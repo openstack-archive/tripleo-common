@@ -74,7 +74,6 @@ class StackUpdateManagerTest(base.TestCase):
 
     def test_get_status(self):
         status, resources = self.stack_update_manager.get_status()
-        self.heatclient.events.list.assert_call_count(2)
         self.assertEqual('WAITING', status)
 
     def test_clear_breakpoint(self):

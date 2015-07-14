@@ -49,11 +49,18 @@ class UpdateManagerTest(base.TestCase):
             'environment.yaml': 'resource_registry: {}\n',
         }
         update.PackageUpdateManager(
-            heatclient, tuskarclient, novaclient, 'stack_id', 'plan').update()
+            heatclient=heatclient,
+            novaclient=novaclient,
+            stack_id='stack_id',
+            tuskarclient=tuskarclient,
+            plan_id='plan'
+        ).update()
         params = {
+            'existing': True,
             'stack_id': 'stack_id',
             'template': 'template body',
             'files': {},
+            'parameters': {},
             'environment': {
                 'resource_registry': {
                     'resources': {

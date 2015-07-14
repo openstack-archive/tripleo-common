@@ -25,15 +25,21 @@ from tripleo_common import stack_update
 from tuskarclient.common import utils as tuskarutils
 
 LOG = logging.getLogger(__name__)
+TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
+REGISTRY_NAME = "overcloud-resource-registry-puppet.yaml"
 
 
 class PackageUpdateManager(stack_update.StackUpdateManager):
-    def __init__(self, heatclient, tuskarclient, novaclient, stack_id,
-                 plan_id):
+    def __init__(self, heatclient, novaclient, stack_id, tuskarclient=None,
+                 plan_id=None, tht_dir=None):
         stack = heatclient.stacks.get(stack_id)
         self.tuskarclient = tuskarclient
-        self.plan = tuskarutils.find_resource(self.tuskarclient.plans, plan_id)
+        self.plan_id = plan_id
+        self.tht_dir = tht_dir
         self.hook_resource = 'UpdateDeployment'
+        if self.tuskarclient:
+            self.plan = tuskarutils.find_resource(self.tuskarclient.plans,
+                                                  self.plan_id)
         super(PackageUpdateManager, self).__init__(
             heatclient=heatclient, novaclient=novaclient, stack=stack,
             hook_type='pre-update', nested_depth=5,
@@ -43,23 +49,25 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
         # time rounded to seconds, we explicitly convert to string because of
         # tuskar
         timestamp = str(int(time.time()))
-        # set new update timestamp in tuskar plan
-        params = []
-        for param in self.plan.parameters:
-            if re.match(r".*::UpdateIdentifier", param['name']):
-                params.append({'name': param['name'], 'value': timestamp})
 
-        self.plan = self.tuskarclient.plans.patch(self.plan.uuid, params)
-
-        tpl_dir = libutils.save_templates(
-            self.tuskarclient.plans.templates(self.plan.uuid))
+        if self.tuskarclient:
+            self._set_update_identifier(timestamp)
+            self.tht_dir = libutils.save_templates(
+                self.tuskarclient.plans.templates(self.plan.uuid))
+            tpl_name = 'plan.yaml'
+            env_name = 'environment.yaml'
+            stack_params = {}
+        else:
+            tpl_name = TEMPLATE_NAME
+            env_name = REGISTRY_NAME
+            stack_params = {'UpdateIdentifier': timestamp}
 
         try:
             tpl_files, template = template_utils.get_template_contents(
-                template_file=os.path.join(tpl_dir, 'plan.yaml'))
+                template_file=os.path.join(self.tht_dir, tpl_name))
             env_files, env = (
                 template_utils.process_multiple_environments_and_files(
-                    env_paths=[os.path.join(tpl_dir, 'environment.yaml')]))
+                    env_paths=[os.path.join(self.tht_dir, env_name)]))
             template_utils.deep_update(env, {
                 'resource_registry': {
                     'resources': {
@@ -72,18 +80,29 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
                 }
             })
             fields = {
+                'existing': True,
                 'stack_id': self.stack.id,
                 'template': template,
                 'files': dict(list(tpl_files.items()) +
                               list(env_files.items())),
-                'environment': env
+                'environment': env,
+                'parameters': stack_params
             }
 
             LOG.info('updating stack: %s', self.stack.stack_name)
             LOG.debug('stack update params: %s', fields)
             self.heatclient.stacks.update(**fields)
         finally:
-            if LOG.isEnabledFor(logging.DEBUG):
-                LOG.debug("Tuskar templates saved in %s", tpl_dir)
-            else:
-                shutil.rmtree(tpl_dir)
+            if self.tuskarclient:
+                if LOG.isEnabledFor(logging.DEBUG):
+                    LOG.debug("Tuskar templates saved in %s", self.tht_dir)
+                else:
+                    shutil.rmtree(self.tht_dir)
+
+    def _set_update_identifier(self, timestamp):
+        # set new update timestamp in tuskar plan
+        params = []
+        for param in self.plan.parameters:
+            if re.match(r".*::UpdateIdentifier", param['name']):
+                params.append({'name': param['name'], 'value': timestamp})
+        self.plan = self.tuskarclient.plans.patch(self.plan.uuid, params)
