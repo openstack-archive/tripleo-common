@@ -31,7 +31,7 @@ REGISTRY_NAME = "overcloud-resource-registry-puppet.yaml"
 
 class PackageUpdateManager(stack_update.StackUpdateManager):
     def __init__(self, heatclient, novaclient, stack_id, tuskarclient=None,
-                 plan_id=None, tht_dir=None):
+                 plan_id=None, tht_dir=None, environment_files=None):
         stack = heatclient.stacks.get(stack_id)
         self.tuskarclient = tuskarclient
         self.plan_id = plan_id
@@ -40,6 +40,7 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
         if self.tuskarclient:
             self.plan = tuskarutils.find_resource(self.tuskarclient.plans,
                                                   self.plan_id)
+        self.environment_files = environment_files
         super(PackageUpdateManager, self).__init__(
             heatclient=heatclient, novaclient=novaclient, stack=stack,
             hook_type='pre-update', nested_depth=5,
@@ -65,9 +66,12 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
         try:
             tpl_files, template = template_utils.get_template_contents(
                 template_file=os.path.join(self.tht_dir, tpl_name))
+            env_paths = [os.path.join(self.tht_dir, env_name)]
+            if self.environment_files:
+                env_paths.extend(self.environment_files)
             env_files, env = (
                 template_utils.process_multiple_environments_and_files(
-                    env_paths=[os.path.join(self.tht_dir, env_name)]))
+                    env_paths=env_paths))
             template_utils.deep_update(env, {
                 'resource_registry': {
                     'resources': {
