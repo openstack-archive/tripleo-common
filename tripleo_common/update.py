@@ -52,12 +52,11 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
         timestamp = str(int(time.time()))
 
         if self.tuskarclient:
-            self._set_update_identifier(timestamp)
+            stack_params = self._set_update_params(timestamp)
             self.tht_dir = libutils.save_templates(
                 self.tuskarclient.plans.templates(self.plan.uuid))
             tpl_name = 'plan.yaml'
             env_name = 'environment.yaml'
-            stack_params = {}
         else:
             tpl_name = TEMPLATE_NAME
             env_name = REGISTRY_NAME
@@ -103,10 +102,10 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
                 else:
                     shutil.rmtree(self.tht_dir)
 
-    def _set_update_identifier(self, timestamp):
-        # set new update timestamp in tuskar plan
-        params = []
+    def _set_update_params(self, timestamp):
+        # set new update timestamp for each role
+        params = {}
         for param in self.plan.parameters:
             if re.match(r".*::UpdateIdentifier", param['name']):
-                params.append({'name': param['name'], 'value': timestamp})
-        self.plan = self.tuskarclient.plans.patch(self.plan.uuid, params)
+                params[param['name']] = timestamp
+        return params

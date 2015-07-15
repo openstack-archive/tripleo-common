@@ -60,7 +60,7 @@ class UpdateManagerTest(base.TestCase):
             'stack_id': 'stack_id',
             'template': 'template body',
             'files': {},
-            'parameters': {},
+            'parameters': {'Compute-1::UpdateIdentifier': '123'},
             'environment': {
                 'resource_registry': {
                     'resources': {
@@ -73,6 +73,4 @@ class UpdateManagerTest(base.TestCase):
                 }
             }
         }
-        tuskarclient.plans.patch.assert_called_once_with(
-            'plan', [{'name': 'Compute-1::UpdateIdentifier', 'value': '123'}])
         heatclient.stacks.update.assert_called_once_with(**params)
