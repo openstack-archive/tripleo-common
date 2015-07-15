@@ -87,8 +87,12 @@ class ScaleManagerTest(base.TestCase):
         self.tuskarclient.plans.patch.assert_called_once_with(
             '5', [{'name': 'compute-1::count', 'value': '3'}])
         self.heatclient.stacks.update.assert_called_once_with(
-            stack_id='stack', template='template body', environment={},
-            files={}, parameters={})
+            stack_id='stack',
+            template='template body',
+            environment={},
+            existing=True,
+            files={},
+            parameters={})
 
     @mock.patch('tuskarclient.common.utils.find_resource')
     def test_invalid_scaleup(self, mock_find_resource):
@@ -117,9 +121,13 @@ class ScaleManagerTest(base.TestCase):
         self.tuskarclient.plans.patch.assert_called_once_with(
             '5', [{'name': 'compute-1::count', 'value': '1'}])
         self.heatclient.stacks.update.assert_called_once_with(
-            stack_id='stack', template='template body', environment={},
-            files={}, parameters={'compute-1::removal_policies': [
-                {'resource_list': ['node0']}]})
+            stack_id='stack',
+            template='template body',
+            environment={},
+            existing=True,
+            files={},
+            parameters={'compute-1::removal_policies': [
+                        {'resource_list': ['node0']}]})
 
     @mock.patch('tuskarclient.common.utils.find_resource')
     def test_invalid_scaledown(self, mock_find_resource):

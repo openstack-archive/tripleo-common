@@ -22,14 +22,20 @@ from tripleo_common import libutils
 from tuskarclient.common import utils as tuskarutils
 
 LOG = logging.getLogger(__name__)
+TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
+REGISTRY_NAME = "overcloud-resource-registry-puppet.yaml"
 
 
 class ScaleManager(object):
-    def __init__(self, tuskarclient, heatclient, plan_id, stack_id):
+    def __init__(self, heatclient, stack_id, tuskarclient=None, plan_id=None,
+                 tht_dir=None):
         self.tuskarclient = tuskarclient
         self.heatclient = heatclient
         self.stack_id = stack_id
-        self.plan = tuskarutils.find_resource(self.tuskarclient.plans, plan_id)
+        self.tht_dir = tht_dir
+        if self.tuskarclient:
+            self.plan = tuskarutils.find_resource(self.tuskarclient.plans,
+                                                  plan_id)
 
     def scaleup(self, role, num):
         LOG.debug('updating role %s count to %d', role, num)
@@ -74,8 +80,53 @@ class ScaleManager(object):
                 "Couldn't find following instances in stack %s: %s" %
                 (self.stack_id, ','.join(instance_list)))
 
-        # decrease count for each tuskar role in tuskar plan and add removal
+        # decrease count for each role (or resource group) and set removal
         # policy for each resource group
+        if self.tuskarclient:
+            stack_params = self._get_removal_params_from_plan(
+                resources_by_role)
+        else:
+            stack_params = self._get_removal_params_from_heat(
+                resources_by_role)
+
+        self._update_stack(parameters=stack_params)
+
+    def _update_stack(self, parameters={}):
+        if self.tuskarclient:
+            self.tht_dir = libutils.save_templates(
+                self.tuskarclient.plans.templates(self.plan.uuid))
+            tpl_name = 'plan.yaml'
+            env_name = 'environment.yaml'
+        else:
+            tpl_name = TEMPLATE_NAME
+            env_name = REGISTRY_NAME
+
+        try:
+            tpl_files, template = template_utils.get_template_contents(
+                template_file=os.path.join(self.tht_dir, tpl_name))
+            env_files, env = (
+                template_utils.process_multiple_environments_and_files(
+                    env_paths=[os.path.join(self.tht_dir, env_name)]))
+            fields = {
+                'existing': True,
+                'stack_id': self.stack_id,
+                'template': template,
+                'files': dict(list(tpl_files.items()) +
+                              list(env_files.items())),
+                'environment': env,
+                'parameters': parameters
+            }
+
+            LOG.debug('stack update params: %s', fields)
+            self.heatclient.stacks.update(**fields)
+        finally:
+            if self.tuskarclient:
+                if LOG.isEnabledFor(logging.DEBUG):
+                    LOG.debug("Tuskar templates saved in %s", self.tht_dir)
+                else:
+                    shutil.rmtree(self.tht_dir)
+
+    def _get_removal_params_from_plan(self, resources_by_role):
         patch_params = []
         stack_params = {}
         for role, role_resources in resources_by_role.items():
@@ -93,30 +144,22 @@ class ScaleManager(object):
 
         LOG.debug('updating plan %s: %s', self.plan.uuid, patch_params)
         self.plan = self.tuskarclient.plans.patch(self.plan.uuid, patch_params)
-        self._update_stack(parameters=stack_params)
+        return stack_params
 
-    def _update_stack(self, parameters={}):
-        tpl_dir = libutils.save_templates(
-            self.tuskarclient.plans.templates(self.plan.uuid))
-        try:
-            tpl_files, template = template_utils.get_template_contents(
-                template_file=os.path.join(tpl_dir, 'plan.yaml'))
-            env_files, env = (
-                template_utils.process_multiple_environments_and_files(
-                    env_paths=[os.path.join(tpl_dir, 'environment.yaml')]))
-            fields = {
-                'stack_id': self.stack_id,
-                'template': template,
-                'files': dict(list(tpl_files.items()) +
-                              list(env_files.items())),
-                'environment': env,
-                'parameters': parameters
-            }
+    def _get_removal_params_from_heat(self, resources_by_role):
+        stack_params = {}
+        stack = self.heatclient.stacks.get(self.stack_id)
+        for role, role_resources in resources_by_role.items():
+            param_name = "{0}Count".format(role)
+            old_count = next(v for k, v in stack.parameters.iteritems() if
+                             k == param_name)
+            count = max(int(old_count) - len(role_resources), 0)
+            stack_params[param_name] = str(count)
+            # add instance resource names into removal_policies
+            # so heat knows which instances should be removed
+            removal_param = "{0}RemovalPolicies".format(role)
+            stack_params[removal_param] = [{
+                'resource_list': [r.resource_name for r in role_resources]
+            }]
 
-            LOG.debug('stack update params: %s', fields)
-            self.heatclient.stacks.update(**fields)
-        finally:
-            if LOG.isEnabledFor(logging.DEBUG):
-                LOG.debug("Tuskar templates saved in %s", tpl_dir)
-            else:
-                shutil.rmtree(tpl_dir)
+        return stack_params
