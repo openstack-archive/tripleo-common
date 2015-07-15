@@ -28,11 +28,12 @@ REGISTRY_NAME = "overcloud-resource-registry-puppet.yaml"
 
 class ScaleManager(object):
     def __init__(self, heatclient, stack_id, tuskarclient=None, plan_id=None,
-                 tht_dir=None):
+                 tht_dir=None, environment_files=None):
         self.tuskarclient = tuskarclient
         self.heatclient = heatclient
         self.stack_id = stack_id
         self.tht_dir = tht_dir
+        self.environment_files = environment_files
         if self.tuskarclient:
             self.plan = tuskarutils.find_resource(self.tuskarclient.plans,
                                                   plan_id)
@@ -104,9 +105,12 @@ class ScaleManager(object):
         try:
             tpl_files, template = template_utils.get_template_contents(
                 template_file=os.path.join(self.tht_dir, tpl_name))
+            env_paths = [os.path.join(self.tht_dir, env_name)]
+            if self.environment_files:
+                env_paths.extend(self.environment_files)
             env_files, env = (
                 template_utils.process_multiple_environments_and_files(
-                    env_paths=[os.path.join(self.tht_dir, env_name)]))
+                    env_paths=env_paths))
             fields = {
                 'existing': True,
                 'stack_id': self.stack_id,
