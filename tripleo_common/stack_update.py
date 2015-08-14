@@ -179,8 +179,13 @@ class StackUpdateManager(object):
 
     def _input_to_refs(self, regexp, refs):
         if regexp:
-            pattern = "\A{0}\Z".format(regexp)
-            return [ref for ref in refs if re.match(pattern,
-                                                    self._server_name(ref))]
+            try:
+                pattern = "\A{0}\Z".format(regexp)
+                return [ref for ref in refs if
+                        re.match(pattern, self._server_name(ref))]
+            except re.error as err:
+                LOG.warn("'%s' is invalid regular expression: %s",
+                         regexp.encode('string-escape'), err)
+                return []
         else:
             return [refs.pop()]
