@@ -35,6 +35,8 @@ class StackUpdateManager(object):
 
     def clear_breakpoints(self, refs):
         resources = self._resources_by_state()
+        succeeds = []
+        fails = []
         for ref in refs:
             try:
                 res = resources['on_breakpoint'][ref]
@@ -46,8 +48,12 @@ class StackUpdateManager(object):
                     stack_id=stack_id,
                     resource_name=res.logical_resource_id,
                     data={'unset_hook': self.hook_type})
-            except IndexError:
-                LOG.error("no more breakpoints")
+                succeeds.append(ref)
+            except Exception as err:
+                LOG.error("failed to remove breakpoint on %s: %s",
+                          server_name, err)
+                fails.append(ref)
+        return (succeeds, fails)
 
     def get_status(self):
         self.stack = self.heatclient.stacks.get(self.stack.id)

@@ -77,11 +77,21 @@ class StackUpdateManagerTest(base.TestCase):
         self.assertEqual('WAITING', status)
 
     def test_clear_breakpoints(self):
-        self.stack_update_manager.clear_breakpoints(['resource_id'])
+        good, bad = self.stack_update_manager.clear_breakpoints(
+            ['resource_id'])
         self.heatclient.resources.signal.assert_called_once_with(
             stack_id='123',
             resource_name='logical_id',
             data={'unset_hook': 'pre-update'})
+        self.assertEqual(good, ['resource_id'])
+        self.assertEqual(bad, [])
+
+    def test_clear_breakpoints_fails(self):
+        self.heatclient.resources.signal.side_effect = Exception('error')
+        good, bad = self.stack_update_manager.clear_breakpoints(
+            ['resource_id'])
+        self.assertEqual(good, [])
+        self.assertEqual(bad, ['resource_id'])
 
     def test_cancel(self):
         self.stack_update_manager.cancel()
