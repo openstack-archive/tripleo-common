@@ -21,18 +21,16 @@ from tripleo_common import scale
 from tripleo_common.tests import base
 
 
-def mock_plan():
-    plan = mock.Mock()
-    plan.uuid = '5'
-    plan.name = 'My Plan'
-    plan.parameters = []
-    plan.parameters.append({'name': 'compute-1::count', 'value': '2'})
-    plan.to_dict.return_value = {
+def mock_stack():
+    stack = mock.Mock()
+    stack.name = 'My Stack'
+    stack.parameters = {'ComputeCount': '2'}
+    stack.to_dict.return_value = {
         'uuid': 5,
-        'name': 'My Plan',
-        'parameters': plan.parameters,
+        'name': 'My Stack',
+        'parameters': stack.parameters,
     }
-    return plan
+    return stack
 
 
 class ScaleManagerTest(base.TestCase):
@@ -40,12 +38,6 @@ class ScaleManagerTest(base.TestCase):
     def setUp(self):
         super(ScaleManagerTest, self).setUp()
         self.image = collections.namedtuple('image', ['id'])
-        self.tuskarclient = mock.MagicMock()
-        self.tuskarclient.plans.patch.return_value = mock_plan()
-        self.tuskarclient.plans.templates.return_value = {
-            'plan.yaml': 'template body',
-            'environment.yaml': 'resource_registry: {}\n',
-        }
         self.heatclient = mock.MagicMock()
         self.heatclient.resources.list.return_value = [
             mock.MagicMock(
@@ -55,7 +47,7 @@ class ScaleManagerTest(base.TestCase):
                                 'stacks/overcloud/123'}],
                 logical_resource_id='logical_id',
                 physical_resource_id='resource_id',
-                resource_type='compute-1'
+                resource_type='Compute'
             ),
             mock.MagicMock(
                 links=[{'rel': 'stack',
@@ -64,7 +56,7 @@ class ScaleManagerTest(base.TestCase):
                                 'stacks/overcloud/124'}],
                 logical_resource_id='node0',
                 physical_resource_id='123',
-                resource_type='compute-1',
+                resource_type='Compute',
                 resource_name='node0',
             )
         ]
@@ -72,69 +64,27 @@ class ScaleManagerTest(base.TestCase):
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
-    @mock.patch('tripleo_common.libutils.open', create=True)
-    @mock.patch('tuskarclient.common.utils.find_resource')
-    def test_scaleup(self, mock_find_resource, mock_open,
-                     mock_template_contents, mock_env_files):
-        mock_find_resource.return_value = mock_plan()
-        mock_template_contents.return_value = ({}, 'template body')
+    def test_scaledown(self, mock_get_template_contents, mock_env_files):
+        mock_get_template_contents.return_value = ({}, 'template_body')
         mock_env_files.return_value = ({}, {})
-        manager = scale.ScaleManager(tuskarclient=self.tuskarclient,
-                                     heatclient=self.heatclient,
-                                     stack_id='stack',
-                                     plan_id='plan')
-        manager.scaleup(role='compute-1', num=3)
-        self.tuskarclient.plans.patch.assert_called_once_with(
-            '5', [{'name': 'compute-1::count', 'value': '3'}])
-        self.heatclient.stacks.update.assert_called_once_with(
-            stack_id='stack',
-            template='template body',
-            environment={},
-            existing=True,
-            files={},
-            parameters={})
-        mock_env_files.assert_called_once_with(env_paths=[])
-
-    @mock.patch('tuskarclient.common.utils.find_resource')
-    def test_invalid_scaleup(self, mock_find_resource):
-        mock_find_resource.return_value = mock_plan()
-        manager = scale.ScaleManager(tuskarclient=self.tuskarclient,
-                                     heatclient=self.heatclient,
-                                     stack_id='stack',
-                                     plan_id='plan')
-        self.assertRaises(ValueError, manager.scaleup, 'compute-1', 1)
-
-    @mock.patch('heatclient.common.template_utils.'
-                'process_multiple_environments_and_files')
-    @mock.patch('heatclient.common.template_utils.get_template_contents')
-    @mock.patch('tripleo_common.libutils.open', create=True)
-    @mock.patch('tuskarclient.common.utils.find_resource')
-    def test_scaledown(self, mock_find_resource, mock_open,
-                       mock_template_contents, mock_env_files):
-        mock_find_resource.return_value = mock_plan()
-        mock_template_contents.return_value = ({}, 'template body')
-        mock_env_files.return_value = ({}, {})
-        manager = scale.ScaleManager(tuskarclient=self.tuskarclient,
-                                     heatclient=self.heatclient,
-                                     stack_id='stack',
-                                     plan_id='plan')
+        self.heatclient.stacks.get.return_value = mock_stack()
+        manager = scale.ScaleManager(heatclient=self.heatclient,
+                                     stack_id='stack', tht_dir='/tmp/')
         manager.scaledown(['resource_id'])
-        self.tuskarclient.plans.patch.assert_called_once_with(
-            '5', [{'name': 'compute-1::count', 'value': '1'}])
         self.heatclient.stacks.update.assert_called_once_with(
             stack_id='stack',
-            template='template body',
+            template='template_body',
             environment={},
             existing=True,
             files={},
-            parameters={'compute-1::removal_policies': [
-                        {'resource_list': ['node0']}]})
+            parameters={
+                'ComputeCount': '1',
+                'ComputeRemovalPolicies': [
+                    {'resource_list': ['node0']}
+                ]
+            })
 
-    @mock.patch('tuskarclient.common.utils.find_resource')
-    def test_invalid_scaledown(self, mock_find_resource):
-        mock_find_resource.return_value = mock_plan()
-        manager = scale.ScaleManager(tuskarclient=self.tuskarclient,
-                                     heatclient=self.heatclient,
-                                     stack_id='stack',
-                                     plan_id='plan')
+    def test_invalid_scaledown(self):
+        manager = scale.ScaleManager(heatclient=self.heatclient,
+                                     stack_id='stack')
         self.assertRaises(ValueError, manager.scaledown, 'invalid_resource_id')

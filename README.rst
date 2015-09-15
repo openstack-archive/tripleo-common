@@ -2,7 +2,7 @@
 tripleo-common
 ===============================
 
-A common library for TripleO CLI and Tuskar UI.
+A common library for TripleO workflows.
 
 * Free software: Apache license
 * Documentation: http://docs.openstack.org/developer/tripleo-common
