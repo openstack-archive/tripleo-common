@@ -56,16 +56,14 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
             self.tht_dir = libutils.save_templates(
                 self.tuskarclient.plans.templates(self.plan.uuid))
             tpl_name = 'plan.yaml'
-            env_name = 'environment.yaml'
         else:
             tpl_name = TEMPLATE_NAME
-            env_name = REGISTRY_NAME
             stack_params = {'UpdateIdentifier': timestamp}
 
         try:
             tpl_files, template = template_utils.get_template_contents(
                 template_file=os.path.join(self.tht_dir, tpl_name))
-            env_paths = [os.path.join(self.tht_dir, env_name)]
+            env_paths = []
             if self.environment_files:
                 env_paths.extend(self.environment_files)
             env_files, env = (

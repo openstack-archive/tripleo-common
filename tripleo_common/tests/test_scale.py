@@ -93,6 +93,7 @@ class ScaleManagerTest(base.TestCase):
             existing=True,
             files={},
             parameters={})
+        mock_env_files.assert_called_once_with(env_paths=[])
 
     @mock.patch('tuskarclient.common.utils.find_resource')
     def test_invalid_scaleup(self, mock_find_resource):

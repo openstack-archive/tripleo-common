@@ -74,3 +74,4 @@ class UpdateManagerTest(base.TestCase):
             }
         }
         heatclient.stacks.update.assert_called_once_with(**params)
+        mock_env_files.assert_called_once_with(env_paths=[])
