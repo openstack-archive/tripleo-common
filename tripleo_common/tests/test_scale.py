@@ -47,7 +47,8 @@ class ScaleManagerTest(base.TestCase):
                                 'stacks/overcloud/123'}],
                 logical_resource_id='logical_id',
                 physical_resource_id='resource_id',
-                resource_type='Compute'
+                resource_type='OS::Heat::ResourceGroup',
+                resource_name='Compute'
             ),
             mock.MagicMock(
                 links=[{'rel': 'stack',
@@ -78,7 +79,7 @@ class ScaleManagerTest(base.TestCase):
             existing=True,
             files={},
             parameters={
-                'ComputeCount': '1',
+                'ComputeCount': '0',
                 'ComputeRemovalPolicies': [
                     {'resource_list': ['node0']}
                 ]
