@@ -4,4 +4,4 @@ source = tripleo_common
 omit = tripleo_common/openstack/*
 
 [report]
-ignore-errors = True
+ignore_errors = True
