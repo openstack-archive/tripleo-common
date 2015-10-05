@@ -18,6 +18,7 @@ import logging
 import os
 
 from heatclient.common import template_utils
+from tripleo_common import update
 
 LOG = logging.getLogger(__name__)
 TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
@@ -70,12 +71,15 @@ class ScaleManager(object):
 
         tpl_files, template = template_utils.get_template_contents(
             template_file=os.path.join(self.tht_dir, TEMPLATE_NAME))
+
         env_paths = []
         if self.environment_files:
             env_paths.extend(self.environment_files)
         env_files, env = (
             template_utils.process_multiple_environments_and_files(
                 env_paths=env_paths))
+        update.add_breakpoints_cleanup_into_env(env)
+
         fields = {
             'existing': True,
             'stack_id': self.stack_id,

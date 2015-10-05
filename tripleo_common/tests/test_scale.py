@@ -71,10 +71,15 @@ class ScaleManagerTest(base.TestCase):
         manager = scale.ScaleManager(heatclient=self.heatclient,
                                      stack_id='stack', tht_dir='/tmp/')
         manager.scaledown(['resource_id'])
+        env = {
+            'resource_registry': {
+                'resources': {'*': {'*': {'UpdateDeployment': {'hooks': []}}}}
+            }
+        }
         self.heatclient.stacks.update.assert_called_once_with(
             stack_id='stack',
             template='template_body',
-            environment={},
+            environment=env,
             existing=True,
             files={},
             parameters={

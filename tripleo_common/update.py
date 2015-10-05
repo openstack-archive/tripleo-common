@@ -22,6 +22,15 @@ from tripleo_common import stack_update
 
 LOG = logging.getLogger(__name__)
 TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
+UPDATE_RESOURCE_NAME = 'UpdateDeployment'
+
+
+def add_breakpoints_cleanup_into_env(env):
+    template_utils.deep_update(env, {
+        'resource_registry': {
+            'resources': {'*': {'*': {UPDATE_RESOURCE_NAME: {'hooks': []}}}}
+        }
+    })
 
 
 class PackageUpdateManager(stack_update.StackUpdateManager):
@@ -29,12 +38,11 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
                  tht_dir=None, environment_files=None):
         stack = heatclient.stacks.get(stack_id)
         self.tht_dir = tht_dir
-        self.hook_resource = 'UpdateDeployment'
         self.environment_files = environment_files
         super(PackageUpdateManager, self).__init__(
             heatclient=heatclient, novaclient=novaclient, stack=stack,
             hook_type='pre-update', nested_depth=5,
-            hook_resource=self.hook_resource)
+            hook_resource=UPDATE_RESOURCE_NAME)
 
     def update(self):
         # time rounded to seconds
@@ -55,7 +63,7 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
                 'resources': {
                     '*': {
                         '*': {
-                            self.hook_resource: {'hooks': 'pre-update'}
+                            UPDATE_RESOURCE_NAME: {'hooks': 'pre-update'}
                         }
                     }
                 }
