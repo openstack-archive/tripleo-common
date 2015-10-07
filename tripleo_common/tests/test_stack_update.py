@@ -76,8 +76,8 @@ class StackUpdateManagerTest(base.TestCase):
         status, resources = self.stack_update_manager.get_status()
         self.assertEqual('WAITING', status)
 
-    def test_clear_breakpoint(self):
-        self.stack_update_manager.clear_breakpoint('resource_id')
+    def test_clear_breakpoints(self):
+        self.stack_update_manager.clear_breakpoints(['resource_id'])
         self.heatclient.resources.signal.assert_called_once_with(
             stack_id='123',
             resource_name='logical_id',

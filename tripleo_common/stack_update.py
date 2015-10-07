@@ -33,21 +33,21 @@ class StackUpdateManager(object):
         self.server_names = {}
         self.servers = []
 
-    def clear_breakpoint(self, ref):
+    def clear_breakpoints(self, refs):
         resources = self._resources_by_state()
-        try:
-            res = resources['on_breakpoint'][ref]
-            server_name = self._server_name(ref)
-            LOG.info("removing breakpoint on %s", ref)
-            print("removing breakpoint on {0}".format(server_name))
-            stack_id = next(x['href'] for x in res.links if
-                            x['rel'] == 'stack').rsplit('/', 1)[1]
-            self.heatclient.resources.signal(
-                stack_id=stack_id,
-                resource_name=res.logical_resource_id,
-                data={'unset_hook': self.hook_type})
-        except IndexError:
-            LOG.error("no more breakpoints")
+        for ref in refs:
+            try:
+                res = resources['on_breakpoint'][ref]
+                server_name = self._server_name(ref)
+                LOG.warn("removing breakpoint on %s", server_name)
+                stack_id = next(x['href'] for x in res.links if
+                                x['rel'] == 'stack').rsplit('/', 1)[1]
+                self.heatclient.resources.signal(
+                    stack_id=stack_id,
+                    resource_name=res.logical_resource_id,
+                    data={'unset_hook': self.hook_type})
+            except IndexError:
+                LOG.error("no more breakpoints")
 
     def get_status(self):
         self.stack = self.heatclient.stacks.get(self.stack.id)
@@ -73,8 +73,7 @@ class StackUpdateManager(object):
         self.heatclient.actions.cancel_update(self.stack.id)
         # removing existing breakpoints
         resources = self._resources_by_state()
-        for ref in resources['on_breakpoint'].keys():
-            self.clear_breakpoint(ref)
+        self.clear_breakpoints(resources['on_breakpoint'].keys())
 
     def do_interactive_update(self):
         status = None
@@ -93,10 +92,10 @@ class StackUpdateManager(object):
                     print("canceling update, doing rollback")
                     self.cancel()
                 else:
-                    for ref in self._input_to_refs(
-                            user_input.strip(),
-                            resources['on_breakpoint'].keys()):
-                        self.clear_breakpoint(ref)
+                    refs = self._input_to_refs(
+                        user_input.strip(),
+                        resources['on_breakpoint'].keys())
+                    self.clear_breakpoints(refs)
             time.sleep(5)
         print('update finished with status {0}'.format(status))
 
