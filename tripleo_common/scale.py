@@ -22,6 +22,30 @@ from tripleo_common import update
 
 LOG = logging.getLogger(__name__)
 TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
+RESOURCE_GROUP_TYPE = 'OS::Heat::ResourceGroup'
+
+
+def get_group_resources_after_delete(groupname, res_to_delete, resources):
+    group = next(res for res in resources if
+                 res.resource_name == groupname and
+                 res.resource_type == RESOURCE_GROUP_TYPE)
+    members = []
+    for res in resources:
+        stack_name, stack_id = next(
+            x['href'] for x in res.links if
+            x['rel'] == 'stack').rsplit('/', 2)[1:]
+        # desired new count of nodes after delete operation should be
+        # count of all existing nodes in ResourceGroup which are not
+        # in set of nodes being deleted. Also nodes in any delete state
+        # from a previous failed update operation are not included in
+        # overall count (if such nodes exist)
+        if (stack_id == group.physical_resource_id and
+            res not in res_to_delete and
+                not res.resource_status.startswith('DELETE')):
+
+            members.append(res)
+
+    return members
 
 
 class ScaleManager(object):
@@ -63,7 +87,8 @@ class ScaleManager(object):
 
         # decrease count for each role (or resource group) and set removal
         # policy for each resource group
-        stack_params = self._get_removal_params_from_heat(resources_by_role)
+        stack_params = self._get_removal_params_from_heat(
+            resources_by_role, resources)
 
         self._update_stack(parameters=stack_params)
 
@@ -93,15 +118,19 @@ class ScaleManager(object):
         LOG.debug('stack update params: %s', fields)
         self.heatclient.stacks.update(**fields)
 
-    def _get_removal_params_from_heat(self, resources_by_role):
+    def _get_removal_params_from_heat(self, resources_by_role, resources):
         stack_params = {}
-        stack = self.heatclient.stacks.get(self.stack_id)
         for role, role_resources in resources_by_role.items():
             param_name = "{0}Count".format(role)
-            old_count = next(v for k, v in stack.parameters.items() if
-                             k == param_name)
-            count = max(int(old_count) - len(role_resources), 0)
-            stack_params[param_name] = str(count)
+
+            # get real count of nodes for each role. *Count stack parameters
+            # can not be used because stack parameters return parameters
+            # passed by user no matter if previous update operation succeeded
+            # or not
+            group_members = get_group_resources_after_delete(
+                role, role_resources, resources)
+            stack_params[param_name] = str(len(group_members))
+
             # add instance resource names into removal_policies
             # so heat knows which instances should be removed
             removal_param = "{0}RemovalPolicies".format(role)
