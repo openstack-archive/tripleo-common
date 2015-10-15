@@ -37,7 +37,7 @@ set -o pipefail
 
 SCRIPT_NAME=${SCRIPT_NAME:-$(basename $0)}
 
-function show_options () {
+function show_options {
     echo "Usage: $SCRIPT_NAME [options]"
     echo
     echo "Automates TripleO setup steps."
@@ -169,8 +169,8 @@ function repo_setup {
     # TODO: remove python-hardware from the list below once centos7/current-tripleo includes https://review.gerrithub.io/#/c/247917/
     sudo /bin/bash -c "cat <<-EOF>>/etc/yum.repos.d/delorean-current.repo
 
-		includepkgs=diskimage-builder,openstack-heat,instack,instack-undercloud,openstack-ironic,openstack-ironic-inspector,os-cloud-config,os-net-config,python-ironic-inspector-client,python-tripleoclient,tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tuskar-ui-extras,openstack-puppet-modules,python-hardware
-		EOF"
+includepkgs=diskimage-builder,openstack-heat,instack,instack-undercloud,openstack-ironic,openstack-ironic-inspector,os-cloud-config,os-net-config,python-ironic-inspector-client,python-tripleoclient,tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tuskar-ui-extras,openstack-puppet-modules,python-hardware
+EOF"
 
     # Install the yum-plugin-priorities package so that the Delorean repository
     # takes precedence over the main RDO repositories.
