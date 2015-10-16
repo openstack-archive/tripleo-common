@@ -29,9 +29,11 @@ class StackUpdateManagerTest(base.TestCase):
         self.stack = mock.MagicMock(id='123', status='IN_PROGRESS',
                                     stack_name='stack')
         self.heatclient.stacks.get.return_value = self.stack
-        self.novaclient.servers.list.return_value = [
-            mock.MagicMock(name='instance_name', id='instance_id')
-        ]
+
+        server_mock = mock.MagicMock(id='instance_id')
+        server_mock.name = 'instance_name'
+        self.novaclient.servers.list.return_value = [server_mock]
+
         self.heatclient.software_deployments.get.return_value = \
             mock.MagicMock(server_id='instance_id')
         self.heatclient.resources.list.return_value = [
@@ -100,3 +102,13 @@ class StackUpdateManagerTest(base.TestCase):
             stack_id='123',
             resource_name='logical_id',
             data={'unset_hook': 'pre-update'})
+
+    def test_intput_to_refs_regexp(self):
+        result = self.stack_update_manager._input_to_refs(
+            'instance_name.*', ['instance_id'])
+        self.assertEqual(result, ['instance_id'])
+
+    def test_intput_to_refs_invalid_regexp(self):
+        result = self.stack_update_manager._input_to_refs(
+            ']].*', ['instance_id'])
+        self.assertEqual(result, [])
