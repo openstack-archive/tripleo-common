@@ -51,6 +51,7 @@ function show_options {
     echo
     echo "Options:"
     echo "      --repo-setup         -- Perform repository setup."
+    echo "      --delorean-setup     -- Install local delorean build environment."
     echo "      --undercloud         -- Install the undercloud."
     echo "      --overcloud-images   -- Build and load overcloud images."
     echo "      --register-nodes     -- Register and configure nodes."
@@ -70,7 +71,7 @@ if [ ${#@} = 0 ]; then
 fi
 
 TEMP=$(getopt -o ,h \
-        -l,help,repo-setup,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,all \
+        -l,help,repo-setup,delorean-setup,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,all \
         -o,x,h,a \
         -n $SCRIPT_NAME -- "$@")
 
@@ -100,9 +101,11 @@ OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
     /etc/yum.repos.d/delorean-deps.repo"}
 RDO_RELEASE=${RDO_RELEASE:-kilo}
 REPO_SETUP=${REPO_SETUP:-""}
+DELOREAN_SETUP=${DELOREAN_SETUP:-""}
 STDERR=/dev/null
 UNDERCLOUD=${UNDERCLOUD:-""}
 UNDERCLOUD_CONF=${UNDERCLOUD_CONF:-"/usr/share/instack-undercloud/undercloud.conf.sample"}
+TRIPLEO_ROOT=${TRIPLEO_ROOT:-$HOME/tripleo}
 
 # TODO: remove this when Image create in openstackclient supports the v2 API
 export OS_IMAGE_API_VERSION=1
@@ -116,6 +119,7 @@ while true ; do
         --overcloud-deploy) OVERCLOUD_DEPLOY="1"; shift 1;;
         --overcloud-images) OVERCLOUD_IMAGES="1"; shift 1;;
         --repo-setup) REPO_SETUP="1"; shift 1;;
+        --delorean-setup) DELOREAN_SETUP="1"; shift 1;;
         --undercloud) UNDERCLOUD="1"; shift 1;;
         -x) set -x; STDERR=/dev/stderr; shift 1;;
         -h | --help) show_options 0;;
@@ -178,6 +182,39 @@ EOF"
 
     log "Repository setup - DONE."
 
+}
+
+function delorean_setup {
+
+    log "Delorean setup"
+
+    # Install delorean as per combination of toci-instack and delorean docs
+    sudo yum install -y createrepo git git-hg mock python-virtualenv rpm-build yum-plugin-priorities yum-utils
+
+    # Add the current user to the mock group
+    sudo usermod -G mock -a $(id -nu)
+
+    mkdir -p $TRIPLEO_ROOT
+    [ -d $TRIPLEO_ROOT/delorean ] || git clone https://github.com/openstack-packages/delorean.git $TRIPLEO_ROOT/delorean
+
+    pushd $TRIPLEO_ROOT/delorean
+
+    sudo rm -rf data commits.sqlite
+    mkdir -p data
+
+    sed -i -e "s%reponame=.*%reponame=delorean-ci%" projects.ini
+    sed -i -e "s%target=.*%target=centos%" projects.ini
+    sed -i -e "s%baseurl=.*%baseurl=https://trunk.rdoproject.org/centos7%" projects.ini
+    # Remove the rpm install test to speed up delorean (our ci test will to this)
+    # TODO: add an option for this in delorean
+    sed -i -e 's%.*installed.*%touch $OUTPUT_DIRECTORY/installed%' scripts/build_rpm.sh
+
+    virtualenv venv
+    ./venv/bin/pip install -r requirements.txt
+    ./venv/bin/python setup.py install
+
+    popd
+    log "Delorean setup - DONE."
 }
 
 function undercloud {
@@ -292,6 +329,10 @@ function overcloud_deploy {
 
 if [ "$REPO_SETUP" = 1 ]; then
     repo_setup
+fi
+
+if [ "$DELOREAN_SETUP" = 1 ]; then
+    delorean_setup
 fi
 
 if [ "$UNDERCLOUD" = 1 ]; then
