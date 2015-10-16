@@ -52,6 +52,7 @@ function show_options {
     echo "Options:"
     echo "      --repo-setup         -- Perform repository setup."
     echo "      --delorean-setup     -- Install local delorean build environment."
+    echo "      --delorean-build     -- Build a delorean package locally"
     echo "      --undercloud         -- Install the undercloud."
     echo "      --overcloud-images   -- Build and load overcloud images."
     echo "      --register-nodes     -- Register and configure nodes."
@@ -71,7 +72,7 @@ if [ ${#@} = 0 ]; then
 fi
 
 TEMP=$(getopt -o ,h \
-        -l,help,repo-setup,delorean-setup,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,all \
+        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,all \
         -o,x,h,a \
         -n $SCRIPT_NAME -- "$@")
 
@@ -102,6 +103,7 @@ OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
 RDO_RELEASE=${RDO_RELEASE:-kilo}
 REPO_SETUP=${REPO_SETUP:-""}
 DELOREAN_SETUP=${DELOREAN_SETUP:-""}
+DELOREAN_BUILD=${DELOREAN_BUILD:-""}
 STDERR=/dev/null
 UNDERCLOUD=${UNDERCLOUD:-""}
 UNDERCLOUD_CONF=${UNDERCLOUD_CONF:-"/usr/share/instack-undercloud/undercloud.conf.sample"}
@@ -120,6 +122,7 @@ while true ; do
         --overcloud-images) OVERCLOUD_IMAGES="1"; shift 1;;
         --repo-setup) REPO_SETUP="1"; shift 1;;
         --delorean-setup) DELOREAN_SETUP="1"; shift 1;;
+        --delorean-build) DELOREAN_BUILD="1"; shift 1;;
         --undercloud) UNDERCLOUD="1"; shift 1;;
         -x) set -x; STDERR=/dev/stderr; shift 1;;
         -h | --help) show_options 0;;
@@ -215,6 +218,51 @@ function delorean_setup {
 
     popd
     log "Delorean setup - DONE."
+}
+
+function delorean_build {
+
+    log "Delorean build"
+
+    export PATH=/sbin:/usr/sbin:$PATH
+    source $(dirname ${BASH_SOURCE[0]:-$0})/common_functions.sh
+
+    pushd $TRIPLEO_ROOT/delorean
+
+    sudo rm -rf data commits.sqlite
+    mkdir -p data
+
+    # build packages
+    # loop through each of the projects listed in DELOREAN_BUILD_REFS, if it is a project we
+    # are capable of building an rpm for then build it.
+    # e.g. DELOREAN_BUILD_REFS="openstack/cinder openstack/heat etc.."
+    for PROJ in $DELOREAN_BUILD_REFS ; do
+        log "Building $PROJ"
+
+        PROJ=$(filterref $PROJ)
+
+        # Clone the repo if it doesn't yet exist
+        [ -d $TRIPLEO_ROOT/$PROJ ] || git clone https://github.com/openstack/$PROJ.git $TRIPLEO_ROOT/$PROJ
+
+        MAPPED_PROJ=$(./venv/bin/python scripts/map-project-name $PROJ || true)
+        [ -e data/$MAPPED_PROJ ] && continue
+        cp -r $TRIPLEO_ROOT/$PROJ data/$MAPPED_PROJ
+        pushd data/$MAPPED_PROJ
+        GITHASH=$(git rev-parse HEAD)
+
+        # Set the branches delorean reads to the same git hash as PROJ has left for us
+        for BRANCH in master origin/master ; do
+            git checkout -b $BRANCH || git checkout $BRANCH
+            git reset --hard $GITHASH
+        done
+        popd
+
+        # Using sudo to su a command as ourselves to run the command with a new login
+        # to ensure the addition to the mock group has taken effect.
+        sudo su $(id -nu) -c "./venv/bin/delorean --config-file projects.ini --head-only --package-name $MAPPED_PROJ --local --build-env DELOREAN_DEV=1 --build-env http_proxy=${http_proxy:-} --info-repo rdoinfo"
+    done
+    popd
+    log "Delorean build - DONE."
 }
 
 function undercloud {
@@ -333,6 +381,15 @@ fi
 
 if [ "$DELOREAN_SETUP" = 1 ]; then
     delorean_setup
+fi
+
+if [ "$DELOREAN_BUILD" = 1 ]; then
+    export DELOREAN_BUILD_REFS="${DELOREAN_BUILD_REFS:-$@}"
+    if [ -z "$DELOREAN_BUILD_REFS" ]; then
+        echo "Usage: $0 --delorean-build openstack/heat openstack/nova"
+        exit 1
+    fi
+    delorean_build
 fi
 
 if [ "$UNDERCLOUD" = 1 ]; then
