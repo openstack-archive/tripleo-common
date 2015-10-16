@@ -18,7 +18,7 @@ import os
 import time
 
 from heatclient.common import template_utils
-from tripleo_common import stack_update
+from tripleo_common import _stack_update
 
 LOG = logging.getLogger(__name__)
 TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
@@ -33,7 +33,7 @@ def add_breakpoints_cleanup_into_env(env):
     })
 
 
-class PackageUpdateManager(stack_update.StackUpdateManager):
+class PackageUpdateManager(_stack_update.StackUpdateManager):
     def __init__(self, heatclient, novaclient, stack_id,
                  tht_dir=None, environment_files=None):
         stack = heatclient.stacks.get(stack_id)

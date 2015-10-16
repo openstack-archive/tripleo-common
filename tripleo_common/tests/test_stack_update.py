@@ -16,7 +16,7 @@
 
 import mock
 
-from tripleo_common import stack_update
+from tripleo_common import _stack_update
 from tripleo_common.tests import base
 
 
@@ -71,7 +71,7 @@ class StackUpdateManagerTest(base.TestCase):
                 ]
 
         self.heatclient.events.list.side_effect = return_events
-        self.stack_update_manager = stack_update.StackUpdateManager(
+        self.stack_update_manager = _stack_update.StackUpdateManager(
             self.heatclient, self.novaclient, self.stack, 'pre-update')
 
     def test_get_status(self):
