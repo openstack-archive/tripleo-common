@@ -38,6 +38,8 @@ function pin(){
 # Cherry-pick a commit for tripleo ci
 # $1 : project name e.g. nova
 # $2 : Gerrit refspec to cherry pick
+# $3 : bug id of reason for the cherry pick (used to skip cherry pick if found
+#      in commit that triggers ci).
 function cherrypick(){
     local PROJ_NAME=$1
     local REFSPEC=$2
