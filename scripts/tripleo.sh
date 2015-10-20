@@ -112,6 +112,10 @@ TRIPLEO_ROOT=${TRIPLEO_ROOT:-$HOME/tripleo}
 # TODO: remove this when Image create in openstackclient supports the v2 API
 export OS_IMAGE_API_VERSION=1
 
+# Temporary workarounds
+# pin puppet_heat bug 1507934
+export DIB_REPOREF_puppet_heat=c9295a7224e4f2efdda6dd82b3c48c6e9269a2d6
+
 while true ; do
     case "$1" in
         --all|-a ) ALL="1"; shift 1;;
