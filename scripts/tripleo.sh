@@ -100,7 +100,7 @@ OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
     /etc/yum.repos.d/delorean.repo \
     /etc/yum.repos.d/delorean-current.repo \
     /etc/yum.repos.d/delorean-deps.repo"}
-RDO_RELEASE=${RDO_RELEASE:-kilo}
+STABLE_RELEASE=${STABLE_RELEASE:-}
 REPO_SETUP=${REPO_SETUP:-""}
 DELOREAN_SETUP=${DELOREAN_SETUP:-""}
 DELOREAN_BUILD=${DELOREAN_BUILD:-""}
@@ -161,22 +161,33 @@ function repo_setup {
         rpm -q epel-release || sudo yum -y install epel-release
     fi
 
-    # Enable the Delorean Deps repository
-    sudo curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7/delorean-deps.repo
-    sudo sed -i -e 's%priority=.*%priority=30%' /etc/yum.repos.d/delorean-deps.repo
+    if [ -z "$STABLE_RELEASE" ]; then
+        # Enable the Delorean Deps repository
+        sudo curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7/delorean-deps.repo
+        sudo sed -i -e 's%priority=.*%priority=30%' /etc/yum.repos.d/delorean-deps.repo
 
-    # Enable last known good RDO Trunk Delorean repository
-    sudo curl -o /etc/yum.repos.d/delorean.repo $DELOREAN_REPO_URL/$DELOREAN_REPO_FILE
-    sudo sed -i -e 's%priority=.*%priority=20%' /etc/yum.repos.d/delorean.repo
+        # Enable last known good RDO Trunk Delorean repository
+        sudo curl -o /etc/yum.repos.d/delorean.repo $DELOREAN_REPO_URL/$DELOREAN_REPO_FILE
+        sudo sed -i -e 's%priority=.*%priority=20%' /etc/yum.repos.d/delorean.repo
 
-    # Enable latest RDO Trunk Delorean repository
-    sudo curl -o /etc/yum.repos.d/delorean-current.repo http://trunk.rdoproject.org/centos7/current/delorean.repo
-    sudo sed -i -e 's%priority=.*%priority=10%' /etc/yum.repos.d/delorean-current.repo
-    sudo sed -i 's/\[delorean\]/\[delorean-current\]/' /etc/yum.repos.d/delorean-current.repo
-    sudo /bin/bash -c "cat <<-EOF>>/etc/yum.repos.d/delorean-current.repo
+        # Enable latest RDO Trunk Delorean repository
+        sudo curl -o /etc/yum.repos.d/delorean-current.repo http://trunk.rdoproject.org/centos7/current/delorean.repo
+        sudo sed -i -e 's%priority=.*%priority=10%' /etc/yum.repos.d/delorean-current.repo
+        sudo sed -i 's/\[delorean\]/\[delorean-current\]/' /etc/yum.repos.d/delorean-current.repo
+        sudo /bin/bash -c "cat <<-EOF>>/etc/yum.repos.d/delorean-current.repo
 
 includepkgs=diskimage-builder,instack,instack-undercloud,os-apply-config,os-cloud-config,os-collect-config,os-net-config,os-refresh-config,python-tripleoclient,tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tripleo,openstack-tripleo-puppet-elements
 EOF"
+    else
+        # Enable delorean current for the stable version
+        sudo curl -o /etc/yum.repos.d/delorean.repo https://trunk.rdoproject.org/centos7-$STABLE_RELEASE/current/delorean.repo
+
+        # Enable the Delorean Deps repository
+        sudo curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7-$STABLE_RELEASE/delorean-deps.repo
+
+        # Create empty delorean-current for dib image building
+        sudo sh -c '> /etc/yum.repos.d/delorean-current.repo'
+    fi
 
     # Install the yum-plugin-priorities package so that the Delorean repository
     # takes precedence over the main RDO repositories.
@@ -206,7 +217,7 @@ function delorean_setup {
 
     sed -i -e "s%reponame=.*%reponame=delorean-ci%" projects.ini
     sed -i -e "s%target=.*%target=centos%" projects.ini
-    sed -i -e "s%baseurl=.*%baseurl=https://trunk.rdoproject.org/centos7%" projects.ini
+
     # Remove the rpm install test to speed up delorean (our ci test will to this)
     # TODO: add an option for this in delorean
     sed -i -e 's%.*installed.*%touch $OUTPUT_DIRECTORY/installed%' scripts/build_rpm.sh
@@ -228,6 +239,16 @@ function delorean_build {
 
     pushd $TRIPLEO_ROOT/delorean
 
+    if [ -z "$STABLE_RELEASE" ]; then
+        sed -i -e "s%baseurl=.*%baseurl=https://trunk.rdoproject.org/centos7%" projects.ini
+        sed -i -e "s%distro=.*%distro=rpm-master%" projects.ini
+        sed -i -e "s%source=.*%source=master%" projects.ini
+    else
+        sed -i -e "s%baseurl=.*%baseurl=https://trunk.rdoproject.org/centos7-$STABLE_RELEASE%" projects.ini
+        sed -i -e "s%distro=.*%distro=rpm-$STABLE_RELEASE%" projects.ini
+        sed -i -e "s%source=.*%source=stable/$STABLE_RELEASE%" projects.ini
+    fi
+
     sudo rm -rf data commits.sqlite
     mkdir -p data
 
@@ -241,7 +262,14 @@ function delorean_build {
         PROJ=$(filterref $PROJ)
 
         # Clone the repo if it doesn't yet exist
-        [ -d $TRIPLEO_ROOT/$PROJ ] || git clone https://github.com/openstack/$PROJ.git $TRIPLEO_ROOT/$PROJ
+        if [ ! -d $TRIPLEO_ROOT/$PROJ ]; then
+            git clone https://github.com/openstack/$PROJ.git $TRIPLEO_ROOT/$PROJ
+            if [ ! -z "$STABLE_RELEASE" ]; then
+                pushd $TRIPLEO_ROOT/$PROJ
+                git checkout -b stable/$STABLE_RELEASE origin/stable/$STABLE_RELEASE
+                popd
+            fi
+        fi
 
         MAPPED_PROJ=$(./venv/bin/python scripts/map-project-name $PROJ || true)
         [ -e data/$MAPPED_PROJ ] && continue
@@ -250,7 +278,7 @@ function delorean_build {
         GITHASH=$(git rev-parse HEAD)
 
         # Set the branches delorean reads to the same git hash as PROJ has left for us
-        for BRANCH in master origin/master ; do
+        for BRANCH in master origin/master stable/liberty; do
             git checkout -b $BRANCH || git checkout $BRANCH
             git reset --hard $GITHASH
         done
