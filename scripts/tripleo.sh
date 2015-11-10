@@ -59,6 +59,7 @@ function show_options {
     echo "      --introspect-nodes   -- Introspect nodes."
     echo "      --flavors            -- Create flavors for deployment."
     echo "      --overcloud-deploy   -- Deploy an overcloud."
+    echo "      --use-containers     -- Use a containerized compute node."
     echo "      --all, -a            -- Run all of the above commands."
     echo "      -x                   -- enable tracing"
     echo "      --help, -h           -- Print this help message."
@@ -72,7 +73,7 @@ if [ ${#@} = 0 ]; then
 fi
 
 TEMP=$(getopt -o ,h \
-        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,all \
+        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,use-containers,all \
         -o,x,h,a \
         -n $SCRIPT_NAME -- "$@")
 
@@ -85,10 +86,12 @@ fi
 eval set -- "$TEMP"
 
 ALL=${ALL:-""}
+CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates/environments/docker-rdo.yaml --libvirt-type=qemu"}
 DELOREAN_REPO_FILE=${DELOREAN_REPO_FILE:-"delorean.repo"}
 DELOREAN_REPO_URL=${DELOREAN_REPO_URL:-"\
     http://trunk.rdoproject.org/centos7/current-tripleo/"}
 FLAVORS=${FLAVORS:-""}
+ATOMIC_URL=${ATOMIC_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/22/Cloud/x86_64/Images/Fedora-Cloud-Atomic-22-20150521.x86_64.qcow2"}
 INSTACKENV_JSON_PATH=${INSTACKENV_JSON_PATH:-"$HOME/instackenv.json"}
 INTROSPECT_NODES=${INTROSPECT_NODES:-""}
 REGISTER_NODES=${REGISTER_NODES:-""}
@@ -108,6 +111,7 @@ STDERR=/dev/null
 UNDERCLOUD=${UNDERCLOUD:-""}
 UNDERCLOUD_CONF=${UNDERCLOUD_CONF:-"/usr/share/instack-undercloud/undercloud.conf.sample"}
 TRIPLEO_ROOT=${TRIPLEO_ROOT:-$HOME/tripleo}
+USE_CONTAINERS=${USE_CONTAINERS:-""}
 
 # TODO: remove this when Image create in openstackclient supports the v2 API
 export OS_IMAGE_API_VERSION=1
@@ -117,6 +121,7 @@ export OS_IMAGE_API_VERSION=1
 while true ; do
     case "$1" in
         --all|-a ) ALL="1"; shift 1;;
+        --use-containers) USE_CONTAINERS="1"; shift 1;;
         --flavors) FLAVORS="1"; shift 1;;
         --introspect-nodes) INTROSPECT_NODES="1"; shift 1;;
         --register-nodes) REGISTER_NODES="1"; shift 1;;
@@ -396,8 +401,16 @@ function overcloud_deploy {
         OVERCLOUD_DEPLOY_ARGS="$OVERCLOUD_DEPLOY_ARGS --templates"
     fi
     stackrc_check
-    openstack overcloud deploy $OVERCLOUD_DEPLOY_ARGS
 
+    if [[ $USE_CONTAINERS == 1 ]]; then
+        if ! glance image-list | grep  -q atomic-image; then
+            wget $ATOMIC_URL
+            glance image-create --name atomic-image --file `basename $ATOMIC_URL` --disk-format qcow2 --container-format bare
+        fi
+        OVERCLOUD_DEPLOY_ARGS="$OVERCLOUD_DEPLOY_ARGS $CONTAINER_ARGS"
+    fi
+
+    openstack overcloud deploy $OVERCLOUD_DEPLOY_ARGS
     log "Overcloud deployment started - DONE."
 
 }
@@ -445,6 +458,11 @@ if [ "$OVERCLOUD_DEPLOY" = 1 ]; then
     overcloud_deploy
 fi
 
+if [[ "$USE_CONTAINERS" == 1 && "$OVERCLOUD_DEPLOY" != 1 ]]; then
+    echo "Error: --overcloud-deploy flag is required with the flag --use-containers"
+    exit 1
+fi
+
 if [ "$ALL" = 1 ]; then
     repo_setup
     undercloud
@@ -454,4 +472,3 @@ if [ "$ALL" = 1 ]; then
     flavors
     overcloud_deploy
 fi
-
