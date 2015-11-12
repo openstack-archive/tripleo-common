@@ -18,17 +18,17 @@ import logging
 import os
 
 from heatclient.common import template_utils
+
+from tripleo_common import constants
 from tripleo_common import update
 
 LOG = logging.getLogger(__name__)
-TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
-RESOURCE_GROUP_TYPE = 'OS::Heat::ResourceGroup'
 
 
 def get_group_resources_after_delete(groupname, res_to_delete, resources):
     group = next(res for res in resources if
                  res.resource_name == groupname and
-                 res.resource_type == RESOURCE_GROUP_TYPE)
+                 res.resource_type == constants.RESOURCE_GROUP_TYPE)
     members = []
     for res in resources:
         stack_name, stack_id = next(
@@ -95,7 +95,7 @@ class ScaleManager(object):
     def _update_stack(self, parameters={}, timeout_mins=240):
 
         tpl_files, template = template_utils.get_template_contents(
-            template_file=os.path.join(self.tht_dir, TEMPLATE_NAME))
+            template_file=os.path.join(self.tht_dir, constants.TEMPLATE_NAME))
 
         env_paths = []
         if self.environment_files:
