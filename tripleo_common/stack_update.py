@@ -41,7 +41,7 @@ class StackUpdateManager(object):
             try:
                 res = resources['on_breakpoint'][ref]
                 server_name = self._server_name(ref)
-                LOG.warn("removing breakpoint on %s", server_name)
+                LOG.info("removing breakpoint on %s", server_name)
                 stack_id = next(x['href'] for x in res.links if
                                 x['rel'] == 'stack').rsplit('/', 1)[1]
                 self.heatclient.resources.signal(
