@@ -92,8 +92,10 @@ class StackUpdateManager(object):
                         print("{0}: {1}".format(state, self._server_names(
                                                 resources[state].keys())))
                 user_input = raw_input(
-                    "Breakpoint reached, continue? Regexp or Enter=proceed, "
-                    "no=cancel update, C-c=quit interactive mode: ")
+                    "Breakpoint reached, continue? Regexp or "
+                    "Enter=proceed (will clear %s), "
+                    "no=cancel update, C-c=quit interactive mode: "
+                    % resources['on_breakpoint'].keys()[-1])
                 if user_input.strip().lower() == 'no':
                     print("canceling update, doing rollback")
                     self.cancel()
