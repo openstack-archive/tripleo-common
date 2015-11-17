@@ -302,6 +302,14 @@ function delorean_build {
 function undercloud {
 
     log "Undercloud install"
+    # We use puppet modules from source by default for master, for stable we
+    # currently use a stable package (we may eventually want to use a
+    # stable-puppet-modules element instead so we can set DIB_REPOREF.., etc)
+    if [ -z "$STABLE_RELEASE" ]; then
+        export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-source}
+    else
+        export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-}
+    fi
 
     sudo yum install -y python-tripleoclient
 
@@ -326,6 +334,15 @@ function overcloud_images {
 
     log "Overcloud images"
     log "Overcloud images saved in $OVERCLOUD_IMAGES_PATH"
+
+    # We use puppet modules from source by default for master, for stable we
+    # currently use a stable package (we may eventually want to use a
+    # stable-puppet-modules element instead so we can set DIB_REPOREF.., etc)
+    if [ -z "$STABLE_RELEASE" ]; then
+        export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-source}
+    else
+        export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-}
+    fi
 
     # (slagle) TODO: This needs to be fixed in python-tripleoclient or
     # diskimage-builder!
