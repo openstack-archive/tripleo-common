@@ -38,7 +38,7 @@ class TestBaseImageManager(testbase.TestCase):
 
         with mock.patch('six.moves.builtins.open', mock_open_context):
             base_manager = BaseImageManager(['yamlfile'])
-            disk_images = base_manager.load_config_files()
+            disk_images = base_manager.load_config_files('disk_images')
 
         mock_yaml_load.assert_called_once_with("YAML")
         self.assertEqual([{
@@ -51,7 +51,8 @@ class TestBaseImageManager(testbase.TestCase):
 
     def test_load_config_files_not_found(self):
         base_manager = BaseImageManager(['file/does/not/exist'])
-        self.assertRaises(IOError, base_manager.load_config_files)
+        self.assertRaises(IOError, base_manager.load_config_files,
+                          'disk_images')
 
     @mock.patch('yaml.load', autospec=True)
     @mock.patch('os.path.isfile', autospec=True)
@@ -80,7 +81,7 @@ class TestBaseImageManager(testbase.TestCase):
 
         with mock.patch('six.moves.builtins.open', mock_open_context):
             base_manager = BaseImageManager(['yamlfile1', 'yamlfile2'])
-            disk_images = base_manager.load_config_files()
+            disk_images = base_manager.load_config_files('disk_images')
 
         self.assertEqual(2, mock_yaml_load.call_count)
         self.assertEqual([{
@@ -117,4 +118,4 @@ class TestBaseImageManager(testbase.TestCase):
         with mock.patch('six.moves.builtins.open', mock_open_context):
             base_manager = BaseImageManager(['yamlfile'])
             self.assertRaises(ImageSpecificationException,
-                              base_manager.load_config_files)
+                              base_manager.load_config_files, 'disk_images')

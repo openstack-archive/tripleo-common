@@ -20,3 +20,7 @@ class ImageBuilderException(Exception):
 
 class ImageSpecificationException(Exception):
     pass
+
+
+class ImageUploaderException(Exception):
+    pass
