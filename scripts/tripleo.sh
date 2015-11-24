@@ -186,11 +186,13 @@ function repo_setup {
 includepkgs=diskimage-builder,instack,instack-undercloud,os-apply-config,os-cloud-config,os-collect-config,os-net-config,os-refresh-config,python-tripleoclient,tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tripleo,openstack-tripleo-puppet-elements
 EOF"
     else
-        # Enable delorean current for the stable version
-        sudo curl -o /etc/yum.repos.d/delorean.repo https://trunk.rdoproject.org/centos7-$STABLE_RELEASE/current/delorean.repo
-
         # Enable the Delorean Deps repository
         sudo curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7-$STABLE_RELEASE/delorean-deps.repo
+        sudo sed -i -e 's%priority=.*%priority=30%' /etc/yum.repos.d/delorean-deps.repo
+
+        # Enable delorean current for the stable version
+        sudo curl -o /etc/yum.repos.d/delorean.repo https://trunk.rdoproject.org/centos7-$STABLE_RELEASE/current/delorean.repo
+        sudo sed -i -e 's%priority=.*%priority=20%' /etc/yum.repos.d/delorean.repo
 
         # Create empty delorean-current for dib image building
         sudo sh -c '> /etc/yum.repos.d/delorean-current.repo'
