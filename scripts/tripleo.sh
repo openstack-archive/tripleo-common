@@ -59,6 +59,7 @@ function show_options {
     echo "      --introspect-nodes   -- Introspect nodes."
     echo "      --flavors            -- Create flavors for deployment."
     echo "      --overcloud-deploy   -- Deploy an overcloud."
+    echo "      --overcloud-delete   -- Delete the overcloud."
     echo "      --all, -a            -- Run all of the above commands."
     echo "      -x                   -- enable tracing"
     echo "      --help, -h           -- Print this help message."
@@ -72,7 +73,7 @@ if [ ${#@} = 0 ]; then
 fi
 
 TEMP=$(getopt -o ,h \
-        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,all \
+        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,overcloud-delete,all \
         -o,x,h,a \
         -n $SCRIPT_NAME -- "$@")
 
@@ -93,6 +94,8 @@ INSTACKENV_JSON_PATH=${INSTACKENV_JSON_PATH:-"$HOME/instackenv.json"}
 INTROSPECT_NODES=${INTROSPECT_NODES:-""}
 REGISTER_NODES=${REGISTER_NODES:-""}
 OVERCLOUD_DEPLOY=${OVERCLOUD_DEPLOY:-""}
+OVERCLOUD_DELETE=${OVERCLOUD_DELETE:-""}
+OVERCLOUD_DELETE_TIMEOUT=${OVERCLOUD_DELETE_TIMEOUT:-"300"}
 OVERCLOUD_DEPLOY_ARGS=${OVERCLOUD_DEPLOY_ARGS:-""}
 OVERCLOUD_IMAGES_PATH=${OVERCLOUD_IMAGES_PATH:-"$HOME"}
 OVERCLOUD_IMAGES=${OVERCLOUD_IMAGES:-""}
@@ -100,6 +103,7 @@ OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
     /etc/yum.repos.d/delorean.repo \
     /etc/yum.repos.d/delorean-current.repo \
     /etc/yum.repos.d/delorean-deps.repo"}
+OVERCLOUD_NAME=${OVERCLOUD_NAME:-"overcloud"}
 STABLE_RELEASE=${STABLE_RELEASE:-}
 REPO_SETUP=${REPO_SETUP:-""}
 DELOREAN_SETUP=${DELOREAN_SETUP:-""}
@@ -119,6 +123,7 @@ while true ; do
         --introspect-nodes) INTROSPECT_NODES="1"; shift 1;;
         --register-nodes) REGISTER_NODES="1"; shift 1;;
         --overcloud-deploy) OVERCLOUD_DEPLOY="1"; shift 1;;
+        --overcloud-delete) OVERCLOUD_DELETE="1"; shift 1;;
         --overcloud-images) OVERCLOUD_IMAGES="1"; shift 1;;
         --repo-setup) REPO_SETUP="1"; shift 1;;
         --delorean-setup) DELOREAN_SETUP="1"; shift 1;;
@@ -419,7 +424,26 @@ function overcloud_deploy {
 
 }
 
+function overcloud_delete {
 
+    log "Overcloud delete"
+
+    stackrc_check
+
+    # We delete the stack via heat, then wait for it to be deleted
+    # This should be fairly quick, but we poll for OVERCLOUD_DELETE_TIMEOUT
+    heat stack-delete "$OVERCLOUD_NAME"
+    # Note, we need the ID, not the name, as stack-show will only return
+    # soft-deleted stacks by ID (not name, as it may be reused)
+    OVERCLOUD_ID=$(heat stack-list | grep "$OVERCLOUD_NAME" | awk '{print $2}')
+    if $(tripleo wait_for -w $OVERCLOUD_DELETE_TIMEOUT -d 10 -s "DELETE_COMPLETE" -- "heat stack-show $OVERCLOUD_ID"); then
+       log "Overcloud $OVERCLOUD_ID DELETE_COMPLETE"
+    else
+       log "Overcloud $OVERCLOUD_ID delete failed or timed out:"
+       heat stack-show $OVERCLOUD_ID
+       exit 1
+    fi
+}
 
 if [ "$REPO_SETUP" = 1 ]; then
     repo_setup
@@ -460,6 +484,10 @@ fi
 
 if [ "$OVERCLOUD_DEPLOY" = 1 ]; then
     overcloud_deploy
+fi
+
+if [ "$OVERCLOUD_DELETE" = 1 ]; then
+    overcloud_delete
 fi
 
 if [ "$ALL" = 1 ]; then
