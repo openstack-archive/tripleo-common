@@ -57,7 +57,6 @@ function show_options {
     echo "      --overcloud-images   -- Build and load overcloud images."
     echo "      --register-nodes     -- Register and configure nodes."
     echo "      --introspect-nodes   -- Introspect nodes."
-    echo "      --flavors            -- Create flavors for deployment."
     echo "      --overcloud-deploy   -- Deploy an overcloud."
     echo "      --use-containers     -- Use a containerized compute node."
     echo "      --all, -a            -- Run all of the above commands."
@@ -73,7 +72,7 @@ if [ ${#@} = 0 ]; then
 fi
 
 TEMP=$(getopt -o ,h \
-        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,flavors,overcloud-deploy,use-containers,all \
+        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,overcloud-deploy,use-containers,all \
         -o,x,h,a \
         -n $SCRIPT_NAME -- "$@")
 
@@ -90,7 +89,6 @@ CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates
 DELOREAN_REPO_FILE=${DELOREAN_REPO_FILE:-"delorean.repo"}
 DELOREAN_REPO_URL=${DELOREAN_REPO_URL:-"\
     http://trunk.rdoproject.org/centos7/current-tripleo/"}
-FLAVORS=${FLAVORS:-""}
 ATOMIC_URL=${ATOMIC_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/22/Cloud/x86_64/Images/Fedora-Cloud-Atomic-22-20150521.x86_64.qcow2"}
 INSTACKENV_JSON_PATH=${INSTACKENV_JSON_PATH:-"$HOME/instackenv.json"}
 INTROSPECT_NODES=${INTROSPECT_NODES:-""}
@@ -122,7 +120,6 @@ while true ; do
     case "$1" in
         --all|-a ) ALL="1"; shift 1;;
         --use-containers) USE_CONTAINERS="1"; shift 1;;
-        --flavors) FLAVORS="1"; shift 1;;
         --introspect-nodes) INTROSPECT_NODES="1"; shift 1;;
         --register-nodes) REGISTER_NODES="1"; shift 1;;
         --overcloud-deploy) OVERCLOUD_DEPLOY="1"; shift 1;;
@@ -396,21 +393,6 @@ function introspect_nodes {
 
 }
 
-
-function flavors {
-
-    log "Flavors"
-
-    stackrc_check
-    openstack flavor create --id auto --ram 4096 --disk 40 --vcpus 1 baremetal
-    openstack flavor \
-        set --property "capabilities:boot_option"="local" \
-        baremetal
-
-    log "Flavors - DONE."
-
-}
-
 function overcloud_deploy {
 
     log "Overcloud deploy"
@@ -469,10 +451,6 @@ if [ "$INTROSPECT_NODES" = 1 ]; then
     introspect_nodes
 fi
 
-if [ "$FLAVORS" = 1 ]; then
-    flavors
-fi
-
 if [ "$OVERCLOUD_DEPLOY" = 1 ]; then
     overcloud_deploy
 fi
@@ -488,6 +466,5 @@ if [ "$ALL" = 1 ]; then
     overcloud_images
     register_nodes
     introspect_nodes
-    flavors
     overcloud_deploy
 fi
