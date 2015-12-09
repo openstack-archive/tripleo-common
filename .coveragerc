@@ -1,7 +1,7 @@
 [run]
 branch = True
 source = tripleo_common
-omit = tripleo_common/openstack/*
+omit = tripleo_common/tests/*
 
 [report]
 ignore_errors = True
