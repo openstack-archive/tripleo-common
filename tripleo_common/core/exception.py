@@ -67,6 +67,10 @@ class PlanDoesNotExistError(TripleoCommonException):
     msg_fmt = _("A plan with the name %(name) does not exist.")
 
 
+class FileDoesNotExistError(TripleoCommonException):
+    msg_fmt = _("A file with the name %(name)s does not exist.")
+
+
 class PlanAlreadyExistsError(TripleoCommonException):
     msg_fmt = _("A plan with the name %(name) already exists.")
 

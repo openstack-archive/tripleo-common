@@ -112,6 +112,26 @@ class PlanManagerTest(base.TestCase):
                           plan_mgr.delete_plan,
                           self.plan_name)
 
+    def test_delete_files(self):
+        self.plan_store.delete_file = mock.MagicMock()
+        plan_mgr = plan.PlanManager(self.plan_store, self.heatclient)
+        plan_mgr.delete_file(self.plan_name, 'fake-file.yaml')
+        self.plan_store.delete_file.assert_called_with(
+            self.plan_name, 'fake-file.yaml')
+
+        self.plan_store.delete_file = mock.Mock(
+            side_effect=exception.FileDoesNotExistError(name='fake-file.yaml'))
+        self.assertRaises(exception.FileDoesNotExistError,
+                          plan_mgr.delete_file, self.plan_name,
+                          'fake-file.yaml')
+
+        with mock.patch('tripleo_common.core.plan.LOG') as log_mock:
+            self.plan_store.delete_file = mock.Mock(side_effect=ValueError())
+            self.assertRaises(ValueError, plan_mgr.delete_file,
+                              self.plan_name, 'fake-file.yaml')
+            log_mock.exception.assert_called_with(
+                "Error deleting file from plan.")
+
     def test_delete_temporary_environment(self):
 
         self.expected_plan.files = {
