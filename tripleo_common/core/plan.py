@@ -81,7 +81,8 @@ class PlanManager(object):
             except swiftexceptions.ClientException as ce:
                 LOG.exception("Swift error deleting plan.")
                 if ce.http_status == 404:
-                    six.raise_from(exception.PlanDoesNotExistError(), ce)
+                    six.raise_from(exception.PlanDoesNotExistError(
+                        name=plan_name), ce)
             except Exception:
                 LOG.exception("Error deleting plan.")
                 raise
@@ -112,6 +113,11 @@ class PlanManager(object):
 
         try:
             return self.plan_store.get(plan_name)
+        except swiftexceptions.ClientException as ce:
+            LOG.exception("Swift error retrieving plan.")
+            if ce.http_status == 404:
+                six.raise_from(exception.PlanDoesNotExistError(
+                    name=plan_name), ce)
         except Exception:
             LOG.exception("Error retrieving plan.")
             raise
@@ -201,6 +207,11 @@ class PlanManager(object):
 
         try:
             self.plan_store.update(plan_name, plan_files)
+        except swiftexceptions.ClientException as ce:
+            LOG.exception("Swift error updating plan.")
+            if ce.http_status == 404:
+                six.raise_from(exception.PlanDoesNotExistError(
+                    name=plan_name), ce)
         except Exception:
             LOG.exception("Error updating plan.")
             raise

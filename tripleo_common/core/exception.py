@@ -64,11 +64,11 @@ class StackInUseError(TripleoCommonException):
 
 
 class PlanDoesNotExistError(TripleoCommonException):
-    msg_fmt = _("A plan with the name %(name) does not exist.")
+    msg_fmt = _("A plan with the name %(name)s does not exist.")
 
 
 class PlanAlreadyExistsError(TripleoCommonException):
-    msg_fmt = _("A plan with the name %(name) already exists.")
+    msg_fmt = _("A plan with the name %(name)s already exists.")
 
 
 class TooManyRootTemplatesError(TripleoCommonException):
@@ -85,4 +85,4 @@ class MappingFileNotFoundError(TripleoCommonException):
 
 
 class TooManyCapabilitiesMapFilesError(TripleoCommonException):
-    msg_fmt = _("There can only be up to one root template in a given plan.")
+    msg_fmt = _("There cannot be more than one root template in a given plan.")

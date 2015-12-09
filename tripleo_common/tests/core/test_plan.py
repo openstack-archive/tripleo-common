@@ -141,6 +141,17 @@ class PlanManagerTest(base.TestCase):
                          "Plan mismatch")
         self.plan_store.get.assert_called_with(self.plan_name)
         with mock.patch('tripleo_common.core.plan.LOG') as log_mock:
+            # test swift container doesn't exist
+            self.plan_store.get = mock.Mock(
+                side_effect=swiftexceptions.ClientException(
+                    "test-error", http_status=404))
+            self.assertRaises(exception.PlanDoesNotExistError,
+                              plan_mgr.get_plan,
+                              self.plan_name)
+            log_mock.exception.assert_called_with(
+                'Swift error retrieving plan.')
+
+            # test other exception occurs
             self.plan_store.get = mock.Mock(side_effect=ValueError())
             self.assertRaises(ValueError, plan_mgr.get_plan, 'overcloud')
             log_mock.exception.assert_called_with("Error retrieving plan.")
@@ -264,12 +275,6 @@ class PlanManagerTest(base.TestCase):
                               plan_mgr.get_deployment_parameters,
                               self.plan_name)
 
-        # calls self.heatclient.stacks.validate
-        # set side effect on validate of heatexceptions.HTTPBadRequest
-        # calls six.raise_from(exception.HeatValidationFailedError(), exc)
-        # assert params match
-        pass
-
     def test_update_plan(self):
         self.plan_store.update = mock.MagicMock()
         self.plan_store.get = mock.MagicMock(return_value=self.expected_plan)
@@ -280,10 +285,22 @@ class PlanManagerTest(base.TestCase):
                          "Plan mismatch")
         self.plan_store.get.assert_called_with(self.plan_name)
         with mock.patch('tripleo_common.core.plan.LOG') as log_mock:
-            self.plan_store.get = mock.Mock(side_effect=ValueError())
+            # test swift container doesn't exist
+            self.plan_store.update = mock.Mock(
+                side_effect=swiftexceptions.ClientException(
+                    "test-error", http_status=404))
+            self.assertRaises(exception.PlanDoesNotExistError,
+                              plan_mgr.update_plan,
+                              self.plan_name,
+                              self.expected_plan.files)
+            log_mock.exception.assert_called_with(
+                'Swift error updating plan.')
+
+            # test other exception occurs
+            self.plan_store.update = mock.Mock(side_effect=ValueError())
             self.assertRaises(ValueError, plan_mgr.update_plan,
                               self.plan_name, self.expected_plan.files)
-            log_mock.exception.assert_called_with("Error retrieving plan.")
+            log_mock.exception.assert_called_with("Error updating plan.")
 
     def test_validate_plan(self):
         # calls self.get_plan(plan_name)
