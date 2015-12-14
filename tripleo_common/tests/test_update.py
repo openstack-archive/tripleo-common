@@ -59,7 +59,8 @@ class UpdateManagerTest(base.TestCase):
                         }
                     }
                 }
-            }
+            },
+            'timeout_mins': 240,
         }
         heatclient.stacks.update.assert_called_once_with(**params)
         mock_env_files.assert_called_once_with(env_paths=[])

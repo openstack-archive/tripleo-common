@@ -92,7 +92,7 @@ class ScaleManager(object):
 
         self._update_stack(parameters=stack_params)
 
-    def _update_stack(self, parameters={}):
+    def _update_stack(self, parameters={}, timeout_mins=240):
 
         tpl_files, template = template_utils.get_template_contents(
             template_file=os.path.join(self.tht_dir, TEMPLATE_NAME))
@@ -112,7 +112,8 @@ class ScaleManager(object):
             'files': dict(list(tpl_files.items()) +
                           list(env_files.items())),
             'environment': env,
-            'parameters': parameters
+            'parameters': parameters,
+            'timeout_mins': timeout_mins
         }
 
         LOG.debug('stack update params: %s', fields)

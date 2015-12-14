@@ -44,7 +44,7 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
             hook_type='pre-update', nested_depth=5,
             hook_resource=UPDATE_RESOURCE_NAME)
 
-    def update(self):
+    def update(self, timeout_mins=240):
         # time rounded to seconds
         timestamp = int(time.time())
 
@@ -76,7 +76,8 @@ class PackageUpdateManager(stack_update.StackUpdateManager):
             'files': dict(list(tpl_files.items()) +
                           list(env_files.items())),
             'environment': env,
-            'parameters': stack_params
+            'parameters': stack_params,
+            'timeout_mins': timeout_mins,
         }
 
         LOG.info('updating stack: %s', self.stack.stack_name)
