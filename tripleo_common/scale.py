@@ -74,8 +74,8 @@ class ScaleManager(object):
             # of nova server)
             role_resource = next(x for x in resources if
                                  x.physical_resource_id == stack_id)
-            # Get the role name which is the resource_type in Heat.
-            role = role_resource.resource_type
+            # get the role name which is parent resource name in Heat
+            role = role_resource.parent_resource
             resources_by_role[role].append(role_resource)
 
         resources_by_role = dict(resources_by_role)

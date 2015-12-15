@@ -57,7 +57,8 @@ class ScaleManagerTest(base.TestCase):
                                 'stacks/overcloud/124'}],
                 logical_resource_id='node0',
                 physical_resource_id='123',
-                resource_type='Compute',
+                resource_type='OS::TripleO::Compute',
+                parent_resource='Compute',
                 resource_name='node0',
             )
         ]
