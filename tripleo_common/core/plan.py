@@ -151,7 +151,8 @@ class PlanManager(object):
                 environment=environment,
                 show_nested=True)
         except heatexceptions.HTTPBadRequest as exc:
-            six.raise_from(exception.HeatValidationFailedError(), exc)
+            six.raise_from(exception.HeatValidationFailedError(msg=exc), exc)
+
         return params
 
     def update_deployment_parameters(self, plan_name, deployment_parameters):
@@ -185,7 +186,7 @@ class PlanManager(object):
                 environment=environment,
                 show_nested=True)
         except heatexceptions.HTTPBadRequest as exc:
-            six.raise_from(exception.HeatValidationFailedError(), exc)
+            six.raise_from(exception.HeatValidationFailedError(msg=exc), exc)
 
         env = yaml.dump(deployment_parameters, default_flow_style=False)
         plan.files[deployment_params_file] = {
@@ -246,7 +247,7 @@ class PlanManager(object):
                 show_nested=True)
         except heatexceptions.HTTPBadRequest as exc:
             LOG.exception("Error validating the plan.")
-            six.raise_from(exception.HeatValidationFailedError(), exc)
+            six.raise_from(exception.HeatValidationFailedError(msg=exc), exc)
 
         # no validation issues found
         return True

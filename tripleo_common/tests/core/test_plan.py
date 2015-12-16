@@ -169,7 +169,6 @@ class PlanManagerTest(base.TestCase):
 
     def test_get_deployment_parameters(self):
         self.plan_store.get = mock.MagicMock(return_value=self.expected_plan)
-        # calls templates.process_plan_data(plan.files)
         plan_mgr = plan.PlanManager(self.plan_store, self.heatclient)
         with mock.patch('tripleo_common.utils.templates') as templates:
             templates.process_plan_data.return_value = (
@@ -217,6 +216,7 @@ class PlanManagerTest(base.TestCase):
                 },
                 show_nested=True
             )
+
             # set side effect of heatexceptions.HTTPBadRequest on validate
             self.heatclient.stacks.validate = mock.Mock(
                 side_effect=heatexceptions.HTTPBadRequest

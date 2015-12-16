@@ -76,7 +76,7 @@ class TooManyRootTemplatesError(TripleoCommonException):
 
 
 class HeatValidationFailedError(TripleoCommonException):
-    msg_fmt = _("The plan failed to validate via the Heat service.")
+    msg_fmt = _("The plan failed to validate via the Heat service. %(msg)s")
 
 
 class MappingFileNotFoundError(TripleoCommonException):
