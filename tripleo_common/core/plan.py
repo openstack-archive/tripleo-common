@@ -207,7 +207,7 @@ class PlanManager(object):
         except heatexceptions.HTTPBadRequest as exc:
             six.raise_from(exception.HeatValidationFailedError(msg=exc), exc)
 
-        env = yaml.dump(deployment_parameters, default_flow_style=False)
+        env = yaml.safe_dump(deployment_parameters, default_flow_style=False)
         plan.files[deployment_params_file] = {
             'contents': env,
             'meta': {
