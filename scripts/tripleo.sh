@@ -115,13 +115,14 @@ OVERCLOUD_UPDATE_ARGS=${OVERCLOUD_UPDATE_ARGS:-"$OVERCLOUD_DEPLOY_ARGS"}
 OVERCLOUD_UPDATE_CHECK=${OVERCLOUD_UPDATE_CHECK:-}
 OVERCLOUD_IMAGES_PATH=${OVERCLOUD_IMAGES_PATH:-"$HOME"}
 OVERCLOUD_IMAGES=${OVERCLOUD_IMAGES:-""}
-OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
-    /etc/yum.repos.d/delorean.repo \
-    /etc/yum.repos.d/delorean-current.repo \
-    /etc/yum.repos.d/delorean-deps.repo"}
 OVERCLOUD_IMAGES_ARGS=${OVERCLOUD_IMAGES_ARGS='--all'}
 OVERCLOUD_NAME=${OVERCLOUD_NAME:-"overcloud"}
 REPO_SETUP=${REPO_SETUP:-""}
+REPO_PREFIX=${REPO_PREFIX:-"/etc/yum.repos.d/"}
+OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
+    $REPO_PREFIX/delorean.repo \
+    $REPO_PREFIX/delorean-current.repo \
+    $REPO_PREFIX/delorean-deps.repo"}
 DELOREAN_SETUP=${DELOREAN_SETUP:-""}
 DELOREAN_BUILD=${DELOREAN_BUILD:-""}
 STDERR=/dev/null
@@ -189,32 +190,32 @@ function repo_setup {
 
     if [ -z "$STABLE_RELEASE" ]; then
         # Enable the Delorean Deps repository
-        sudo curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7/delorean-deps.repo
-        sudo sed -i -e 's%priority=.*%priority=30%' /etc/yum.repos.d/delorean-deps.repo
+        sudo curl -o $REPO_PREFIX/delorean-deps.repo http://trunk.rdoproject.org/centos7/delorean-deps.repo
+        sudo sed -i -e 's%priority=.*%priority=30%' $REPO_PREFIX/delorean-deps.repo
 
         # Enable last known good RDO Trunk Delorean repository
-        sudo curl -o /etc/yum.repos.d/delorean.repo $DELOREAN_REPO_URL/$DELOREAN_REPO_FILE
-        sudo sed -i -e 's%priority=.*%priority=20%' /etc/yum.repos.d/delorean.repo
+        sudo curl -o $REPO_PREFIX/delorean.repo $DELOREAN_REPO_URL/$DELOREAN_REPO_FILE
+        sudo sed -i -e 's%priority=.*%priority=20%' $REPO_PREFIX/delorean.repo
 
         # Enable latest RDO Trunk Delorean repository
-        sudo curl -o /etc/yum.repos.d/delorean-current.repo http://trunk.rdoproject.org/centos7/current/delorean.repo
-        sudo sed -i -e 's%priority=.*%priority=10%' /etc/yum.repos.d/delorean-current.repo
-        sudo sed -i 's/\[delorean\]/\[delorean-current\]/' /etc/yum.repos.d/delorean-current.repo
-        sudo /bin/bash -c "cat <<-EOF>>/etc/yum.repos.d/delorean-current.repo
+        sudo curl -o $REPO_PREFIX/delorean-current.repo http://trunk.rdoproject.org/centos7/current/delorean.repo
+        sudo sed -i -e 's%priority=.*%priority=10%' $REPO_PREFIX/delorean-current.repo
+        sudo sed -i 's/\[delorean\]/\[delorean-current\]/' $REPO_PREFIX/delorean-current.repo
+        sudo /bin/bash -c "cat <<-EOF>>$REPO_PREFIX/delorean-current.repo
 
 includepkgs=diskimage-builder,instack,instack-undercloud,os-apply-config,os-cloud-config,os-collect-config,os-net-config,os-refresh-config,python-tripleoclient,tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tripleo,openstack-tripleo-puppet-elements
 EOF"
     else
         # Enable the Delorean Deps repository
-        sudo curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7-$STABLE_RELEASE/delorean-deps.repo
-        sudo sed -i -e 's%priority=.*%priority=30%' /etc/yum.repos.d/delorean-deps.repo
+        sudo curl -o $REPO_PREFIX/delorean-deps.repo http://trunk.rdoproject.org/centos7-$STABLE_RELEASE/delorean-deps.repo
+        sudo sed -i -e 's%priority=.*%priority=30%' $REPO_PREFIX/delorean-deps.repo
 
         # Enable delorean current for the stable version
-        sudo curl -o /etc/yum.repos.d/delorean.repo $DELOREAN_STABLE_REPO_URL/$DELOREAN_REPO_FILE
+        sudo curl -o $REPO_PREFIX/delorean.repo $DELOREAN_STABLE_REPO_URL/$DELOREAN_REPO_FILE
         sudo sed -i -e 's%priority=.*%priority=20%' /etc/yum.repos.d/delorean.repo
 
         # Create empty delorean-current for dib image building
-        sudo sh -c '> /etc/yum.repos.d/delorean-current.repo'
+        sudo sh -c "> $REPO_PREFIX/delorean-current.repo"
     fi
 
     # Install the yum-plugin-priorities package so that the Delorean repository
