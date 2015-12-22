@@ -28,6 +28,12 @@ def _get_dict_from_env_string(env_name, env_string):
 
 
 def deep_update(base, new):
+    """Updates a given dictionary with a nested dictionary of varying depth
+
+    :param base: The dictionary to update
+    :param new: The dictionary to merge into the base dictionary
+    :return: a combined nested dictionary
+    """
     for key, val in new.items():
         if isinstance(val, dict):
             tmp = deep_update(base.get(key, {}), val)
@@ -38,7 +44,16 @@ def deep_update(base, new):
 
 
 def process_plan_data(plan_data):
-    """Processes the plan data."""
+    """Preprocesses and organizes plan files for heatclient interaction
+
+    This method separates the the root template, environments and other
+    associated files in preparation to send to heatclient for validation
+    or deployment.  The environment files are merged with the temporary
+    environment information stored in the deployment parameters.
+
+    :param plan_data: the files stored in a plan
+    :return: template, merged environment and associated files
+    """
     template = ''
     environment = {}
     env_items = []
