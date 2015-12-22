@@ -101,6 +101,7 @@ OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
     /etc/yum.repos.d/delorean.repo \
     /etc/yum.repos.d/delorean-current.repo \
     /etc/yum.repos.d/delorean-deps.repo"}
+OVERCLOUD_IMAGES_ARGS=${OVERCLOUD_IMAGES_ARGS='--all'}
 STABLE_RELEASE=${STABLE_RELEASE:-}
 REPO_SETUP=${REPO_SETUP:-""}
 DELOREAN_SETUP=${DELOREAN_SETUP:-""}
@@ -360,7 +361,7 @@ function overcloud_images {
     log "Overcloud images saved in $OVERCLOUD_IMAGES_PATH"
     pushd $OVERCLOUD_IMAGES_PATH
     DIB_YUM_REPO_CONF=$OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF \
-        openstack overcloud image build --all 2>&1 | \
+        openstack overcloud image build $OVERCLOUD_IMAGES_ARGS 2>&1 | \
         tee -a overcloud-image-build.log
 
     stackrc_check
