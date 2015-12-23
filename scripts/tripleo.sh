@@ -58,8 +58,10 @@ function show_options {
     echo "      --register-nodes     -- Register and configure nodes."
     echo "      --introspect-nodes   -- Introspect nodes."
     echo "      --overcloud-deploy   -- Deploy an overcloud."
+    echo "      --overcloud-update   -- Update a deployed overcloud."
     echo "      --overcloud-delete   -- Delete the overcloud."
     echo "      --use-containers     -- Use a containerized compute node."
+    echo "      --enable-check       -- Enable checks on update."
     echo "      --all, -a            -- Run all of the above commands."
     echo "      -x                   -- enable tracing"
     echo "      --help, -h           -- Print this help message."
@@ -73,7 +75,7 @@ if [ ${#@} = 0 ]; then
 fi
 
 TEMP=$(getopt -o ,h \
-        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,overcloud-deploy,overcloud-delete,use-containers,all \
+        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,overcloud-deploy,overcloud-update,overcloud-delete,use-containers,all,enable-check \
         -o,x,h,a \
         -n $SCRIPT_NAME -- "$@")
 
@@ -98,6 +100,10 @@ OVERCLOUD_DEPLOY=${OVERCLOUD_DEPLOY:-""}
 OVERCLOUD_DELETE=${OVERCLOUD_DELETE:-""}
 OVERCLOUD_DELETE_TIMEOUT=${OVERCLOUD_DELETE_TIMEOUT:-"300"}
 OVERCLOUD_DEPLOY_ARGS=${OVERCLOUD_DEPLOY_ARGS:-""}
+OVERCLOUD_UPDATE=${OVERCLOUD_UPDATE:-""}
+OVERCLOUD_UPDATE_RM_FILES=${OVERCLOUD_UPDATE_RM_FILES:-"1"}
+OVERCLOUD_UPDATE_ARGS=${OVERCLOUD_UPDATE_ARGS:-"$OVERCLOUD_DEPLOY_ARGS"}
+OVERCLOUD_UPDATE_CHECK=${OVERCLOUD_UPDATE_CHECK:-}
 OVERCLOUD_IMAGES_PATH=${OVERCLOUD_IMAGES_PATH:-"$HOME"}
 OVERCLOUD_IMAGES=${OVERCLOUD_IMAGES:-""}
 OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
@@ -125,9 +131,11 @@ while true ; do
     case "$1" in
         --all|-a ) ALL="1"; shift 1;;
         --use-containers) USE_CONTAINERS="1"; shift 1;;
+        --enable-check) OVERCLOUD_UPDATE_CHECK="1"; shift 1;;
         --introspect-nodes) INTROSPECT_NODES="1"; shift 1;;
         --register-nodes) REGISTER_NODES="1"; shift 1;;
         --overcloud-deploy) OVERCLOUD_DEPLOY="1"; shift 1;;
+        --overcloud-update) OVERCLOUD_UPDATE="1"; shift 1;;
         --overcloud-delete) OVERCLOUD_DELETE="1"; shift 1;;
         --overcloud-images) OVERCLOUD_IMAGES="1"; shift 1;;
         --repo-setup) REPO_SETUP="1"; shift 1;;
@@ -425,9 +433,46 @@ function overcloud_deploy {
         OVERCLOUD_DEPLOY_ARGS="$OVERCLOUD_DEPLOY_ARGS $CONTAINER_ARGS"
     fi
 
+    log "Overcloud create started."
     openstack overcloud deploy $OVERCLOUD_DEPLOY_ARGS
-    log "Overcloud deployment started - DONE."
+    log "Overcloud create - DONE."
+}
 
+function overcloud_update {
+    # Force use of --templates
+    if [[ ! $OVERCLOUD_UPDATE_ARGS =~ --templates ]]; then
+        OVERCLOUD_UPDATE_ARGS="$OVERCLOUD_UPDATE_ARGS --templates"
+    fi
+    stackrc_check
+    if heat stack-show "$OVERCLOUD_NAME" | grep "stack_status " | egrep "(CREATE|UPDATE)_COMPLETE"; then
+        FILE_PREFIX=$(date "+overcloud-update-resources-%s")
+        BEFORE_FILE="/tmp/${FILE_PREFIX}-before.txt"
+        AFTER_FILE="/tmp/${FILE_PREFIX}-after.txt"
+        # This is an update, so if enabled, compare the before/after resource lists
+        if [ ! -z "$OVERCLOUD_UPDATE_CHECK" ]; then
+            heat resource-list -n5 overcloud | awk '{print $2, $4, $6}' | sort > $BEFORE_FILE
+        fi
+
+        log "Overcloud update started."
+        openstack overcloud deploy $OVERCLOUD_UPDATE_ARGS
+        log "Overcloud update - DONE."
+
+        if [ ! -z "$OVERCLOUD_UPDATE_CHECK" ]; then
+            heat resource-list -n5 overcloud | awk '{print $2, $4, $6}' | sort > $AFTER_FILE
+            diff_rsrc=$(diff $BEFORE_FILE $AFTER_FILE)
+            if [ ! -z "$diff_rsrc" ]; then
+                log "Overcloud update - Completed but unexpected resource differences: $diff_rsrc"
+                exit 1
+            fi
+        fi
+        log "Overcloud update - DONE."
+        if [[ $OVERCLOUD_UPDATE_RM_FILES == 1 ]]; then
+            rm -f $BEFORE_FILE $AFTER_FILE
+        fi
+    else
+        log "Overcloud FAILED - No stack $OVERCLOUD_NAME."
+        exit 1
+    fi
 }
 
 function overcloud_delete {
@@ -486,6 +531,10 @@ fi
 
 if [ "$OVERCLOUD_DEPLOY" = 1 ]; then
     overcloud_deploy
+fi
+
+if [ "$OVERCLOUD_UPDATE" = 1 ]; then
+    overcloud_update
 fi
 
 if [ "$OVERCLOUD_DELETE" = 1 ]; then
