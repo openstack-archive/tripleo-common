@@ -86,7 +86,7 @@ fi
 eval set -- "$TEMP"
 
 ALL=${ALL:-""}
-CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates/environments/docker-rdo.yaml --libvirt-type=qemu"}
+CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates/environments/docker.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/docker-network.yaml --libvirt-type=qemu"}
 DELOREAN_REPO_FILE=${DELOREAN_REPO_FILE:-"delorean.repo"}
 DELOREAN_REPO_URL=${DELOREAN_REPO_URL:-"\
     http://trunk.rdoproject.org/centos7/current-tripleo/"}
