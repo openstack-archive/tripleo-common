@@ -87,11 +87,20 @@ fi
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
 
+# Pin to known good delorean stable repo url
+# https://launchpad.net/bugs/1531881
+# https://review.openstack.org/#/c/264793/
+DELOREAN_STABLE_REPO_URL=${DELOREAN_STABLE_REPO_URL:-"\
+    https://trunk.rdoproject.org/centos7-liberty/b2/0f/b20f058419ed23c13fcb936adc4d2678b0e93ba3_fcbece74/"}
+
 ALL=${ALL:-""}
 CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates/environments/docker.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/docker-network.yaml --libvirt-type=qemu"}
+STABLE_RELEASE=${STABLE_RELEASE:-}
 DELOREAN_REPO_FILE=${DELOREAN_REPO_FILE:-"delorean.repo"}
 DELOREAN_REPO_URL=${DELOREAN_REPO_URL:-"\
     http://trunk.rdoproject.org/centos7/current-tripleo/"}
+DELOREAN_STABLE_REPO_URL=${DELOREAN_STABLE_REPO_URL:-"\
+    https://trunk.rdoproject.org/centos7-$STABLE_RELEASE/current/"}
 ATOMIC_URL=${ATOMIC_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/22/Cloud/x86_64/Images/Fedora-Cloud-Atomic-22-20150521.x86_64.qcow2"}
 INSTACKENV_JSON_PATH=${INSTACKENV_JSON_PATH:-"$HOME/instackenv.json"}
 INTROSPECT_NODES=${INTROSPECT_NODES:-""}
@@ -112,7 +121,6 @@ OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
     /etc/yum.repos.d/delorean-deps.repo"}
 OVERCLOUD_IMAGES_ARGS=${OVERCLOUD_IMAGES_ARGS='--all'}
 OVERCLOUD_NAME=${OVERCLOUD_NAME:-"overcloud"}
-STABLE_RELEASE=${STABLE_RELEASE:-}
 REPO_SETUP=${REPO_SETUP:-""}
 DELOREAN_SETUP=${DELOREAN_SETUP:-""}
 DELOREAN_BUILD=${DELOREAN_BUILD:-""}
@@ -202,7 +210,7 @@ EOF"
         sudo sed -i -e 's%priority=.*%priority=30%' /etc/yum.repos.d/delorean-deps.repo
 
         # Enable delorean current for the stable version
-        sudo curl -o /etc/yum.repos.d/delorean.repo https://trunk.rdoproject.org/centos7-$STABLE_RELEASE/current/delorean.repo
+        sudo curl -o /etc/yum.repos.d/delorean.repo $DELOREAN_STABLE_REPO_URL/$DELOREAN_REPO_FILE
         sudo sed -i -e 's%priority=.*%priority=20%' /etc/yum.repos.d/delorean.repo
 
         # Create empty delorean-current for dib image building
