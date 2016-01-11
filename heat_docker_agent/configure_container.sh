@@ -34,6 +34,18 @@ yum install -y \
         openvswitch \
         puppet
 
+# openstack packages
+yum install -y \
+	openstack-ceilometer-compute \
+	python-nova \
+	openstack-nova-common \
+	openstack-neutron \
+	libvirt-daemon-config-nwfilter \
+	libvirt-daemon-kvm \
+	openstack-nova-compute \
+	openstack-neutron-ml2 \
+	openstack-neutron-openvswitch
+
 # heat-config-docker-compose
 # TODO: fix! yet another requirement for docker-compose
 pip install dpath functools32
