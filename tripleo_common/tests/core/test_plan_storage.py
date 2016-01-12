@@ -88,9 +88,10 @@ class PlanStorageTest(base.TestCase):
 
         # attempt to create a 2nd plan should fail
         self.plan_store.list = mock.MagicMock(return_value=['overcloud'])
-        self.assertRaises(exception.PlanAlreadyExistsError,
-                          self.plan_store.create,
-                          self.plan_name)
+        self.assertRaisesRegexp(exception.PlanAlreadyExistsError,
+                                self.plan_name,
+                                self.plan_store.create,
+                                self.plan_name)
 
     def test_delete(self):
         self.swiftclient.get_container = mock.MagicMock(
