@@ -87,6 +87,25 @@ class PlanManager(object):
                 LOG.exception("Error deleting plan.")
                 raise
 
+    def delete_file(self, plan_name, filename):
+        """Deletes file in a plan container
+
+        :param plan_name: The name of the plan to use as the container name
+        :type plan_name: str
+        :param filename: The file to delete from the container.
+        :type filename: str
+        """
+        try:
+            self.plan_store.delete_file(plan_name, filename)
+        except swiftexceptions.ClientException as ce:
+            LOG.exception("Swift error deleting file.")
+            if ce.http_status == 404:
+                six.raise_from(exception.FileDoesNotExistError(
+                    name=filename), ce)
+        except Exception:
+            LOG.exception("Error deleting file from plan.")
+            raise
+
     def delete_temporary_environment(self, plan_name):
         """Deletes the temporary environment files
 
