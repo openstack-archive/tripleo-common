@@ -1,0 +1,131 @@
+#!/bin/bash
+#set -x
+# Copyright 2015 Red Hat, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+#
+# Script to upload files to a Swift container for deployment via
+# TripleO Heat Templates.
+#
+set -eu
+set -o pipefail
+SCRIPT_NAME=$(basename $0)
+SCRIPT_HOME=$(cd $(dirname $0); pwd)
+
+function show_options {
+    echo "Usage: $SCRIPT_NAME"
+    echo
+    echo "Options:"
+    echo "    -h, --help                  -- print this help."
+    echo "    -f <file>                   -- File(s) to upload."
+    echo "    -c <container>              -- Swift container to use."
+    echo "      Default: overcloud"
+    echo "    --environment <env>         -- Generate this heat <env>"
+    echo "      Default: $HOME/.tripleo/environments/deployment-artifacts.yaml"
+    echo "    --seconds <seconds>         -- Number of seconds for temp URLs."
+    echo "      Default: 31536000 (one year)"
+    echo
+    echo "Upload a set of files to Swift and generate a Heat environment"
+    echo "file containing the required DeployArtifactURLs parameter(s) "
+    echo "so that it is used with TripleO Heat Templates."
+    echo
+    exit $1
+}
+
+TEMP=`getopt -o he:f:c: -l help,environment:,file:,container: -n $SCRIPT_NAME -- "$@"`
+if [ $? != 0 ]; then
+    echo "Terminating..." >&2
+    exit 1
+fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+ENVIRONMENT_FILE="$HOME/.tripleo/environments/deployment-artifacts.yaml"
+FILES=
+CONTAINER_NAME=overcloud
+SECONDS=31536000
+
+while true ; do
+    case "$1" in
+        -h|--help) show_options 0 >&2;;
+        -e|--environment) ENVIRONMENT_FILE=$2 ; shift 2;;
+        -f|--file) FILES+=" $2" ; shift 2;;
+        -c|--container) CONTAINER_NAME=$2 ; shift 2;;
+        -s|--seconds) SECONDS=$2 ; shift 2;;
+        --) shift ; break;;
+        *) echo "Error: unsupported option $1." ; exit 1;;
+    esac
+done
+
+if [ -z "${FILES:-}" ]; then
+  echo "Error: No files were specified."
+  exit 1
+fi
+
+if [ -z "${CONTAINER_NAME:-}" ]; then
+  echo "Error: No Swift --container was specified."
+  exit 1
+fi
+
+function create_heat_env() {
+  local heat_env_file=$1
+  mkdir -p $(dirname "$heat_env_file")
+  cat > "$heat_env_file" <<-EOF_CAT
+# Heat environment to deploy artifacts via Swift Temp URL(s)
+parameter_defaults:
+  DeployArtifactURLs:
+EOF_CAT
+}
+
+# create the container (doing it more than once won't hurt...)
+swift post "$CONTAINER_NAME"
+
+SWIFT_ACCOUNT=$(swift stat "$CONTAINER_NAME" 2>/dev/null | grep Account: | sed -e "s|.*Account..||")
+SWIFT_INTERNAL_URL=$(openstack endpoint show swift | grep internalurl | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
+
+# Does the Temp-URL-Key exist on this container?
+# If not set it...
+if ! swift stat $CONTAINER_NAME | grep "Meta Temp-Url-Key" &>/dev/null; then
+  echo "Creating new Swift Temp-URL-Key for container: $CONTAINER_NAME"
+  SWIFT_TEMP_URL_KEY=$(uuidgen | sha1sum | awk '{print $1}')
+  swift post "$CONTAINER_NAME" -m "Temp-URL-Key:$SWIFT_TEMP_URL_KEY"
+else
+  SWIFT_TEMP_URL_KEY=$(swift stat $CONTAINER_NAME 2>/dev/null | grep "Meta Temp-Url-Key" | sed -e "s|.*Meta Temp-Url-Key..||")
+fi
+
+if [ -n "${ENVIRONMENT_FILE:-}" ]; then
+  echo "Creating heat environment file: $ENVIRONMENT_FILE"
+  create_heat_env "$ENVIRONMENT_FILE"
+else
+  echo "No environment file specified... skipping creation of Heat environment."
+fi
+
+function upload_file {
+
+  local FILE="$1"
+  echo "Uploading file to swift: $1"
+  pushd $(dirname $FILE) &>/dev/null
+  swift upload "$CONTAINER_NAME" $(basename $FILE)
+  popd &>/dev/null
+  echo "Upload complete."
+
+  local URL=$(swift tempurl GET "$SECONDS" "/v1/${SWIFT_ACCOUNT}/${CONTAINER_NAME}/$(basename $FILE)" "$SWIFT_TEMP_URL_KEY")
+  echo "    - '${SWIFT_INTERNAL_URL}$URL'" >> $ENVIRONMENT_FILE
+
+}
+
+for FILE in ${FILES[@]}; do
+  upload_file "$FILE"
+done
