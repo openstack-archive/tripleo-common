@@ -1,0 +1,25 @@
+disk_images:
+      -
+         imagename: overcloud-odl
+         builder: dib
+         arch: amd64
+         type: qcow2
+         distro: rhel7
+         elements:
+           - ntp
+           - sysctl
+           - hosts
+           - baremetal
+           - dhcp-all-interfaces
+           - os-collect-config
+           - heat-config-puppet
+           - heat-config-script
+           - puppet-modules
+           - hiera
+           - os-net-config
+           - stable-interface-names
+           - grub2-deprecated
+         packages:
+           - java-1.8.0-openjdk
+           - opendaylight
+         options:
