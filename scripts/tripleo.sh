@@ -87,12 +87,6 @@ fi
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
 
-# Pin to known good delorean stable repo url
-# https://launchpad.net/bugs/1531881
-# https://review.openstack.org/#/c/264793/
-DELOREAN_STABLE_REPO_URL=${DELOREAN_STABLE_REPO_URL:-"\
-    https://trunk.rdoproject.org/centos7-liberty/b2/0f/b20f058419ed23c13fcb936adc4d2678b0e93ba3_fcbece74/"}
-
 ALL=${ALL:-""}
 CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates/environments/docker.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/docker-network.yaml --libvirt-type=qemu"}
 STABLE_RELEASE=${STABLE_RELEASE:-}
