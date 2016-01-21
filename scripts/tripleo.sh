@@ -62,6 +62,7 @@ function show_options {
     echo "      --overcloud-delete   -- Delete the overcloud."
     echo "      --use-containers     -- Use a containerized compute node."
     echo "      --enable-check       -- Enable checks on update."
+    echo "      --overcloud-pingtest -- Run a tenant vm, attach and ping floating IP."
     echo "      --all, -a            -- Run all of the above commands."
     echo "      -x                   -- enable tracing"
     echo "      --help, -h           -- Print this help message."
@@ -75,7 +76,7 @@ if [ ${#@} = 0 ]; then
 fi
 
 TEMP=$(getopt -o ,h \
-        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,overcloud-deploy,overcloud-update,overcloud-delete,use-containers,all,enable-check \
+        -l,help,repo-setup,delorean-setup,delorean-build,undercloud,overcloud-images,register-nodes,introspect-nodes,overcloud-deploy,overcloud-update,overcloud-delete,use-containers,overcloud-pingtest,all,enable-check \
         -o,x,h,a \
         -n $SCRIPT_NAME -- "$@")
 
@@ -111,6 +112,7 @@ OVERCLOUD_IMAGES_PATH=${OVERCLOUD_IMAGES_PATH:-"$HOME"}
 OVERCLOUD_IMAGES=${OVERCLOUD_IMAGES:-""}
 OVERCLOUD_IMAGES_ARGS=${OVERCLOUD_IMAGES_ARGS='--all'}
 OVERCLOUD_NAME=${OVERCLOUD_NAME:-"overcloud"}
+OVERCLOUD_PINGTEST=${OVERCLOUD_PINGTEST:-""}
 REPO_SETUP=${REPO_SETUP:-""}
 REPO_PREFIX=${REPO_PREFIX:-"/etc/yum.repos.d/"}
 OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
@@ -141,6 +143,7 @@ while true ; do
         --overcloud-update) OVERCLOUD_UPDATE="1"; shift 1;;
         --overcloud-delete) OVERCLOUD_DELETE="1"; shift 1;;
         --overcloud-images) OVERCLOUD_IMAGES="1"; shift 1;;
+        --overcloud-pingtest) OVERCLOUD_PINGTEST="1"; shift 1;;
         --repo-setup) REPO_SETUP="1"; shift 1;;
         --delorean-setup) DELOREAN_SETUP="1"; shift 1;;
         --delorean-build) DELOREAN_BUILD="1"; shift 1;;
@@ -160,14 +163,20 @@ function log {
     echo "#################"
 }
 
+function source_rc {
+    if [ $1 = "stackrc" ] ; then cloud="Undercloud"; else cloud="Overcloud"; fi
+    echo "You must source a $1 file for the $cloud."
+    echo "Attempting to source $HOME/$1"
+    source $HOME/$1
+    echo "Done"
+}
+
 function stackrc_check {
-    OS_AUTH_URL=${OS_AUTH_URL:-""}
-    if [ -z "$OS_AUTH_URL" ]; then
-        echo "You must source a stackrc file for the Undercloud."
-        echo "Attempting to source stackrc at $HOME/stackrc"
-        source $HOME/stackrc
-        echo "Done."
-    fi
+    source_rc "stackrc"
+}
+
+function overcloudrc_check {
+    source_rc "overcloudrc"
 }
 
 function repo_setup {
@@ -503,6 +512,77 @@ function overcloud_delete {
     fi
 }
 
+function cleanup_pingtest {
+
+    log "Overcloud pingtest, starting cleanup"
+    overcloudrc_check
+    heat stack-delete tenant-stack
+    if $(tripleo wait_for -w 300 -d 10 -s "Stack not found" -- "heat stack-show tenant-stack" ); then
+        log "Overcloud pingtest - deleted the tenant-stack heat stack"
+    else
+        log "Overcloud pingtest - time out waiting to delete tenant heat stack, please check manually"
+    fi
+    log "Overcloud pingtest - cleaning demo network 'nova' and 'pingtest_image' image"
+    glance image-delete pingtest_image
+    neutron net-delete nova
+    log "Overcloud pingtest - DONE"
+}
+
+
+function overcloud_pingtest {
+
+    log "Overcloud pingtest"
+    exitval=0
+
+    overcloudrc_check
+
+    version=`curl http://download.cirros-cloud.net/version/released`
+    cirros_latest=cirros-$version-x86_64-disk.img
+    if [ ! -e $OVERCLOUD_IMAGES_PATH/$cirros_latest ]; then
+        log "Overcloud pingtest, trying to download latest $cirros_latest"
+        curl -o $OVERCLOUD_IMAGES_PATH/$cirros_latest http://download.cirros-cloud.net/$version/$cirros_latest
+    fi
+    log "Overcloud pingtest, uploading demo tenant image to glance"
+    glance image-create --progress --name pingtest_image --is-public True --disk-format qcow2 --container-format bare --file $OVERCLOUD_IMAGES_PATH/$cirros_latest
+
+    log "Overcloud pingtest, creating demo tenant keypair and external network"
+    if ! nova keypair-show default 2>/dev/null; then tripleo user-config; fi
+    neutron net-create nova --shared --router:external=True --provider:network_type flat \
+  --provider:physical_network datacentre
+    FLOATING_IP_CIDR=${FLOATING_IP_CIDR:-"192.0.2.0/24"}
+    FLOATING_IP_START=${FLOATING_IP_START:-"192.0.2.50"}
+    FLOATING_IP_END=${FLOATING_IP_END:-"192.0.2.64"}
+    EXTERNAL_NETWORK_GATEWAY=${EXTERNAL_NETWORK_GATEWAY:-"192.0.2.1"}
+    neutron subnet-create --name ext-subnet --allocation-pool start=$FLOATING_IP_START,end=$FLOATING_IP_END --disable-dhcp --gateway $EXTERNAL_NETWORK_GATEWAY nova $FLOATING_IP_CIDR
+    TENANT_PINGTEST_TEMPLATE=/usr/share/tripleo-common/tenantvm_floatingip.yaml
+    if [ ! -e $TENANT_PINGTEST_TEMPLATE ]; then
+        TENANT_PINGTEST_TEMPLATE=$(dirname `readlink -f -- $0`)/../templates/tenantvm_floatingip.yaml
+    fi
+    log "Overcloud pingtest, creating tenant-stack heat stack:"
+    heat stack-create -f $TENANT_PINGTEST_TEMPLATE tenant-stack || exitval=1
+    if tripleo wait_for -w 180 -d 10 -s "CREATE_COMPLETE" -- "heat stack-list | grep tenant-stack"; then
+        log "Overcloud pingtest, heat stack CREATE_COMPLETE";
+
+        vm1_ip=`heat output-show tenant-stack server1_public_ip -F raw`
+
+        log "Overcloud pingtest, trying to ping the floating IPs $vm1_ip"
+
+        if tripleo wait_for -w 180 -d 10 -s "bytes from $vm1_ip" -- "ping -c 1 $vm1_ip" ; then
+            ping -c 1 $vm1_ip
+            log "Overcloud pingtest, SUCCESS"
+        else
+            ping -c 1 $vm1_ip || :
+            log "Overloud pingtest, FAIL"
+            exitval=1
+        fi
+    else
+        log "Overcloud pingtest, failed to create heat stack, trying cleanup"
+        exitval=1
+    fi
+    cleanup_pingtest
+    exit $exitval
+}
+
 if [ "$REPO_SETUP" = 1 ]; then
     repo_setup
 fi
@@ -551,6 +631,10 @@ fi
 if [[ "$USE_CONTAINERS" == 1 && "$OVERCLOUD_DEPLOY" != 1 ]]; then
     echo "Error: --overcloud-deploy flag is required with the flag --use-containers"
     exit 1
+fi
+
+if [ "$OVERCLOUD_PINGTEST" = 1 ]; then
+    overcloud_pingtest
 fi
 
 if [ "$ALL" = 1 ]; then
