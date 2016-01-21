@@ -286,7 +286,7 @@ function delorean_build {
 
         # Clone the repo if it doesn't yet exist
         if [ ! -d $TRIPLEO_ROOT/$PROJ ]; then
-            git clone https://github.com/openstack/$PROJ.git $TRIPLEO_ROOT/$PROJ
+            git clone https://git.openstack.org/openstack/$PROJ.git $TRIPLEO_ROOT/$PROJ
             if [ ! -z "$STABLE_RELEASE" ]; then
                 pushd $TRIPLEO_ROOT/$PROJ
                 git checkout -b stable/$STABLE_RELEASE origin/stable/$STABLE_RELEASE
