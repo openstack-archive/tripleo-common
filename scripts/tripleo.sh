@@ -334,6 +334,9 @@ function undercloud {
     # pin for https://bugs.launchpad.net/tripleo/+bug/1525314
     export DIB_REPOREF_puppetlabs_mysql=60393f7d4a42d96e67436249b940a2374bffbe77
 
+    # pin for https://bugs.launchpad.net/tripleo/+bug/1538127
+    export DIB_REPOREF_puppet_heat=5b938affecf786a2f5189a514a815ffdfe16db08
+
     if [ -z "$STABLE_RELEASE" ]; then
         export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-source}
     else
@@ -370,6 +373,9 @@ function overcloud_images {
 
     # pin for https://bugs.launchpad.net/tripleo/+bug/1525314
     export DIB_REPOREF_puppetlabs_mysql=60393f7d4a42d96e67436249b940a2374bffbe77
+
+    # pin for https://bugs.launchpad.net/tripleo/+bug/1538127
+    export DIB_REPOREF_puppet_heat=5b938affecf786a2f5189a514a815ffdfe16db08
 
     if [ -z "$STABLE_RELEASE" ]; then
         export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-source}
