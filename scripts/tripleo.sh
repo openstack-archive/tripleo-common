@@ -330,10 +330,6 @@ function undercloud {
     # We use puppet modules from source by default for master, for stable we
     # currently use a stable package (we may eventually want to use a
     # stable-puppet-modules element instead so we can set DIB_REPOREF.., etc)
-
-    # pin for https://bugs.launchpad.net/tripleo/+bug/1538127
-    export DIB_REPOREF_puppet_heat=5b938affecf786a2f5189a514a815ffdfe16db08
-
     if [ -z "$STABLE_RELEASE" ]; then
         export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-source}
     else
@@ -367,10 +363,6 @@ function overcloud_images {
     # We use puppet modules from source by default for master, for stable we
     # currently use a stable package (we may eventually want to use a
     # stable-puppet-modules element instead so we can set DIB_REPOREF.., etc)
-
-    # pin for https://bugs.launchpad.net/tripleo/+bug/1538127
-    export DIB_REPOREF_puppet_heat=5b938affecf786a2f5189a514a815ffdfe16db08
-
     if [ -z "$STABLE_RELEASE" ]; then
         export DIB_INSTALLTYPE_puppet_modules=${DIB_INSTALLTYPE_puppet_modules:-source}
     else
