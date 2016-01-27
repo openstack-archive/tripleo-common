@@ -113,6 +113,7 @@ OVERCLOUD_IMAGES=${OVERCLOUD_IMAGES:-""}
 OVERCLOUD_IMAGES_ARGS=${OVERCLOUD_IMAGES_ARGS='--all'}
 OVERCLOUD_NAME=${OVERCLOUD_NAME:-"overcloud"}
 OVERCLOUD_PINGTEST=${OVERCLOUD_PINGTEST:-""}
+OVERCLOUD_PINGTEST_OLD_HEATCLIENT=${OVERCLOUD_PINGTEST_OLD_HEATCLIENT:-"1"}
 REPO_SETUP=${REPO_SETUP:-""}
 REPO_PREFIX=${REPO_PREFIX:-"/etc/yum.repos.d/"}
 OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
@@ -565,7 +566,11 @@ function overcloud_pingtest {
     if tripleo wait_for -w 180 -d 10 -s "CREATE_COMPLETE" -- "heat stack-list | grep tenant-stack"; then
         log "Overcloud pingtest, heat stack CREATE_COMPLETE";
 
-        vm1_ip=`heat output-show tenant-stack server1_public_ip -F raw`
+        if [ "$OVERCLOUD_PINGTEST_OLD_HEATCLIENT" = 1 ]; then
+            vm1_ip=`heat output-show tenant-stack server1_public_ip -F raw`
+        else
+            vm1_ip=`heat output-show tenant-stack server1_public_ip -F raw -v`
+        fi
 
         log "Overcloud pingtest, trying to ping the floating IPs $vm1_ip"
 
