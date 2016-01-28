@@ -525,14 +525,13 @@ function overcloud_pingtest {
 
     overcloudrc_check
 
-    version=`curl http://download.cirros-cloud.net/version/released`
-    cirros_latest=cirros-$version-x86_64-disk.img
-    if [ ! -e $OVERCLOUD_IMAGES_PATH/$cirros_latest ]; then
-        log "Overcloud pingtest, trying to download latest $cirros_latest"
-        curl -o $OVERCLOUD_IMAGES_PATH/$cirros_latest http://download.cirros-cloud.net/$version/$cirros_latest
+    IMAGE_PATH=$OVERCLOUD_IMAGES_PATH/fedora-user.qcow2
+    if [ ! -e $IMAGE_PATH ]; then
+        log "Overcloud pingtest, trying to download Fedora image"
+        curl -L -o $IMAGE_PATH http://cloud.fedoraproject.org/fedora-21.x86_64.qcow2
     fi
     log "Overcloud pingtest, uploading demo tenant image to glance"
-    glance image-create --progress --name pingtest_image --is-public True --disk-format qcow2 --container-format bare --file $OVERCLOUD_IMAGES_PATH/$cirros_latest
+    glance image-create --progress --name pingtest_image --is-public True --disk-format qcow2 --container-format bare --file $IMAGE_PATH
 
     log "Overcloud pingtest, creating demo tenant keypair and external network"
     if ! nova keypair-show default 2>/dev/null; then tripleo user-config; fi
@@ -560,7 +559,7 @@ function overcloud_pingtest {
 
         log "Overcloud pingtest, trying to ping the floating IPs $vm1_ip"
 
-        if tripleo wait_for -w 180 -d 10 -s "bytes from $vm1_ip" -- "ping -c 1 $vm1_ip" ; then
+        if tripleo wait_for -w 360 -d 10 -s "bytes from $vm1_ip" -- "ping -c 1 $vm1_ip" ; then
             ping -c 1 $vm1_ip
             log "Overcloud pingtest, SUCCESS"
         else
