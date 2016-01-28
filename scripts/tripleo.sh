@@ -529,10 +529,17 @@ function overcloud_pingtest {
             log "Overcloud pingtest, SUCCESS"
         else
             ping -c 1 $vm1_ip || :
+            nova show Server1 || :
+            nova service-list || :
+            neutron agent-list || :
+            nova console-log Server1 || :
             log "Overloud pingtest, FAIL"
             exitval=1
         fi
     else
+        heat stack-show tenant-stack || :
+        heat event-list tenant-stack || :
+        heat resource-list -n 5 tenant-stack || :
         log "Overcloud pingtest, failed to create heat stack, trying cleanup"
         exitval=1
     fi
