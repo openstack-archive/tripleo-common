@@ -554,7 +554,7 @@ function overcloud_pingtest {
     fi
     log "Overcloud pingtest, creating tenant-stack heat stack:"
     heat stack-create -f $TENANT_PINGTEST_TEMPLATE tenant-stack || exitval=1
-    if tripleo wait_for -w 180 -d 10 -s "CREATE_COMPLETE" -- "heat stack-list | grep tenant-stack"; then
+    if tripleo wait_for -w 360 -d 10 -s "CREATE_COMPLETE" -- "heat stack-list | grep tenant-stack"; then
         log "Overcloud pingtest, heat stack CREATE_COMPLETE";
 
         if [ "$OVERCLOUD_PINGTEST_OLD_HEATCLIENT" = 1 ]; then
