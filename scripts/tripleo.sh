@@ -93,7 +93,7 @@ CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates
 STABLE_RELEASE=${STABLE_RELEASE:-}
 DELOREAN_REPO_FILE=${DELOREAN_REPO_FILE:-"delorean.repo"}
 DELOREAN_REPO_URL=${DELOREAN_REPO_URL:-"\
-    http://trunk.rdoproject.org/centos7/current-tripleo/"}
+    http://trunk.rdoproject.org/centos7/73/5f/735fdc50b0bc14386d0a9705ae85a9dde25e3d6d_0e55db37/"}
 DELOREAN_STABLE_REPO_URL=${DELOREAN_STABLE_REPO_URL:-"\
     https://trunk.rdoproject.org/centos7-$STABLE_RELEASE/current/"}
 ATOMIC_URL=${ATOMIC_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/22/Cloud/x86_64/Images/Fedora-Cloud-Atomic-22-20150521.x86_64.qcow2"}
@@ -354,9 +354,6 @@ function undercloud {
     # pin for https://bugs.launchpad.net/tripleo/+bug/1539797
     export DIB_REPOREF_puppetlabs_concat=f3de395019928ceaca479a830a9fa63909941736
 
-    # pin  for https://bugs.launchpad.net/tripleo/+bug/1543493
-    export DIB_REPOREF_puppet_nova=e64bc9a57b2a9febad50181889faa19fba5f72ef
-
     sudo yum install -y python-tripleoclient
 
     if [ ! -f ~/undercloud.conf ]; then
@@ -392,9 +389,6 @@ function overcloud_images {
 
     # pin for https://bugs.launchpad.net/tripleo/+bug/1539797
     export DIB_REPOREF_puppetlabs_concat=f3de395019928ceaca479a830a9fa63909941736
-
-    # pin  for https://bugs.launchpad.net/tripleo/+bug/1543493
-    export DIB_REPOREF_puppet_nova=e64bc9a57b2a9febad50181889faa19fba5f72ef
 
     # (slagle) TODO: This needs to be fixed in python-tripleoclient or
     # diskimage-builder!
