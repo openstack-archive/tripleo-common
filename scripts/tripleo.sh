@@ -444,7 +444,7 @@ function overcloud_deploy {
 
     if [[ $USE_CONTAINERS == 1 ]]; then
         if ! glance image-list | grep  -q atomic-image; then
-            wget $ATOMIC_URL
+            wget --progress=dot:mega $ATOMIC_URL
             glance image-create --name atomic-image --file `basename $ATOMIC_URL` --disk-format qcow2 --container-format bare
         fi
         OVERCLOUD_DEPLOY_ARGS="$OVERCLOUD_DEPLOY_ARGS $CONTAINER_ARGS"
