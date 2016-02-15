@@ -14,8 +14,23 @@
 # under the License.
 import datetime
 
+import yaml
 
-class Plan(object):
+
+class BaseModel(object):
+
+    def __repr__(self, *args, **kwargs):
+        repr_ = {self.__class__.__name__: self.__dict__}
+        return yaml.safe_dump(repr_, default_flow_style=True)
+
+    def __eq__(self, other):
+        if not (isinstance(other, self.__class__) or
+                isinstance(self, other.__class__)):
+            return False
+        return self.__dict__ == getattr(other, '__dict__')
+
+
+class Plan(BaseModel):
 
     def __init__(self, name):
         self.name = name
