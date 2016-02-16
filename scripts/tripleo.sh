@@ -113,7 +113,6 @@ OVERCLOUD_IMAGES=${OVERCLOUD_IMAGES:-""}
 OVERCLOUD_IMAGES_ARGS=${OVERCLOUD_IMAGES_ARGS='--all'}
 OVERCLOUD_NAME=${OVERCLOUD_NAME:-"overcloud"}
 OVERCLOUD_PINGTEST=${OVERCLOUD_PINGTEST:-""}
-OVERCLOUD_PINGTEST_OLD_HEATCLIENT=${OVERCLOUD_PINGTEST_OLD_HEATCLIENT:-"1"}
 REPO_SETUP=${REPO_SETUP:-""}
 REPO_PREFIX=${REPO_PREFIX:-"/etc/yum.repos.d/"}
 OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF=${OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF:-"\
@@ -563,9 +562,10 @@ function overcloud_pingtest {
     if tripleo wait_for -w 360 -d 10 -s "CREATE_COMPLETE" -- "heat stack-list | grep tenant-stack"; then
         log "Overcloud pingtest, heat stack CREATE_COMPLETE";
 
-        if [ "$OVERCLOUD_PINGTEST_OLD_HEATCLIENT" = 1 ]; then
-            vm1_ip=`heat output-show tenant-stack server1_public_ip -F raw`
-        else
+        vm1_ip=`heat output-show tenant-stack server1_public_ip -F raw`
+        # On new Heat clients the above command returns a big long string.
+        # If the resulting value is longer than an IP address we need the alternate command.
+        if [ ${#vm1_ip} -gt 15 ]; then
             vm1_ip=`heat output-show tenant-stack server1_public_ip -F raw -v`
         fi
 
