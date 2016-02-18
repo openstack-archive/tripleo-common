@@ -316,9 +316,24 @@ function delorean_build {
         done
         popd
 
-        # Using sudo to su a command as ourselves to run the command with a new login
-        # to ensure the addition to the mock group has taken effect.
-        sudo su $(id -nu) -c "./venv/bin/delorean --config-file projects.ini --head-only --package-name $MAPPED_PROJ --local --build-env DELOREAN_DEV=1 --build-env http_proxy=${http_proxy:-} --info-repo rdoinfo"
+        while true; do
+            DELOREANCMD="./venv/bin/delorean --config-file projects.ini --head-only --package-name $MAPPED_PROJ --local --build-env DELOREAN_DEV=1 --build-env http_proxy=${http_proxy:-} --info-repo rdoinfo"
+            # Using sudo to su a command as ourselves to run the command with a new login
+            # to ensure the addition to the mock group has taken effect.
+            sudo su $(id -nu) -c "$DELOREANCMD" || true
+
+            # If delorean fails due to a network error it will mark it to be retried up to 3 times
+            # Test the status and run delorean again if it is not SUCCESS or FAILED
+            STATUS=$(echo "select status from commits where project_name == \"$MAPPED_PROJ\" order by id desc limit 1;" | sqlite3 commits.sqlite)
+            if [ "$STATUS" == "FAILED" ] ; then
+                exit 1
+            elif [ "$STATUS" == "SUCCESS" ] ; then
+                break
+            elif [ "$STATUS" == "RETRY" ] ; then
+                continue
+            fi
+            exit 1
+        done
     done
     popd
     log "Delorean build - DONE."
