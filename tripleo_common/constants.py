@@ -25,3 +25,9 @@ UPDATE_RESOURCE_NAME = 'UpdateDeployment'
 
 #: The default timeout to pass to Heat stacks
 STACK_TIMEOUT_DEFAULT = 240
+
+#: The default name to use for a plan container
+DEFAULT_CONTAINER_NAME = 'overcloud'
+
+#: The path to the tripleo heat templates installed on the undercloud
+DEFAULT_TEMPLATES_PATH = '/usr/share/openstack-tripleo-heat-templates/'

@@ -1,0 +1,30 @@
+---
+version: '2.0'
+name: tripleo.plan_management.v1
+description: TripleO Overcloud Deployment Workflows v1
+
+workflows:
+
+  create_deployment_plan:
+    type: direct
+    input:
+      - container
+    tasks:
+      create_plan:
+        action: tripleo.create_plan container=<% $.container %>
+
+  create_default_deployment_plan:
+    type: direct
+    input:
+      - container
+    tasks:
+      create_container:
+        action: tripleo.create_container container=<% $.container %>
+        on-success:
+          - upload_to_container
+      upload_to_container:
+        action: tripleo.upload_default_templates container=<% $.container %>
+        on-success:
+          - create_plan
+      create_plan:
+        action: tripleo.create_plan container=<% $.container %>

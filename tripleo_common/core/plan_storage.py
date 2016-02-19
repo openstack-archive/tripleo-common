@@ -44,7 +44,7 @@ class SwiftPlanStorageBackend(object):
                 headers=default_container_headers
             )
         else:
-            raise exception.PlanAlreadyExistsError(name=plan_name)
+            raise exception.ContainerAlreadyExistsError(name=plan_name)
 
     def delete(self, plan_name):
         """Deletes a plan and associated files

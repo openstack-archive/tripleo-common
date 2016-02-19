@@ -71,8 +71,8 @@ class FileDoesNotExistError(TripleoCommonException):
     msg_fmt = _("A file with the name %(name)s does not exist.")
 
 
-class PlanAlreadyExistsError(TripleoCommonException):
-    msg_fmt = _("A plan with the name %(name)s already exists.")
+class ContainerAlreadyExistsError(TripleoCommonException):
+    msg_fmt = _("A container with the name %(name)s already exists.")
 
 
 class TooManyRootTemplatesError(TripleoCommonException):
@@ -90,3 +90,7 @@ class MappingFileNotFoundError(TripleoCommonException):
 
 class TooManyCapabilitiesMapFilesError(TripleoCommonException):
     msg_fmt = _("There cannot be more than one root template in a given plan.")
+
+
+class ServiceEndpointNotFoundError(TripleoCommonException):
+    msg_fmt = _("No endpoints found for [%(service_name)s, %(service_type)s].")

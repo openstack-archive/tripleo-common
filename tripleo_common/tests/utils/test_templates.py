@@ -13,9 +13,11 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import mock
+
 from tripleo_common.tests import base
-from tripleo_common.utils.templates import find_root_template
-from tripleo_common.utils.templates import process_plan_data
+from tripleo_common.utils import templates
 
 PLAN_DATA = {
     '/path/to/overcloud.yaml': {
@@ -59,7 +61,7 @@ class UtilsTemplatesTest(base.TestCase):
 
     def setUp(self):
         super(UtilsTemplatesTest, self).setUp()
-        self.tpl, self.env, self.files = process_plan_data(PLAN_DATA)
+        self.tpl, self.env, self.files = templates.process_plan_data(PLAN_DATA)
         print(self.files)
 
     def test_find_root_template(self):
@@ -67,7 +69,7 @@ class UtilsTemplatesTest(base.TestCase):
         del PLAN_DATA['/path/to/overcloud.yaml']
 
         # without root, should return {}
-        self.assertEqual({}, find_root_template(PLAN_DATA))
+        self.assertEqual({}, templates.find_root_template(PLAN_DATA))
 
         # add root_template back to sample data
         root_template = {
@@ -77,7 +79,8 @@ class UtilsTemplatesTest(base.TestCase):
         }
         PLAN_DATA.update(root_template)
 
-        self.assertEqual(root_template, find_root_template(PLAN_DATA))
+        self.assertEqual(root_template,
+                         templates.find_root_template(PLAN_DATA))
 
     def test_template_found(self):
         self.assertEqual(self.tpl, 'heat_template_version: 2015-04-30')
@@ -85,4 +88,27 @@ class UtilsTemplatesTest(base.TestCase):
     def test_files_found(self):
         self.assertEqual(self.files, {
             '/path/to/somefile.yaml': 'description: lorem ipsum',
+        })
+
+    @mock.patch("requests.request")
+    def test_preprocess_templates(self, mock_request):
+
+        # Setup
+        envs = []
+        mock_request.return_value = mock.Mock(content="""{
+        "heat_template_version": "2016-04-08"
+        }""")
+
+        # Test a basic call to check the main code paths
+        result = templates.preprocess_templates(
+            "swift_base_url", "container", "template", envs, "auth_token")
+
+        # Verify the values we get out
+        self.assertEqual(result, {
+            'environment': {},
+            'files': {},
+            'stack_name': 'container',
+            'template': {
+                'heat_template_version': '2016-04-08'
+            }
         })
