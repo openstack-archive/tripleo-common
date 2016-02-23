@@ -409,7 +409,7 @@ function overcloud_images {
         tee -a overcloud-image-build.log
 
     stackrc_check
-    openstack overcloud image upload
+    openstack overcloud image upload --update-existing
     popd
 
     log "Overcloud images - DONE."
