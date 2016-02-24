@@ -402,6 +402,15 @@ function overcloud_images {
     echo -e '#!/bin/bash\nyum install -y yum-plugin-priorities' | sudo tee /usr/share/diskimage-builder/elements/yum/pre-install.d/99-tmphacks
     sudo chmod +x /usr/share/diskimage-builder/elements/yum/pre-install.d/99-tmphacks
 
+    # To install the undercloud instack-undercloud is run as root,
+    # as a result all of the git repositories get cached to
+    # ~root/.cache/image-create/source-repositories, lets not clone them again
+    if [ -d ~root/.cache/image-create/source-repositories ] && \
+       [ ! -d ~/.cache/image-create/source-repositories ] ; then
+        sudo cp -r ~root/.cache/image-create/source-repositories ~/.cache/image-create/source-repositories
+        sudo chown -R $(id -u) ~/.cache/image-create/source-repositories
+    fi
+
     log "Overcloud images saved in $OVERCLOUD_IMAGES_PATH"
     pushd $OVERCLOUD_IMAGES_PATH
     DIB_YUM_REPO_CONF=$OVERCLOUD_IMAGES_DIB_YUM_REPO_CONF \
