@@ -93,7 +93,7 @@ CONTAINER_ARGS=${CONTAINER_ARGS:-"-e /usr/share/openstack-tripleo-heat-templates
 STABLE_RELEASE=${STABLE_RELEASE:-}
 DELOREAN_REPO_FILE=${DELOREAN_REPO_FILE:-"delorean.repo"}
 DELOREAN_REPO_URL=${DELOREAN_REPO_URL:-"\
-    http://trunk.rdoproject.org/centos7/73/5f/735fdc50b0bc14386d0a9705ae85a9dde25e3d6d_0e55db37/"}
+    http://trunk.rdoproject.org/centos7/current-tripleo/"}
 DELOREAN_STABLE_REPO_URL=${DELOREAN_STABLE_REPO_URL:-"\
     https://trunk.rdoproject.org/centos7-$STABLE_RELEASE/current/"}
 ATOMIC_URL=${ATOMIC_URL:-"https://download.fedoraproject.org/pub/fedora/linux/releases/22/Cloud/x86_64/Images/Fedora-Cloud-Atomic-22-20150521.x86_64.qcow2"}
