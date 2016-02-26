@@ -234,7 +234,7 @@ function delorean_setup {
     log "Delorean setup"
 
     # Install delorean as per combination of toci-instack and delorean docs
-    sudo yum install -y createrepo git mock python-virtualenv rpm-build yum-plugin-priorities yum-utils
+    sudo yum install -y createrepo git mock python-virtualenv rpm-build yum-plugin-priorities yum-utils gcc
 
     # Add the current user to the mock group
     sudo usermod -G mock -a $(id -nu)
