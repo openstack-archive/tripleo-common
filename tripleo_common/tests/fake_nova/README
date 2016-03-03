@@ -1,0 +1,4 @@
+We don't want to pull in all of Nova and, more importantly, all of its
+numerous dependencies just for the sake of having one class to inherit
+from in our custom filter.  Instead, this module will be injected into
+sys.modules as 'nova' when we run unit tests that rely on it.
