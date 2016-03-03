@@ -570,13 +570,14 @@ function overcloud_pingtest {
     FLOATING_IP_START=${FLOATING_IP_START:-"192.0.2.50"}
     FLOATING_IP_END=${FLOATING_IP_END:-"192.0.2.64"}
     EXTERNAL_NETWORK_GATEWAY=${EXTERNAL_NETWORK_GATEWAY:-"192.0.2.1"}
+    TENANT_STACK_DEPLOY_ARGS=${TENANT_STACK_DEPLOY_ARGS:-""}
     neutron subnet-create --name ext-subnet --allocation-pool start=$FLOATING_IP_START,end=$FLOATING_IP_END --disable-dhcp --gateway $EXTERNAL_NETWORK_GATEWAY nova $FLOATING_IP_CIDR
     TENANT_PINGTEST_TEMPLATE=/usr/share/tripleo-common/tenantvm_floatingip.yaml
     if [ ! -e $TENANT_PINGTEST_TEMPLATE ]; then
         TENANT_PINGTEST_TEMPLATE=$(dirname `readlink -f -- $0`)/../templates/tenantvm_floatingip.yaml
     fi
     log "Overcloud pingtest, creating tenant-stack heat stack:"
-    heat stack-create -f $TENANT_PINGTEST_TEMPLATE tenant-stack || exitval=1
+    heat stack-create -f $TENANT_PINGTEST_TEMPLATE $TENANT_STACK_DEPLOY_ARGS tenant-stack || exitval=1
     if tripleo wait_for -w 360 -d 10 -s "CREATE_COMPLETE" -- "heat stack-list | grep tenant-stack"; then
         log "Overcloud pingtest, heat stack CREATE_COMPLETE";
 
