@@ -46,7 +46,7 @@ def deep_update(base, new):
 def process_plan_data(plan_data):
     """Preprocesses and organizes plan files for heatclient interaction
 
-    This method separates the the root template, environments and other
+    This method separates the root template, environments and other
     associated files in preparation to send to heatclient for validation
     or deployment.  The environment files are merged with the temporary
     environment information stored in the deployment parameters.
