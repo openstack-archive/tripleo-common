@@ -1,0 +1,16 @@
+disk_images:
+  -
+    imagename: overcloud
+    arch: amd64
+    type: qcow2
+    distro: centos7
+    elements:
+      - selinux-permissive delorean-repo centos-cloud-repo epel
+  -
+    imagename: ramdisk_agent
+    arch: amd64
+    type: qcow2
+    distro: centos7
+    elements:
+      - selinux-permissive delorean-repo centos-cloud-repo epel
+

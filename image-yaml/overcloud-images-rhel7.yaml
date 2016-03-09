@@ -1,0 +1,11 @@
+disk_images:
+  -
+    imagename: overcloud
+    arch: amd64
+    type: qcow2
+    distro: rhel7
+  -
+    imagename: ramdisk_agent
+    arch: amd64
+    type: qcow2
+    distro: rhel7
