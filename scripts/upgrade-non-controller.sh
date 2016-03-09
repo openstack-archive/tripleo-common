@@ -27,6 +27,8 @@ SCRIPT_NAME=$(basename $0)
 
 #can make the upgrade script overridable (if a different target will be used)
 UPGRADE_SCRIPT=${UPGRADE_SCRIPT:-/root/tripleo_upgrade_node.sh}
+#allow override incase the ssh user is not 'heat-admin' - must be able to sudo
+UPGRADE_NODE_USER=${UPGRADE_NODE_USER:-"heat-admin"}
 UPGRADE_NODE=""
 QUERY_NODE=""
 SCRIPT=""
@@ -85,7 +87,7 @@ function confirm_script_on_node {
   name_or_id=$1
   node_ip=$(nova show $name_or_id | grep "ctlplane network" | awk '{print $5}')
   log "checking for upgrade script $UPGRADE_SCRIPT on node $name_or_id ($node_ip)"
-  results=$(ssh heat-admin@$node_ip "sudo ls -l $UPGRADE_SCRIPT")
+  results=$(ssh $UPGRADE_NODE_USER@$node_ip "sudo ls -l $UPGRADE_SCRIPT")
   log "upgrade script $UPGRADE_SCRIPT found on node $name_or_id ($node_ip)"
 }
 
@@ -94,10 +96,10 @@ function deliver_script {
   node=$2
   node_ip=$(nova show $node | grep "ctlplane network" | awk '{print $5}')
   file_name=$(echo ${script##*/})
-  log "Sending upgrade script $script to $node_ip"
-  scp $script heat-admin@$node_ip:/home/heat-admin/$file_name
+  log "Sending upgrade script $script to $node_ip as $UPGRADE_NODE_USER"
+  scp $script $UPGRADE_NODE_USER@$node_ip:/home/$UPGRADE_NODE_USER/$file_name
   log "Copying upgrade script to right location and setting permissions"
-  ssh heat-admin@$node_ip "sudo cp /home/heat-admin/$file_name $UPGRADE_SCRIPT ; \
+  ssh $UPGRADE_NODE_USER@$node_ip "sudo cp /home/$UPGRADE_NODE_USER/$file_name $UPGRADE_SCRIPT ; \
                            sudo chmod 755 $UPGRADE_SCRIPT ; "
 }
 
@@ -109,12 +111,12 @@ if [ -n "$UPGRADE_NODE" ]; then
   confirm_script_on_node $UPGRADE_NODE
   node_ip=$(nova show $UPGRADE_NODE | grep "ctlplane network" | awk '{print $5}')
   log "Executing $UPGRADE_SCRIPT on $node_ip"
-  ssh heat-admin@$node_ip sudo $UPGRADE_SCRIPT
+  ssh $UPGRADE_NODE_USER@$node_ip sudo $UPGRADE_SCRIPT
 fi
 
 if [ -n "$QUERY_NODE" ]; then
   # query for status, can remove this for simplicity
   find_nova_node_by_name_or_id $QUERY_NODE
   node_ip=$(nova show $QUERY_NODE | grep "ctlplane network" | awk '{print $5}')
-  ssh heat-admin@$node_ip "sudo journalctl -n 1000 | grep tripleo-upgrade"
+  ssh $UPGRADE_NODE_USER@$node_ip "sudo journalctl -n 1000 | grep tripleo-upgrade"
 fi
