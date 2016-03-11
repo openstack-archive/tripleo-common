@@ -28,8 +28,8 @@ class TripleOCapabilitiesFilter(filters.BaseHostFilter):
 
     def host_passes(self, host_state, spec_obj):
         host_node = host_state.stats.get('node')
-        instance_node = spec_obj.scheduler_hints.get('capabilities:node')
+        instance_node = spec_obj['scheduler_hints'].get('capabilities:node')
         # The instance didn't request a specific node
         if not instance_node:
             return True
-        return host_node == instance_node[0]
+        return host_node == instance_node

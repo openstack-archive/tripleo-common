@@ -35,8 +35,9 @@ class TestCapabilitiesFilter(base.TestCase):
         instance = capabilities_filter.TripleOCapabilitiesFilter()
         host_state = mock.Mock()
         host_state.stats.get.return_value = ''
-        spec_obj = mock.Mock()
-        spec_obj.scheduler_hints.get.return_value = []
+        mock_hints = mock.Mock()
+        spec_obj = {'scheduler_hints': mock_hints}
+        mock_hints.get.return_value = None
         self.assertTrue(instance.host_passes(host_state, spec_obj))
 
     def test_requested_node_matches(self):
@@ -48,21 +49,23 @@ class TestCapabilitiesFilter(base.TestCase):
 
         def mock_spec_get(key):
             if key == 'capabilities:node':
-                return ['compute-0']
+                return 'compute-0'
             else:
                 self.fail('Unexpected key requested by filter')
 
         instance = capabilities_filter.TripleOCapabilitiesFilter()
         host_state = mock.Mock()
         host_state.stats.get.side_effect = mock_host_get
-        spec_obj = mock.Mock()
-        spec_obj.scheduler_hints.get.side_effect = mock_spec_get
+        mock_hints = mock.Mock()
+        spec_obj = {'scheduler_hints': mock_hints}
+        mock_hints.get.side_effect = mock_spec_get
         self.assertTrue(instance.host_passes(host_state, spec_obj))
 
     def test_requested_node_no_match(self):
         instance = capabilities_filter.TripleOCapabilitiesFilter()
         host_state = mock.Mock()
         host_state.stats.get.return_value = 'controller-0'
-        spec_obj = mock.Mock()
-        spec_obj.scheduler_hints.get.return_value = ['compute-0']
+        mock_hints = mock.Mock()
+        spec_obj = {'scheduler_hints': mock_hints}
+        mock_hints.get.return_value = 'compute-0'
         self.assertFalse(instance.host_passes(host_state, spec_obj))
