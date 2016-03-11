@@ -11,22 +11,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from heat.engine import properties
 from heat.engine.resources.openstack.nova import server
 
 
 class ServerUpdateAllowed(server.Server):
-    '''Allows the user_data property to be changed on update without replacement.
+    '''Prevent any properties changes from replacing an existing server.
 
     '''
 
-    properties_schema = dict(server.Server.properties_schema)
-    properties_schema[server.Server.USER_DATA] = properties.Schema(
-        properties.Schema.STRING,
-        'User data script to be executed by cloud-init.',
-        update_allowed=True,
-        default=''
-    )
+    update_allowed_properties = server.Server.properties_schema.keys()
 
 
 def resource_mapping():
