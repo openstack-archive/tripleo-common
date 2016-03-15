@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Doing this in a seperate script lets us do it step by step with a single docker layer.
+# Doing this in a separate script lets us do it step by step with a single docker layer.
 
 yum -y install http://rdoproject.org/repos/openstack-liberty/rdo-release-liberty.rpm
 yum update -y \
