@@ -204,7 +204,10 @@ class NodesTest(base.TestCase):
         node_properties = {"capabilities": "num_nics:6"}
 
         ironic = mock.MagicMock()
-        nodes.register_all_nodes('servicehost', node_list, client=ironic)
+        new_nodes = nodes.register_all_nodes('servicehost',
+                                             node_list,
+                                             client=ironic)
+        self.assertEqual([ironic.node.create.return_value], new_nodes)
         pxe_node_driver_info = {"ssh_address": "foo.bar",
                                 "ssh_username": "test",
                                 "ssh_key_contents": "random",
@@ -427,7 +430,8 @@ class NodesTest(base.TestCase):
         node = collections.namedtuple('node', ['uuid'])
         client = mock.MagicMock()
         client.node.list.return_value = [node('foobar')]
-        nodes._clean_up_extra_nodes(set(('abcd',)), client, remove=True)
+        seen = [node('abcd')]
+        nodes._clean_up_extra_nodes(seen, client, remove=True)
         client.node.delete.assert_called_once_with('foobar')
 
     def test__get_node_id_fake_pxe(self):

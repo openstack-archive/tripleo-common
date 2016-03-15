@@ -333,13 +333,13 @@ def _update_or_register_ironic_node(service_host, node, node_map, client=None):
     else:
         ironic_node = register_ironic_node(service_host, node, client)
 
-    return ironic_node.uuid
+    return ironic_node
 
 
 def _clean_up_extra_nodes(seen, client, remove=False):
-    all_nodes = set([n.uuid for n in client.node.list()])
+    all_nodes = {n.uuid for n in client.node.list()}
     remove_func = client.node.delete
-    extra_nodes = all_nodes - seen
+    extra_nodes = all_nodes - {n.uuid for n in seen}
     for node in extra_nodes:
         if remove:
             LOG.debug('Removing extra registered node %s.' % node)
@@ -359,16 +359,17 @@ def register_all_nodes(service_host, nodes_list, client=None, remove=False,
         glance_ids = glance.create_or_find_kernel_and_ramdisk(
             glance_client, kernel_name, ramdisk_name)
 
-    seen = set()
+    seen = []
     for node in nodes_list:
         if glance_ids['kernel'] and 'kernel_id' not in node:
             node['kernel_id'] = glance_ids['kernel']
         if glance_ids['ramdisk'] and 'ramdisk_id' not in node:
             node['ramdisk_id'] = glance_ids['ramdisk']
 
-        uuid = _update_or_register_ironic_node(service_host,
+        node = _update_or_register_ironic_node(service_host,
                                                node, node_map,
                                                client=client)
-        seen.add(uuid)
+        seen.append(node)
 
     _clean_up_extra_nodes(seen, client, remove=remove)
+    return seen
