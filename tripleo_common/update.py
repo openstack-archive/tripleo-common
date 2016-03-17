@@ -18,17 +18,18 @@ import os
 import time
 
 from heatclient.common import template_utils
+
 from tripleo_common import _stack_update
+from tripleo_common import constants
 
 LOG = logging.getLogger(__name__)
-TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
-UPDATE_RESOURCE_NAME = 'UpdateDeployment'
 
 
 def add_breakpoints_cleanup_into_env(env):
     template_utils.deep_update(env, {
         'resource_registry': {
-            'resources': {'*': {'*': {UPDATE_RESOURCE_NAME: {'hooks': []}}}}
+            'resources': {'*': {'*': {
+                constants.UPDATE_RESOURCE_NAME: {'hooks': []}}}}
         }
     })
 
@@ -42,7 +43,7 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
         super(PackageUpdateManager, self).__init__(
             heatclient=heatclient, novaclient=novaclient, stack=stack,
             hook_type='pre-update', nested_depth=5,
-            hook_resource=UPDATE_RESOURCE_NAME)
+            hook_resource=constants.UPDATE_RESOURCE_NAME)
 
     def update(self, timeout_mins=240):
         # time rounded to seconds
@@ -51,7 +52,7 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
         stack_params = {'UpdateIdentifier': timestamp}
 
         tpl_files, template = template_utils.get_template_contents(
-            template_file=os.path.join(self.tht_dir, TEMPLATE_NAME))
+            template_file=os.path.join(self.tht_dir, constants.TEMPLATE_NAME))
         env_paths = []
         if self.environment_files:
             env_paths.extend(self.environment_files)
@@ -63,7 +64,8 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
                 'resources': {
                     '*': {
                         '*': {
-                            UPDATE_RESOURCE_NAME: {'hooks': 'pre-update'}
+                            constants.UPDATE_RESOURCE_NAME: {
+                                'hooks': 'pre-update'}
                         }
                     }
                 }
