@@ -14,6 +14,7 @@ Contents:
    readme
    installation
    usage
+   images
    contributing
 
 Indices and tables
