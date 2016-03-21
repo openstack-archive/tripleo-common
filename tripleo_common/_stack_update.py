@@ -18,6 +18,8 @@ import logging
 import re
 import time
 
+import heatclient.exc
+
 LOG = logging.getLogger(__name__)
 
 
@@ -134,10 +136,13 @@ class StackUpdateManager(object):
             stack_name, stack_id = next(
                 x['href'] for x in res.links if
                 x['rel'] == 'stack').rsplit('/', 2)[1:]
-            events = self.heatclient.events.list(
-                stack_id=stack_id,
-                resource_name=res.logical_resource_id,
-                sort_dir='asc')
+            try:
+                events = self.heatclient.events.list(
+                    stack_id=stack_id,
+                    resource_name=res.logical_resource_id,
+                    sort_dir='asc')
+            except heatclient.exc.HTTPNotFound:
+                events = []
             state = 'not_started'
             for ev in events:
                 # ignore events older than start of the last stack change
