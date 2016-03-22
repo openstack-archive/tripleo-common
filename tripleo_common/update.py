@@ -45,7 +45,7 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
             hook_type='pre-update', nested_depth=5,
             hook_resource=constants.UPDATE_RESOURCE_NAME)
 
-    def update(self, timeout_mins=240):
+    def update(self, timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
         # time rounded to seconds
         timestamp = int(time.time())
 

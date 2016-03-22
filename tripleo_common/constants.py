@@ -22,3 +22,6 @@ RESOURCE_GROUP_TYPE = 'OS::Heat::ResourceGroup'
 
 #: The resource name used for package updates
 UPDATE_RESOURCE_NAME = 'UpdateDeployment'
+
+#: The default timeout to pass to Heat stacks
+STACK_TIMEOUT_DEFAULT = 240
