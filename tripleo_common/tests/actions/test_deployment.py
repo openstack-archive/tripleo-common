@@ -186,3 +186,55 @@ class OrchestrationDeployActionTest(base.TestCase):
         get_obj_client_mock.delete_object.called_once_with('container',
                                                            'object')
         get_obj_client_mock.delete_container.called_once_with('container')
+
+
+class DeployStackActionTest(base.TestCase):
+
+    def setUp(self,):
+        super(DeployStackActionTest, self).setUp()
+
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_orchestration_client')
+    @mock.patch('mistral.context.ctx')
+    def test_run(self, mock_ctx, get_orchestration_client_mock,
+                 mock_get_object_client, mock_get_workflow_client,
+                 mock_get_template_contents,
+                 mock_process_multiple_environments_and_files):
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_get_object_client.return_value = mock.MagicMock(
+            url="http://test.com")
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = None
+        get_orchestration_client_mock.return_value = heat
+
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        action = deployment.DeployStackAction(1, 'overcloud')
+        action.run()
+        heat.stacks.create.assert_called_once_with(
+            environment={},
+            files={},
+            stack_name='overcloud',
+            template={'heat_template_version': '2016-04-30'},
+            timeout_mins=1,
+        )
