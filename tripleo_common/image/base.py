@@ -26,6 +26,7 @@ from tripleo_common.image.exception import ImageSpecificationException
 class BaseImageManager(object):
     logger = log.getLogger(__name__ + '.BaseImageManager')
     APPEND_ATTRIBUTES = ['elements', 'options', 'packages']
+    CONFIG_SECTIONS = ['disk_images', 'uploads']
 
     def __init__(self, config_files):
         self.config_files = config_files
@@ -38,39 +39,38 @@ class BaseImageManager(object):
             except KeyError:
                 existing_image[attribute_name] = attribute
 
-    def load_config_files(self):
-        disk_images = {}
+    def load_config_files(self, section):
+        config_data = {}
         for config_file in self.config_files:
             if os.path.isfile(config_file):
                 with open(config_file) as cf:
-                    images = yaml.load(cf.read()).get("disk_images")
-                    self.logger.debug(
-                        'disk_images JSON: %s' % str(disk_images))
-                for image in images:
-                    image_name = image.get('imagename')
+                    data = yaml.load(cf.read()).get(section)
+                    if not data:
+                        return None
+                    self.logger.debug('%s JSON: %s' % (section, str(data)))
+                for item in data:
+                    image_name = item.get('imagename')
                     if image_name is None:
                         msg = 'imagename is required'
                         self.logger.error(msg)
                         raise ImageSpecificationException(msg)
 
-                    existing_image = disk_images.get(image_name)
+                    existing_image = config_data.get(image_name)
                     if not existing_image:
-                        disk_images[image_name] = image
+                        config_data[image_name] = item
                         continue
 
                     for attr in self.APPEND_ATTRIBUTES:
-                        self._extend_or_set_attribute(existing_image, image,
+                        self._extend_or_set_attribute(existing_image, item,
                                                       attr)
 
                     # If a new key is introduced, add it.
-                    for key, value in six.iteritems(image):
+                    for key, value in six.iteritems(item):
                         if key not in existing_image:
-                            existing_image[key] = image[key]
+                            existing_image[key] = item[key]
 
-                    disk_images[image_name] = existing_image
-
+                    config_data[image_name] = existing_image
             else:
                 self.logger.error('No config file exists at: %s' % config_file)
                 raise IOError('No config file exists at: %s' % config_file)
-
-        return [x for x in disk_images.values()]
+        return [x for x in config_data.values()]

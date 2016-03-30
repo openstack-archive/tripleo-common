@@ -1,0 +1,29 @@
+uploads:
+    - imagename: tripleoupstream/heat-docker-agents:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-nova-compute:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-data:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-openvswitch-vswitchd:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-openvswitch-db-server:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
