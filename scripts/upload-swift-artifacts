@@ -93,7 +93,7 @@ EOF_CAT
 swift post "$CONTAINER_NAME"
 
 SWIFT_ACCOUNT=$(swift stat "$CONTAINER_NAME" 2>/dev/null | grep Account: | sed -e "s|.*Account..||")
-SWIFT_INTERNAL_URL=$(openstack endpoint show swift | grep internalurl | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
+SWIFT_INTERNAL_URL=$(openstack endpoint list | grep swift | grep internal | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
 
 # Does the Temp-URL-Key exist on this container?
 # If not set it...
