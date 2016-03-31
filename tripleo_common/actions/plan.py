@@ -16,11 +16,13 @@ import json
 import logging
 import yaml
 
+from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
+from tripleo_common import exception
 
 LOG = logging.getLogger(__name__)
 
@@ -126,3 +128,60 @@ class ListPlansAction(base.TripleOAction):
                 plan_list.append(item['name'])
         return list(set(plan_list).intersection(
             [env.name for env in mc.environments.list()]))
+
+
+class DeletePlanAction(base.TripleOAction):
+    """Deletes a plan and associated files
+
+    Deletes a plan by deleting the container matching plan_name. It
+    will not delete the plan if a stack exists with the same name.
+
+    Raises StackInUseError if a stack with the same name as plan_name
+    exists.
+    """
+
+    def __init__(self, container):
+        super(DeletePlanAction, self).__init__()
+        self.container = container
+
+    def run(self):
+        error_text = None
+        # heat throws HTTPNotFound if the stack is not found
+        try:
+            stack = self._get_orchestration_client().stacks.get(self.container)
+        except heatexceptions.HTTPNotFound:
+            pass
+        else:
+            if stack is not None:
+                raise exception.StackInUseError(name=self.container)
+
+        try:
+            swift = self._get_object_client()
+            if self.container in [container["name"] for container in
+                                  swift.get_account()[1]]:
+                box = swift.get_container(self.container)
+                # ensure container is a plan
+                if box[0].get(constants.TRIPLEO_META_USAGE_KEY) == 'plan':
+                    # FIXME(rbrady): remove delete_object loop when
+                    # LP#1615830 is fixed.  See LP#1615825 for more info.
+                    # delete files from plan
+                    for data in box[1]:
+                        swift.delete_object(self.container, data['name'])
+                    # delete plan container
+                    swift.delete_container(self.container)
+                    # if mistral environment exists, delete it too
+                    mistral = self._get_workflow_client()
+                    if self.container in [env.name for env in
+                                          mistral.environments.list()]:
+                        # deletes environment
+                        mistral.environments.delete(self.container)
+
+        except swiftexceptions.ClientException as ce:
+            LOG.exception("Swift error deleting plan.")
+            error_text = ce.msg
+        except Exception as err:
+            LOG.exception("Error deleting plan.")
+            error_text = err
+
+        if error_text:
+            return mistral_workflow_utils.Result(error=error_text)
