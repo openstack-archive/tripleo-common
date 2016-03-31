@@ -206,3 +206,45 @@ class CreatePlanActionTest(base.TestCase):
 
         error_str = "capabilities-map.yaml missing key: 'root_template'"
         self.assertEqual(result.error, error_str)
+
+
+class ListPlansActionTest(base.TestCase):
+
+    def setUp(self):
+        super(ListPlansActionTest, self).setUp()
+        self.container = 'overcloud'
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    def test_run(self, get_workflow_client_mock, get_obj_client_mock):
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_account.return_value = ({}, [
+            {
+                'count': 1,
+                'bytes': 55,
+                'name': 'overcloud'
+            },
+        ])
+        swift.get_container.return_value = ({
+            'x-container-meta-usage-tripleo': 'plan',
+        }, [])
+        get_obj_client_mock.return_value = swift
+
+        # setup mistral
+        mistral = mock.MagicMock()
+        env_item = mock.Mock()
+        env_item.name = self.container
+        mistral.environments.list.return_value = [env_item]
+        get_workflow_client_mock.return_value = mistral
+
+        # Test
+        action = plan.ListPlansAction()
+        action.run()
+
+        # verify
+        self.assertEqual([self.container], action.run())
+        swift.get_account.assert_called()
+        swift.get_container.assert_called_with(self.container)
