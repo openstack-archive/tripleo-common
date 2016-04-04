@@ -308,6 +308,39 @@ class NodesTest(base.TestCase):
                                               client=ironic)
         ironic.node.update.assert_called_once_with(1, mock.ANY)
 
+    def test_register_update_with_images(self):
+        node = self._get_node()
+        node['kernel_id'] = 'image-k'
+        node['ramdisk_id'] = 'image-r'
+        ironic = mock.MagicMock()
+        node_map = {'mac': {'aaa': 1}}
+
+        def side_effect(*args, **kwargs):
+            update_patch = [
+                {'path': '/name', 'value': 'node1'},
+                {'path': '/driver_info/ssh_key_contents', 'value': 'random'},
+                {'path': '/driver_info/ssh_address', 'value': 'foo.bar'},
+                {'path': '/properties/memory_mb', 'value': '2048'},
+                {'path': '/properties/local_gb', 'value': '30'},
+                {'path': '/properties/cpu_arch', 'value': 'amd64'},
+                {'path': '/properties/cpus', 'value': '1'},
+                {'path': '/properties/capabilities', 'value': 'num_nics:6'},
+                {'path': '/driver_info/deploy_kernel', 'value': 'image-k'},
+                {'path': '/driver_info/deploy_ramdisk', 'value': 'image-r'},
+                {'path': '/driver_info/ssh_username', 'value': 'test'},
+                {'path': '/driver_info/ssh_virt_type', 'value': 'virsh'}]
+            for key in update_patch:
+                key['op'] = 'add'
+            self.assertThat(update_patch,
+                            matchers.MatchesSetwise(*(map(matchers.Equals,
+                                                          args[1]))))
+            return mock.Mock(uuid='uuid1')
+
+        ironic.node.update.side_effect = side_effect
+        nodes._update_or_register_ironic_node(None, node, node_map,
+                                              client=ironic)
+        ironic.node.update.assert_called_once_with(1, mock.ANY)
+
     def _update_by_type(self, pm_type):
         ironic = mock.MagicMock()
         node_map = {'mac': {}, 'pm_addr': {}}

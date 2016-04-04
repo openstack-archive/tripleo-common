@@ -316,6 +316,8 @@ def _update_or_register_ironic_node(service_host, node, node_map, client=None):
                             ('disk', '/properties/local_gb'),
                             ('arch', '/properties/cpu_arch'),
                             ('name', '/name'),
+                            ('kernel_id', '/driver_info/deploy_kernel'),
+                            ('ramdisk_id', '/driver_info/deploy_ramdisk'),
                             ('capabilities', '/properties/capabilities')]:
             if field in node:
                 patched[path] = node.pop(field)
