@@ -48,7 +48,7 @@ class UpdateManagerTest(base.TestCase):
             'stack_id': 'stack_id',
             'template': 'template body',
             'files': {},
-            'parameters': {'UpdateIdentifier': 123},
+            'parameters': {'UpdateIdentifier': 123, 'StackAction': 'UPDATE'},
             'environment': {
                 'resource_registry': {
                     'resources': {
