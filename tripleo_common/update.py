@@ -49,7 +49,7 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
         # time rounded to seconds
         timestamp = int(time.time())
 
-        stack_params = {'UpdateIdentifier': timestamp}
+        stack_params = {'UpdateIdentifier': timestamp, 'StackAction': 'UPDATE'}
 
         tpl_files, template = template_utils.get_template_contents(
             template_file=os.path.join(self.tht_dir, constants.TEMPLATE_NAME))
