@@ -32,7 +32,8 @@ yum install -y \
         python-devel \
         python-pip \
         openvswitch \
-        puppet
+        puppet \
+        python-ipaddr
 
 # openstack packages
 yum install -y \
