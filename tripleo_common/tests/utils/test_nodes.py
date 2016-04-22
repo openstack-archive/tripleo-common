@@ -182,6 +182,66 @@ class FindNodeHandlerTest(base.TestCase):
                           nodes._find_node_handler, {'pm_type': 'foobar'})
 
 
+class NodeProvisionStateTest(base.TestCase):
+
+    def test_wait_for_provision_state(self):
+        baremetal_client = mock.Mock()
+        baremetal_client.node.get.return_value = mock.Mock(
+            provision_state="available", last_error=None)
+        nodes.wait_for_provision_state(baremetal_client, 'UUID', "available")
+
+    def test_wait_for_provision_state_not_found(self):
+        baremetal_client = mock.Mock()
+        baremetal_client.node.get.side_effect = exception.InvalidNode("boom")
+        self.assertRaises(
+            exception.InvalidNode,
+            nodes.wait_for_provision_state,
+            baremetal_client, 'UUID', "enroll")
+
+    def test_wait_for_provision_state_timeout(self):
+        baremetal_client = mock.Mock()
+        baremetal_client.node.get.return_value = mock.Mock(
+            provision_state="not what we want", last_error=None)
+        self.assertRaises(
+            exception.Timeout,
+            nodes.wait_for_provision_state,
+            baremetal_client, 'UUID', "available", loops=1, sleep=0.01)
+
+    def test_wait_for_provision_state_fail(self):
+        baremetal_client = mock.Mock()
+        baremetal_client.node.get.return_value = mock.Mock(
+            provision_state="enroll",
+            last_error="node on fire; returning to previous state.")
+        self.assertRaises(
+            exception.StateTransitionFailed,
+            nodes.wait_for_provision_state,
+            baremetal_client, 'UUID', "available", loops=1, sleep=0.01)
+
+    @mock.patch('tripleo_common.utils.nodes.wait_for_provision_state')
+    def test_set_nodes_state(self, wait_for_state_mock):
+
+        wait_for_state_mock.return_value = True
+        bm_client = mock.Mock()
+
+        # One node already deployed, one in the manageable state after
+        # introspection.
+        node_list = [
+            mock.Mock(uuid="ABCDEFGH", provision_state="active"),
+            mock.Mock(uuid="IJKLMNOP", provision_state="manageable")
+        ]
+
+        skipped_states = ('active', 'available')
+        affected_nodes = nodes.set_nodes_state(bm_client, node_list, 'provide',
+                                               'available', skipped_states)
+        uuids = [node.uuid for node in affected_nodes]
+
+        bm_client.node.set_provision_state.assert_has_calls([
+            mock.call('IJKLMNOP', 'provide'),
+        ])
+
+        self.assertEqual(uuids, ['IJKLMNOP', ])
+
+
 class NodesTest(base.TestCase):
 
     def _get_node(self):

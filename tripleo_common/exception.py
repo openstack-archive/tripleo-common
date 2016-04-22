@@ -20,3 +20,29 @@ class InvalidNode(ValueError):
         message = 'Invalid node data: %s' % message
         self.node = node
         super(InvalidNode, self).__init__(message)
+
+
+class Timeout(Exception):
+    """An operation timed out"""
+
+    def __init__(self, message):
+        message = 'An operation timed out: %s' % message
+        super(Timeout, self).__init__(message)
+
+
+class StateTransitionFailed(Exception):
+    """Ironic node state transition failed"""
+
+    def __init__(self, node, target_state):
+        self.node = node
+        self.target_state = target_state
+        message = (
+            "Error transitioning Ironic node %(uuid)s to provision state "
+            "%(state)s: %(error)s. Now in state %(actual)s." % {
+                'uuid': node.uuid,
+                'state': target_state,
+                'error': node.last_error,
+                'actual': node.provision_state
+            }
+        )
+        super(StateTransitionFailed, self).__init__(message)
