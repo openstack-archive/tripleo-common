@@ -16,6 +16,8 @@
 
 import mock
 
+import six
+
 from tripleo_common.image.exception import ImageBuilderException
 from tripleo_common.image.image_builder import DibImageBuilder
 from tripleo_common.image.image_builder import ImageBuilder
@@ -39,8 +41,16 @@ class TestDibImageBuilder(base.TestCase):
         super(TestDibImageBuilder, self).setUp()
         self.builder = DibImageBuilder()
 
+    # The open method is in a different module for
+    # python2 vs. python3
+    if six.PY2:
+        open_module = '__builtin__.open'
+    else:
+        open_module = 'builtins.open'
+
+    @mock.patch(open_module)
     @mock.patch('subprocess.check_call')
-    def test_build_image(self, mock_check_call):
+    def test_build_image(self, mock_check_call, mock_open):
         self.builder.build_image('image/path', 'imgtype', 'node_dist', 'arch',
                                  ['element1', 'element2'], ['options'],
                                  ['package1', 'package2'],
@@ -51,4 +61,7 @@ class TestDibImageBuilder(base.TestCase):
              '-t', 'imgtype',
              '-p', 'package1,package2', 'options', '-n',
              '--docker-target', 'docker-target', 'node_dist',
-             'element1', 'element2'])
+             'element1', 'element2'],
+            stdout=mock.ANY,
+            stderr=mock.ANY)
+        mock_open.assert_called_once_with('image/path.log', 'w')

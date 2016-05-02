@@ -85,5 +85,9 @@ class DibImageBuilder(ImageBuilder):
 
         cmd.extend(elements)
 
+        log_file = '%s.log' % image_path
+
         self.logger.info('Running %s' % cmd)
-        subprocess.check_call(cmd)
+        self.logger.debug('Logging output to %s' % log_file)
+        with open(log_file, 'w') as log_fd:
+            subprocess.check_call(cmd, stdout=log_fd, stderr=log_fd)
