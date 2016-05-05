@@ -1,0 +1,31 @@
+disk_images:
+  -
+    imagename: overcloud
+    arch: amd64
+    type: qcow2
+    elements:
+      - sysctl hosts baremetal dhcp-all-interfaces os-collect-config overcloud-full overcloud-controller overcloud-compute overcloud-ceph-storage heat-config-puppet heat-config-script puppet-modules hiera os-net-config stable-interface-names grub2 element-manifest network-gateway dynamic-login undercloud-package-install pip-and-virtualenv-override
+    packages:
+      - python-psutil
+      - python-debtcollector
+      - plotnetcfg
+      - sos
+      - python-networking-cisco
+      - python-UcsSdk
+      - device-mapper-multipath
+      - python-networking-bigswitch
+      - openstack-neutron-bigswitch-lldp
+      - openstack-neutron-bigswitch-agent
+    options:
+      - "--min-tmpfs 5"
+  -
+    imagename: ramdisk_agent
+    arch: amd64
+    type: qcow2
+    elements:
+      - ironic-agent dynamic-login element-manifest network-gateway epel undercloud-package-install pip-and-virtualenv-override
+    packages:
+      - python-hardware-detect
+    options:
+      - "--min-tmpfs=5"
+
