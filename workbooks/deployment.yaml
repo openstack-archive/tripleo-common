@@ -1,0 +1,96 @@
+---
+version: '2.0'
+name: tripleo.deployment.v1
+description: TripleO deployment workflows
+
+workflows:
+
+  deploy_on_server:
+    type: direct
+    input:
+      - server_uuid
+      - server_name
+      - config
+      - config_name
+      - group
+      - queue_name: tripleo
+    tasks:
+
+      deploy_config:
+        action: tripleo.deploy_config
+        on-complete: send_message
+        input:
+          server_id: <% $.server_uuid %>
+          name: <% $.config_name %>
+          config: <% $.config %>
+          group: <% $.group %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.deployment.v1.deploy_on_server
+              payload:
+                server_uuid: <% $.server_uuid %>
+                server_name: <% $.server_name %>
+                config_name: <% $.config_name %>
+                status_code: <% task(deploy_config).result.deploy_status_code %>
+                stdout: <% task(deploy_config).result.deploy_stdout %>
+                stderr: <% task(deploy_config).result.deploy_stderr %>
+                execution: <% execution() %>
+
+  deploy_on_servers:
+    type: direct
+
+    input:
+      - server_name
+      - config_name
+      - config
+      - group: script
+      - queue_name: tripleo
+
+    tasks:
+
+      get_servers_matching:
+        action: nova.servers_list
+        on-success: deploy_on_servers
+        publish:
+          servers_with_name: <% task(get_servers_matching).result._info.where($.name.indexOf(execution().input.server_name) > -1) %>
+
+      deploy_on_servers:
+        on-success: send_success_message
+        on-error: send_failed_message
+        with-items: server in <% $.servers_with_name %>
+        workflow: tripleo.deployment.v1.deploy_on_server
+        input:
+          server_name: <% $.server.name %>
+          server_uuid: <% $.server.id %>
+          config: <% $.config %>
+          config_name: <% $.config_name %>
+          group: <% $.group %>
+          queue_name: <% $.queue_name %>
+
+      send_success_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.deployment.v1.deploy_on_servers
+              payload:
+                status: SUCCESS
+                execution: <% execution() %>
+
+      send_failed_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.deployment.v1.deploy_on_servers
+              payload:
+                status: FAILED
+                message: <% task(deploy_on_servers).result %>
+                execution: <% execution() %>
