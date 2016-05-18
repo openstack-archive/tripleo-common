@@ -1,0 +1,272 @@
+---
+version: '2.0'
+name: tripleo.baremetal.v1
+description: TripleO Baremetal Workflows
+
+workflows:
+
+  set_node_state:
+    type: direct
+
+    input:
+      - node_uuid
+      - state_action
+      - target_state
+
+    tasks:
+
+      set_provision_state:
+        on-success: wait_for_provision_state
+        action: ironic.node_set_provision_state node_uuid=<% $.node_uuid %> state=<% $.state_action %>
+
+      wait_for_provision_state:
+        action: ironic.node_get node_id=<% $.node_uuid %>
+        timeout: 1200 #20 minutes
+        retry:
+          delay: 3
+          count: 400
+          continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
+
+  # Take nodes JSON and create nodes in a "manageable" state
+  register_or_update:
+    type: direct
+
+    input:
+     - nodes_json
+     - remove: False
+     - queue_name: tripleo
+     - kernel_name: null
+     - ramdisk_name: null
+
+    tasks:
+      register_or_update_nodes:
+        action: tripleo.register_or_update_nodes
+        on-success: set_nodes_managed
+        on-error: set_status_failed_register_or_update_nodes
+        input:
+           nodes_json: <% $.nodes_json %>
+           remove: <% $.remove %>
+           kernel_name: <% $.kernel_name %>
+           ramdisk_name: <% $.ramdisk_name %>
+        publish:
+          registered_nodes: <% task(register_or_update_nodes).result %>
+
+      set_status_failed_register_or_update_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(register_or_update_nodes).result %>
+          registered_nodes: []
+
+      set_nodes_managed:
+        on-success: send_message
+        on-error: set_status_failed_nodes_managed
+        with-items: node in <% $.registered_nodes %>
+        workflow: tripleo.baremetal.v1.set_node_state node_uuid=<% $.node.uuid %> state_action='manage' target_state='manageable'
+        publish:
+          status: SUCCESS
+          message: Nodes set to managed.
+
+      set_status_failed_nodes_managed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_nodes_managed).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.register_or_update
+              execution_id: <% execution().id %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                registered_nodes: <% $.registered_nodes or [] %>
+
+  # Take a list of nodes and move them to "available"
+  provide:
+    type: direct
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tasks:
+
+      set_nodes_available:
+        on-success: send_message
+        on-error: set_status_failed_nodes_available
+        with-items: uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.set_node_state node_uuid=<% $.uuid %> state_action='provide' target_state='available'
+        publish:
+          status: SUCCESS
+          message: 'Successfully set nodes state to available.'
+
+      set_status_failed_nodes_available:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: 'Failed to set nodes to available.'
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.provide
+              execution_id: <% execution().id %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
+  # Provide all nodes in a 'manageable' state.
+  provide_manageable_nodes:
+    type: direct
+
+    input:
+      - queue_name: tripleo
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list maintenance=False associated=False
+        on-success: provide_manageable
+        on-error: set_status_failed_get_manageable_nodes
+        publish:
+          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+
+      set_status_failed_get_manageable_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_manageable_nodes).result %>
+
+      provide_manageable:
+        on-success: send_message
+        workflow: tripleo.baremetal.v1.provide
+        input:
+          node_uuids: <% $.managed_nodes %>
+          queue_name: <% $.queue_name %>
+        publish:
+          status: SUCCESS
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.provide_manageable_nodes
+              execution_id: <% execution().id %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
+  # Take a list of nodes and move them through introspection.
+  introspect:
+    type: direct
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tasks:
+
+      start_introspection:
+        on-success: wait_for_introspection_to_finish
+        on-error: set_status_failed_start_introspection
+        with-items: uuid in <% $.node_uuids %>
+        action: baremetal_introspection.introspect uuid=<% $.uuid %>
+
+      set_status_failed_start_introspection:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(start_introspection).result %>
+          introspected_nodes: []
+
+      wait_for_introspection_to_finish:
+        on-success: send_message
+        action: baremetal_introspection.wait_for_finish
+        input:
+          uuids: <% $.node_uuids %>
+        publish:
+          introspected_nodes: <% task(wait_for_introspection_to_finish).result %>
+          status: SUCCESS
+          message: 'Succussfully introspected nodes.'
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.introspect
+              execution_id: <% execution().id %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                introspected_nodes: <% $.get('introspected_nodes', []) %>
+
+
+  # Introspect all nodes in a 'manageable' state.
+  introspect_manageable_nodes:
+    type: direct
+
+    input:
+      - queue_name: tripleo
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list maintenance=False associated=False
+        on-success: introspect_manageable
+        on-error: set_status_failed_get_manageable_nodes
+        publish:
+          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+
+      set_status_failed_get_manageable_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_manageable_nodes).result %>
+
+      introspect_manageable:
+        on-success: send_message
+        on-error: set_status_introspect_manageable
+        workflow: tripleo.baremetal.v1.introspect
+        input:
+          node_uuids: <% $.managed_nodes %>
+          queue_name: <% $.queue_name %>
+        publish:
+          introspected_nodes: <% task(introspect_manageable).result.introspected_nodes %>
+          message: 'Nodes introspected successfully.'
+
+      set_status_introspect_manageable:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(introspect_manageable).result %>
+          introspected_nodes: []
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.introspect_manageable_nodes
+              execution_id: <% execution().id %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                introspected_nodes: <% $.get('introspected_nodes', []) %>
