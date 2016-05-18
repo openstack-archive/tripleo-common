@@ -7,7 +7,6 @@ yum update -y \
     && yum clean all
 yum install -y \
         initscripts \
-        dhcp-client \
         ethtool \
         NetworkManager
 
