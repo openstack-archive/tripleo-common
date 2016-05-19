@@ -21,6 +21,10 @@ class ServerUpdateAllowed(server.Server):
 
     update_allowed_properties = server.Server.properties_schema.keys()
 
+    def needs_replace_with_prop_diff(self, changed_properties_set,
+                                     after_props, before_props):
+        return False
+
 
 def resource_mapping():
     return {'OS::Nova::Server': ServerUpdateAllowed}
