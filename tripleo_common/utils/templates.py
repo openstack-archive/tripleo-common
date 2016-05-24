@@ -48,54 +48,6 @@ def deep_update(base, new):
     return base
 
 
-def process_plan_data(plan_data):
-    """Preprocesses and organizes plan files for heatclient interaction
-
-    This method separates the root template, environments and other
-    associated files in preparation to send to heatclient for validation
-    or deployment.  The environment files are merged with the temporary
-    environment information stored in the deployment parameters.
-
-    :param plan_data: the files stored in a plan
-    :return: template, merged environment and associated files
-    """
-    template = ''
-    environment = {}
-    env_items = []
-    temp_env_items = []
-    files = {}
-
-    for key, val in plan_data.items():
-        file_type = val.get('meta', {}).get('file-type')
-        enabled = val.get('meta', {}).get('enabled')
-        if not file_type:
-            files[key] = val['contents']
-        elif file_type == 'environment' and enabled:
-            env_items.append({'name': key,
-                              'meta': val['meta'],
-                              'contents': val['contents']})
-        elif file_type == 'temp-environment':
-            temp_env_items.append({'name': key,
-                                   'meta': val['meta'],
-                                   'contents': val['contents']})
-        elif file_type == 'root-template':
-            template = val['contents']
-        elif file_type == 'root-environment' and enabled:
-            environment = _get_dict_from_env_string(key, val['contents'])
-
-    # merge environment files
-    for item in env_items:
-        env_dict = _get_dict_from_env_string(item['name'], item['contents'])
-        environment = deep_update(environment, env_dict)
-
-    # merge the temporary environment files last
-    for item in temp_env_items:
-        env_dict = _get_dict_from_env_string(item['name'], item['contents'])
-        environment = deep_update(environment, env_dict)
-
-    return template, environment, files
-
-
 def preprocess_templates(swift_base_url, container_name, template,
                          environments, auth_token):
     """Pre-processes and organizes plan files
@@ -168,8 +120,3 @@ def preprocess_templates(swift_base_url, container_name, template,
         'environment': env,
         'files': files
     }
-
-
-def find_root_template(plan_files):
-    return {k: v for (k, v) in plan_files.items()
-            if v.get('meta', {}).get('file-type') == 'root-template'}

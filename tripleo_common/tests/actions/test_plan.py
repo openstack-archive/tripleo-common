@@ -15,7 +15,7 @@
 import mock
 
 from tripleo_common.actions import plan
-from tripleo_common.core import exception
+from tripleo_common import exception
 from tripleo_common.tests import base
 
 MAPPING_YAML_CONTENTS = """root_template: /path/to/overcloud.yaml

@@ -61,34 +61,6 @@ class UtilsTemplatesTest(base.TestCase):
 
     def setUp(self):
         super(UtilsTemplatesTest, self).setUp()
-        self.tpl, self.env, self.files = templates.process_plan_data(PLAN_DATA)
-        print(self.files)
-
-    def test_find_root_template(self):
-        # delete the root_template from sample data
-        del PLAN_DATA['/path/to/overcloud.yaml']
-
-        # without root, should return {}
-        self.assertEqual({}, templates.find_root_template(PLAN_DATA))
-
-        # add root_template back to sample data
-        root_template = {
-            '/path/to/overcloud.yaml': {
-                'contents': 'heat_template_version: 2015-04-30',
-                'meta': {'file-type': 'root-template'}}
-        }
-        PLAN_DATA.update(root_template)
-
-        self.assertEqual(root_template,
-                         templates.find_root_template(PLAN_DATA))
-
-    def test_template_found(self):
-        self.assertEqual(self.tpl, 'heat_template_version: 2015-04-30')
-
-    def test_files_found(self):
-        self.assertEqual(self.files, {
-            '/path/to/somefile.yaml': 'description: lorem ipsum',
-        })
 
     @mock.patch("requests.request")
     def test_preprocess_templates(self, mock_request):

@@ -17,8 +17,8 @@ import logging
 import yaml
 
 from tripleo_common.actions import base
-from tripleo_common.core import constants
-from tripleo_common.core import exception
+from tripleo_common import constants
+from tripleo_common import exception
 
 LOG = logging.getLogger(__name__)
 
