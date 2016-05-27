@@ -543,6 +543,13 @@ class NodesTest(base.TestCase):
                           nodes._get_node_id,
                           node, handler, node_map)
 
+    def test_get_node_id_valid_duplicate(self):
+        node = self._get_node()
+        handler = nodes._find_driver_handler('pxe_ipmitool')
+        node_map = {'mac': {'aaa': 'id'},
+                    'pm_addr': {'foo.bar': 'id'}}
+        self.assertEqual('id', nodes._get_node_id(node, handler, node_map))
+
 
 class TestPopulateNodeMapping(base.TestCase):
     def test_populate_node_mapping_ironic(self):

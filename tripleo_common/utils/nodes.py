@@ -281,17 +281,17 @@ def _populate_node_mapping(client):
 
 
 def _get_node_id(node, handler, node_map):
-    candidates = []
+    candidates = set()
     for mac in node.get('mac', []):
         try:
-            candidates.append(node_map['mac'][mac.lower()])
+            candidates.add(node_map['mac'][mac.lower()])
         except KeyError:
             pass
 
     unique_id = handler.unique_id_from_fields(node)
     if unique_id:
         try:
-            candidates.append(node_map['pm_addr'][unique_id])
+            candidates.add(node_map['pm_addr'][unique_id])
         except KeyError:
             pass
 
@@ -300,7 +300,7 @@ def _get_node_id(node, handler, node_map):
                                     'node data: %s' % candidates,
                                     node=node)
     elif candidates:
-        return candidates[0]
+        return list(candidates)[0]
 
 
 def _update_or_register_ironic_node(service_host, node, node_map, client=None):
