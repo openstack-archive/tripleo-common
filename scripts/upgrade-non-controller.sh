@@ -37,11 +37,13 @@ function show_options {
     echo "Usage: $SCRIPT_NAME"
     echo
     echo "Options:"
-    echo "    -h, --help                  -- print this help."
-    echo "    --upgrade <nova node>       -- nova node name or id to upgrade"
-    echo "    --script <absolute_path>    -- absolute path to the script you wish"
-    echo "                                   to use for the upgrade"
-    echo "    --query <nova node>         -- determine upgrade status on node"
+    echo "  -h|--help                    -- print this help."
+    echo "  -u|--upgrade <nova node>     -- nova node name or id to upgrade"
+    echo "  -s|--script <absolute_path>  -- absolute path to the script you wish"
+    echo "                                  to use for the upgrade"
+    echo "  -q|--query <nova node>       -- determine if the node is ACTIVE and"
+    echo "                                  has the upgrade script. Also, tail"
+    echo "                                  yum.log for any package update info"
     echo
     echo "Invoke the tripleo upgrade script on non controller nodes as part of"
     echo " the tripleo upgrade workflow."
@@ -49,7 +51,8 @@ function show_options {
     exit $1
 }
 
-TEMP=`getopt -o h -l help,upgrade:,query:,script: -n $SCRIPT_NAME -- "$@"`
+TEMP=`getopt -o h,u:,q:,s: -l help,upgrade:,query:,script: -n $SCRIPT_NAME -- "$@"`
+
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
     exit 1
@@ -60,12 +63,12 @@ eval set -- "$TEMP"
 
 while true ; do
     case "$1" in
-        --help) show_options 0 >&2;;
-        --upgrade) UPGRADE_NODE="$2" ; shift 2 ;;
-        --script) SCRIPT="$2"; shift 2 ;;
-        --query) QUERY_NODE="$2" ; shift 2 ;;
-        --) shift ; break ;;
-        *) echo "Error: unsupported option $1." ; exit 1 ;;
+        -h | --help ) show_options 0 >&2;;
+        -u | --upgrade ) UPGRADE_NODE="$2" ; shift 2 ;;
+        -s | --script ) SCRIPT="$2"; shift 2 ;;
+        -q | --query ) QUERY_NODE="$2" ; shift 2 ;;
+        -- ) shift ; break ;;
+        * ) echo "Error: unsupported option $1." ; exit 1 ;;
     esac
 done
 
@@ -115,8 +118,11 @@ if [ -n "$UPGRADE_NODE" ]; then
 fi
 
 if [ -n "$QUERY_NODE" ]; then
-  # query for status, can remove this for simplicity
+  # check node exists, check for upgrade script
   find_nova_node_by_name_or_id $QUERY_NODE
+  confirm_script_on_node $QUERY_NODE
   node_ip=$(nova show $QUERY_NODE | grep "ctlplane network" | awk '{print $5}')
-  ssh $UPGRADE_NODE_USER@$node_ip "sudo journalctl -n 1000 | grep tripleo-upgrade"
+  log "We can't remotely tell if the upgrade has run on $QUERY_NODE."
+  log "We can check for package updates... trying to tail yum.log on $QUERY_NODE:"
+  ssh $UPGRADE_NODE_USER@$node_ip "sudo tail /var/log/yum.log"
 fi
