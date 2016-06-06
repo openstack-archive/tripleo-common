@@ -15,6 +15,7 @@ Contents:
    installation
    usage
    images
+   tripleo-mistral
    contributing
 
 Indices and tables
