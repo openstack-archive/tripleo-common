@@ -512,3 +512,15 @@ def register_all_nodes(service_host, nodes_list, client=None, remove=False,
         )
 
     return seen
+
+
+def register_all_nodes_compat(service_host, *args, **kwargs):
+    """This is a compatibility shim for the CLI
+
+    This is to help remove the unused service_host arg. It will be removed in
+    the following commit once python-tripleoclient has migrated to the updated
+    register_all_nodes.
+    """
+
+    # TODO(d0ugal): Remove this shim once python-tripleoclient has been updated
+    register_all_nodes(service_host, *args, **kwargs)
