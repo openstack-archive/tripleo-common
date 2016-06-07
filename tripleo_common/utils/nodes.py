@@ -208,7 +208,7 @@ def _find_node_handler(fields):
     return _find_driver_handler(driver)
 
 
-def register_ironic_node(service_host, node, client=None, blocking=None):
+def register_ironic_node(node, client=None, blocking=None):
     if blocking is not None:
         LOG.warning('blocking argument to register_ironic_node is deprecated '
                     'and does nothing')
@@ -312,7 +312,7 @@ def _get_node_id(node, handler, node_map):
         return list(candidates)[0]
 
 
-def _update_or_register_ironic_node(service_host, node, node_map, client=None):
+def _update_or_register_ironic_node(node, node_map, client=None):
     handler = _find_node_handler(node)
     node_uuid = _get_node_id(node, handler, node_map)
 
@@ -345,7 +345,7 @@ def _update_or_register_ironic_node(service_host, node, node_map, client=None):
                                'op': 'add'})
         ironic_node = client.node.update(node_uuid, node_patch)
     else:
-        ironic_node = register_ironic_node(service_host, node, client)
+        ironic_node = register_ironic_node(node, client)
 
     return ironic_node
 
@@ -471,13 +471,11 @@ def set_nodes_state(baremetal_client, nodes, transition, target_state,
     return altered_nodes
 
 
-def register_all_nodes(service_host, nodes_list, client=None, remove=False,
-                       blocking=True, keystone_client=None, glance_client=None,
-                       kernel_name=None, ramdisk_name=None,
-                       provide=True):
+def register_all_nodes(nodes_list, client=None, remove=False, blocking=True,
+                       keystone_client=None, glance_client=None,
+                       kernel_name=None, ramdisk_name=None, provide=True):
     """Register all nodes in nodes_list in the baremetal service.
 
-    :param service_host: The host providing the baremetal API.
     :param nodes_list: The list of nodes to register.
     :param client: An Ironic client object.
     :param remove: Should nodes not in the list be removed?
@@ -505,9 +503,7 @@ def register_all_nodes(service_host, nodes_list, client=None, remove=False,
         if glance_ids['ramdisk'] and 'ramdisk_id' not in node:
             node['ramdisk_id'] = glance_ids['ramdisk']
 
-        node = _update_or_register_ironic_node(service_host,
-                                               node, node_map,
-                                               client=client)
+        node = _update_or_register_ironic_node(node, node_map, client=client)
         seen.append(node)
 
     _clean_up_extra_nodes(seen, client, remove=remove)
@@ -523,18 +519,6 @@ def register_all_nodes(service_host, nodes_list, client=None, remove=False,
         )
 
     return seen
-
-
-def register_all_nodes_compat(service_host, *args, **kwargs):
-    """This is a compatibility shim for the CLI
-
-    This is to help remove the unused service_host arg. It will be removed in
-    the following commit once python-tripleoclient has migrated to the updated
-    register_all_nodes.
-    """
-
-    # TODO(d0ugal): Remove this shim once python-tripleoclient has been updated
-    register_all_nodes(service_host, *args, **kwargs)
 
 
 def dict_to_capabilities(caps_dict):

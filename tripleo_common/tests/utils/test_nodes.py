@@ -264,9 +264,7 @@ class NodesTest(base.TestCase):
         node_properties = {"capabilities": "num_nics:6"}
 
         ironic = mock.MagicMock()
-        new_nodes = nodes.register_all_nodes('servicehost',
-                                             node_list,
-                                             client=ironic)
+        new_nodes = nodes.register_all_nodes(node_list, client=ironic)
         self.assertEqual([ironic.node.create.return_value], new_nodes)
         pxe_node_driver_info = {"ssh_address": "foo.bar",
                                 "ssh_username": "test",
@@ -291,7 +289,7 @@ class NodesTest(base.TestCase):
                            "cpu_arch": "amd64",
                            "capabilities": "num_nics:6"}
         ironic = mock.MagicMock()
-        nodes.register_all_nodes('servicehost', node_list, client=ironic)
+        nodes.register_all_nodes(node_list, client=ironic)
         pxe_node_driver_info = {"ssh_address": "foo.bar",
                                 "ssh_username": "test",
                                 "ssh_key_contents": "random",
@@ -319,7 +317,7 @@ class NodesTest(base.TestCase):
         image = collections.namedtuple('image', ['id'])
         glance.images.find.side_effect = (image('kernel-123'),
                                           image('ramdisk-999'))
-        nodes.register_all_nodes('servicehost', node_list, client=ironic,
+        nodes.register_all_nodes(node_list, client=ironic,
                                  glance_client=glance, kernel_name='bm-kernel',
                                  ramdisk_name='bm-ramdisk')
         pxe_node_driver_info = {"ssh_address": "foo.bar",
@@ -348,7 +346,7 @@ class NodesTest(base.TestCase):
                            "cpu_arch": "amd64",
                            "capabilities": "num_nics:6"}
         ironic = mock.MagicMock()
-        nodes.register_all_nodes('servicehost', node_list, client=ironic)
+        nodes.register_all_nodes(node_list, client=ironic)
         pxe_node_driver_info = {"ssh_address": "foo.bar",
                                 "ssh_username": "test",
                                 "ssh_key_contents": "random",
@@ -376,7 +374,7 @@ class NodesTest(base.TestCase):
                            "cpu_arch": "amd64",
                            "capabilities": "num_nics:7"}
         ironic = mock.MagicMock()
-        nodes.register_all_nodes('servicehost', node_list, client=ironic)
+        nodes.register_all_nodes(node_list, client=ironic)
         pxe_node_driver_info = {"ssh_address": "foo.bar",
                                 "ssh_username": "test",
                                 "ssh_key_contents": "random",
@@ -417,8 +415,7 @@ class NodesTest(base.TestCase):
             return mock.Mock(uuid='uuid1')
 
         ironic.node.update.side_effect = side_effect
-        nodes._update_or_register_ironic_node(None, node, node_map,
-                                              client=ironic)
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with(1, mock.ANY)
 
     def test_register_update_with_images(self):
@@ -450,8 +447,7 @@ class NodesTest(base.TestCase):
             return mock.Mock(uuid='uuid1')
 
         ironic.node.update.side_effect = side_effect
-        nodes._update_or_register_ironic_node(None, node, node_map,
-                                              client=ironic)
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with(1, mock.ANY)
 
     def _update_by_type(self, pm_type):
@@ -460,8 +456,7 @@ class NodesTest(base.TestCase):
         node = self._get_node()
         node['pm_type'] = pm_type
         node_map['pm_addr']['foo.bar'] = ironic.node.get.return_value.uuid
-        nodes._update_or_register_ironic_node('servicehost', node,
-                                              node_map, client=ironic)
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with(
             ironic.node.get.return_value.uuid, mock.ANY)
 
@@ -503,8 +498,7 @@ class NodesTest(base.TestCase):
             return mock.Mock(uuid='uuid1')
 
         ironic.node.update.side_effect = side_effect
-        nodes._update_or_register_ironic_node(None, node, node_map,
-                                              client=ironic)
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with(1, mock.ANY)
 
     def test_register_node_update_with_uuid(self):
@@ -533,8 +527,7 @@ class NodesTest(base.TestCase):
             return mock.Mock(uuid='abcdef')
 
         ironic.node.update.side_effect = side_effect
-        nodes._update_or_register_ironic_node(None, node, node_map,
-                                              client=ironic)
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with('abcdef', mock.ANY)
 
     def test_register_ironic_node_int_values(self):
@@ -548,7 +541,7 @@ class NodesTest(base.TestCase):
         node['memory'] = 2048
         node['disk'] = 30
         client = mock.MagicMock()
-        nodes.register_ironic_node('service_host', node, client=client)
+        nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(driver=mock.ANY,
                                                    name='node1',
                                                    properties=node_properties,
@@ -565,7 +558,7 @@ class NodesTest(base.TestCase):
             del node[v]
         node['pm_type'] = 'fake_pxe'
         client = mock.MagicMock()
-        nodes.register_ironic_node('service_host', node, client=client)
+        nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(driver='fake_pxe',
                                                    name='node1',
                                                    properties=node_properties,
@@ -599,8 +592,7 @@ class NodesTest(base.TestCase):
             return mock.Mock(uuid='uuid1')
 
         ironic.node.update.side_effect = side_effect
-        nodes._update_or_register_ironic_node(None, node, node_map,
-                                              client=ironic)
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
 
     def test_clean_up_extra_nodes_ironic(self):
         node = collections.namedtuple('node', ['uuid'])

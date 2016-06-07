@@ -59,7 +59,6 @@ class RegisterOrUpdateNodes(base.TripleOAction):
 
         try:
             return nodes.register_all_nodes(
-                'service_host',  # unused
                 self.nodes_json,
                 client=baremetal_client,
                 remove=self.remove,
