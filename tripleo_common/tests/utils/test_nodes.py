@@ -339,6 +339,32 @@ class NodesTest(base.TestCase):
         ironic.port.create.assert_has_calls([port_call])
         ironic.node.set_power_state.assert_has_calls([power_off_call])
 
+    def test_register_all_nodes_uuid(self):
+        node_list = [self._get_node()]
+        node_list[0]['uuid'] = 'abcdef'
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        ironic = mock.MagicMock()
+        nodes.register_all_nodes('servicehost', node_list, client=ironic)
+        pxe_node_driver_info = {"ssh_address": "foo.bar",
+                                "ssh_username": "test",
+                                "ssh_key_contents": "random",
+                                "ssh_virt_type": "virsh"}
+        pxe_node = mock.call(driver="pxe_ssh",
+                             name='node1',
+                             driver_info=pxe_node_driver_info,
+                             properties=node_properties,
+                             uuid="abcdef")
+        port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
+                              address='aaa')
+        power_off_call = mock.call(ironic.node.create.return_value.uuid, 'off')
+        ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
+        ironic.port.create.assert_has_calls([port_call])
+        ironic.node.set_power_state.assert_has_calls([power_off_call])
+
     def test_register_update(self):
         node = self._get_node()
         ironic = mock.MagicMock()
@@ -454,6 +480,36 @@ class NodesTest(base.TestCase):
                                               client=ironic)
         ironic.node.update.assert_called_once_with(1, mock.ANY)
 
+    def test_register_node_update_with_uuid(self):
+        node = self._get_node()
+        node['uuid'] = 'abcdef'
+        ironic = mock.MagicMock()
+        node_map = {'uuids': {'abcdef'}}
+
+        def side_effect(*args, **kwargs):
+            update_patch = [
+                {'path': '/name', 'value': 'node1'},
+                {'path': '/driver_info/ssh_key_contents', 'value': 'random'},
+                {'path': '/driver_info/ssh_address', 'value': 'foo.bar'},
+                {'path': '/properties/memory_mb', 'value': '2048'},
+                {'path': '/properties/local_gb', 'value': '30'},
+                {'path': '/properties/cpu_arch', 'value': 'amd64'},
+                {'path': '/properties/cpus', 'value': '1'},
+                {'path': '/properties/capabilities', 'value': 'num_nics:6'},
+                {'path': '/driver_info/ssh_username', 'value': 'test'},
+                {'path': '/driver_info/ssh_virt_type', 'value': 'virsh'}]
+            for key in update_patch:
+                key['op'] = 'add'
+            self.assertThat(update_patch,
+                            matchers.MatchesSetwise(*(map(matchers.Equals,
+                                                          args[1]))))
+            return mock.Mock(uuid='abcdef')
+
+        ironic.node.update.side_effect = side_effect
+        nodes._update_or_register_ironic_node(None, node, node_map,
+                                              client=ironic)
+        ironic.node.update.assert_called_once_with('abcdef', mock.ANY)
+
     def test_register_ironic_node_int_values(self):
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
@@ -564,7 +620,8 @@ class TestPopulateNodeMapping(base.TestCase):
                                               [])
         client.node.list.return_value = [node1, node2]
         expected = {'mac': {'aaa': 'abcdef'},
-                    'pm_addr': {'10.0.1.2': 'fedcba'}}
+                    'pm_addr': {'10.0.1.2': 'fedcba'},
+                    'uuids': {'abcdef', 'fedcba'}}
         self.assertEqual(expected, nodes._populate_node_mapping(client))
 
     def test_populate_node_mapping_ironic_fake_pxe(self):
@@ -575,5 +632,6 @@ class TestPopulateNodeMapping(base.TestCase):
         node = ironic_node('abcdef', 'fake_pxe', None)
         client.node.list_ports.return_value = [ironic_port('aaa')]
         client.node.list.return_value = [node]
-        expected = {'mac': {'aaa': 'abcdef'}, 'pm_addr': {}}
+        expected = {'mac': {'aaa': 'abcdef'}, 'pm_addr': {},
+                    'uuids': {'abcdef'}}
         self.assertEqual(expected, nodes._populate_node_mapping(client))

@@ -239,8 +239,9 @@ def register_ironic_node(service_host, node, client=None, blocking=None):
                   "properties": properties,
                   "driver_info": driver_info}
 
-    if 'name' in node:
-        create_map.update({"name": six.text_type(node.get('name'))})
+    for field in ('name', 'uuid'):
+        if field in node:
+            create_map.update({field: six.text_type(node[field])})
 
     node_id = handler.unique_id_from_fields(node)
     LOG.debug('Registering node %s with ironic.', node_id)
@@ -266,7 +267,7 @@ def register_ironic_node(service_host, node, client=None, blocking=None):
 
 def _populate_node_mapping(client):
     LOG.debug('Populating list of registered nodes.')
-    node_map = {'mac': {}, 'pm_addr': {}}
+    node_map = {'mac': {}, 'pm_addr': {}, 'uuids': set()}
     nodes = client.node.list(detail=True)
     for node in nodes:
         for port in client.node.list_ports(node.uuid):
@@ -276,6 +277,8 @@ def _populate_node_mapping(client):
         unique_id = handler.unique_id_from_node(node)
         if unique_id:
             node_map['pm_addr'][unique_id] = node.uuid
+
+        node_map['uuids'].add(node.uuid)
 
     return node_map
 
@@ -294,6 +297,10 @@ def _get_node_id(node, handler, node_map):
             candidates.add(node_map['pm_addr'][unique_id])
         except KeyError:
             pass
+
+    uuid = node.get('uuid')
+    if uuid and uuid in node_map['uuids']:
+        candidates.add(uuid)
 
     if len(candidates) > 1:
         raise exception.InvalidNode('Several candidates found for the same '
@@ -329,6 +336,8 @@ def _update_or_register_ironic_node(service_host, node, node_map, client=None):
 
         node_patch = []
         for key, value in patched.items():
+            if key == 'uuid':
+                continue  # not needed during update
             node_patch.append({'path': key,
                                'value': six.text_type(value),
                                'op': 'add'})
