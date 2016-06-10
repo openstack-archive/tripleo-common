@@ -84,7 +84,13 @@ class StackUpdateManager(object):
         self.clear_breakpoints(resources['on_breakpoint'].keys())
 
     def do_interactive_update(self):
-        status = None
+        status, _ = self.get_status()
+
+        # wait for the stack-update to start
+        while status in ['COMPLETE', 'FAILED']:
+            status, _ = self.get_status()
+            time.sleep(5)
+
         while status not in ['COMPLETE', 'FAILED']:
             status, resources = self.get_status()
             print(status)
