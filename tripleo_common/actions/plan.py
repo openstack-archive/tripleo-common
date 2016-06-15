@@ -185,3 +185,39 @@ class DeletePlanAction(base.TripleOAction):
 
         if error_text:
             return mistral_workflow_utils.Result(error=error_text)
+
+
+class ListRolesAction(base.TripleOAction):
+    """Returns a deployment plan's roles
+
+    Parses overcloud.yaml and returns the Heat resources where
+    type = OS::Heat::ResourceGroup
+
+    :param container: name of the Swift container / plan name
+    :return: list of roles in the container's deployment plan
+    """
+
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        super(ListRolesAction, self).__init__()
+        self.container = container
+
+    def run(self):
+        try:
+            mc = self._get_workflow_client()
+            mistral_env = mc.environments.get(self.container)
+            template_name = mistral_env.variables['template']
+
+            oc = self._get_object_client()
+            resources = yaml.safe_load(
+                oc.get_object(self.container, template_name)[1])['resources']
+        except Exception as mistral_err:
+            err_msg = ("Error retrieving deployment plan: %s"
+                       % mistral_err)
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(None, err_msg)
+
+        roles = []
+        for resource, details in resources.items():
+            if details['type'] == constants.RESOURCE_GROUP_TYPE:
+                roles.append(resource)
+        return roles

@@ -67,6 +67,19 @@ topics:
             description:
 """
 
+RESOURCES_YAML_CONTENTS = """heat_template_version: 2016-04-08
+resources:
+  Controller:
+    type: OS::Heat::ResourceGroup
+  NotRoleContoller:
+    type: OS::Dummy::DummyGroup
+  Compute:
+    type: OS::Heat::ResourceGroup
+notresources:
+  BlockStorageDummy:
+    type: OS::Heat::ResourceGroup
+"""
+
 
 class CreateContainerActionTest(base.TestCase):
 
@@ -332,3 +345,53 @@ class DeletePlanActionTest(base.TestCase):
         swift.delete_container.assert_called_with(self.container_name)
 
         mistral.environments.delete.assert_called_with(self.container_name)
+
+
+class RoleListActionTest(base.TestCase):
+
+    def setUp(self):
+        super(RoleListActionTest, self).setUp()
+        self.container = 'overcloud'
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    def test_run(self, workflow_client_mock, get_obj_client_mock):
+
+        # setup mistral
+        mistral = mock.MagicMock()
+        env_item = mock.Mock()
+        mistral.environments.get.return_value = env_item
+        workflow_client_mock.return_value = mistral
+
+        env_item.variables = {
+            'template': 'overcloud.yaml',
+            'environments': [
+                {'path': 'overcloud-resource-registry-puppet.yaml'}
+            ]
+        }
+        env_item.name = self.container
+        env_item.description = None
+        env_item.created_at = '2016-06-30 15:51:09'
+        env_item.updated_at = None
+        env_item.scope = 'private'
+        env_item.id = '4b5e97d0-2f7a-4cdd-ab7c-71331cce477d'
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
+        get_obj_client_mock.return_value = swift
+
+        template_name = workflow_client_mock().environments.get(
+            self.container).variables['template']
+
+        # Test
+        action = plan.ListRolesAction()
+        result = action.run()
+
+        # verify
+        expected = ['Compute', 'Controller']
+        result.sort()
+        self.assertEqual(expected, result)
+        self.assertEqual('overcloud.yaml', template_name)
+        swift.get_object.assert_called_with(self.container, template_name)
