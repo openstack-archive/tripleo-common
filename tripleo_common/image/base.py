@@ -15,6 +15,7 @@
 
 import six
 
+import json
 import os
 import yaml
 
@@ -74,3 +75,8 @@ class BaseImageManager(object):
                 self.logger.error('No config file exists at: %s' % config_file)
                 raise IOError('No config file exists at: %s' % config_file)
         return [x for x in config_data.values()]
+
+    def json_output(self):
+        self.logger.info('Using config files: %s' % self.config_files)
+        disk_images = self.load_config_files(self.CONFIG_SECTIONS[0])
+        print(json.dumps(disk_images))

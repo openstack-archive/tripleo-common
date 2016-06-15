@@ -50,6 +50,10 @@ _opts = [
                 default=False,
                 help="""Skip build if cached image exists."""
                ),
+    cfg.BoolOpt('json-output',
+                default=False,
+                help="""Skip build and only output the configuration in a """
+                     """structured JSON format.""")
 ]
 CONF.register_group(image_opt_group)
 CONF.register_cli_opts(_opts, group=image_opt_group)
@@ -62,7 +66,10 @@ def main(argv=sys.argv):
     manager = ImageBuildManager(CONF.image.config_file,
                                 output_directory=CONF.image.output_directory,
                                 skip=CONF.image.skip)
-    manager.build()
+    if CONF.image.json_output:
+        manager.json_output()
+    else:
+        manager.build()
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
