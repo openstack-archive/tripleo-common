@@ -14,8 +14,10 @@
 # under the License.
 import mock
 
+from mistral.workflow import utils as mistral_workflow_utils
+from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common.actions import plan
-from tripleo_common import exception
 from tripleo_common.tests import base
 
 MAPPING_YAML_CONTENTS = """root_template: /path/to/overcloud.yaml
@@ -46,6 +48,20 @@ topics:
         environments:
           - file: /path/to/poc-custom-env.yaml
             title: Fake2
+            description:
+"""
+
+INVALID_MAPPING_CONTENTS = """
+root_environment: /path/to/environment.yaml
+topics:
+  - title: Fake Single Environment Group Configuration
+    description:
+    environment_groups:
+      - title:
+        description: Random fake string of text
+        environments:
+          - file: /path/to/network-isolation.json
+            title: Default Configuration
             description:
 """
 
@@ -86,8 +102,12 @@ class CreateContainerActionTest(base.TestCase):
 
         # Test
         action = plan.CreateContainerAction(self.container_name)
+        result = action.run()
 
-        self.assertRaises(exception.ContainerAlreadyExistsError, action.run)
+        error_str = ('A container with the name %s already'
+                     ' exists.') % self.container_name
+        self.assertEqual(result, mistral_workflow_utils.Result(
+            None, error_str))
 
 
 class CreatePlanActionTest(base.TestCase):
@@ -127,3 +147,62 @@ class CreatePlanActionTest(base.TestCase):
                        ' [{"path": "/path/to/environment.yaml"}], '
                        '"template": "/path/to/overcloud.yaml"}')
         )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    def test_run_with_invalid_yaml(self, get_obj_client_mock):
+
+        swift = mock.MagicMock()
+
+        swift.get_object.return_value = ({}, 'invalid: %')
+        get_obj_client_mock.return_value = swift
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = 'Error parsing the yaml file'
+        # don't bother checking the exact yaml error (it's long)
+        self.assertEqual(result.error.split(':')[0], error_str)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    def test_run_with_invalid_string(self, get_obj_client_mock):
+
+        swift = mock.MagicMock()
+
+        swift.get_object.return_value = ({}, 'this is just a string')
+        get_obj_client_mock.return_value = swift
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = 'Error occurred creating plan'
+        # don't bother checking the exact error (python versions different)
+        self.assertEqual(result.error.split(':')[0], error_str)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    def test_run_with_no_file(self, get_obj_client_mock):
+
+        swift = mock.MagicMock()
+
+        swift.get_object.side_effect = swiftexceptions.ClientException(
+            'atest2')
+        get_obj_client_mock.return_value = swift
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = 'File missing from container: atest2'
+        self.assertEqual(result.error, error_str)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    def test_run_with_missing_key(self, get_obj_client_mock):
+
+        swift = mock.MagicMock()
+
+        swift.get_object.return_value = ({}, INVALID_MAPPING_CONTENTS)
+        get_obj_client_mock.return_value = swift
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = "capabilities-map.yaml missing key: 'root_template'"
+        self.assertEqual(result.error, error_str)
