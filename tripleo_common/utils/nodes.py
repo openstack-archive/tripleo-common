@@ -232,8 +232,10 @@ def register_ironic_node(service_host, node, client=None, blocking=None):
                   if node.get(v) is not None}
 
     if 'capabilities' in node:
-        properties.update({"capabilities":
-                          six.text_type(node.get('capabilities'))})
+        caps = node['capabilities']
+        if isinstance(caps, dict):
+            caps = dict_to_capabilities(caps)
+        properties.update({"capabilities": six.text_type(caps)})
 
     create_map = {"driver": node["pm_type"],
                   "properties": properties,
@@ -533,3 +535,10 @@ def register_all_nodes_compat(service_host, *args, **kwargs):
 
     # TODO(d0ugal): Remove this shim once python-tripleoclient has been updated
     register_all_nodes(service_host, *args, **kwargs)
+
+
+def dict_to_capabilities(caps_dict):
+    """Convert a dictionary into a string with the capabilities syntax."""
+    return ','.join(["%s:%s" % (key, value)
+                     for key, value in caps_dict.items()
+                     if value is not None])

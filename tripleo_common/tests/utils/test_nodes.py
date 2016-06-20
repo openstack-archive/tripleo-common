@@ -365,6 +365,33 @@ class NodesTest(base.TestCase):
         ironic.port.create.assert_has_calls([port_call])
         ironic.node.set_power_state.assert_has_calls([power_off_call])
 
+    def test_register_all_nodes_caps_dict(self):
+        node_list = [self._get_node()]
+        node_list[0]['capabilities'] = {
+            'num_nics': 7
+        }
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:7"}
+        ironic = mock.MagicMock()
+        nodes.register_all_nodes('servicehost', node_list, client=ironic)
+        pxe_node_driver_info = {"ssh_address": "foo.bar",
+                                "ssh_username": "test",
+                                "ssh_key_contents": "random",
+                                "ssh_virt_type": "virsh"}
+        pxe_node = mock.call(driver="pxe_ssh",
+                             name='node1',
+                             driver_info=pxe_node_driver_info,
+                             properties=node_properties)
+        port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
+                              address='aaa')
+        power_off_call = mock.call(ironic.node.create.return_value.uuid, 'off')
+        ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
+        ironic.port.create.assert_has_calls([port_call])
+        ironic.node.set_power_state.assert_has_calls([power_off_call])
+
     def test_register_update(self):
         node = self._get_node()
         ironic = mock.MagicMock()
