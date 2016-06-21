@@ -14,7 +14,9 @@
 # under the License.
 import logging
 
+from glanceclient.v2 import client as glanceclient
 from heatclient.v1 import client as heatclient
+from ironicclient.v1 import client as ironicclient
 from mistral.actions import base
 from mistral import context
 from mistral.utils.openstack import keystone as keystone_utils
@@ -40,6 +42,28 @@ class TripleOAction(base.Action):
         }
 
         return swift_client.Connection(**kwargs)
+
+    def _get_baremetal_client(self):
+        ctx = context.ctx()
+
+        ironic_endpoint = keystone_utils.get_endpoint_for_project('ironic')
+
+        return ironicclient.Client(
+            ironic_endpoint.url,
+            token=ctx.auth_token,
+            region_name=ironic_endpoint.region,
+            os_ironic_api_version='1.11'
+        )
+
+    def _get_image_client(self):
+        ctx = context.ctx()
+
+        glance_endpoint = keystone_utils.get_endpoint_for_project('glance')
+        return glanceclient.Client(
+            glance_endpoint.url,
+            token=ctx.auth_token,
+            region_name=glance_endpoint.region
+        )
 
     def _get_orchestration_client(self):
         ctx = context.ctx()

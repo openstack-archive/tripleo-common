@@ -17,6 +17,7 @@ import collections
 import logging
 
 from glanceclient import exc as exceptions
+from glanceclient.v2.client import Client as real_glance_client
 
 LOG = logging.getLogger(__name__)
 
@@ -50,7 +51,23 @@ def _upload_file(glanceclient, name, path, disk_format, type_name,
                  skip_missing=False):
     image_tuple = collections.namedtuple('image', ['id'])
     try:
-        image = glanceclient.images.find(name=name, disk_format=disk_format)
+        if isinstance(glanceclient, real_glance_client):
+            images = glanceclient.images.list(name=name,
+                                              disk_format=disk_format)
+            image = None
+            for img in images:
+                if img['name'] == name and img['disk_format'] == disk_format:
+                    image = img
+            if not image:
+                raise exceptions.NotFound("No image found")
+        else:
+            # TODO(dprince) remove this
+            # This code expects the python-openstackclient version of
+            # "glanceclient" (which isn't pure python-glanceclient) and is
+            # here for backwards compat until python-tripleoclient starts
+            # using the Mistral API for this functionality.
+            image = glanceclient.images.find(name=name,
+                                             disk_format=disk_format)
     except exceptions.NotFound:
         if path:
             image = glanceclient.images.create(
