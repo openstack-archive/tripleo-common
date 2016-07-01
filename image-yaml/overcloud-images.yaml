@@ -1,6 +1,6 @@
 disk_images:
   -
-    imagename: overcloud
+    imagename: overcloud-full
     arch: amd64
     type: qcow2
     elements:
@@ -19,7 +19,7 @@ disk_images:
     options:
       - "--min-tmpfs 5"
   -
-    imagename: ramdisk_agent
+    imagename: ironic-python-agent
     arch: amd64
     type: qcow2
     elements:
