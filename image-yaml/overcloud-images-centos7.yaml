@@ -5,12 +5,12 @@ disk_images:
     type: qcow2
     distro: centos7
     elements:
-      - selinux-permissive delorean-repo epel
+      - selinux-permissive epel
   -
     imagename: ramdisk_agent
     arch: amd64
     type: qcow2
     distro: centos7
     elements:
-      - selinux-permissive delorean-repo epel
+      - selinux-permissive epel
 
