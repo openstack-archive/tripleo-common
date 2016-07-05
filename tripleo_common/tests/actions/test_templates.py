@@ -38,3 +38,50 @@ class UploadTemplatesActionTest(base.TestCase):
             constants.DEFAULT_TEMPLATES_PATH, 'test')
         mock_extract_tar.assert_called_once_with(
             mock_get_swift.return_value, 'test', 'tar-container')
+
+
+class ProcessTemplatesActionTest(base.TestCase):
+
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_run(self, mock_ctx, mock_get_object_client,
+                 mock_get_workflow_client, mock_get_template_contents,
+                 mock_process_multiple_environments_and_files):
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_get_object_client.return_value = mock.MagicMock(
+            url="http://test.com")
+
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        result = action.run()
+
+        # Verify the values we get out
+        self.assertEqual(result, {
+            'environment': {},
+            'files': {},
+            'stack_name': constants.DEFAULT_CONTAINER_NAME,
+            'template': {
+                'heat_template_version': '2016-04-30'
+            }
+        })

@@ -130,8 +130,7 @@ class UpdateCapabilitiesAction(base.TripleOAction):
             mistral_client.environments.update(**env_kwargs)
         except Exception as mistral_err:
             err_msg = (
-                "Error retrieving mistral "
-                "environment. %s" % mistral_err)
+                "Error retrieving mistral environment. %s" % mistral_err)
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(
                 None,
