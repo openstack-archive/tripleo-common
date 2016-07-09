@@ -14,12 +14,9 @@
 # limitations under the License.
 
 import collections
-import logging
 
 from glanceclient import exc as exceptions
 from glanceclient.v2.client import Client as real_glance_client
-
-LOG = logging.getLogger(__name__)
 
 
 def create_or_find_kernel_and_ramdisk(glanceclient, kernel_name, ramdisk_name,

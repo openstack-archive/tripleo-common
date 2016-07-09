@@ -12,8 +12,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import logging
-
 from glanceclient.v2 import client as glanceclient
 from heatclient.v1 import client as heatclient
 from ironicclient.v1 import client as ironicclient
@@ -22,9 +20,6 @@ from mistral import context
 from mistral.utils.openstack import keystone as keystone_utils
 from mistralclient.api import client as mistral_client
 from swiftclient import client as swift_client
-
-
-LOG = logging.getLogger(__name__)
 
 
 class TripleOAction(base.Action):
