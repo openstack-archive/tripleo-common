@@ -9,22 +9,90 @@ workflows:
     type: direct
     input:
       - container
+      - queue_name: tripleo
     tasks:
       create_plan:
         action: tripleo.create_plan container=<% $.container %>
+        on-success: set_status_success
+        on-error: set_status_failed
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(create_plan).result %>
+
+      set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_plan).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.create_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
 
   create_default_deployment_plan:
     type: direct
     input:
       - container
+      - queue_name: tripleo
     tasks:
       create_container:
         action: tripleo.create_container container=<% $.container %>
-        on-success:
-          - upload_to_container
+        on-success: upload_to_container
+        on-error: container_set_status_failed
+
       upload_to_container:
         action: tripleo.upload_default_templates container=<% $.container %>
-        on-success:
-          - create_plan
+        on-success: create_plan
+        on-error: upload_set_status_failed
+
       create_plan:
         action: tripleo.create_plan container=<% $.container %>
+        on-success: plan_set_status_success
+        on-error: plan_set_status_failed
+
+      plan_set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(create_plan).result %>
+
+      plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_plan).result %>
+
+      upload_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(upload_to_container).result %>
+
+      container_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_container).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.create_default_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
