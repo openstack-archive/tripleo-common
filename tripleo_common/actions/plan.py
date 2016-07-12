@@ -16,9 +16,11 @@ import json
 import logging
 import yaml
 
+from mistral.workflow import utils as mistral_workflow_utils
+from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common.actions import base
 from tripleo_common import constants
-from tripleo_common import exception
 
 LOG = logging.getLogger(__name__)
 
@@ -38,7 +40,12 @@ class CreateContainerAction(base.TripleOAction):
         # checks to see if a container with that name exists
         if self.container in [container["name"] for container in
                               oc.get_account()[1]]:
-            raise exception.ContainerAlreadyExistsError(name=self.container)
+            result_string = ("A container with the name %s already"
+                             " exists.") % self.container
+            return mistral_workflow_utils.Result(
+                None,
+                result_string
+            )
         oc.put_container(self.container, headers=default_container_headers)
 
 
@@ -54,14 +61,30 @@ class CreatePlanAction(base.TripleOAction):
             'name': self.container,
         }
         env_vars = {}
-        # parses capabilities to get root_template, root_environment
-        mapfile = yaml.load(
-            oc.get_object(self.container, 'capabilities-map.yaml')[1])
-        if mapfile['root_template']:
-            env_vars['template'] = mapfile['root_template']
-        if mapfile['root_environment']:
-            env_vars['environments'] = [{'path': mapfile['root_environment']}]
+        error_text = None
+        try:
+            # parses capabilities to get root_template, root_environment
+            mapfile = yaml.safe_load(
+                oc.get_object(self.container, 'capabilities-map.yaml')[1])
 
-        env_data['variables'] = json.dumps(env_vars, sort_keys=True,)
-        # creates environment
-        self._get_workflow_client().environments.create(**env_data)
+            if mapfile['root_template']:
+                env_vars['template'] = mapfile['root_template']
+            if mapfile['root_environment']:
+                env_vars['environments'] = [
+                    {'path': mapfile['root_environment']}]
+
+            env_data['variables'] = json.dumps(env_vars, sort_keys=True,)
+            # creates environment
+            self._get_workflow_client().environments.create(**env_data)
+        except yaml.YAMLError as yaml_err:
+            error_text = "Error parsing the yaml file: %s" % yaml_err
+        except swiftexceptions.ClientException as obj_err:
+            error_text = "File missing from container: %s" % obj_err
+        except KeyError as key_err:
+            error_text = ("capabilities-map.yaml missing key: "
+                          "%s" % key_err)
+        except Exception as err:
+            error_text = "Error occurred creating plan: %s" % err
+
+        if error_text:
+            return mistral_workflow_utils.Result(error=error_text)
