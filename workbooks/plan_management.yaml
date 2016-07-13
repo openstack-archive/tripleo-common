@@ -6,7 +6,6 @@ description: TripleO Overcloud Deployment Workflows v1
 workflows:
 
   create_deployment_plan:
-    type: direct
     input:
       - container
       - queue_name: tripleo
@@ -41,7 +40,6 @@ workflows:
                 execution: <% execution() %>
 
   create_default_deployment_plan:
-    type: direct
     input:
       - container
       - queue_name: tripleo
