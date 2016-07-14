@@ -80,7 +80,6 @@ workflows:
           messages:
             body:
               type: tripleo.baremetal.v1.register_or_update
-              execution_id: <% execution().id %>
               payload:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
@@ -119,7 +118,6 @@ workflows:
           messages:
             body:
               type: tripleo.baremetal.v1.provide
-              execution_id: <% execution().id %>
               payload:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
@@ -163,7 +161,6 @@ workflows:
           messages:
             body:
               type: tripleo.baremetal.v1.provide_manageable_nodes
-              execution_id: <% execution().id %>
               payload:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
@@ -209,7 +206,6 @@ workflows:
           messages:
             body:
               type: tripleo.baremetal.v1.introspect
-              execution_id: <% execution().id %>
               payload:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
@@ -264,7 +260,6 @@ workflows:
           messages:
             body:
               type: tripleo.baremetal.v1.introspect_manageable_nodes
-              execution_id: <% execution().id %>
               payload:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
