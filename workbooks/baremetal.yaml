@@ -27,9 +27,9 @@ workflows:
           count: 400
           continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
 
-  # Take nodes JSON and create nodes in a "manageable" state
   register_or_update:
     type: direct
+    description: Take nodes JSON and create nodes in a "manageable" state
 
     input:
      - nodes_json
@@ -86,9 +86,9 @@ workflows:
                 execution: <% execution() %>
                 registered_nodes: <% $.registered_nodes or [] %>
 
-  # Take a list of nodes and move them to "available"
   provide:
     type: direct
+    description: Take a list of nodes and move them to "available"
 
     input:
       - node_uuids
@@ -123,9 +123,9 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
 
-  # Provide all nodes in a 'manageable' state.
   provide_manageable_nodes:
     type: direct
+    description: Provide all nodes in a 'manageable' state.
 
     input:
       - queue_name: tripleo
@@ -166,9 +166,9 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
 
-  # Take a list of nodes and move them through introspection.
   introspect:
     type: direct
+    description: Take a list of nodes and move them through introspection.
 
     input:
       - node_uuids
@@ -213,9 +213,9 @@ workflows:
                 introspected_nodes: <% $.get('introspected_nodes', []) %>
 
 
-  # Introspect all nodes in a 'manageable' state.
   introspect_manageable_nodes:
     type: direct
+    description: Introspect all nodes in a 'manageable' state.
 
     input:
       - queue_name: tripleo
