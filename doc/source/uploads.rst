@@ -6,7 +6,8 @@ Image uploads
    :glob:
    :maxdepth: 2
 
-   image/upload.rst
+   image/build
+   image/upload
 
 
 YAML file format

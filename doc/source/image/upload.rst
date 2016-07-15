@@ -8,7 +8,7 @@ Call the image upload manager::
     manager.upload()
 
 
-.. autoclass:: tripleo_common.image.build.ImageUploadManager
+.. autoclass:: tripleo_common.image.image_uploader.ImageUploadManager
    :members:
 
 Multiple config files
