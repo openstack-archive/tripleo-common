@@ -1,6 +1,8 @@
 FROM centos:7
 MAINTAINER "Jeff Peeler" <jpeeler@redhat.com>
 
+ARG OPENSTACK_RELEASE
+LABEL openstack_release=$OPENSTACK_RELEASE
 ENV container docker
 ENV DOCKER_HOST unix:///var/run/docker.sock
 

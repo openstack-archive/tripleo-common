@@ -2,7 +2,14 @@
 
 # Doing this in a separate script lets us do it step by step with a single docker layer.
 
-yum -y install http://rdoproject.org/repos/openstack-liberty/rdo-release-liberty.rpm
+if [ -z "$OPENSTACK_RELEASE" ]; then
+    echo "Please, set OPENSTACK_RELEASE to the desired openstack version."
+    echo "You can run the build command as: "
+    echo "OPENSTACK_RELEASE=mitaka docker build -t tripleoupstream/heat-docker-agents:\$OPENSTACK_RELEASE --build-arg OPENSTACK_RELEASE=\$OPENSTACK_RELEASE ."
+    exit 1
+fi
+
+yum -y install http://rdoproject.org/repos/openstack-$OPENSTACK_RELEASE/rdo-release-$OPENSTACK_RELEASE.rpm
 yum update -y
 yum install -y \
         initscripts \
