@@ -33,18 +33,35 @@ yum install -y \
         puppet \
         python-ipaddr
 
-# openstack packages
-yum install -y \
-	openstack-ceilometer-compute \
-	python-nova \
-	openstack-nova-common \
-	openstack-neutron \
-	libvirt-daemon-config-nwfilter \
-	libvirt-daemon-kvm \
-	openstack-nova-compute \
-	openstack-neutron-ml2 \
-	openstack-neutron-openvswitch
+# NOTE(flaper87): openstack packages
+# We need these packages just to install the config files.
+# Instead of installing the entire package, we'll extract the
+# config files from the RPM and put them in place. This step will
+# save us ~500 MB in the final size of the image.
+yum install -y --downloadonly --downloaddir=/tmp/packages \
+        openstack-ceilometer-compute \
+        python-nova \
+        openstack-nova-common \
+        openstack-neutron \
+        libvirt-daemon-config-nwfilter \
+        libvirt-daemon-kvm \
+        openstack-nova-compute \
+        openstack-neutron-ml2 \
+        openstack-neutron-openvswitch
 
+CUR=`pwd`
+cd /tmp/packages
+for f in $(ls openstack-*.rpm);
+do
+    rpm2cpio $f | cpio -ivd ./etc/*
+
+    if [ -d 'etc' ];
+    then
+        cp -r etc/* /etc
+        rm -Rf etc
+    fi
+done
+cd $CUR && rm -Rf /tmp/packages
 
 # Also note gcc, python-devel, and libyaml-devel are required for
 # docker-compose. It would be nice to package that or use somethinge else.
