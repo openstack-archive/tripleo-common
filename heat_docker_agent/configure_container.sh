@@ -12,9 +12,6 @@ yum install -y \
 
 # We shouldn't need python-zaqarclient here for os-collect-config.
 # The rpm should pull it in but it's not doing that..
-# Also note gcc and python-pip, python-devel, and libyaml-devel are
-# required for docker-compose.  It would be nice to package that or use
-# somethinge else.
 yum install -y \
         openstack-tripleo-puppet-elements \
         openstack-tripleo-image-elements \
@@ -26,10 +23,6 @@ yum install -y \
         os-net-config \
         jq \
         python-zaqarclient \
-        gcc \
-        libyaml-devel \
-        python-devel \
-        python-pip \
         openvswitch \
         puppet \
         python-ipaddr
@@ -46,17 +39,33 @@ yum install -y \
 	openstack-neutron-ml2 \
 	openstack-neutron-openvswitch
 
+
+# Also note gcc, python-devel, and libyaml-devel are required for
+# docker-compose. It would be nice to package that or use somethinge else.
+# Working on getting this into centos:7
+# https://admin.fedoraproject.org/pkgdb/package/rpms/docker-compose/
+yum install -y \
+    gcc \
+    libyaml-devel \
+    python-devel \
+    python-pip \
+    docker
+
 # heat-config-docker-compose
 # TODO: fix! yet another requirement for docker-compose
 pip install dpath functools32
-yum install -y \
-        docker
-
 
 pip install -U docker-compose
 
-yum clean all
+# NOTE(flaper87): We have to use `rpm --nodeps` because some packages that we
+# depend on happen to depend on python-devel, which we don't need for this
+# container.
+rpm -e --nodeps python-devel
 
+# NOTE(flaper87): Remove unnecessary packages
+yum remove gcc "*-devel"
+yum autoremove -y
+yum clean all
 
 # Heat config setup.
 mkdir -p /var/lib/heat-config/hooks
