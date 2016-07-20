@@ -3,8 +3,7 @@
 # Doing this in a separate script lets us do it step by step with a single docker layer.
 
 yum -y install http://rdoproject.org/repos/openstack-liberty/rdo-release-liberty.rpm
-yum update -y \
-    && yum clean all
+yum update -y
 yum install -y \
         initscripts \
         dhcp-client \
