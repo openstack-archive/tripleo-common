@@ -7,7 +7,7 @@ ENV DOCKER_HOST unix:///var/run/docker.sock
 # Just use a script to configure the agent container.  This way we can
 # Split up the operations and do it all in a single layer.
 ADD configure_container.sh /tmp/
-RUN /tmp/configure_container.sh
+RUN /tmp/configure_container.sh && rm /tmp/configure_container.sh
 
 # This is a script which:
 # - Copies the existing network interface configs from the host to the agent.
