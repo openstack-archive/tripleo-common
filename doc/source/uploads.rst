@@ -18,3 +18,4 @@ YAML file format
          uploader: docker
          pull_source: docker.io
          push_destination: localhost:8787
+
