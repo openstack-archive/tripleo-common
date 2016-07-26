@@ -51,7 +51,7 @@ yum install -y --downloadonly --downloaddir=/tmp/packages \
 
 CUR=`pwd`
 cd /tmp/packages
-for f in $(ls openstack-*.rpm);
+for f in $(ls *.rpm);
 do
     rpm2cpio $f | cpio -ivd ./etc/*
 
