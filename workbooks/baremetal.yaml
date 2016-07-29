@@ -37,6 +37,7 @@ workflows:
      - queue_name: tripleo
      - kernel_name: null
      - ramdisk_name: null
+     - instance_boot_option: local
 
     tasks:
       register_or_update_nodes:
@@ -48,6 +49,7 @@ workflows:
            remove: <% $.remove %>
            kernel_name: <% $.kernel_name %>
            ramdisk_name: <% $.ramdisk_name %>
+           instance_boot_option: <% $.instance_boot_option %>
         publish:
           registered_nodes: <% task(register_or_update_nodes).result %>
 
