@@ -38,7 +38,6 @@ class GetCapabilitiesAction(base.TripleOAction):
         self.container = container
 
     def run(self):
-        environments = {}
         try:
             map_file = self._get_object_client().get_object(
                 self.container, 'capabilities-map.yaml')
@@ -51,11 +50,6 @@ class GetCapabilitiesAction(base.TripleOAction):
                 None,
                 err_msg
             )
-        # identify all environments
-        for topic in capabilities['topics']:
-            for eg in topic['environment_groups']:
-                for env in eg['environments']:
-                    environments[env['file']] = {'enabled': False}
         try:
             mistral_client = self._get_workflow_client()
             mistral_env = mistral_client.environments.get(self.container)
@@ -71,13 +65,22 @@ class GetCapabilitiesAction(base.TripleOAction):
         selected_envs = [item['path'] for item in
                          mistral_env.variables['environments']
                          if 'path' in item]
-        for item in selected_envs:
-            if item in environments:
-                environments[item]['enabled'] = True
-            else:
-                environments[item] = {'enabled': False}
 
-        return environments
+        data_to_return = {}
+        capabilities.pop('root_environment')
+        capabilities.pop('root_template')
+
+        for topic in capabilities['topics']:
+            title = topic.get('title', '_title_holder')
+            data_to_return[title] = topic
+            for eg in topic['environment_groups']:
+                for env in eg['environments']:
+                    if selected_envs and env.get('file') in selected_envs:
+                        env['enabled'] = True
+                    else:
+                        env['enabled'] = False
+
+        return data_to_return
 
 
 class UpdateCapabilitiesAction(base.TripleOAction):

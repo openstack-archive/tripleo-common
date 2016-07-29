@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import mock
+import yaml
 
 from mistral.workflow import utils as mistral_workflow_utils
 
@@ -49,6 +50,58 @@ topics:
           - file: /path/to/poc-custom-env.yaml
             title: Fake2
             description:
+"""
+
+MAPPING_JSON_CONTENTS = """{
+  "Fake Multiple Environment Group Configuration": {
+    "description": null,
+    "environment_groups": [
+      {
+        "description": "Random fake string of text",
+        "environments": [
+          {
+            "description": "Random fake string of text",
+            "enabled": false,
+            "file": "/path/to/ceph-storage-env.yaml",
+            "title": "Fake1"
+          }
+        ],
+        "title": "Random Fake 1"
+      },
+      {
+        "description": null,
+        "environments": [
+          {
+            "description": null,
+            "enabled": false,
+            "file": "/path/to/poc-custom-env.yaml",
+            "title": "Fake2"
+          }
+        ],
+        "title": "Random Fake 2"
+      }
+    ],
+    "title": "Fake Multiple Environment Group Configuration"
+  },
+ "Fake Single Environment Group Configuration": {
+   "description": null,
+   "environment_groups": [
+     {
+       "description": "Random fake string of text",
+       "environments": [
+         {
+           "description": null,
+           "enabled": false,
+           "file": "/path/to/network-isolation.json",
+           "title": "Default Configuration"
+         }
+     ],
+     "title": null
+    }
+  ],
+  "title": "Fake Single Environment Group Configuration"
+  }
+}
 """
 
 
@@ -109,11 +162,8 @@ class GetCapabilitiesActionTest(base.TestCase):
         get_workflow_client_mock.return_value = mistral
 
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)
-        self.assertEqual({
-            '/path/to/ceph-storage-env.yaml': {'enabled': False},
-            '/path/to/network-isolation.json': {'enabled': False},
-            '/path/to/poc-custom-env.yaml': {'enabled': False}},
-            action.run())
+        yaml_mapping = yaml.safe_load(MAPPING_JSON_CONTENTS)
+        self.assertEqual(yaml_mapping, action.run())
 
 
 class UpdateCapabilitiesActionTest(base.TestCase):
