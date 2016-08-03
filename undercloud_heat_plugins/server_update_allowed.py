@@ -25,6 +25,12 @@ class ServerUpdateAllowed(server.Server):
                                      after_props, before_props):
         return False
 
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        prop_diff.pop(self.IMAGE, None)
+        return super(ServerUpdateAllowed, self).handle_update(json_snippet,
+                                                              tmpl_diff,
+                                                              prop_diff)
+
 
 def resource_mapping():
     return {'OS::Nova::Server': ServerUpdateAllowed}
