@@ -20,6 +20,7 @@ from mistral.actions import base
 from mistral import context
 from mistral.utils.openstack import keystone as keystone_utils
 from mistralclient.api import client as mistral_client
+from novaclient.client import Client as nova_client
 from swiftclient import client as swift_client
 
 
@@ -109,3 +110,14 @@ class TripleOAction(base.Action):
                                    mistral_url=mistral_endpoint.url)
 
         return mc
+
+    def _get_compute_client(self):
+        ctx = context.ctx()
+        keystone_endpoint = keystone_utils.get_endpoint_for_project('keystone')
+        nova_endpoint = keystone_utils.get_endpoint_for_project('nova')
+
+        nc = nova_client(2, username=ctx.user_name, auth_token=ctx.auth_token,
+                         auth_url=keystone_endpoint.url, url=nova_endpoint.url,
+                         project_id=ctx.project_id)
+        nc.client.management_url = nova_endpoint.url
+        return nc

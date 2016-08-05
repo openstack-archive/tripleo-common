@@ -380,3 +380,69 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
 
+
+  tag_node:
+    description: Tag a node with a role
+    input:
+      - node_uuid
+      - role
+      - queue_name: tripleo
+
+    task-defaults:
+      on-error: send_message
+
+    tasks:
+
+      update_node:
+        on-success: send_message
+        action: tripleo.baremetal.update_node_capability node_uuid=<% $.node_uuid %> capability='profile' value=<% $.role %>
+        publish:
+          message: <% task(update_node).result %>
+          status: SUCCESS
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.tag_node
+              payload:
+                status: <% $.get('status', 'FAILED') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
+
+  tag_nodes:
+    description: Runs the tag_node workflow in a loop
+    input:
+      - node_uuids
+      - role
+      - queue_name: tripleo
+
+    tasks:
+
+      tag_nodes:
+        with-items: node_uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.tag_node node_uuid=<% $.node_uuid %> role=<% $.role %>
+        concurrency: 1
+        on-success: update_role_parameters
+
+      update_role_parameters:
+        on-success: send_message
+        action: tripleo.parameters.update_role role=<% $.role %>
+        publish:
+          message: <% task(update_role_parameters).result %>
+          status: SUCCESS
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.tag_nodes
+              payload:
+                status: <% $.get('status', 'FAILED') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>

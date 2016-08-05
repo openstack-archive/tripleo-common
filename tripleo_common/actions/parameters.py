@@ -31,6 +31,7 @@ import logging
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
+from tripleo_common.utils import parameters
 
 LOG = logging.getLogger(__name__)
 
@@ -104,3 +105,18 @@ class UpdateParametersAction(base.TripleOAction):
         }
         wc.environments.update(**env_kwargs)
         return wf_env
+
+
+class UpdateRoleParametersAction(UpdateParametersAction):
+    """Updates role related parameters in Mistral Environment ."""
+
+    def __init__(self, role):
+        super(UpdateRoleParametersAction, self).__init__(parameters=None)
+        self.role = role
+
+    def run(self):
+        baremetal_client = self._get_baremetal_client()
+        compute_client = self._get_compute_client()
+        self.parameters = parameters.set_count_and_flavor_params(
+            self.role, baremetal_client, compute_client)
+        return super(UpdateRoleParametersAction, self).run()

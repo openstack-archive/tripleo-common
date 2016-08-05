@@ -551,3 +551,32 @@ def capabilities_to_dict(caps):
     if isinstance(caps, dict):
         return caps
     return dict([key.split(':', 1) for key in caps.split(',')])
+
+
+def _get_capability_patch(node, capability, value):
+    """Return a JSON patch updating a node capability"""
+    capabilities = node.properties.get('capabilities')
+    capabilities_dict = capabilities_to_dict(capabilities)
+
+    capabilities_dict[capability] = value
+    capabilities = dict_to_capabilities(capabilities_dict)
+
+    return [{
+        "op": "replace",
+        "path": "/properties/capabilities",
+        "value": capabilities
+    }]
+
+
+def update_node_capability(node_uuid, capability, value, client):
+    """Update a node's capability
+
+    :param node_uuid: The UUID of the node
+    :param capability: The name of the capability to update
+    :param value: The value to update token
+    :param client: An Ironic client object
+    :return: Result of updating the node
+    """
+    node = client.node.get(node_uuid)
+    patch = _get_capability_patch(node, capability, value)
+    return client.node.update(node_uuid, patch)

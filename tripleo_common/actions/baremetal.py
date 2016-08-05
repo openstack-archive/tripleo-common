@@ -257,3 +257,36 @@ class ConfigureRootDeviceAction(base.TripleOAction):
         LOG.info('Updated root device for node %(node)s, new device '
                  'is %(dev)s, new local_gb is %(local_gb)d',
                  {'node': node.uuid, 'dev': root_device, 'local_gb': new_size})
+
+
+class UpdateNodeCapability(base.TripleOAction):
+    """Update a node's capability
+
+    :param node_uuid: The UUID of the node
+    :param capability: The name of the capability to update
+    :param value: The value to update token
+    :return: Result of updating the node
+    """
+
+    def __init__(self, node_uuid, capability, value):
+        super(UpdateNodeCapability, self).__init__()
+        self.node_uuid = node_uuid
+        self.capability = capability
+        self.value = value
+
+    def run(self):
+        baremetal_client = self._get_baremetal_client()
+
+        try:
+            return nodes.update_node_capability(
+                self.node_uuid,
+                self.capability,
+                self.value,
+                baremetal_client
+            )
+        except Exception as err:
+            LOG.exception("Error updating node capability in ironic.")
+            return mistral_workflow_utils.Result(
+                "",
+                "%s: %s" % (type(err).__name__, str(err))
+            )
