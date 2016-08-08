@@ -80,6 +80,10 @@ class DibImageBuilder(ImageBuilder):
             cmd.append('--docker-target')
             cmd.append(docker_target)
 
+        environment = extra_options.get('environment')
+        if environment:
+            os.environ.update(environment)
+
         if node_dist:
             cmd.append(node_dist)
 

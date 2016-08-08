@@ -44,7 +44,7 @@ class TestImageBuildManager(base.TestCase):
         mock_builder.build_image.assert_called_with(
             './overcloud.qcow2', 'qcow2', 'some_awesome_os', 'amd64',
             ['image_element'], [], [],
-            {'skip_base': False, 'docker_target': None})
+            {'skip_base': False, 'docker_target': None, 'environment': {}})
 
     @mock.patch.object(ImageBuilder, 'get_builder')
     @mock.patch('tripleo_common.image.base.BaseImageManager.load_config_files',
