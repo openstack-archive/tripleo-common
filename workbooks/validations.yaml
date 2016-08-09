@@ -1,0 +1,39 @@
+---
+version: '2.0'
+name: tripleo.validations.v1
+description: TripleO Validations Workflows v1
+
+workflows:
+
+  copy_ssh_key:
+    type: direct
+    input:
+      - overcloud_admin: heat-admin
+      - queue_name: tripleo
+    tasks:
+      get_servers:
+        action: nova.servers_list
+        on-success: get_pubkey
+        publish:
+          servers: <% task(get_servers).result._info %>
+
+      get_pubkey:
+        action: tripleo.validations.get_pubkey
+        on-success: deploy_ssh_key
+        publish:
+          pubkey: <% task(get_pubkey).result %>
+
+      deploy_ssh_key:
+        workflow: tripleo.deployment.v1.deploy_on_server
+        with-items: server in <% $.servers %>
+        input:
+          server_name: <% $.server.name %>
+          server_uuid: <% $.server.id %>
+          config: |
+            #!/bin/bash
+            if ! grep "<% $.pubkey %>" /home/<% $.overcloud_admin %>/.ssh/authorized_keys; then
+              echo "<% $.pubkey %>" >> /home/<% $.overcloud_admin %>/.ssh/authorized_keys
+            fi
+          config_name: copy_ssh_key
+          group: script
+          queue_name: <% $.queue_name %>

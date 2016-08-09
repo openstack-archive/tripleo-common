@@ -28,3 +28,20 @@ code to accomplish these tasks. ::
     # make sure the new actions got loaded
     mistral action-list | grep tripleo
 
+Validations
+-----------
+
+Prerequisites
+~~~~~~~~~~~~~
+
+If you haven't installed the undercloud with the ``enable_validations`` set to
+true, you will have to prepare your undercloud to run the validations::
+
+    $ sudo pip install git+https://git.openstack.org/openstack/tripleo-validations
+    $ sudo yum install ansible
+    $ sudo useradd validations
+
+Finally you need to generate an SSH keypair for the validation user and copy
+it to the overcloud's authorized_keys files::
+
+    $ mistral execution-create tripleo.validations.v1.copy_ssh_key
