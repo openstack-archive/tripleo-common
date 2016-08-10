@@ -15,8 +15,10 @@
 import glob
 import logging
 import os
+import tempfile
 import yaml
 
+from mistral import context
 from oslo_concurrency import processutils
 
 from tripleo_common import constants
@@ -71,8 +73,43 @@ def get_remaining_metadata(validation):
         return dict()
 
 
+def find_validation(validation):
+    return '{}/{}.yaml'.format(constants.DEFAULT_VALIDATIONS_PATH, validation)
+
+
+def run_validation(validation, identity_file):
+    ctx = context.ctx()
+    return processutils.execute(
+        '/usr/bin/sudo', '-u', 'validations',
+        'OS_AUTH_URL={}'.format(ctx.auth_uri),
+        'OS_USERNAME={}'.format(ctx.user_name),
+        'OS_AUTH_TOKEN={}'.format(ctx.auth_token),
+        'OS_TENANT_NAME={}'.format(ctx.project_name),
+        '/usr/bin/run-validation',
+        find_validation(validation),
+        identity_file
+    )
+
+
 def create_ssh_keypair(key_path):
     """Create SSH keypair"""
     LOG.debug('Creating SSH keypair at %s', key_path)
     processutils.execute('/usr/bin/ssh-keygen', '-t', 'rsa', '-N', '',
                          '-f', key_path, '-C', 'tripleo-validations')
+
+
+def write_identity_file(key):
+    """Write the SSH private key to disk"""
+    fd, path = tempfile.mkstemp(prefix='validations_identity_')
+    LOG.debug('Writing SSH key to disk at %s', path)
+    with os.fdopen(fd, 'w') as tmp:
+        tmp.write(key)
+    processutils.execute('/usr/bin/sudo', '/usr/bin/chown', 'validations:',
+                         path)
+    return path
+
+
+def cleanup_identity_file(path):
+    """Write the SSH private key to disk"""
+    LOG.debug('Cleaning up identity file at %s', path)
+    processutils.execute('/usr/bin/sudo', '/usr/bin/rm', '-f', path)

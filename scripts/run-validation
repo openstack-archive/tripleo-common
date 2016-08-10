@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+VALIDATION_FILE=$1
+IDENTITY_FILE=$2
+
+if [[ -z "$VALIDATION_FILE" ]]; then
+    echo "Missing required validation file"
+    exit 1
+fi
+
+if [[ ! -r "$VALIDATION_FILE" ]]; then
+    echo "Can not find validation at $VALIDATION_FILE"
+    exit 1
+fi
+
+if [[ -z "$IDENTITY_FILE" ]]; then
+    echo "Missing required identity file"
+    exit 1
+fi
+
+# Make sure ssh is not asking interactively for hosts it can't check the key
+# authenticity
+export ANSIBLE_HOST_KEY_CHECKING=False
+
+export ANSIBLE_PRIVATE_KEY_FILE=$IDENTITY_FILE
+
+export ANSIBLE_INVENTORY=$(which tripleo-ansible-inventory)
+
+ansible-playbook $VALIDATION_FILE

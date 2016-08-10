@@ -15,6 +15,9 @@
 import collections
 import mock
 
+from mistral.workflow import utils as mistral_workflow_utils
+from oslo_concurrency.processutils import ProcessExecutionError
+
 from tripleo_common.actions import validations
 from tripleo_common.tests import base
 from tripleo_common.tests.utils import test_validations
@@ -88,3 +91,65 @@ class ListGroupsActionTest(base.TestCase):
         action = validations.ListGroupsAction()
         self.assertEqual(set(['group1', 'group2']), action.run())
         mock_load_validations.assert_called_once_with()
+
+
+class RunValidationActionTest(base.TestCase):
+
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    @mock.patch('tripleo_common.utils.validations.write_identity_file')
+    @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
+    @mock.patch('tripleo_common.utils.validations.run_validation')
+    def test_run(self, mock_run_validation, mock_cleanup_identity_file,
+                 mock_write_identity_file, get_workflow_client_mock):
+        mistral = mock.MagicMock()
+        get_workflow_client_mock.return_value = mistral
+        environment = collections.namedtuple('environment', ['variables'])
+        mistral.environments.get.return_value = environment(variables={
+            'private_key': 'shhhh'
+        })
+        mock_write_identity_file.return_value = 'identity_file_path'
+        mock_run_validation.return_value = 'output', 'error'
+        action = validations.RunValidationAction('validation')
+        expected = mistral_workflow_utils.Result(
+            data={
+                'stdout': 'output',
+                'stderr': 'error'
+            },
+            error=None)
+        self.assertEqual(expected, action.run())
+        mock_write_identity_file.assert_called_once_with('shhhh')
+        mock_run_validation.assert_called_once_with('validation',
+                                                    'identity_file_path')
+        mock_cleanup_identity_file.assert_called_once_with(
+            'identity_file_path')
+
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    @mock.patch('tripleo_common.utils.validations.write_identity_file')
+    @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
+    @mock.patch('tripleo_common.utils.validations.run_validation')
+    def test_run_failing(self, mock_run_validation, mock_cleanup_identity_file,
+                         mock_write_identity_file, get_workflow_client_mock):
+        mistral = mock.MagicMock()
+        get_workflow_client_mock.return_value = mistral
+        environment = collections.namedtuple('environment', ['variables'])
+        mistral.environments.get.return_value = environment(variables={
+            'private_key': 'shhhh'
+        })
+        mock_write_identity_file.return_value = 'identity_file_path'
+        mock_run_validation.side_effect = ProcessExecutionError(
+            stdout='output', stderr='error')
+        action = validations.RunValidationAction('validation')
+        expected = mistral_workflow_utils.Result(
+            data=None,
+            error={
+                'stdout': 'output',
+                'stderr': 'error'
+            })
+        self.assertEqual(expected, action.run())
+        mock_write_identity_file.assert_called_once_with('shhhh')
+        mock_run_validation.assert_called_once_with('validation',
+                                                    'identity_file_path')
+        mock_cleanup_identity_file.assert_called_once_with(
+            'identity_file_path')

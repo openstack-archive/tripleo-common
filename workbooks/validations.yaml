@@ -5,6 +5,157 @@ description: TripleO Validations Workflows v1
 
 workflows:
 
+  run_validation:
+    type: direct
+    input:
+      - validation_name
+      - queue_name: tripleo
+
+    tasks:
+
+      notify_running:
+        on-complete: run_validation
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.run_validation
+              payload:
+                validation_name: <% $.validation_name %>
+                status: RUNNING
+                execution: <% execution() %>
+
+      run_validation:
+        on-success: send_message
+        on-error: set_status_failed
+        action: tripleo.validations.run_validation validation=<% $.validation_name %>
+        publish:
+          status: SUCCESS
+          stdout: <% task(run_validation).result.stdout %>
+          stderr: <% task(run_validation).result.stderr %>
+
+      set_status_failed:
+        on-complete: send_message
+        publish:
+          status: FAILED
+          stdout: <% task(run_validation).result.stdout %>
+          stderr: <% task(run_validation).result.stderr %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.run_validation
+              payload:
+                validation_name: <% $.validation_name %>
+                status: <% $.get('status', 'SUCCESS') %>
+                stdout: <% $.stdout %>
+                stderr: <% $.stderr %>
+                execution: <% execution() %>
+
+  run_validations:
+    type: direct
+    input:
+      - validation_names: []
+      - queue_name: tripleo
+
+    tasks:
+
+      notify_running:
+        on-complete: run_validations
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.run_validations
+              payload:
+                validation_names: <% $.validation_names %>
+                status: RUNNING
+                execution: <% execution() %>
+
+      run_validations:
+        on-success: send_message
+        on-error: set_status_failed
+        workflow: tripleo.validations.v1.run_validation validation_name=<% $.validation %> queue_name=<% $.queue_name %>
+        with-items: validation in <% $.validation_names %>
+        publish:
+          status: SUCCESS
+
+      set_status_failed:
+        on-complete: send_message
+        publish:
+          status: FAILED
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.run_validations
+              payload:
+                validation_names: <% $.validation_names %>
+                status: <% $.get('status', 'SUCCESS') %>
+                execution: <% execution() %>
+
+  run_groups:
+    type: direct
+    input:
+      - group_names: []
+      - queue_name: tripleo
+
+    tasks:
+
+      find_validations:
+        on-success: notify_running
+        action: tripleo.list_validations groups=<% $.group_names %>
+        publish:
+          validations: <% task(find_validations).result %>
+
+      notify_running:
+        on-complete: run_validation_group
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.run_validations
+              payload:
+                group_names: <% $.group_names %>
+                validation_names: <% $.validations.id %>
+                status: RUNNING
+                execution: <% execution() %>
+
+      run_validation_group:
+        on-success: send_message
+        on-error: set_status_failed
+        workflow: tripleo.validations.v1.run_validation validation_name=<% $.validation %> queue_name=<% $.queue_name %>
+        with-items: validation in <% $.validations.id %>
+        publish:
+          status: SUCCESS
+
+      set_status_failed:
+        on-complete: send_message
+        publish:
+          status: FAILED
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.run_groups
+              payload:
+                group_names: <% $.group_names %>
+                validation_names: <% $.validations.id %>
+                status: <% $.get('status', 'SUCCESS') %>
+                execution: <% execution() %>
+
   list:
     type: direct
     input:

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import namedtuple
 import mock
 import yaml
 
@@ -94,6 +95,26 @@ class ValidationsKeyTest(base.TestCase):
             '/usr/bin/ssh-keygen', '-t', 'rsa', '-N', '',
             '-f', '/path/to/key', '-C', 'tripleo-validations')
 
+    @mock.patch("oslo_concurrency.processutils.execute")
+    @mock.patch('tempfile.mkstemp')
+    def test_write_identity_file(self, mock_mkstemp, mock_execute):
+        mock_open_context = mock.mock_open()
+        mock_mkstemp.return_value = 'fd', 'tmp_path'
+        with mock.patch('os.fdopen',
+                        mock_open_context):
+            validations.write_identity_file('private_key')
+
+        mock_open_context.assert_called_once_with('fd', 'w')
+        mock_open_context().write.assert_called_once_with('private_key')
+        mock_execute.assert_called_once_with(
+            '/usr/bin/sudo', '/usr/bin/chown', 'validations:', 'tmp_path')
+
+    @mock.patch("oslo_concurrency.processutils.execute")
+    def test_cleanup_identity_file(self, mock_execute):
+        validations.cleanup_identity_file('/path/to/key')
+        mock_execute.assert_called_once_with(
+            '/usr/bin/sudo', '/usr/bin/rm', '-f', '/path/to/key')
+
 
 class LoadValidationsTest(base.TestCase):
 
@@ -153,3 +174,35 @@ class LoadValidationsTest(base.TestCase):
 
         expected = [VALIDATION_GROUPS_1_2_PARSED, VALIDATION_GROUP_1_PARSED]
         self.assertEqual(expected, my_validations)
+
+
+class RunValidationTest(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.validations.find_validation')
+    @mock.patch('oslo_concurrency.processutils.execute')
+    @mock.patch('mistral.context.ctx')
+    def test_run_validation(self, mock_ctx, mock_execute,
+                            mock_find_validation):
+        Ctx = namedtuple('Ctx', 'auth_uri user_name auth_token project_name')
+        mock_ctx.return_value = Ctx(
+            auth_uri='auth_uri',
+            user_name='user_name',
+            auth_token='auth_token',
+            project_name='project_name'
+        )
+        mock_execute.return_value = 'output'
+        mock_find_validation.return_value = 'validation_path'
+
+        result = validations.run_validation('validation', 'identity_file')
+        self.assertEqual('output', result)
+        mock_execute.assert_called_once_with(
+            '/usr/bin/sudo', '-u', 'validations',
+            'OS_AUTH_URL=auth_uri',
+            'OS_USERNAME=user_name',
+            'OS_AUTH_TOKEN=auth_token',
+            'OS_TENANT_NAME=project_name',
+            '/usr/bin/run-validation',
+            'validation_path',
+            'identity_file'
+        )
+        mock_find_validation.assert_called_once_with('validation')
