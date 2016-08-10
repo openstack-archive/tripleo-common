@@ -23,7 +23,7 @@ disk_images:
     arch: amd64
     type: qcow2
     elements:
-      - ironic-agent dynamic-login element-manifest network-gateway epel enable-packages-install pip-and-virtualenv-override
+      - ironic-agent dynamic-login element-manifest network-gateway enable-packages-install pip-and-virtualenv-override
     packages:
       - python-hardware-detect
     options:
