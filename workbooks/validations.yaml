@@ -5,6 +5,20 @@ description: TripleO Validations Workflows v1
 
 workflows:
 
+  list:
+    type: direct
+    input:
+      - group_names: []
+    tasks:
+      find_validations:
+        action: tripleo.validations.list_validations groups=<% $.group_names %>
+
+  list_groups:
+    type: direct
+    tasks:
+      find_groups:
+        action: tripleo.validations.list_groups
+
   copy_ssh_key:
     type: direct
     input:

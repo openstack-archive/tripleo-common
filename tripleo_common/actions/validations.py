@@ -53,3 +53,26 @@ class GetPubkeyAction(base.TripleOAction):
             mc.environments.create(**workflow_env)
 
         return public_key
+
+
+class ListValidationsAction(base.TripleOAction):
+    """Return a set of TripleO validations"""
+    def __init__(self, groups=None):
+        super(ListValidationsAction, self).__init__()
+        self.groups = groups
+
+    def run(self):
+        return utils.load_validations(groups=self.groups)
+
+
+class ListGroupsAction(base.TripleOAction):
+    """Return a set of TripleO validation groups"""
+    def __init__(self):
+        super(ListGroupsAction, self).__init__()
+
+    def run(self):
+        validations = utils.load_validations()
+        return {
+            group for validation in validations
+            for group in validation['groups']
+        }

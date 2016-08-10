@@ -32,6 +32,10 @@ DEFAULT_CONTAINER_NAME = 'overcloud'
 #: The path to the tripleo heat templates installed on the undercloud
 DEFAULT_TEMPLATES_PATH = '/usr/share/openstack-tripleo-heat-templates/'
 
+# The path to the tripleo validations installed on the undercloud
+DEFAULT_VALIDATIONS_PATH = \
+    '/usr/share/openstack-tripleo-validations/validations/'
+
 # TRIPLEO_META_USAGE_KEY is inserted into metadata for containers created in
 # Swift via SwiftPlanStorageBackend to identify them from other containers
 TRIPLEO_META_USAGE_KEY = 'x-container-meta-usage-tripleo'

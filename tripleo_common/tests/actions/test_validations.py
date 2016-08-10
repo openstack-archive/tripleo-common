@@ -17,6 +17,7 @@ import mock
 
 from tripleo_common.actions import validations
 from tripleo_common.tests import base
+from tripleo_common.tests.utils import test_validations
 
 
 class GetPubkeyActionTest(base.TestCase):
@@ -55,3 +56,35 @@ class GetPubkeyActionTest(base.TestCase):
         mock_mkdtemp.assert_called_once()
         mock_create_keypair.assert_called_once_with('/tmp_path/id_rsa')
         mock_rmtree.asser_called_once_with('/tmp_path')
+
+
+class ListValidationsActionTest(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.validations.load_validations')
+    def test_run_default(self, mock_load_validations):
+        mock_load_validations.return_value = 'list of validations'
+        action = validations.ListValidationsAction()
+        self.assertEqual('list of validations', action.run())
+        mock_load_validations.assert_called_once_with(groups=None)
+
+    @mock.patch('tripleo_common.utils.validations.load_validations')
+    def test_run_groups(self, mock_load_validations):
+        mock_load_validations.return_value = 'list of validations'
+        action = validations.ListValidationsAction(groups=['group1',
+                                                           'group2'])
+        self.assertEqual('list of validations', action.run())
+        mock_load_validations.assert_called_once_with(groups=['group1',
+                                                              'group2'])
+
+
+class ListGroupsActionTest(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.validations.load_validations')
+    def test_run(self, mock_load_validations):
+        mock_load_validations.return_value = [
+            test_validations.VALIDATION_GROUPS_1_2_PARSED,
+            test_validations.VALIDATION_GROUP_1_PARSED,
+            test_validations.VALIDATION_WITH_METADATA_PARSED]
+        action = validations.ListGroupsAction()
+        self.assertEqual(set(['group1', 'group2']), action.run())
+        mock_load_validations.assert_called_once_with()
