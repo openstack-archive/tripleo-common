@@ -32,6 +32,8 @@ class ImageBuildManager(BaseImageManager):
        """
     logger = log.getLogger(__name__ + '.ImageBuildManager')
 
+    APPEND_ATTRIBUTES = BaseImageManager.APPEND_ATTRIBUTES + ['environment']
+
     def __init__(self, config_files, output_directory='.', skip=False):
         super(ImageBuildManager, self).__init__(config_files)
         self.output_directory = re.sub('[/]$', '', output_directory)
@@ -69,10 +71,12 @@ class ImageBuildManager(BaseImageManager):
             elements = image.get('elements', [])
             options = image.get('options', [])
             packages = image.get('packages', [])
+            environment = image.get('environment', {})
 
             extra_options = {
                 'skip_base': skip_base,
                 'docker_target': docker_target,
+                'environment': environment
             }
 
             builder = ImageBuilder.get_builder(builder)
