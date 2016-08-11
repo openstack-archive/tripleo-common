@@ -78,7 +78,7 @@ function log {
 
 function find_nova_node_by_name_or_id {
   name_or_id=$1
-  node_status=$(nova show $name_or_id | awk '$2 ~ /^status/{print $4}')
+  node_status=$(openstack server show $name_or_id -f value -c status)
   if ! [[ $node_status == "ACTIVE" ]]; then
     log "ERROR: node $name_or_id not found to be ACTIVE. Current status is $node_status"
     exit 1
