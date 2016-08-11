@@ -193,7 +193,8 @@ class RunValidationTest(base.TestCase):
         mock_execute.return_value = 'output'
         mock_find_validation.return_value = 'validation_path'
 
-        result = validations.run_validation('validation', 'identity_file')
+        result = validations.run_validation('validation', 'identity_file',
+                                            'plan')
         self.assertEqual('output', result)
         mock_execute.assert_called_once_with(
             '/usr/bin/sudo', '-u', 'validations',
@@ -203,6 +204,7 @@ class RunValidationTest(base.TestCase):
             'OS_TENANT_NAME=project_name',
             '/usr/bin/run-validation',
             'validation_path',
-            'identity_file'
+            'identity_file',
+            'plan'
         )
         mock_find_validation.assert_called_once_with('validation')
