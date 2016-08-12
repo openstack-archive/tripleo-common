@@ -30,6 +30,11 @@ default_container_headers = {
 
 
 class CreateContainerAction(base.TripleOAction):
+    """Creates an object container
+
+    This action creates an object container for a given name.  If a container
+    with the same name already exists an exception is raised.
+    """
 
     def __init__(self, container):
         super(CreateContainerAction, self).__init__()
@@ -50,6 +55,12 @@ class CreateContainerAction(base.TripleOAction):
 
 
 class CreatePlanAction(base.TripleOAction):
+    """Creates a plan
+
+    Given a container, creates a Mistral environment with the same name,
+    parses the capabilities map file and sets initial plan template and
+    environment files.
+    """
 
     def __init__(self, container):
         super(CreatePlanAction, self).__init__()
@@ -88,3 +99,30 @@ class CreatePlanAction(base.TripleOAction):
 
         if error_text:
             return mistral_workflow_utils.Result(error=error_text)
+
+
+class ListPlansAction(base.TripleOAction):
+    """Lists deployment plans
+
+    This action lists all deployment plans residing in the undercloud.  A
+    deployment plan consists of a container marked with metadata
+    'x-container-meta-usage-tripleo' and a mistral environment with the same
+    name as the container.
+    """
+
+    def __init__(self):
+        super(ListPlansAction, self).__init__()
+
+    def run(self):
+        # plans consist of a container object and mistral environment
+        # with the same name.  The container is marked with metadata
+        # to ensure it isn't confused with another container
+        plan_list = []
+        oc = self._get_object_client()
+        mc = self._get_workflow_client()
+        for item in oc.get_account()[1]:
+            container = oc.get_container(item['name'])[0]
+            if constants.TRIPLEO_META_USAGE_KEY in container.keys():
+                plan_list.append(item['name'])
+        return list(set(plan_list).intersection(
+            [env.name for env in mc.environments.list()]))
