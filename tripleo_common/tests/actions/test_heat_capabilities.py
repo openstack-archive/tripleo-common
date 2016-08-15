@@ -91,16 +91,46 @@ MAPPING_JSON_CONTENTS = """{
        "environments": [
          {
            "description": null,
-           "enabled": false,
+           "enabled": true,
            "file": "/path/to/network-isolation.json",
            "title": "Default Configuration"
          }
-     ],
-     "title": null
-    }
-  ],
+       ],
+       "title": null
+     }
+   ],
   "title": "Fake Single Environment Group Configuration"
-  }
+ },
+ "Other": {
+   "description": null,
+   "environment_groups": [
+     {
+       "description": null,
+       "environments": [
+         {
+        "description": "Enable /path/to/environments/custom.yaml environment",
+           "enabled": false,
+           "file": "/path/to/environments/custom.yaml",
+           "title": "/path/to/environments/custom.yaml",
+         }
+       ],
+       "title": "/path/to/environments/custom.yaml",
+     },
+     {
+       "description": null,
+       "environments": [
+         {
+        "description": "Enable /path/to/environments/custom2.yaml environment",
+           "enabled": false,
+           "file": "/path/to/environments/custom2.yaml",
+           "title": "/path/to/environments/custom2.yaml",
+         }
+       ],
+       "title": "/path/to/environments/custom2.yaml",
+     }
+   ],
+  "title": "Other"
+ }
 }
 """
 
@@ -155,11 +185,47 @@ class GetCapabilitiesActionTest(base.TestCase):
         # setup swift
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
+        swift_files_data = ({
+            u'x-container-meta-usage-tripleo': u'plan',
+            u'content-length': u'54271', u'x-container-object-count': u'3',
+            u'accept-ranges': u'bytes', u'x-storage-policy': u'Policy-0',
+            u'date': u'Wed, 31 Aug 2016 16:04:37 GMT',
+            u'x-timestamp': u'1471025600.02126',
+            u'x-trans-id': u'txebb37f980dbc4e4f991dc-0057c70015',
+            u'x-container-bytes-used': u'970557',
+            u'content-type': u'application/json; charset=utf-8'}, [{
+                u'bytes': 808,
+                u'last_modified': u'2016-08-12T18:13:22.231760',
+                u'hash': u'2df2606ed8b866806b162ab3fa9a77ea',
+                u'name': 'all-nodes-validation.yaml',
+                u'content_type': u'application/octet-stream'
+            }, {
+                u'bytes': 1808,
+                u'last_modified': u'2016-08-13T18:13:22.231760',
+                u'hash': u'3df2606ed8b866806b162ab3fa9a77ea',
+                u'name': '/path/to/environments/custom.yaml',
+                u'content_type': u'application/octet-stream'
+            }, {
+                u'bytes': 2808,
+                u'last_modified': u'2016-07-13T18:13:22.231760',
+                u'hash': u'4df2606ed8b866806b162ab3fa9a77ea',
+                u'name': '/path/to/environments/custom2.yaml',
+                u'content_type': u'application/octet-stream'
+            }])
+        swift.get_container.return_value = swift_files_data
         get_obj_client_mock.return_value = swift
 
         # setup mistral
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
+
+        mock_env = mock.MagicMock()
+        mock_env.name = self.container_name
+        mock_env.variables = {
+            'template': 'overcloud',
+            'environments': [{'path': '/path/to/network-isolation.json'}]
+        }
+        mistral.environments.get.return_value = mock_env
 
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)
         yaml_mapping = yaml.safe_load(MAPPING_JSON_CONTENTS)
