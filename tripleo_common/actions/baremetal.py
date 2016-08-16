@@ -16,6 +16,7 @@ import logging
 
 from mistral.workflow import utils as mistral_workflow_utils
 from tripleo_common.actions import base
+from tripleo_common.utils import glance
 from tripleo_common.utils import nodes
 
 LOG = logging.getLogger(__name__)
@@ -67,3 +68,66 @@ class RegisterOrUpdateNodes(base.TripleOAction):
                 "",
                 err.message
             )
+
+
+class ConfigureBootAction(base.TripleOAction):
+    """Configure kernel and ramdisk.
+
+    :param node_uuid: an Ironic node UUID
+    :param kernel_name: Glance name of the kernel to use for the nodes.
+    :param ramdisk_name: Glance name of the ramdisk to use for the nodes.
+    :param instance_boot_option: Whether to set instances for booting from
+                                 local hard drive (local) or network (netboot).
+    """
+
+    def __init__(self, node_uuid, kernel_name='bm-deploy-kernel',
+                 ramdisk_name='bm-deploy-ramdisk', instance_boot_option=None):
+        super(ConfigureBootAction, self).__init__()
+        self.node_uuid = node_uuid
+        self.kernel_name = kernel_name
+        self.ramdisk_name = ramdisk_name
+        self.instance_boot_option = instance_boot_option
+
+    def run(self):
+        baremetal_client = self._get_baremetal_client()
+        image_client = self._get_image_client()
+
+        try:
+            image_ids = {'kernel': None, 'ramdisk': None}
+            if self.kernel_name is not None and self.ramdisk_name is not None:
+                image_ids = glance.create_or_find_kernel_and_ramdisk(
+                    image_client, self.kernel_name, self.ramdisk_name)
+
+            node = baremetal_client.node.get(self.node_uuid)
+
+            capabilities = node.properties.get('capabilities', {})
+            capabilities = nodes.capabilities_to_dict(capabilities)
+            if self.instance_boot_option is not None:
+                capabilities['boot_option'] = self.instance_boot_option
+            else:
+                # Add boot option capability if it didn't exist
+                capabilities.setdefault(
+                    'boot_option', self.instance_boot_option or 'local')
+            capabilities = nodes.dict_to_capabilities(capabilities)
+
+            baremetal_client.node.update(node.uuid, [
+                {
+                    'op': 'add',
+                    'path': '/properties/capabilities',
+                    'value': capabilities,
+                },
+                {
+                    'op': 'add',
+                    'path': '/driver_info/deploy_ramdisk',
+                    'value': image_ids['ramdisk'],
+                },
+                {
+                    'op': 'add',
+                    'path': '/driver_info/deploy_kernel',
+                    'value': image_ids['kernel'],
+                },
+            ])
+            LOG.debug("Configuring boot option for Node %s", self.node_uuid)
+        except Exception as err:
+            LOG.exception("Error configuring node boot options with Ironic.")
+            return mistral_workflow_utils.Result("", err)
