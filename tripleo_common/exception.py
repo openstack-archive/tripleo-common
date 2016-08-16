@@ -107,3 +107,7 @@ class StateTransitionFailed(Exception):
             }
         )
         super(StateTransitionFailed, self).__init__(message)
+
+
+class RootDeviceDetectionError(Exception):
+    """Failed to detect the root device"""

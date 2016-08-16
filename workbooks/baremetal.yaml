@@ -267,3 +267,123 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
                 introspected_nodes: <% $.get('introspected_nodes', []) %>
+
+  configure:
+    description: Take a list of manageable nodes and update their boot configuration.
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+      - kernel_name: bm-deploy-kernel
+      - ramdisk_name: bm-deploy-ramdisk
+      - instance_boot_option: null
+      - root_device: null
+      - root_device_minimum_size: 4
+      - overwrite_root_device_hints: False
+
+    tasks:
+
+      configure_boot:
+        on-success: configure_root_device
+        on-error: set_status_failed_configure_boot
+        with-items: node_uuid in <% $.node_uuids %>
+        action: tripleo.baremetal.configure_boot node_uuid=<% $.node_uuid %> kernel_name=<% $.kernel_name %> ramdisk_name=<% $.ramdisk_name %> instance_boot_option=<% $.instance_boot_option %>
+        publish:
+          status: SUCCESS
+          message: 'Successfully configured boot options.'
+
+      configure_root_device:
+        on-success: send_message
+        on-error: set_status_failed_configure_root_device
+        with-items: node_uuid in <% $.node_uuids %>
+        action: tripleo.baremetal.configure_root_device node_uuid=<% $.node_uuid %> root_device=<% $.root_device %> minimum_size=<% $.root_device_minimum_size %> overwrite=<% $.overwrite_root_device_hints %>
+        publish:
+          status: SUCCESS
+          message: 'Successfully configured root device.'
+
+      set_status_failed_configure_boot:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(configure_boot).result %>
+
+      set_status_failed_configure_root_device:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(configure_root_device).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.configure
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
+
+  configure_manageable_nodes:
+    description: Update the boot configuration of all nodes in 'manageable' state.
+
+    input:
+      - queue_name: tripleo
+      - kernel_name: 'bm-deploy-kernel'
+      - ramdisk_name: 'bm-deploy-ramdisk'
+      - instance_boot_option: null
+      - root_device: null
+      - root_device_minimum_size: 4
+      - overwrite_root_device_hints: False
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list maintenance=False associated=False
+        on-success: configure_manageable
+        on-error: set_status_failed_get_manageable_nodes
+        publish:
+          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+
+      configure_manageable:
+        on-success: send_message
+        on-error: set_status_failed_configure_manageable
+        workflow: tripleo.baremetal.v1.configure
+        input:
+          node_uuids: <% $.managed_nodes %>
+          queue_name: <% $.queue_name %>
+          kernel_name: <% $.kernel_name %>
+          ramdisk_name: <% $.ramdisk_name %>
+          instance_boot_option: <% $.instance_boot_option %>
+          root_device: <% $.root_device %>
+          root_device_minimum_size: <% $.root_device_minimum_size %>
+          overwrite_root_device_hints: <% $.overwrite_root_device_hints %>
+        publish:
+          message: 'Manageable nodes configured successfully.'
+
+      set_status_failed_configure_manageable:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(configure_manageable).result %>
+
+      set_status_failed_get_manageable_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_manageable_nodes).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.configure_manageable_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
