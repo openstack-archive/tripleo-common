@@ -22,7 +22,7 @@ from tripleo_common import constants
 
 
 LOG = logging.getLogger(__name__)
-UPGRADE_PREPARE_ENVIRONMENT_NAME = 'major-upgrade-pacemaker-init.yaml'
+TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
 UPGRADE_ENVIRONMENT_NAME = 'major-upgrade-pacemaker.yaml'
 UPGRADE_CLEANUP_ENVIRONMENT_NAME = 'major-upgrade-pacemaker-converge.yaml'
 
@@ -62,10 +62,6 @@ class StackUpgradeManager(object):
         LOG.debug('stack update params: %s', fields)
 
         self.heatclient.stacks.update(**fields)
-
-    def upgrade_pre(self, timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
-        LOG.info('upgrading stack: %s', self.stack.stack_name)
-        self._update_stack(timeout_mins, UPGRADE_PREPARE_ENVIRONMENT_NAME)
 
     def upgrade(self, timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
         LOG.info('upgrading stack: %s', self.stack.stack_name)

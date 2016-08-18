@@ -80,31 +80,3 @@ class StackUpgradeManagerTest(base.TestCase):
         heatclient.stacks.update.assert_called_once_with(**params)
         mock_env_files.assert_called_once_with(env_paths=[
             '/tmp/environments/major-upgrade-pacemaker-converge.yaml'])
-
-    @mock.patch('heatclient.common.template_utils.'
-                'process_multiple_environments_and_files')
-    @mock.patch('heatclient.common.template_utils.get_template_contents')
-    def test_upgrade_pre(self, mock_template_contents, mock_env_files):
-        heatclient = mock.MagicMock()
-        heatclient.stacks.get.return_value = mock.MagicMock(
-            stack_name='stack', id='stack_id')
-        mock_template_contents.return_value = ({}, 'template body')
-        mock_env_files.return_value = ({}, {})
-        upgrade.StackUpgradeManager(
-            heatclient=heatclient,
-            stack_id='stack_id',
-            tht_dir='/tmp/'
-        ).upgrade_pre()
-        params = {
-            'existing': True,
-            'stack_id': 'stack_id',
-            'template': 'template body',
-            'files': {},
-            'parameters': {},
-            'environment': {
-            },
-            'timeout_mins': 240,
-        }
-        heatclient.stacks.update.assert_called_once_with(**params)
-        mock_env_files.assert_called_once_with(env_paths=[
-            '/tmp/environments/major-upgrade-pacemaker-init.yaml'])
