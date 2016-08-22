@@ -131,15 +131,18 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         mocked_env = mock.MagicMock()
         mocked_env.variables = {
             'environments': [
-                {'path': '/path/to/overcloud-default-env.yaml'}
+                {'path': '/path/to/overcloud-default-env.yaml'},
+                {'path': '/path/to/ceph-storage-env.yaml'},
             ]
         }
         mistral.environments.get.return_value = mocked_env
         get_workflow_client_mock.return_value = mistral
 
-        environments = {'/path/to/ceph-storage-env.yaml': {'enabled': False},
-                        '/path/to/network-isolation.json': {'enabled': False},
-                        '/path/to/poc-custom-env.yaml': {'enabled': True}}
+        environments = {
+            '/path/to/ceph-storage-env.yaml': False,
+            '/path/to/network-isolation.json': False,
+            '/path/to/poc-custom-env.yaml': True
+        }
 
         action = heat_capabilities.UpdateCapabilitiesAction(
             environments, self.container_name)
@@ -148,7 +151,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
                 {'path': '/path/to/overcloud-default-env.yaml'},
                 {'path': '/path/to/poc-custom-env.yaml'}
             ]},
-            action.run().variables)
+            action.run())
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction._get_object_client')

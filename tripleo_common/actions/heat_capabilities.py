@@ -113,14 +113,17 @@ class UpdateCapabilitiesAction(base.TripleOAction):
             )
 
         for k, v in self.environments.items():
-            if v.get('enabled', False):
-                mistral_env.variables['environments'].append(
-                    {'path': k}
-                )
+            found = False
+            if {'path': k} in mistral_env.variables['environments']:
+                found = True
+            if v:
+                if not found:
+                    mistral_env.variables['environments'].append(
+                        {'path': k}
+                    )
             else:
-                # see if it resides in mistral env and if so, remove it
-                if {'path': k} in mistral_env.variables['environments']:
-                    mistral_env.variables['environments'].pop({'path': k})
+                if found:
+                    mistral_env.variables['environments'].remove({'path': k})
 
         env_kwargs = {
             'name': mistral_env.name,
@@ -136,4 +139,4 @@ class UpdateCapabilitiesAction(base.TripleOAction):
                 None,
                 err_msg
             )
-        return mistral_env
+        return mistral_env.variables
