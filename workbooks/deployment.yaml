@@ -7,6 +7,7 @@ workflows:
 
   deploy_on_server:
     type: direct
+
     input:
       - server_uuid
       - server_name
@@ -14,6 +15,7 @@ workflows:
       - config_name
       - group
       - queue_name: tripleo
+
     tasks:
 
       deploy_config:
@@ -93,4 +95,37 @@ workflows:
               payload:
                 status: FAILED
                 message: <% task(deploy_on_servers).result %>
+                execution: <% execution() %>
+
+  # Deploys a workload cloud stack
+  deploy_plan:
+    type: direct
+
+    input:
+      - container
+      - timeout: 240
+      - queue_name: tripleo
+
+    tasks:
+      deploy:
+        action: tripleo.deploy timeout=<% $.timeout %> container=<% $.container %>
+        on-success: send_message
+        on-error: set_deployment_failed
+
+      set_deployment_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(deploy).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.deployment.v1.deploy_plan
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
                 execution: <% execution() %>

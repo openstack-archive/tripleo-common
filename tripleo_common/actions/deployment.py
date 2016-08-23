@@ -17,8 +17,12 @@ import logging
 import time
 
 from heatclient.common import deployment_utils
+from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
+
 from tripleo_common.actions import base
+from tripleo_common.actions import templates
+from tripleo_common import constants
 
 LOG = logging.getLogger(__name__)
 
@@ -119,3 +123,30 @@ class OrchestrationDeployAction(base.TripleOAction):
             body_json,
             error
         )
+
+
+class DeployStackAction(templates.ProcessTemplatesAction):
+    """Deploys a heat stack."""
+
+    def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME):
+        super(DeployStackAction, self).__init__(container)
+        self.timeout_mins = timeout
+
+    def run(self):
+        processed_data = super(DeployStackAction, self).run()
+        heat = self._get_orchestration_client()
+        try:
+            stack = heat.stacks.get(self.container)
+        except heat_exc.HTTPNotFound:
+            stack = None
+
+        stack_args = processed_data.copy()
+        stack_args['timeout_mins'] = self.timeout_mins
+
+        if stack is None:
+            LOG.info("Perfoming Heat stack create")
+            return heat.stacks.create(**stack_args)
+
+        LOG.info("Performing Heat stack update")
+        stack_args['existing'] = 'true'
+        return heat.stacks.update(stack.id, **stack_args)
