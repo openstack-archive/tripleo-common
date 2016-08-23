@@ -14,10 +14,12 @@
 # under the License.
 import mock
 
+from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import plan
+from tripleo_common import exception
 from tripleo_common.tests import base
 
 MAPPING_YAML_CONTENTS = """root_template: /path/to/overcloud.yaml
@@ -248,3 +250,85 @@ class ListPlansActionTest(base.TestCase):
         self.assertEqual([self.container], action.run())
         swift.get_account.assert_called()
         swift.get_container.assert_called_with(self.container)
+
+
+class DeletePlanActionTest(base.TestCase):
+
+    def setUp(self):
+        super(DeletePlanActionTest, self).setUp()
+        self.container_name = 'overcloud'
+        self.stack = mock.MagicMock(
+            id='123',
+            status='CREATE_COMPLETE',
+            stack_name=self.container_name
+        )
+
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_orchestration_client')
+    def test_run_stack_exists(self, get_orchestration_client):
+
+        # setup heat
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = self.stack
+        get_orchestration_client.return_value = heat
+
+        # test that stack exists
+        action = plan.DeletePlanAction(self.container_name)
+        self.assertRaises(exception.StackInUseError, action.run)
+        heat.stacks.get.assert_called_with(self.container_name)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_orchestration_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    def test_run(self, get_workflow_client_mock, get_orchestration_client,
+                 get_obj_client_mock):
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_account.return_value = ({}, [
+            {'name': self.container_name},
+            {'name': 'test'},
+        ])
+        swift.get_container.return_value = (
+            {'x-container-meta-usage-tripleo': 'plan'}, [
+                {'name': 'some-name.yaml'},
+                {'name': 'some-other-name.yaml'},
+                {'name': 'yet-some-other-name.yaml'},
+                {'name': 'finally-another-name.yaml'}
+            ]
+        )
+
+        get_obj_client_mock.return_value = swift
+
+        # setup mistral
+        mistral = mock.MagicMock()
+        mistral_environment = mock.Mock()
+        mistral_environment.name = self.container_name
+        mistral.environments.list.return_value = [
+            mistral_environment,
+        ]
+        get_workflow_client_mock.return_value = mistral
+
+        # setup heat
+        heat = mock.MagicMock()
+        heat.stacks.get = mock.Mock(
+            side_effect=heatexceptions.HTTPNotFound)
+        get_orchestration_client.return_value = heat
+
+        action = plan.DeletePlanAction(self.container_name)
+        action.run()
+
+        mock_calls = [
+            mock.call('overcloud', 'some-name.yaml'),
+            mock.call('overcloud', 'some-other-name.yaml'),
+            mock.call('overcloud', 'yet-some-other-name.yaml'),
+            mock.call('overcloud', 'finally-another-name.yaml')
+        ]
+        swift.delete_object.assert_has_calls(
+            mock_calls, any_order=True)
+
+        swift.delete_container.assert_called_with(self.container_name)
+
+        mistral.environments.delete.assert_called_with(self.container_name)
