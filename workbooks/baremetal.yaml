@@ -197,7 +197,7 @@ workflows:
         publish:
           introspected_nodes: <% task(wait_for_introspection_to_finish).result %>
           status: SUCCESS
-          message: 'Succussfully introspected nodes.'
+          message: 'Successfully introspected nodes.'
 
       send_message:
         action: zaqar.queue_post
