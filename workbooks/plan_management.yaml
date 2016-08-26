@@ -46,6 +46,23 @@ workflows:
       - container
       - queue_name: tripleo
     tasks:
+
+      verify_container_doesnt_exist:
+        action: swift.head_container container=<% $.container %>
+        on-success: notify_zaqar
+        on-error: verify_environment_doesnt_exist
+        publish:
+          status: FAILED
+          message: "Unable to create plan. The Swift container already exists"
+
+      verify_environment_doesnt_exist:
+        action: mistral.environments_get name=<% $.container %>
+        on-success: notify_zaqar
+        on-error: create_container
+        publish:
+          status: FAILED
+          message: "Unable to create plan. The Mistral environment already exists"
+
       create_container:
         action: tripleo.create_container container=<% $.container %>
         on-success: upload_to_container
