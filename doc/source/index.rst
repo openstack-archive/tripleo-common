@@ -17,6 +17,7 @@ Contents:
    images
    tripleo-mistral
    contributing
+   reference/index
 
 Indices and tables
 ==================
