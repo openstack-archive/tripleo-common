@@ -542,3 +542,12 @@ def dict_to_capabilities(caps_dict):
     return ','.join(["%s:%s" % (key, value)
                      for key, value in caps_dict.items()
                      if value is not None])
+
+
+def capabilities_to_dict(caps):
+    """Convert the Node's capabilities into a dictionary."""
+    if not caps:
+        return {}
+    if isinstance(caps, dict):
+        return caps
+    return dict([key.split(':', 1) for key in caps.split(',')])

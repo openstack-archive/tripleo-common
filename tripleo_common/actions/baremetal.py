@@ -28,18 +28,27 @@ class RegisterOrUpdateNodes(base.TripleOAction):
     :param remove: Should nodes not in the list be removed?
     :param kernel_name: Glance ID of the kernel to use for the nodes.
     :param ramdisk_name: Glance ID of the ramdisk to use for the nodes.
+    :param instance_boot_option: Whether to set instances for booting from
+                                 local hard drive (local) or network (netboot).
     :return: list of node objects representing the new nodes.
     """
 
     def __init__(self, nodes_json, remove=False, kernel_name=None,
-                 ramdisk_name=None):
+                 ramdisk_name=None, instance_boot_option='local'):
         super(RegisterOrUpdateNodes, self).__init__()
         self.nodes_json = nodes_json
         self.remove = remove
+        self.instance_boot_option = instance_boot_option
         self.kernel_name = kernel_name
         self.ramdisk_name = ramdisk_name
 
     def run(self):
+        for node in self.nodes_json:
+            caps = node.get('capabilities', {})
+            caps = nodes.capabilities_to_dict(caps)
+            caps.setdefault('boot_option', self.instance_boot_option)
+            node['capabilities'] = nodes.dict_to_capabilities(caps)
+
         baremetal_client = self._get_baremetal_client()
         image_client = self._get_image_client()
 
