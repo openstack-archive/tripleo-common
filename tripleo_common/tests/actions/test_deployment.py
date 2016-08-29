@@ -15,6 +15,7 @@
 import mock
 
 from mistral.workflow import utils as mistral_workflow_utils
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import deployment
 from tripleo_common.tests import base
@@ -208,8 +209,12 @@ class DeployStackActionTest(base.TestCase):
                  mock_process_multiple_environments_and_files):
 
         mock_ctx.return_value = mock.MagicMock()
-        mock_get_object_client.return_value = mock.MagicMock(
-            url="http://test.com")
+        # setup swift
+        swift = mock.MagicMock(url="http://test.com")
+        swift.get_object.side_effect = swiftexceptions.ClientException(
+            'atest2')
+        mock_get_object_client.return_value = swift
+
         heat = mock.MagicMock()
         heat.stacks.get.return_value = None
         get_orchestration_client_mock.return_value = heat
