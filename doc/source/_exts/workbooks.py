@@ -57,15 +57,16 @@ def _workbook_to_rst(name, workbook):
             yield '   {}'.format(workflow['description'])
             yield ''
 
-        yield '   Workflow inputs:'
-        yield ''
-        for input_param in workflow['input']:
-            try:
-                yield '   :input {}: Default: {}'.format(
-                    *input_param.items()[0])
-            except:
-                yield '   :input {}: Required.'.format(input_param)
-        yield ''
+        if 'input' in workflow:
+            yield '   Workflow inputs:'
+            yield ''
+            for input_param in workflow['input']:
+                try:
+                    yield '   :input {}: Default: {}'.format(
+                        *input_param.items()[0])
+                except:
+                    yield '   :input {}: Required.'.format(input_param)
+            yield ''
 
 
 def get_workbooks():
