@@ -14,8 +14,11 @@
 import mock
 
 from glanceclient import exc as glance_exceptions
+import ironic_inspector_client
+from oslo_utils import units
 
 from tripleo_common.actions import baremetal
+from tripleo_common import exception
 from tripleo_common.tests import base
 
 
@@ -135,3 +138,195 @@ class TestConfigureBootAction(base.TestCase):
         result = action.run()
 
         self.assertIn("Update error", str(result.error))
+
+
+class TestConfigureRootDeviceAction(base.TestCase):
+
+    def setUp(self):
+        super(TestConfigureRootDeviceAction, self).setUp()
+
+        # Mock data
+        self.disks = [
+            {'name': '/dev/sda', 'size': 11 * units.Gi},
+            {'name': '/dev/sdb', 'size': 2 * units.Gi},
+            {'name': '/dev/sdc', 'size': 5 * units.Gi},
+            {'name': '/dev/sdd', 'size': 21 * units.Gi},
+            {'name': '/dev/sde', 'size': 13 * units.Gi},
+        ]
+        for i, disk in enumerate(self.disks):
+            disk['wwn'] = 'wwn%d' % i
+            disk['serial'] = 'serial%d' % i
+
+        # Ironic mocks
+        self.ironic = mock.MagicMock()
+        ironic_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction._get_baremetal_client',
+            return_value=self.ironic)
+        self.mock_ironic = ironic_patcher.start()
+        self.addCleanup(self.mock_ironic.stop)
+
+        self.ironic.node.list.return_value = [
+            mock.Mock(uuid="ABCDEFGH"),
+        ]
+
+        self.node = mock.Mock(uuid="ABCDEFGH", properties={})
+        self.ironic.node.get.return_value = self.node
+
+        # inspector mocks
+        self.inspector = mock.MagicMock()
+        inspector_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction.'
+            '_get_baremetal_introspection_client',
+            return_value=self.inspector)
+        self.mock_inspector = inspector_patcher.start()
+        self.addCleanup(self.mock_inspector.stop)
+
+        self.inspector.get_data.return_value = {
+            'inventory': {'disks': self.disks}
+        }
+
+    def test_smallest(self):
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest')
+        action.run()
+
+        self.assertEqual(self.ironic.node.update.call_count, 1)
+        root_device_args = self.ironic.node.update.call_args_list[0]
+        expected_patch = [{'op': 'add', 'path': '/properties/root_device',
+                           'value': {'wwn': 'wwn2'}},
+                          {'op': 'add', 'path': '/properties/local_gb',
+                           'value': 4}]
+        self.assertEqual(mock.call('ABCDEFGH', expected_patch),
+                         root_device_args)
+
+    def test_largest(self):
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='largest')
+        action.run()
+
+        self.assertEqual(self.ironic.node.update.call_count, 1)
+        root_device_args = self.ironic.node.update.call_args_list[0]
+        expected_patch = [{'op': 'add', 'path': '/properties/root_device',
+                           'value': {'wwn': 'wwn3'}},
+                          {'op': 'add', 'path': '/properties/local_gb',
+                           'value': 20}]
+        self.assertEqual(mock.call('ABCDEFGH', expected_patch),
+                         root_device_args)
+
+    def test_no_overwrite(self):
+        self.node.properties['root_device'] = {'foo': 'bar'}
+
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest')
+        action.run()
+
+        self.assertEqual(self.ironic.node.update.call_count, 0)
+
+    def test_with_overwrite(self):
+        self.node.properties['root_device'] = {'foo': 'bar'}
+
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest',
+                                                     overwrite=True)
+        action.run()
+
+        self.assertEqual(self.ironic.node.update.call_count, 1)
+        root_device_args = self.ironic.node.update.call_args_list[0]
+        expected_patch = [{'op': 'add', 'path': '/properties/root_device',
+                           'value': {'wwn': 'wwn2'}},
+                          {'op': 'add', 'path': '/properties/local_gb',
+                           'value': 4}]
+        self.assertEqual(mock.call('ABCDEFGH', expected_patch),
+                         root_device_args)
+
+    def test_minimum_size(self):
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest',
+                                                     minimum_size=10)
+        action.run()
+
+        self.assertEqual(self.ironic.node.update.call_count, 1)
+        root_device_args = self.ironic.node.update.call_args_list[0]
+        expected_patch = [{'op': 'add', 'path': '/properties/root_device',
+                           'value': {'wwn': 'wwn0'}},
+                          {'op': 'add', 'path': '/properties/local_gb',
+                           'value': 10}]
+        self.assertEqual(mock.call('ABCDEFGH', expected_patch),
+                         root_device_args)
+
+    def test_bad_inventory(self):
+        self.inspector.get_data.return_value = {}
+
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest')
+        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
+                                "Malformed introspection data",
+                                action.run)
+
+        self.assertEqual(self.ironic.node.update.call_count, 0)
+
+    def test_no_disks(self):
+        self.inspector.get_data.return_value = {
+            'inventory': {
+                'disks': [{'name': '/dev/sda', 'size': 1 * units.Gi}]
+            }
+        }
+
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest')
+        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
+                                "No suitable disks",
+                                action.run)
+
+        self.assertEqual(self.ironic.node.update.call_count, 0)
+
+    def test_no_data(self):
+        self.inspector.get_data.side_effect = (
+            ironic_inspector_client.ClientError(mock.Mock()))
+
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest')
+        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
+                                "No introspection data",
+                                action.run)
+
+        self.assertEqual(self.ironic.node.update.call_count, 0)
+
+    def test_no_wwn_and_serial(self):
+        self.inspector.get_data.return_value = {
+            'inventory': {
+                'disks': [{'name': '/dev/sda', 'size': 10 * units.Gi}]
+                }
+        }
+
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest')
+        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
+                                "Neither WWN nor serial number are known",
+                                action.run)
+
+        self.assertEqual(self.ironic.node.update.call_count, 0)
+
+    def test_device_list(self):
+        action = baremetal.ConfigureRootDeviceAction(
+            node_uuid='MOCK_UUID',
+            root_device='hda,sda,sdb,sdc')
+        action.run()
+
+        self.assertEqual(self.ironic.node.update.call_count, 1)
+        root_device_args = self.ironic.node.update.call_args_list[0]
+        expected_patch = [{'op': 'add', 'path': '/properties/root_device',
+                           'value': {'wwn': 'wwn0'}},
+                          {'op': 'add', 'path': '/properties/local_gb',
+                           'value': 10}]
+        self.assertEqual(mock.call('ABCDEFGH', expected_patch),
+                         root_device_args)
+
+    def test_device_list_not_found(self):
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='hda')
+
+        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
+                                "Cannot find a disk",
+                                action.run)
+        self.assertEqual(self.ironic.node.update.call_count, 0)

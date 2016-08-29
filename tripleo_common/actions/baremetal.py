@@ -14,8 +14,12 @@
 # under the License.
 import logging
 
+import ironic_inspector_client
 from mistral.workflow import utils as mistral_workflow_utils
+from oslo_utils import units
+
 from tripleo_common.actions import base
+from tripleo_common import exception
 from tripleo_common.utils import glance
 from tripleo_common.utils import nodes
 
@@ -131,3 +135,125 @@ class ConfigureBootAction(base.TripleOAction):
         except Exception as err:
             LOG.exception("Error configuring node boot options with Ironic.")
             return mistral_workflow_utils.Result("", err)
+
+
+class ConfigureRootDeviceAction(base.TripleOAction):
+    """Configure the root device strategy.
+
+    :param node_uuid: an Ironic node UUID
+    :param root_device: Define the root device for nodes. Can be either a list
+                        of device names (without /dev) to choose from or one
+                        of two strategies: largest or smallest. For it to work
+                        this command should be run after the introspection.
+    :param minimum_size: Minimum size (in GiB) of the detected root device.
+    :param overwrite: Whether to overwrite existing root device hints when
+                      root-device is set.
+    """
+
+    def __init__(self, node_uuid, root_device=None, minimum_size=4,
+                 overwrite=False):
+        super(ConfigureRootDeviceAction, self).__init__()
+        self.node_uuid = node_uuid
+        self.root_device = root_device
+        self.minimum_size = minimum_size
+        self.overwrite = overwrite
+
+    def run(self):
+        if not self.root_device:
+            return
+
+        baremetal_client = self._get_baremetal_client()
+        node = baremetal_client.node.get(self.node_uuid)
+        self._apply_root_device_strategy(
+            node, self.root_device, self.minimum_size, self.overwrite)
+
+    def _apply_root_device_strategy(self, node, strategy, minimum_size,
+                                    overwrite=False):
+        if node.properties.get('root_device') and not overwrite:
+            # This is a correct situation, we still want to allow people to
+            # fine-tune the root device setting for a subset of nodes.
+            # However, issue a warning, so that they know which nodes were not
+            # updated during this run.
+            LOG.warning('Root device hints are already set for node %s '
+                        'and overwriting is not requested, skipping',
+                        node.uuid)
+            LOG.warning('You may unset them by running $ ironic '
+                        'node-update %s remove properties/root_device',
+                        node.uuid)
+            return
+
+        inspector_client = self._get_baremetal_introspection_client()
+        try:
+            data = inspector_client.get_data(node.uuid)
+        except ironic_inspector_client.ClientError:
+            raise exception.RootDeviceDetectionError(
+                'No introspection data found for node %s, '
+                'root device cannot be detected' % node.uuid)
+        except AttributeError:
+            raise RuntimeError('Ironic inspector client version 1.2.0 or '
+                               'newer is required for detecting root device')
+
+        try:
+            disks = data['inventory']['disks']
+        except KeyError:
+            raise exception.RootDeviceDetectionError(
+                'Malformed introspection data for node %s: '
+                'disks list is missing' % node.uuid)
+
+        minimum_size *= units.Gi
+        disks = [d for d in disks if d.get('size', 0) >= minimum_size]
+
+        if not disks:
+            raise exception.RootDeviceDetectionError(
+                'No suitable disks found for node %s' % node.uuid)
+
+        if strategy == 'smallest':
+            disks.sort(key=lambda d: d['size'])
+            root_device = disks[0]
+        elif strategy == 'largest':
+            disks.sort(key=lambda d: d['size'], reverse=True)
+            root_device = disks[0]
+        else:
+            disk_names = [x.strip() for x in strategy.split(',')]
+            disks = {d['name']: d for d in disks}
+            for candidate in disk_names:
+                try:
+                    root_device = disks['/dev/%s' % candidate]
+                except KeyError:
+                    continue
+                else:
+                    break
+            else:
+                raise exception.RootDeviceDetectionError(
+                    'Cannot find a disk with any of names %(strategy)s '
+                    'for node %(node)s' %
+                    {'strategy': strategy, 'node': node.uuid})
+
+        hint = None
+        for hint_name in ('wwn', 'serial'):
+            if root_device.get(hint_name):
+                hint = {hint_name: root_device[hint_name]}
+                break
+
+        if hint is None:
+            # I don't think it might actually happen, but just in case
+            raise exception.RootDeviceDetectionError(
+                'Neither WWN nor serial number are known for device %(dev)s '
+                'on node %(node)s; root device hints cannot be used' %
+                {'dev': root_device['name'], 'node': node.uuid})
+
+        # During the introspection process we got local_gb assigned according
+        # to the default strategy. Now we need to update it.
+        new_size = root_device['size'] / units.Gi
+        # This -1 is what we always do to account for partitioning
+        new_size -= 1
+
+        bm_client = self._get_baremetal_client()
+        bm_client.node.update(
+            node.uuid,
+            [{'op': 'add', 'path': '/properties/root_device', 'value': hint},
+             {'op': 'add', 'path': '/properties/local_gb', 'value': new_size}])
+
+        LOG.info('Updated root device for node %(node)s, new device '
+                 'is %(dev)s, new local_gb is %(local_gb)d',
+                 {'node': node.uuid, 'dev': root_device, 'local_gb': new_size})

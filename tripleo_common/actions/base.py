@@ -14,6 +14,7 @@
 # under the License.
 from glanceclient.v2 import client as glanceclient
 from heatclient.v1 import client as heatclient
+import ironic_inspector_client
 from ironicclient.v1 import client as ironicclient
 from mistral.actions import base
 from mistral import context
@@ -48,6 +49,19 @@ class TripleOAction(base.Action):
             token=ctx.auth_token,
             region_name=ironic_endpoint.region,
             os_ironic_api_version='1.11'
+        )
+
+    def _get_baremetal_introspection_client(self):
+        ctx = context.ctx()
+
+        bmi_endpoint = keystone_utils.get_endpoint_for_project(
+            'ironic-inspector')
+
+        return ironic_inspector_client.ClientV1(
+            api_version='1.2',
+            inspector_url=bmi_endpoint.url,
+            region_name=bmi_endpoint.region,
+            auth_token=ctx.auth_token
         )
 
     def _get_image_client(self):
