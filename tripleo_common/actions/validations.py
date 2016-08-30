@@ -16,6 +16,9 @@ import os
 import shutil
 import tempfile
 
+from mistral.workflow import utils as mistral_workflow_utils
+from oslo_concurrency.processutils import ProcessExecutionError
+
 from tripleo_common.actions import base
 from tripleo_common.utils import validations as utils
 
@@ -76,3 +79,29 @@ class ListGroupsAction(base.TripleOAction):
             group for validation in validations
             for group in validation['groups']
         }
+
+
+class RunValidationAction(base.TripleOAction):
+    """Run the given validation"""
+    def __init__(self, validation):
+        super(RunValidationAction, self).__init__()
+        self.validation = validation
+
+    def run(self):
+        mc = self._get_workflow_client()
+        try:
+            env = mc.environments.get('ssh_keys')
+            private_key = env.variables['private_key']
+            identity_file = utils.write_identity_file(private_key)
+
+            stdout, stderr = utils.run_validation(self.validation,
+                                                  identity_file)
+            return_value = {'stdout': stdout, 'stderr': stderr}
+            mistral_result = (return_value, None)
+        except ProcessExecutionError as e:
+            return_value = {'stdout': e.stdout, 'stderr': e.stderr}
+            # Indicates to Mistral there was a failure
+            mistral_result = (None, return_value)
+        finally:
+            utils.cleanup_identity_file(identity_file)
+        return mistral_workflow_utils.Result(*mistral_result)

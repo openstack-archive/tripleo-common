@@ -1,0 +1,7 @@
+Defaults!/usr/bin/run-validation !requiretty
+Defaults:validations !requiretty
+Defaults:mistral !requiretty
+mistral ALL = (validations) NOPASSWD:SETENV: /usr/bin/run-validation
+mistral ALL = NOPASSWD: /usr/bin/chown validations\: /tmp/validations_identity_*
+mistral ALL = NOPASSWD: /usr/bin/rm -f /tmp/validations_identity_*
+validations ALL = NOPASSWD: ALL

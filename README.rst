@@ -21,6 +21,7 @@ code to accomplish these tasks. ::
 
     sudo rm -Rf /usr/lib/python2.7/site-packages/tripleo_common*
     sudo python setup.py install
+    sudo cp /usr/share/tripleo-common/sudoers /etc/sudoers.d/tripleo-common
     sudo systemctl restart openstack-mistral-executor
     sudo systemctl restart openstack-mistral-engine
     # this loads the actions via entrypoints
@@ -45,3 +46,31 @@ Finally you need to generate an SSH keypair for the validation user and copy
 it to the overcloud's authorized_keys files::
 
     $ mistral execution-create tripleo.validations.v1.copy_ssh_key
+
+Running validations using the mistral workflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Create a context.json file containing the arguments passed to the workflow::
+
+    {
+      "validation_names": ["512e", "rabbitmq-limits"]
+    }
+
+Run the ``tripleo.validations.v1.run_validations`` workflow with mistral
+client::
+
+    mistral execution-create tripleo.validations.v1.run_validations context.json
+
+
+Running groups of validations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Create a context.json file containing the arguments passed to the workflow::
+
+    {
+      "group_names": ["network", "post-deployment"]
+    }
+
+Run the ``tripleo.validations.v1.run_groups`` workflow with mistral client::
+
+    mistral execution-create tripleo.validations.v1.run_groups context.json
