@@ -94,10 +94,12 @@ swift post "$CONTAINER_NAME"
 
 SWIFT_ACCOUNT=$(swift stat "$CONTAINER_NAME" 2>/dev/null | grep Account: | sed -e "s|.*Account..||")
 
-SWIFT_INTERNAL_URL=$(openstack endpoint show swift | grep internalurl | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
+# This works with newer openstackclient which displays the endpoints in list
+SWIFT_INTERNAL_URL=$(openstack endpoint list | grep swift | grep internal | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
 
 if [ -z "$SWIFT_INTERNAL_URL" ]; then
-  SWIFT_INTERNAL_URL=$(openstack endpoint list | grep swift | grep internal | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
+  # fallback to old openstack client 'show' which displays all the URLs
+  SWIFT_INTERNAL_URL=$(openstack endpoint show swift | grep internalurl | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
 fi
 
 # Does the Temp-URL-Key exist on this container?
