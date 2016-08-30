@@ -34,8 +34,9 @@ class ImageBuildManager(BaseImageManager):
 
     APPEND_ATTRIBUTES = BaseImageManager.APPEND_ATTRIBUTES + ['environment']
 
-    def __init__(self, config_files, output_directory='.', skip=False):
-        super(ImageBuildManager, self).__init__(config_files)
+    def __init__(self, config_files, images=None, output_directory='.',
+                 skip=False):
+        super(ImageBuildManager, self).__init__(config_files, images)
         self.output_directory = re.sub('[/]$', '', output_directory)
         self.skip = skip
 

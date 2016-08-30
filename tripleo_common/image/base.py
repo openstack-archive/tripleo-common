@@ -29,8 +29,9 @@ class BaseImageManager(object):
     APPEND_ATTRIBUTES = ['elements', 'options', 'packages']
     CONFIG_SECTIONS = ['disk_images', 'uploads']
 
-    def __init__(self, config_files):
+    def __init__(self, config_files, images=None):
         self.config_files = config_files
+        self.images = images
 
     def _extend_or_set_attribute(self, existing_image, image, attribute_name):
         attribute = image.get(attribute_name, [])
@@ -55,6 +56,11 @@ class BaseImageManager(object):
                         msg = 'imagename is required'
                         self.logger.error(msg)
                         raise ImageSpecificationException(msg)
+
+                    if self.images is not None and \
+                            image_name not in self.images:
+                        self.logger.debug('Image %s ignored' % image_name)
+                        continue
 
                     existing_image = config_data.get(image_name)
                     if not existing_image:

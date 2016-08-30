@@ -119,3 +119,44 @@ class TestBaseImageManager(testbase.TestCase):
             base_manager = BaseImageManager(['yamlfile'])
             self.assertRaises(ImageSpecificationException,
                               base_manager.load_config_files, 'disk_images')
+
+    @mock.patch('yaml.load', autospec=True)
+    @mock.patch('os.path.isfile', autospec=True)
+    def test_load_config_files_single_image(self, mock_os_path_isfile,
+                                            mock_yaml_load):
+        mock_yaml_load.side_effect = [{
+            'disk_images': [
+                {
+                    'arch': 'amd64',
+                    'imagename': 'overcloud',
+                    'distro': 'some_awesome_distro',
+                    'type': 'qcow2',
+                    'elements': ['image_element']
+                },
+                {
+                    'arch': 'amd64',
+                    'imagename': 'not-overcloud',
+                    'distro': 'some_other_distro',
+                    'type': 'qcow2',
+                    'elements': ['other_element']
+                }
+            ]}]
+
+        mock_os_path_isfile.return_value = True
+
+        mock_open_context = mock.mock_open()
+        mock_open_context().read.return_value = "YAML"
+
+        with mock.patch('six.moves.builtins.open', mock_open_context):
+            base_manager = BaseImageManager(['yamlfile1'],
+                                            images=['not-overcloud'])
+            disk_images = base_manager.load_config_files('disk_images')
+
+        self.assertEqual(1, mock_yaml_load.call_count)
+        self.assertEqual([{
+            'arch': 'amd64',
+            'distro': 'some_other_distro',
+            'imagename': 'not-overcloud',
+            'type': 'qcow2',
+            'elements': ['other_element'],
+        }], disk_images)
