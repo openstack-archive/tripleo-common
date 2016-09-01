@@ -52,7 +52,7 @@ class TripleOAction(base.Action):
             ironic_endpoint.url,
             token=ctx.auth_token,
             region_name=ironic_endpoint.region,
-            os_ironic_api_version='1.11',
+            os_ironic_api_version='1.15',
             # FIXME(lucasagomes):Paramtetize max_retries and
             # max_interval. At the moment since we are dealing with
             # a critical bug (#1612622) let's just hardcode the times

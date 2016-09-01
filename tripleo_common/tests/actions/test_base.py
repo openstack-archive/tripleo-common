@@ -36,7 +36,7 @@ class TestActionsBase(tests_base.TestCase):
             url='http://ironic/v1', region='ironic-region')
         self.action._get_baremetal_client()
         mock_client.assert_called_once_with(
-            'http://ironic/v1', max_retries=12, os_ironic_api_version='1.11',
+            'http://ironic/v1', max_retries=12, os_ironic_api_version='1.15',
             region_name='ironic-region', retry_interval=5, token=mock.ANY)
         mock_endpoint.assert_called_once_with('ironic')
         mock_cxt.assert_called_once_with()
