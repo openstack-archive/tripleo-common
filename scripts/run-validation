@@ -24,6 +24,8 @@ fi
 # Make sure ssh is not asking interactively for hosts it can't check the key
 # authenticity
 export ANSIBLE_HOST_KEY_CHECKING=False
+# Disable retry files until we find a good use and location for them
+export ANSIBLE_RETRY_FILES_ENABLED=False
 
 export ANSIBLE_PRIVATE_KEY_FILE=$IDENTITY_FILE
 
