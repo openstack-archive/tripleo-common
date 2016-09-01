@@ -133,17 +133,40 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         self.timeout_mins = timeout
 
     def run(self):
-        processed_data = super(DeployStackAction, self).run()
+        # check to see if the stack exists
         heat = self._get_orchestration_client()
         try:
             stack = heat.stacks.get(self.container)
         except heat_exc.HTTPNotFound:
             stack = None
 
+        stack_is_new = stack is None
+
+        # update StackAction, DeployIdentifier and UpdateIdentifier
+        wc = self._get_workflow_client()
+        wf_env = wc.environments.get(self.container)
+
+        parameters = dict()
+        timestamp = int(time.time())
+        parameters['DeployIdentifier'] = timestamp
+        parameters['UpdateIdentifier'] = ''
+        parameters['StackAction'] = 'CREATE' if stack_is_new else 'UPDATE'
+
+        env_kwargs = {
+            'name': wf_env.name,
+            'variables': wf_env.variables.update(
+                {'parameter_defaults': parameters}
+            )
+        }
+        # store params changes back to db before call to process templates
+        wc.environments.update(**env_kwargs)
+
+        # process all plan files and create or update a stack
+        processed_data = super(DeployStackAction, self).run()
         stack_args = processed_data.copy()
         stack_args['timeout_mins'] = self.timeout_mins
 
-        if stack is None:
+        if stack_is_new:
             LOG.info("Perfoming Heat stack create")
             return heat.stacks.create(**stack_args)
 
