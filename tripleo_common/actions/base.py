@@ -44,11 +44,22 @@ class TripleOAction(base.Action):
 
         ironic_endpoint = keystone_utils.get_endpoint_for_project('ironic')
 
+        # FIXME(lucasagomes): Use ironicclient.get_client() instead
+        # of ironicclient.Client(). Client() might cause errors since
+        # it doesn't verify the provided arguments, get_client() is the
+        # prefered way
         return ironicclient.Client(
             ironic_endpoint.url,
             token=ctx.auth_token,
             region_name=ironic_endpoint.region,
-            os_ironic_api_version='1.11'
+            os_ironic_api_version='1.11',
+            # FIXME(lucasagomes):Paramtetize max_retries and
+            # max_interval. At the moment since we are dealing with
+            # a critical bug (#1612622) let's just hardcode the times
+            # here since the right fix does involve multiple projects
+            # (tripleo-ci and python-tripleoclient beyong tripleo-common)
+            max_retries=12,
+            retry_interval=5,
         )
 
     def _get_baremetal_introspection_client(self):
