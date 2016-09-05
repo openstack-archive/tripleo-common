@@ -5,6 +5,7 @@ set -o pipefail
 
 VALIDATION_FILE=$1
 IDENTITY_FILE=$2
+PLAN_NAME=$3
 
 if [[ -z "$VALIDATION_FILE" ]]; then
     echo "Missing required validation file"
@@ -30,5 +31,9 @@ export ANSIBLE_RETRY_FILES_ENABLED=False
 export ANSIBLE_PRIVATE_KEY_FILE=$IDENTITY_FILE
 
 export ANSIBLE_INVENTORY=$(which tripleo-ansible-inventory)
+
+# Environment variable is the easiest way to pass variables to an Ansible
+# dynamic inventory script
+export TRIPLEO_PLAN_NAME=${PLAN_NAME}
 
 ansible-playbook $VALIDATION_FILE

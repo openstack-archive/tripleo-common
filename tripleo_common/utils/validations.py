@@ -77,7 +77,7 @@ def find_validation(validation):
     return '{}/{}.yaml'.format(constants.DEFAULT_VALIDATIONS_PATH, validation)
 
 
-def run_validation(validation, identity_file):
+def run_validation(validation, identity_file, plan):
     ctx = context.ctx()
     return processutils.execute(
         '/usr/bin/sudo', '-u', 'validations',
@@ -87,7 +87,8 @@ def run_validation(validation, identity_file):
         'OS_TENANT_NAME={}'.format(ctx.project_name),
         '/usr/bin/run-validation',
         find_validation(validation),
-        identity_file
+        identity_file,
+        plan
     )
 
 

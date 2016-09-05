@@ -19,6 +19,7 @@ from mistral.workflow import utils as mistral_workflow_utils
 from oslo_concurrency.processutils import ProcessExecutionError
 
 from tripleo_common.actions import validations
+from tripleo_common import constants
 from tripleo_common.tests import base
 from tripleo_common.tests.utils import test_validations
 
@@ -119,8 +120,10 @@ class RunValidationActionTest(base.TestCase):
             error=None)
         self.assertEqual(expected, action.run())
         mock_write_identity_file.assert_called_once_with('shhhh')
-        mock_run_validation.assert_called_once_with('validation',
-                                                    'identity_file_path')
+        mock_run_validation.assert_called_once_with(
+            'validation',
+            'identity_file_path',
+            constants.DEFAULT_CONTAINER_NAME)
         mock_cleanup_identity_file.assert_called_once_with(
             'identity_file_path')
 
@@ -149,7 +152,9 @@ class RunValidationActionTest(base.TestCase):
             })
         self.assertEqual(expected, action.run())
         mock_write_identity_file.assert_called_once_with('shhhh')
-        mock_run_validation.assert_called_once_with('validation',
-                                                    'identity_file_path')
+        mock_run_validation.assert_called_once_with(
+            'validation',
+            'identity_file_path',
+            constants.DEFAULT_CONTAINER_NAME)
         mock_cleanup_identity_file.assert_called_once_with(
             'identity_file_path')

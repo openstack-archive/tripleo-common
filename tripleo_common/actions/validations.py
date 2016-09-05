@@ -20,6 +20,7 @@ from mistral.workflow import utils as mistral_workflow_utils
 from oslo_concurrency.processutils import ProcessExecutionError
 
 from tripleo_common.actions import base
+from tripleo_common import constants
 from tripleo_common.utils import validations as utils
 
 
@@ -83,9 +84,10 @@ class ListGroupsAction(base.TripleOAction):
 
 class RunValidationAction(base.TripleOAction):
     """Run the given validation"""
-    def __init__(self, validation):
+    def __init__(self, validation, plan=constants.DEFAULT_CONTAINER_NAME):
         super(RunValidationAction, self).__init__()
         self.validation = validation
+        self.plan = plan
 
     def run(self):
         mc = self._get_workflow_client()
@@ -95,7 +97,8 @@ class RunValidationAction(base.TripleOAction):
             identity_file = utils.write_identity_file(private_key)
 
             stdout, stderr = utils.run_validation(self.validation,
-                                                  identity_file)
+                                                  identity_file,
+                                                  self.plan)
             return_value = {'stdout': stdout, 'stderr': stderr}
             mistral_result = (return_value, None)
         except ProcessExecutionError as e:

@@ -9,6 +9,7 @@ workflows:
     type: direct
     input:
       - validation_name
+      - plan: overcloud
       - queue_name: tripleo
 
     tasks:
@@ -23,13 +24,14 @@ workflows:
               type: tripleo.validations.v1.run_validation
               payload:
                 validation_name: <% $.validation_name %>
+                plan: <% $.plan %>
                 status: RUNNING
                 execution: <% execution() %>
 
       run_validation:
         on-success: send_message
         on-error: set_status_failed
-        action: tripleo.validations.run_validation validation=<% $.validation_name %>
+        action: tripleo.validations.run_validation validation=<% $.validation_name %> plan=<% $.plan %>
         publish:
           status: SUCCESS
           stdout: <% task(run_validation).result.stdout %>
@@ -51,6 +53,7 @@ workflows:
               type: tripleo.validations.v1.run_validation
               payload:
                 validation_name: <% $.validation_name %>
+                plan: <% $.plan %>
                 status: <% $.get('status', 'SUCCESS') %>
                 stdout: <% $.stdout %>
                 stderr: <% $.stderr %>
@@ -60,6 +63,7 @@ workflows:
     type: direct
     input:
       - validation_names: []
+      - plan: overcloud
       - queue_name: tripleo
 
     tasks:
@@ -74,13 +78,14 @@ workflows:
               type: tripleo.validations.v1.run_validations
               payload:
                 validation_names: <% $.validation_names %>
+                plan: <% $.plan %>
                 status: RUNNING
                 execution: <% execution() %>
 
       run_validations:
         on-success: send_message
         on-error: set_status_failed
-        workflow: tripleo.validations.v1.run_validation validation_name=<% $.validation %> queue_name=<% $.queue_name %>
+        workflow: tripleo.validations.v1.run_validation validation_name=<% $.validation %> plan=<% $.plan %> queue_name=<% $.queue_name %>
         with-items: validation in <% $.validation_names %>
         publish:
           status: SUCCESS
@@ -99,6 +104,7 @@ workflows:
               type: tripleo.validations.v1.run_validations
               payload:
                 validation_names: <% $.validation_names %>
+                plan: <% $.plan %>
                 status: <% $.get('status', 'SUCCESS') %>
                 execution: <% execution() %>
 
@@ -106,6 +112,7 @@ workflows:
     type: direct
     input:
       - group_names: []
+      - plan: overcloud
       - queue_name: tripleo
 
     tasks:
@@ -127,13 +134,14 @@ workflows:
               payload:
                 group_names: <% $.group_names %>
                 validation_names: <% $.validations.id %>
+                plan: <% $.plan %>
                 status: RUNNING
                 execution: <% execution() %>
 
       run_validation_group:
         on-success: send_message
         on-error: set_status_failed
-        workflow: tripleo.validations.v1.run_validation validation_name=<% $.validation %> queue_name=<% $.queue_name %>
+        workflow: tripleo.validations.v1.run_validation validation_name=<% $.validation %> plan=<% $.plan %> queue_name=<% $.queue_name %>
         with-items: validation in <% $.validations.id %>
         publish:
           status: SUCCESS
@@ -153,6 +161,7 @@ workflows:
               payload:
                 group_names: <% $.group_names %>
                 validation_names: <% $.validations.id %>
+                plan: <% $.plan %>
                 status: <% $.get('status', 'SUCCESS') %>
                 execution: <% execution() %>
 
