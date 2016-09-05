@@ -35,7 +35,7 @@ function show_options {
     echo "    -h, --help                  -- print this help."
     echo "    -d <directory>              -- Puppet modules directory. Required."
     echo "    -c <container>              -- Swift container to use."
-    echo "      Default: overcloud"
+    echo "      Default: overcloud-artifacts"
     echo "    --environment <env>         -- Generate this heat <env>"
     echo "      Default: $HOME/.tripleo/environments/puppet-modules-url.yaml"
     echo "    --seconds <seconds>         -- Number of seconds for temp URL."
@@ -59,7 +59,7 @@ eval set -- "$TEMP"
 
 ENVIRONMENT_FILE="$HOME/.tripleo/environments/puppet-modules-url.yaml"
 MODULES_DIRECTORY=
-CONTAINER_NAME=overcloud
+CONTAINER_NAME=overcloud-artifacts
 SECONDS=31536000
 
 while true ; do

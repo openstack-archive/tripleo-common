@@ -30,7 +30,7 @@ function show_options {
     echo "    -h, --help                  -- print this help."
     echo "    -f <file>                   -- File(s) to upload."
     echo "    -c <container>              -- Swift container to use."
-    echo "      Default: overcloud"
+    echo "      Default: overcloud-artifacts"
     echo "    --environment <env>         -- Generate this heat <env>"
     echo "      Default: $HOME/.tripleo/environments/deployment-artifacts.yaml"
     echo "    --seconds <seconds>         -- Number of seconds for temp URLs."
@@ -54,7 +54,7 @@ eval set -- "$TEMP"
 
 ENVIRONMENT_FILE="$HOME/.tripleo/environments/deployment-artifacts.yaml"
 FILES=
-CONTAINER_NAME=overcloud
+CONTAINER_NAME=overcloud-artifacts
 SECONDS=31536000
 
 while true ; do
