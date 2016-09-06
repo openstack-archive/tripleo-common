@@ -288,9 +288,6 @@ workflows:
         on-error: set_status_failed_configure_boot
         with-items: node_uuid in <% $.node_uuids %>
         action: tripleo.baremetal.configure_boot node_uuid=<% $.node_uuid %> kernel_name=<% $.kernel_name %> ramdisk_name=<% $.ramdisk_name %> instance_boot_option=<% $.instance_boot_option %>
-        publish:
-          status: SUCCESS
-          message: 'Successfully configured boot options.'
 
       configure_root_device:
         on-success: send_message
@@ -299,7 +296,7 @@ workflows:
         action: tripleo.baremetal.configure_root_device node_uuid=<% $.node_uuid %> root_device=<% $.root_device %> minimum_size=<% $.root_device_minimum_size %> overwrite=<% $.overwrite_root_device_hints %>
         publish:
           status: SUCCESS
-          message: 'Successfully configured root device.'
+          message: 'Successfully configured the nodes.'
 
       set_status_failed_configure_boot:
         on-success: send_message
