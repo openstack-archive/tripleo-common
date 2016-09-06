@@ -158,7 +158,7 @@ class iBootDriverInfo(PrefixedDriverInfo):
 
 DRIVER_INFO = {
     # production drivers
-    '.*_ipmi(tool|native)': PrefixedDriverInfo('ipmi'),
+    '.*_ipmi(tool|native)': PrefixedDriverInfo('ipmi', has_port=True),
     '.*_drac': PrefixedDriverInfo('drac', address_field='host'),
     '.*_ilo': PrefixedDriverInfo('ilo'),
     '.*_ucs': PrefixedDriverInfo(
