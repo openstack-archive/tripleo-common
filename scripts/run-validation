@@ -27,6 +27,9 @@ fi
 export ANSIBLE_HOST_KEY_CHECKING=False
 # Disable retry files until we find a good use and location for them
 export ANSIBLE_RETRY_FILES_ENABLED=False
+# Add `-E` to the sudo flags to preserve the shell environment. The `-H -S -n`
+# options are Ansible's default values.
+export ANSIBLE_SUDO_FLAGS="-H -S -n -E"
 
 export ANSIBLE_PRIVATE_KEY_FILE=$IDENTITY_FILE
 
