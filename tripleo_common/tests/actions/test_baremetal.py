@@ -41,14 +41,14 @@ class TestConfigureBootAction(base.TestCase):
             'tripleo_common.actions.base.TripleOAction._get_baremetal_client',
             return_value=self.ironic)
         self.mock_ironic = ironic_patcher.start()
-        self.addCleanup(self.mock_ironic.stop)
+        self.addCleanup(ironic_patcher.stop)
 
         self.glance = mock.MagicMock()
         glance_patcher = mock.patch(
             'tripleo_common.actions.base.TripleOAction._get_image_client',
             return_value=self.glance)
         self.mock_glance = glance_patcher.start()
-        self.addCleanup(self.mock_glance.stop)
+        self.addCleanup(glance_patcher.stop)
 
         def mock_find(name, disk_format):
             if name == 'bm-deploy-kernel':
@@ -163,7 +163,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
             'tripleo_common.actions.base.TripleOAction._get_baremetal_client',
             return_value=self.ironic)
         self.mock_ironic = ironic_patcher.start()
-        self.addCleanup(self.mock_ironic.stop)
+        self.addCleanup(ironic_patcher.stop)
 
         self.ironic.node.list.return_value = [
             mock.Mock(uuid="ABCDEFGH"),
@@ -179,7 +179,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
             '_get_baremetal_introspection_client',
             return_value=self.inspector)
         self.mock_inspector = inspector_patcher.start()
-        self.addCleanup(self.mock_inspector.stop)
+        self.addCleanup(inspector_patcher.stop)
 
         self.inspector.get_data.return_value = {
             'inventory': {'disks': self.disks}
