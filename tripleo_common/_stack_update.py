@@ -18,6 +18,8 @@ import logging
 import re
 import time
 
+import six
+
 import heatclient.exc
 
 LOG = logging.getLogger(__name__)
@@ -99,7 +101,7 @@ class StackUpdateManager(object):
                     if resources[state]:
                         print("{0}: {1}".format(state, self._server_names(
                                                 resources[state].keys())))
-                user_input = raw_input(
+                user_input = six.moves.input(
                     "Breakpoint reached, continue? Regexp or "
                     "Enter=proceed (will clear %s), "
                     "no=cancel update, C-c=quit interactive mode: "
