@@ -91,6 +91,7 @@ class RunValidationAction(base.TripleOAction):
 
     def run(self):
         mc = self._get_workflow_client()
+        identity_file = None
         try:
             env = mc.environments.get('ssh_keys')
             private_key = env.variables['private_key']
@@ -106,5 +107,6 @@ class RunValidationAction(base.TripleOAction):
             # Indicates to Mistral there was a failure
             mistral_result = (None, return_value)
         finally:
-            utils.cleanup_identity_file(identity_file)
+            if identity_file:
+                utils.cleanup_identity_file(identity_file)
         return mistral_workflow_utils.Result(*mistral_result)
