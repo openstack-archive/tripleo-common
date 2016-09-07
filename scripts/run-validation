@@ -36,4 +36,16 @@ export ANSIBLE_INVENTORY=$(which tripleo-ansible-inventory)
 # dynamic inventory script
 export TRIPLEO_PLAN_NAME=${PLAN_NAME}
 
+# NOTE(shadower): set up token-based environment for the openstack
+# client when the password doesn't exist. This happens when called
+# from mistral:
+if [ -z "${OS_PASSWORD:-}" ]; then
+    # The auth type must be explicitly set to token
+    export OS_AUTH_TYPE=token
+    # The openstack client expects the token as OS_TOKEN
+    export OS_TOKEN=$OS_AUTH_TOKEN
+    # TODO(shadower): I could not get the token auth working with v3:
+    export OS_AUTH_URL=${OS_AUTH_URL/%v3/v2.0}
+fi
+
 ansible-playbook $VALIDATION_FILE
