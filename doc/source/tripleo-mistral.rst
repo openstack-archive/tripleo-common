@@ -44,7 +44,7 @@ Mistral actions can be run through the CLI:
 ::
 
    echo '{"container": "<container-name>"}' > input.json
-   openstack action execution run tripleo.create_container input.json
+   openstack action execution run tripleo.plan.create_container input.json
 
 For REST API usage please reference the `full Mistral documentation
 <http://docs.openstack.org/developer/mistral/>`_.

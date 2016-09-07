@@ -38,7 +38,7 @@ workflows:
 
     tasks:
       register_or_update_nodes:
-        action: tripleo.register_or_update_nodes
+        action: tripleo.baremetal.register_or_update_nodes
         on-success: set_nodes_managed
         on-error: set_status_failed_register_or_update_nodes
         input:
