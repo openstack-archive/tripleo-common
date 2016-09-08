@@ -12,6 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import fnmatch
 import logging
 import yaml
 
@@ -39,12 +40,24 @@ class GetCapabilitiesAction(base.TripleOAction):
 
     def run(self):
         try:
-            map_file = self._get_object_client().get_object(
+            swift_client = self._get_object_client()
+            map_file = swift_client.get_object(
                 self.container, 'capabilities-map.yaml')
             capabilities = yaml.safe_load(map_file[1])
         except Exception:
             err_msg = (
                 "Error parsing capabilities-map.yaml.")
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(
+                None,
+                err_msg
+            )
+        try:
+            container_files = swift_client.get_container(self.container)
+            container_file_list = [entry['name'] for entry
+                                   in container_files[1]]
+        except Exception as swift_err:
+            err_msg = ("Error retrieving plan files: %s" % swift_err)
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(
                 None,
@@ -66,6 +79,25 @@ class GetCapabilitiesAction(base.TripleOAction):
                          mistral_env.variables['environments']
                          if 'path' in item]
 
+        # extract environment files
+        plan_environments = []
+        for env_group in capabilities['topics']:
+            for envs in env_group['environment_groups']:
+                for files in envs['environments']:
+                    file = files.get('file')
+                    if file:
+                        plan_environments.append(file)
+
+        # parse plan for environment files
+        env_files = fnmatch.filter(
+            container_file_list, '*environments/*.yaml')
+        env_user_files = fnmatch.filter(
+            container_file_list, '*user-environment.yaml')
+
+        outstanding_envs = list(set(env_files).union(
+            env_user_files) - set(plan_environments))
+
+        # change capabilities format
         data_to_return = {}
         capabilities.pop('root_environment')
         capabilities.pop('root_template')
@@ -79,6 +111,39 @@ class GetCapabilitiesAction(base.TripleOAction):
                         env['enabled'] = True
                     else:
                         env['enabled'] = False
+
+        # add custom environment files
+        other_environments = []
+        for env in outstanding_envs:
+            flag = selected_envs and env in selected_envs
+            new_env = {
+                "description": "Enable %s environment" % env,
+                "enabled": flag,
+                "file": env,
+                "title": env,
+            }
+            other_environments.append(new_env)
+        other_environments.sort(key=lambda x: x['file'])
+
+        other_environment_groups = []
+        for group in other_environments:
+            new_group = {
+                "description": None,
+                "environments": [group],
+                "title": group['file'],
+            }
+            other_environment_groups.append(new_group)
+
+        other_environments_topic_dict = {
+            "description": None,
+            "title": "Other",
+            "environment_groups": other_environment_groups
+        }
+
+        other_environments_topic = {
+            "Other": other_environments_topic_dict
+        }
+        data_to_return.update(other_environments_topic)
 
         return data_to_return
 
