@@ -16,6 +16,7 @@ import mock
 
 from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
+from mistralclient.api import base as mistral_base
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import plan
@@ -132,44 +133,44 @@ class CreatePlanActionTest(base.TestCase):
         self.container_name = 'test-container'
         self.capabilities_name = 'capabilities-map.yaml'
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
-    def test_run(self, get_workflow_client_mock, get_obj_client_mock):
-
         # setup swift
-        swift = mock.MagicMock()
-        swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
-        get_obj_client_mock.return_value = swift
+        self.swift = mock.MagicMock()
+        self.swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
+        swift_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction._get_object_client',
+            return_value=self.swift)
+        swift_patcher.start()
+        self.addCleanup(swift_patcher.stop)
 
         # setup mistral
-        mistral = mock.MagicMock()
-        get_workflow_client_mock.return_value = mistral
+        self.mistral = mock.MagicMock()
+        self.mistral.environments.get.side_effect = mistral_base.APIException
+        mistral_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction._get_workflow_client',
+            return_value=self.mistral)
+        mistral_patcher.start()
+        self.addCleanup(mistral_patcher.stop)
 
-        # Test
+    def test_run(self):
+
         action = plan.CreatePlanAction(self.container_name)
         action.run()
 
-        # verify
-        swift.get_object.assert_called_once_with(
+        self.swift.get_object.assert_called_once_with(
             self.container_name,
             self.capabilities_name
         )
 
-        mistral.environments.create.assert_called_once_with(
+        self.mistral.environments.create.assert_called_once_with(
             name='test-container',
             variables=('{"environments":'
                        ' [{"path": "/path/to/environment.yaml"}], '
                        '"template": "/path/to/overcloud.yaml"}')
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
-    def test_run_with_invalid_yaml(self, get_obj_client_mock):
+    def test_run_with_invalid_yaml(self):
 
-        swift = mock.MagicMock()
-
-        swift.get_object.return_value = ({}, 'invalid: %')
-        get_obj_client_mock.return_value = swift
+        self.swift.get_object.return_value = ({}, 'invalid: %')
 
         action = plan.CreatePlanAction(self.container_name)
         result = action.run()
@@ -178,13 +179,9 @@ class CreatePlanActionTest(base.TestCase):
         # don't bother checking the exact yaml error (it's long)
         self.assertEqual(result.error.split(':')[0], error_str)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
-    def test_run_with_invalid_string(self, get_obj_client_mock):
+    def test_run_with_invalid_string(self):
 
-        swift = mock.MagicMock()
-
-        swift.get_object.return_value = ({}, 'this is just a string')
-        get_obj_client_mock.return_value = swift
+        self.swift.get_object.return_value = ({}, 'this is just a string')
 
         action = plan.CreatePlanAction(self.container_name)
         result = action.run()
@@ -193,14 +190,10 @@ class CreatePlanActionTest(base.TestCase):
         # don't bother checking the exact error (python versions different)
         self.assertEqual(result.error.split(':')[0], error_str)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
-    def test_run_with_no_file(self, get_obj_client_mock):
+    def test_run_with_no_file(self):
 
-        swift = mock.MagicMock()
-
-        swift.get_object.side_effect = swiftexceptions.ClientException(
+        self.swift.get_object.side_effect = swiftexceptions.ClientException(
             'atest2')
-        get_obj_client_mock.return_value = swift
 
         action = plan.CreatePlanAction(self.container_name)
         result = action.run()
@@ -208,19 +201,27 @@ class CreatePlanActionTest(base.TestCase):
         error_str = 'File missing from container: atest2'
         self.assertEqual(result.error, error_str)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
-    def test_run_with_missing_key(self, get_obj_client_mock):
+    def test_run_with_missing_key(self):
 
-        swift = mock.MagicMock()
-
-        swift.get_object.return_value = ({}, INVALID_MAPPING_CONTENTS)
-        get_obj_client_mock.return_value = swift
+        self.swift.get_object.return_value = ({}, INVALID_MAPPING_CONTENTS)
 
         action = plan.CreatePlanAction(self.container_name)
         result = action.run()
 
         error_str = "capabilities-map.yaml missing key: 'root_template'"
         self.assertEqual(result.error, error_str)
+
+    def test_run_mistral_env_already_exists(self):
+        self.mistral.environments.get.side_effect = None
+        self.mistral.environments.get.return_value = 'test-env'
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = ("Unable to create plan. The Mistral environment already "
+                     "exists")
+        self.assertEqual(result.error, error_str)
+        self.mistral.environments.create.assert_not_called()
 
 
 class ListPlansActionTest(base.TestCase):
