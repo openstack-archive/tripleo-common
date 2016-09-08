@@ -109,8 +109,17 @@ workflows:
     tasks:
       deploy:
         action: tripleo.deploy timeout=<% $.timeout %> container=<% $.container %>
-        on-success: send_message
+        on-success: test_validations_enabled
         on-error: set_deployment_failed
+
+      test_validations_enabled:
+        action: tripleo.validations.enabled
+        on-success: copy_validation_ssh_keys
+        on-error: send_message
+
+      copy_validation_ssh_keys:
+        workflow: tripleo.validations.v1.copy_ssh_key
+        on-complete: send_message
 
       set_deployment_failed:
         on-success: send_message

@@ -62,6 +62,55 @@ class GetPubkeyActionTest(base.TestCase):
         mock_rmtree.asser_called_once_with('/tmp_path')
 
 
+class Enabled(base.TestCase):
+
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    def test_validations_enabled(self, get_workflow_client_mock):
+        mistral = mock.MagicMock()
+        get_workflow_client_mock.return_value = mistral
+        mistral.environments.get.return_value = {}
+        action = validations.Enabled()
+        result = action._validations_enabled()
+        self.assertEqual(result, True)
+
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    def test_validations_disabled(self, get_workflow_client_mock):
+        mistral = mock.MagicMock()
+        get_workflow_client_mock.return_value = mistral
+        mistral.environments.get.side_effect = Exception()
+        action = validations.Enabled()
+        result = action._validations_enabled()
+        self.assertEqual(result, False)
+
+    @mock.patch(
+        'tripleo_common.actions.validations.Enabled._validations_enabled')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    def test_success_with_validations_enabled(self, get_workflow_client_mock,
+                                              validations_enabled_mock):
+        validations_enabled_mock.return_value = True
+        action = validations.Enabled()
+        action_result = action.run()
+        self.assertEqual(None, action_result.error)
+        self.assertEqual('Validations are enabled',
+                         action_result.data['stdout'])
+
+    @mock.patch(
+        'tripleo_common.actions.validations.Enabled._validations_enabled')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+    def test_success_with_validations_disabled(self, get_workflow_client_mock,
+                                               validations_enabled_mock):
+        validations_enabled_mock.return_value = False
+        action = validations.Enabled()
+        action_result = action.run()
+        self.assertEqual(None, action_result.data)
+        self.assertEqual('Validations are disabled',
+                         action_result.error['stdout'])
+
+
 class ListValidationsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.validations.load_validations')

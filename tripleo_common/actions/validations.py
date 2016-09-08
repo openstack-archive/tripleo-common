@@ -59,6 +59,36 @@ class GetPubkeyAction(base.TripleOAction):
         return public_key
 
 
+class Enabled(base.TripleOAction):
+    """Indicate whether the validations have been enabled."""
+
+    def __init__(self):
+        super(Enabled, self).__init__()
+
+    def _validations_enabled(self):
+        """Detect whether the validations are enabled on the undercloud."""
+        mistral = self._get_workflow_client()
+        try:
+            # NOTE: the `ssh_keys` environment is created by
+            # instack-undercloud only when the validations are enabled on the
+            # undercloud (or when they're installed manually). Therefore, we
+            # can check for its presence here:
+            mistral.environments.get('ssh_keys')
+            return True
+        except Exception:
+            return False
+
+    def run(self):
+        return_value = {'stderr': ''}
+        if self._validations_enabled():
+            return_value['stdout'] = 'Validations are enabled'
+            mistral_result = (return_value, None)
+        else:
+            return_value['stdout'] = 'Validations are disabled'
+            mistral_result = (None, return_value)
+        return mistral_workflow_utils.Result(*mistral_result)
+
+
 class ListValidationsAction(base.TripleOAction):
     """Return a set of TripleO validations"""
     def __init__(self, groups=None):
