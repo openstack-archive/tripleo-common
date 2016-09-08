@@ -107,7 +107,7 @@ workflows:
         on-success: send_message
         publish:
           status: FAILED
-          message: 'Failed to set nodes to available.'
+          message: <% task(set_nodes_available).result %>
 
       send_message:
         action: zaqar.queue_post
