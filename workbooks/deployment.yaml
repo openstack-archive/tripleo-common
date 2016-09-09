@@ -6,7 +6,6 @@ description: TripleO deployment workflows
 workflows:
 
   deploy_on_server:
-    type: direct
 
     input:
       - server_uuid
@@ -44,7 +43,6 @@ workflows:
                 execution: <% execution() %>
 
   deploy_on_servers:
-    type: direct
 
     input:
       - server_name
@@ -99,7 +97,6 @@ workflows:
 
   # Deploys a workload cloud stack
   deploy_plan:
-    type: direct
 
     input:
       - container

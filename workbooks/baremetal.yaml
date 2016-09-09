@@ -6,8 +6,6 @@ description: TripleO Baremetal Workflows
 workflows:
 
   set_node_state:
-    type: direct
-
     input:
       - node_uuid
       - state_action
@@ -28,7 +26,6 @@ workflows:
           continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
 
   register_or_update:
-    type: direct
     description: Take nodes JSON and create nodes in a "manageable" state
 
     input:
@@ -89,7 +86,6 @@ workflows:
                 registered_nodes: <% $.registered_nodes or [] %>
 
   provide:
-    type: direct
     description: Take a list of nodes and move them to "available"
 
     input:
@@ -126,7 +122,6 @@ workflows:
                 execution: <% execution() %>
 
   provide_manageable_nodes:
-    type: direct
     description: Provide all nodes in a 'manageable' state.
 
     input:
@@ -169,7 +164,6 @@ workflows:
                 execution: <% execution() %>
 
   introspect:
-    type: direct
     description: Take a list of nodes and move them through introspection.
 
     input:
@@ -216,7 +210,6 @@ workflows:
 
 
   introspect_manageable_nodes:
-    type: direct
     description: Introspect all nodes in a 'manageable' state.
 
     input:

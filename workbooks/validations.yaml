@@ -6,7 +6,6 @@ description: TripleO Validations Workflows v1
 workflows:
 
   run_validation:
-    type: direct
     input:
       - validation_name
       - plan: overcloud
@@ -60,7 +59,6 @@ workflows:
                 execution: <% execution() %>
 
   run_validations:
-    type: direct
     input:
       - validation_names: []
       - plan: overcloud
@@ -109,7 +107,6 @@ workflows:
                 execution: <% execution() %>
 
   run_groups:
-    type: direct
     input:
       - group_names: []
       - plan: overcloud
@@ -166,7 +163,6 @@ workflows:
                 execution: <% execution() %>
 
   list:
-    type: direct
     input:
       - group_names: []
     tasks:
@@ -174,13 +170,11 @@ workflows:
         action: tripleo.validations.list_validations groups=<% $.group_names %>
 
   list_groups:
-    type: direct
     tasks:
       find_groups:
         action: tripleo.validations.list_groups
 
   copy_ssh_key:
-    type: direct
     input:
       - overcloud_admin: heat-admin
       - queue_name: tripleo
