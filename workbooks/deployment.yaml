@@ -104,6 +104,7 @@ workflows:
       - queue_name: tripleo
 
     tasks:
+
       deploy:
         action: tripleo.deployment.deploy timeout=<% $.timeout %> container=<% $.container %>
         on-success: test_validations_enabled

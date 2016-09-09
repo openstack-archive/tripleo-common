@@ -34,6 +34,7 @@ from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.utils import parameters
+from tripleo_common.utils import passwords as password_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -128,3 +129,45 @@ class UpdateRoleParametersAction(UpdateParametersAction):
         self.parameters = parameters.set_count_and_flavor_params(
             self.role, baremetal_client, compute_client)
         return super(UpdateRoleParametersAction, self).run()
+
+
+class GeneratePasswordsAction(base.TripleOAction):
+    """Generates passwords needed for Overcloud deployment
+
+    This method generates passwords and ensures they are stored in the
+    mistral environment associated with a plan.  This method respects
+    previously generated passwords and adds new passwords as necessary.
+    """
+
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        self.container = container
+
+    def run(self):
+        wc = self._get_workflow_client()
+        try:
+            wf_env = wc.environments.get(self.container)
+        except Exception:
+            msg = "Error retrieving mistral environment: %s" % self.container
+            LOG.exception(msg)
+            return mistral_workflow_utils.Result("", msg)
+
+        passwords = password_utils.generate_overcloud_passwords()
+
+        # if passwords don't yet exist in mistral environment
+        if 'passwords' not in wf_env.variables:
+            wf_env.variables['passwords'] = {}
+
+        # ensure all generated passwords are present in mistral env,
+        # but respect any values previously generated and stored
+        for name, password in passwords.items():
+            if name not in wf_env.variables['passwords']:
+                wf_env.variables['passwords'][name] = password
+
+        env_kwargs = {
+            'name': wf_env.name,
+            'variables': wf_env.variables,
+        }
+
+        wc.environments.update(**env_kwargs)
+
+        return wf_env.variables['passwords']

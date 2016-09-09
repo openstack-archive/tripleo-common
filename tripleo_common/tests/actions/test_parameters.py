@@ -20,6 +20,40 @@ from tripleo_common.actions import parameters
 from tripleo_common import constants
 from tripleo_common.tests import base
 
+_EXISTING_PASSWORDS = {
+    'MistralPassword': 'VFJeqBKbatYhQm9jja67hufft',
+    'BarbicanPassword': 'MGGQBtgKT7FnywvkcdMwE9nhx',
+    'AdminPassword': 'jFmY8FTpvtF2e4d4ReXvmUP8k',
+    'CeilometerMeteringSecret': 'CbHTGK4md4Cc8P8ZyzTns6wry',
+    'ZaqarPassword': 'bbFgCTFbAH8vf9n3xvZCP8aMR',
+    'NovaPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
+    'IronicPassword': '4hFDgn9ANeVfuqk84pHpD4ksa',
+    'RedisPassword': 'xjj3QZDcUQmU6Q7NzWBHRUhGd',
+    'SaharaPassword': 'spFvYGezdFwnTk7NPxgYTbUPh',
+    'AdminToken': 'jq6G6HyZtj7dcZEvuyhAfjutM',
+    'CinderPassword': 'dcxC3xyUcrmvzfrrxpAd3REcm',
+    'GlancePassword': 'VqJYNEdKKsGZtgnHct77XBtrV',
+    'RabbitPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
+    'CephAdminKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
+    'HAProxyStatsPassword': 'P8tbdK6n4YUkTaUyy8XgEVTe6',
+    'TrovePassword': 'V7A7zegkMdRFnYuN23gdc4KQC',
+    'CeilometerPassword': 'RRdpwK6qf2pbKz2UtzxqauAdk',
+    'GnocchiPassword': 'cRYHcUkMuJeK3vyU9pCaznUZc',
+    'HeatStackDomainAdminPassword': 'GgTRyWzKYsxK4mReTJ4CM6sMc',
+    'CephRgwKey': b'AQCQXtlXAAAAABAAUKcqUMu6oMjAXMjoUV4/3A==',
+    'AodhPassword': '8VZXehsKc2HbmFFMKYuqxTJHn',
+    'ManilaPassword': 'NYJN86Fua3X8AVFWmMhQa2zTH',
+    'NeutronMetadataProxySharedSecret': 'Q2YgUCwmBkYdqsdhhCF4hbghu',
+    'CephMonKey': b'AQCQXtlXAAAAABAA9l+59N3yH+C49Y0JiKeGFg==',
+    'SwiftHashSuffix': 'td8mV6k7TYEGKCDvjVBwckpn9',
+    'SnmpdReadonlyUserPassword': 'TestPassword',
+    'SwiftPassword': 'z6EWAVfW7CuxvKdzjWTdrXCeg',
+    'HeatPassword': 'bREnsXtMHKTHxt8XW6NXAYr48',
+    'MysqlClustercheckPassword': 'jN4RMMWWJ4sycaRwh7UvrAtfX',
+    'CephClientKey': b'AQCQXtlXAAAAABAAKyc+8St8i9onHyu2mPk+vg==',
+    'NeutronPassword': 'ZxAjdU2UXCV4GM3WyPKrzAZXD'
+}
+
 
 class GetParametersActionTest(base.TestCase):
 
@@ -126,6 +160,7 @@ class UpdateParametersActionTest(base.TestCase):
         test_parameters = {'SomeTestParameter': 42}
         action = parameters.UpdateParametersAction(test_parameters)
         action.run()
+
         mock_mistral.environments.update.assert_called_once_with(
             name=constants.DEFAULT_CONTAINER_NAME,
             variables={
@@ -134,3 +169,64 @@ class UpdateParametersActionTest(base.TestCase):
                 'environments': [{u'path': u'environments/test.yaml'}],
                 'parameter_defaults': {'SomeTestParameter': 42}}
         )
+
+
+class GeneratePasswordsActionTest(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_hiera_key')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_workflow_client')
+    @mock.patch('mistral.context.ctx')
+    def test_run(self, mock_ctx, mock_get_workflow_client,
+                 mock_hiera_key):
+
+        mock_hiera_key.return_value = "TestPassword"
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.name = constants.DEFAULT_CONTAINER_NAME
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        action = parameters.GeneratePasswordsAction()
+        result = action.run()
+
+        for password_param_name in constants.PASSWORD_PARAMETER_NAMES:
+            self.assertTrue(password_param_name in result,
+                            "%s is not in %s" % (password_param_name, result))
+
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_hiera_key')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_workflow_client')
+    @mock.patch('mistral.context.ctx')
+    def test_run_passwords_exist(self, mock_ctx, mock_get_workflow_client,
+                                 mock_hiera_key):
+
+        mock_hiera_key.return_value = "TestPassword"
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.name = constants.DEFAULT_CONTAINER_NAME
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': _EXISTING_PASSWORDS
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        action = parameters.GeneratePasswordsAction()
+        result = action.run()
+
+        # ensure old passwords used and no new generation
+        self.assertEqual(_EXISTING_PASSWORDS, result)

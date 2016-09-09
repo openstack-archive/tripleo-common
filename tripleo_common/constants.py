@@ -50,3 +50,38 @@ TRIPLEO_META_USAGE_KEY = 'x-container-meta-usage-tripleo'
 # OBJECT_META_KEY_PREFIX is used to prefix Swift metadata keys per object
 # in SwiftPlanStorageBackend
 OBJECT_META_KEY_PREFIX = 'x-object-meta-'
+
+#: List of names of parameters that contain passwords
+PASSWORD_PARAMETER_NAMES = (
+    'AdminPassword',
+    'AdminToken',
+    'AodhPassword',
+    'BarbicanPassword',
+    'CeilometerPassword',
+    'CeilometerMeteringSecret',
+    'CinderPassword',
+    'GlancePassword',
+    'GnocchiPassword',
+    'HAProxyStatsPassword',
+    'HeatPassword',
+    'HeatStackDomainAdminPassword',
+    'IronicPassword',
+    'MistralPassword',
+    'MysqlClustercheckPassword',
+    'NeutronPassword',
+    'NovaPassword',
+    'RabbitPassword',
+    'RedisPassword',
+    'SaharaPassword',
+    'SwiftHashSuffix',
+    'SwiftPassword',
+    'SnmpdReadonlyUserPassword',
+    'TrovePassword',
+    'ZaqarPassword',
+    'ManilaPassword',
+    'NeutronMetadataProxySharedSecret',
+    'CephMonKey',
+    'CephAdminKey',
+    'CephClientKey',
+    'CephRgwKey',
+)

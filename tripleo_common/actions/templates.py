@@ -160,11 +160,20 @@ class ProcessTemplatesAction(base.TripleOAction):
                     temp_files.append(env_temp_file)
                     env_paths.append(env_temp_file)
 
-            # handle user set parameter values
-            params = mistral_environment.variables.get('parameter_defaults')
-            if params:
+            # create a dict to hold all user set params and merge
+            # them in the appropriate order
+            merged_params = {}
+            # merge generated passwords into params first
+            passwords = mistral_environment.variables.get('passwords', {})
+            merged_params.update(passwords)
+            # handle user set parameter values next in case a user has set
+            # a new value for a password parameter
+            params = mistral_environment.variables.get(
+                'parameter_defaults', {})
+            merged_params.update(params)
+            if merged_params:
                 env_temp_file = _create_temp_file(
-                    {'parameter_defaults': params})
+                    {'parameter_defaults': merged_params})
                 temp_files.append(env_temp_file)
                 env_paths.append(env_temp_file)
 
