@@ -40,6 +40,40 @@ workflows:
                 message: <% $.message or '' %>
                 execution: <% execution() %>
 
+  update_deployment_plan:
+    input:
+      - container
+      - queue_name: tripleo
+    tasks:
+      update_plan:
+        action: tripleo.plan.update container=<% $.container %>
+        on-success: set_status_success
+        on-error: set_status_failed
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(update_plan).result %>
+
+      set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(update_plan).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.update_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
+
   create_default_deployment_plan:
     type: direct
     input:
