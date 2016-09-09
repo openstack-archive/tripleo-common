@@ -119,7 +119,7 @@ workflows:
 
       find_validations:
         on-success: notify_running
-        action: tripleo.list_validations groups=<% $.group_names %>
+        action: tripleo.validations.list_validations groups=<% $.group_names %>
         publish:
           validations: <% task(find_validations).result %>
 
