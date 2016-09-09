@@ -14,8 +14,15 @@
 # under the License.
 
 
-#: The name of the root template in a standard tripleo-heat-template layout.
+#: The names of the root template in a standard tripleo-heat-template layout.
 TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
+OVERCLOUD_YAML_NAME = "overcloud.yaml"
+
+#: The name of the overcloud root template in jinja2 format.
+OVERCLOUD_J2_NAME = "overcloud.j2.yaml"
+
+#: The name of custom roles data file used when rendering the jinja template.
+OVERCLOUD_J2_ROLES_NAME = "roles_data.yaml"
 
 #: The name of the type for resource groups.
 RESOURCE_GROUP_TYPE = 'OS::Heat::ResourceGroup'

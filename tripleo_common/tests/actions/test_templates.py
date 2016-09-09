@@ -14,9 +14,46 @@
 # under the License.
 import mock
 
+from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.tests import base
+
+
+JINJA_SNIPPET = """
+# Jinja loop for Role in role_data.yaml
+{% for role in roles %}
+  # Resources generated for {{role.name}} Role
+  {{role.name}}ServiceChain:
+    type: OS::TripleO::Services
+    properties:
+      Services:
+        get_param: {{role.name}}Services
+      ServiceNetMap: {get_attr: [ServiceNetMap, service_net_map]}
+      EndpointMap: {get_attr: [EndpointMap, endpoint_map]}
+      DefaultPasswords: {get_attr: [DefaultPasswords, passwords]}
+{% endfor %}"""
+
+ROLE_DATA_YAML = """
+-
+  name: Controller
+"""
+
+
+EXPECTED_JINJA_RESULT = """
+# Jinja loop for Role in role_data.yaml
+
+  # Resources generated for Controller Role
+  ControllerServiceChain:
+    type: OS::TripleO::Services
+    properties:
+      Services:
+        get_param: ControllerServices
+      ServiceNetMap: {get_attr: [ServiceNetMap, service_net_map]}
+      EndpointMap: {get_attr: [EndpointMap, endpoint_map]}
+      DefaultPasswords: {get_attr: [DefaultPasswords, passwords]}
+"""
 
 
 class UploadTemplatesActionTest(base.TestCase):
@@ -54,8 +91,10 @@ class ProcessTemplatesActionTest(base.TestCase):
                  mock_process_multiple_environments_and_files):
 
         mock_ctx.return_value = mock.MagicMock()
-        mock_get_object_client.return_value = mock.MagicMock(
-            url="http://test.com")
+        swift = mock.MagicMock(url="http://test.com")
+        swift.get_object.side_effect = swiftexceptions.ClientException(
+            'atest2')
+        mock_get_object_client.return_value = swift
 
         mock_mistral = mock.MagicMock()
         mock_env = mock.MagicMock()
@@ -85,3 +124,50 @@ class ProcessTemplatesActionTest(base.TestCase):
                 'heat_template_version': '2016-04-30'
             }
         })
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_process_custom_roles(self, ctx_mock, get_obj_client_mock):
+
+        def return_multiple_files(*args):
+            if args[1] == constants.OVERCLOUD_J2_NAME:
+                return ['', JINJA_SNIPPET]
+            if args[1] == 'foo.j2.yaml':
+                return ['', JINJA_SNIPPET]
+            elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
+                return ['', ROLE_DATA_YAML]
+
+        def return_container_files(*args):
+            return ('headers', [{'name': constants.OVERCLOUD_J2_NAME},
+                                {'name': 'foo.j2.yaml'},
+                                {'name': constants.OVERCLOUD_J2_ROLES_NAME}])
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        action._process_custom_roles()
+
+        get_object_mock_calls = [
+            mock.call('overcloud', constants.OVERCLOUD_J2_NAME),
+            mock.call('overcloud', constants.OVERCLOUD_J2_ROLES_NAME),
+            mock.call('overcloud', 'foo.j2.yaml'),
+        ]
+        swift.get_object.assert_has_calls(
+            get_object_mock_calls, any_order=True)
+
+        put_object_mock_calls = [
+            mock.call(constants.DEFAULT_CONTAINER_NAME,
+                      constants.OVERCLOUD_YAML_NAME,
+                      EXPECTED_JINJA_RESULT),
+            mock.call(constants.DEFAULT_CONTAINER_NAME,
+                      'foo.yaml',
+                      EXPECTED_JINJA_RESULT),
+        ]
+        swift.put_object.assert_has_calls(
+            put_object_mock_calls, any_order=True)
