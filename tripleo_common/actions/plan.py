@@ -103,6 +103,60 @@ class CreatePlanAction(base.TripleOAction):
             return mistral_workflow_utils.Result(error=error_text)
 
 
+class UpdatePlanAction(base.TripleOAction):
+    """Update a plan
+
+    Given a container, update the Mistral environment with the same name,
+    parses the capabilities map file and sets the initial plan template
+    and environment files if they have changed since the plan was originally
+    created.
+    """
+
+    def __init__(self, container):
+        super(UpdatePlanAction, self).__init__()
+        self.container = container
+
+    def run(self):
+        swift = self._get_object_client()
+        mistral = self._get_workflow_client()
+
+        error_text = None
+
+        try:
+            mapobject = swift.get_object(self.container,
+                                         'capabilities-map.yaml')[1]
+            mapfile = yaml.safe_load(mapobject)
+
+            mistral_env = mistral.environments.get(self.container)
+
+            # We always want the root template to match whatever is in the
+            # capabilities map, so update that regardless.
+            mistral_env.variables['root_template'] = mapfile['root_template']
+
+            # Check to see if the root environment is already listed, if it
+            # isn't - add it.
+            # TODO(d0ugal): Users could get into a situation where they have
+            #               an old root environment still added and they
+            #               then have two after the new one is added.
+            root_env = {'path': mapfile['root_environment']}
+            if root_env not in mistral_env.variables['environments']:
+                mistral_env.variables['environments'].insert(0, root_env)
+
+            mistral.environments.update(
+                name=self.container,
+                variables=mistral_env.variables,
+            )
+        except yaml.YAMLError as yaml_err:
+            error_text = "Error parsing the yaml file: %s" % yaml_err
+        except swiftexceptions.ClientException as obj_err:
+            error_text = "File missing from container: %s" % obj_err
+        except KeyError as key_err:
+            error_text = ("capabilities-map.yaml missing key: "
+                          "%s" % key_err)
+        if error_text:
+            return mistral_workflow_utils.Result(error=error_text)
+
+
 class ListPlansAction(base.TripleOAction):
     """Lists deployment plans
 
