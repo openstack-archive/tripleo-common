@@ -55,8 +55,6 @@ class DibImageBuilder(ImageBuilder):
                 "/usr/share/tripleo-puppet-elements",
                 "/usr/share/instack-undercloud",
                 '/usr/share/tripleo-image-elements',
-                '/usr/share/openstack-heat-templates/'
-                'software-config/elements',
             ])
             os.environ.update(env)
 
