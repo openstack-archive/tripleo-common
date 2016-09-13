@@ -194,6 +194,7 @@ class DeployStackActionTest(base.TestCase):
     def setUp(self,):
         super(DeployStackActionTest, self).setUp()
 
+    @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
@@ -206,7 +207,8 @@ class DeployStackActionTest(base.TestCase):
     def test_run(self, mock_ctx, get_orchestration_client_mock,
                  mock_get_object_client, mock_get_workflow_client,
                  mock_get_template_contents,
-                 mock_process_multiple_environments_and_files):
+                 mock_process_multiple_environments_and_files,
+                 mock_time):
 
         mock_ctx.return_value = mock.MagicMock()
         # setup swift
@@ -225,6 +227,7 @@ class DeployStackActionTest(base.TestCase):
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
+            'parameter_defaults': {'random_existing_data': 'a_value'},
         }
         mock_mistral.environments.get.return_value = mock_env
         mock_get_workflow_client.return_value = mock_mistral
@@ -234,8 +237,20 @@ class DeployStackActionTest(base.TestCase):
         })
         mock_process_multiple_environments_and_files.return_value = ({}, {})
 
+        # freeze time at datetime.datetime(2016, 9, 8, 16, 24, 24)
+        mock_time.time.return_value = 1473366264
+
         action = deployment.DeployStackAction(1, 'overcloud')
         action.run()
+
+        # verify parameters are as expected
+        expected_defaults = {'DeployIdentifier': 1473366264,
+                             'StackAction': 'CREATE',
+                             'UpdateIdentifier': '',
+                             'random_existing_data': 'a_value'}
+        self.assertEqual(expected_defaults,
+                         mock_env.variables['parameter_defaults'])
+
         heat.stacks.create.assert_called_once_with(
             environment={},
             files={},
