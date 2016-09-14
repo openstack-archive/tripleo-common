@@ -24,7 +24,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(process_templates).result %>
+          message: <% task(create_plan).result %>
 
       create_plan_set_status_failed:
         on-success: notify_zaqar
@@ -57,8 +57,13 @@ workflows:
     tasks:
       update_plan:
         action: tripleo.plan.update container=<% $.container %>
+        on-success: process_templates
+        on-error: update_plan_set_status_failed
+
+      process_templates:
+        action: tripleo.process_templates container=<% $.container %>
         on-success: set_status_success
-        on-error: set_status_failed
+        on-error: process_templates_set_status_failed
 
       set_status_success:
         on-success: notify_zaqar
@@ -66,11 +71,17 @@ workflows:
           status: SUCCESS
           message: <% task(update_plan).result %>
 
-      set_status_failed:
+      update_plan_set_status_failed:
         on-success: notify_zaqar
         publish:
           status: FAILED
           message: <% task(update_plan).result %>
+
+      process_templates_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(process_templates).result %>
 
       notify_zaqar:
         action: zaqar.queue_post
@@ -124,7 +135,7 @@ workflows:
       plan_process_templates:
         action: tripleo.process_templates container=<% $.container %>
         on-success: plan_set_status_success
-        on-error: plan_set_status_failed
+        on-error: process_templates_set_status_failed
 
       plan_set_status_success:
         on-success: notify_zaqar
