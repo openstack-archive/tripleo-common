@@ -18,6 +18,7 @@ import yaml
 
 from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
+from mistralclient.api import base as mistralclient_base
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
@@ -75,6 +76,18 @@ class CreatePlanAction(base.TripleOAction):
         }
         env_vars = {}
         error_text = None
+
+        # Check to see if an environment with that name already exists
+        try:
+            self._get_workflow_client().environments.get(self.container)
+        except mistralclient_base.APIException:
+            # The environment doesn't exist, as expected. Proceed.
+            pass
+        else:
+            message = ("Unable to create plan. The Mistral environment "
+                       "already exists")
+            return mistral_workflow_utils.Result(None, message)
+
         try:
             # parses capabilities to get root_template, root_environment
             mapfile = yaml.safe_load(
