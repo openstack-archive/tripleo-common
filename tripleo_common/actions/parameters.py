@@ -28,6 +28,8 @@
 # under the License.
 import logging
 
+from mistral.workflow import utils as mistral_workflow_utils
+
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
@@ -41,6 +43,12 @@ class GetParametersAction(templates.ProcessTemplatesAction):
 
     def run(self):
         processed_data = super(GetParametersAction, self).run()
+
+        # If we receive a 'Result' instance it is because the parent action
+        # had an error.
+        if isinstance(processed_data, mistral_workflow_utils.Result):
+            return processed_data
+
         processed_data['show_nested'] = True
 
         # respect previously user set param values

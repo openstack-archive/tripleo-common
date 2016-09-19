@@ -163,6 +163,12 @@ class DeployStackAction(templates.ProcessTemplatesAction):
 
         # process all plan files and create or update a stack
         processed_data = super(DeployStackAction, self).run()
+
+        # If we receive a 'Result' instance it is because the parent action
+        # had an error.
+        if isinstance(processed_data, mistral_workflow_utils.Result):
+            return processed_data
+
         stack_args = processed_data.copy()
         stack_args['timeout_mins'] = self.timeout_mins
 
