@@ -389,7 +389,7 @@ workflows:
     description: Tag a node with a role
     input:
       - node_uuid
-      - role
+      - role: null
       - queue_name: tripleo
 
     task-defaults:
@@ -421,15 +421,25 @@ workflows:
   tag_nodes:
     description: Runs the tag_node workflow in a loop
     input:
-      - node_uuids
+      - tag_node_uuids
+      - untag_node_uuids
       - role
       - queue_name: tripleo
+
+    task-defaults:
+      on-error: send_message
 
     tasks:
 
       tag_nodes:
-        with-items: node_uuid in <% $.node_uuids %>
+        with-items: node_uuid in <% $.tag_node_uuids %>
         workflow: tripleo.baremetal.v1.tag_node node_uuid=<% $.node_uuid %> role=<% $.role %>
+        concurrency: 1
+        on-success: untag_nodes
+
+      untag_nodes:
+        with-items: node_uuid in <% $.untag_node_uuids %>
+        workflow: tripleo.baremetal.v1.tag_node node_uuid=<% $.node_uuid %>
         concurrency: 1
         on-success: update_role_parameters
 
