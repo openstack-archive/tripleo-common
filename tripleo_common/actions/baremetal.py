@@ -262,6 +262,8 @@ class ConfigureRootDeviceAction(base.TripleOAction):
 class UpdateNodeCapability(base.TripleOAction):
     """Update a node's capability
 
+    Set the node's capability to the specified value.
+
     :param node_uuid: The UUID of the node
     :param capability: The name of the capability to update
     :param value: The value to update token
