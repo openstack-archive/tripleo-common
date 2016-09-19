@@ -17,6 +17,7 @@ import shutil
 import tempfile
 
 from mistral.workflow import utils as mistral_workflow_utils
+from mistralclient.api import base as mistralclient_api
 from oslo_concurrency.processutils import ProcessExecutionError
 
 from tripleo_common.actions import base
@@ -132,6 +133,9 @@ class RunValidationAction(base.TripleOAction):
                                                   self.plan)
             return_value = {'stdout': stdout, 'stderr': stderr}
             mistral_result = (return_value, None)
+        except mistralclient_api.APIException as e:
+            return_value = {'stdout': '', 'stderr': e.error_message}
+            mistral_result = (None, return_value)
         except ProcessExecutionError as e:
             return_value = {'stdout': e.stdout, 'stderr': e.stderr}
             # Indicates to Mistral there was a failure
