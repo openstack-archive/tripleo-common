@@ -24,7 +24,7 @@ from tripleo_common import constants
 LOG = logging.getLogger(__name__)
 TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
 UPGRADE_ENVIRONMENT_NAME = 'major-upgrade-pacemaker.yaml'
-UPGRADE_CLEANUP_ENVIRONMENT_NAME = 'major-upgrade-pacemaker-converge.yaml'
+STACK_TIMEOUT_DEFAULT = 240
 
 
 class StackUpgradeManager(object):
@@ -35,7 +35,7 @@ class StackUpgradeManager(object):
         self.environment_files = environment_files
         self.heatclient = heatclient
 
-    def _update_stack(self, timeout_mins, stage_env):
+    def upgrade(self, timeout_mins=STACK_TIMEOUT_DEFAULT):
         stack_params = {}
 
         tpl_files, template = template_utils.get_template_contents(
@@ -44,7 +44,7 @@ class StackUpgradeManager(object):
         if self.environment_files:
             env_paths.extend(self.environment_files)
         env_paths.append(os.path.join(self.tht_dir, 'environments',
-                         stage_env))
+                         UPGRADE_ENVIRONMENT_NAME))
         env_files, env = (
             template_utils.process_multiple_environments_and_files(
                 env_paths=env_paths))
@@ -59,18 +59,9 @@ class StackUpgradeManager(object):
             'timeout_mins': timeout_mins,
         }
 
-        LOG.debug('stack update params: %s', fields)
-
-        self.heatclient.stacks.update(**fields)
-
-    def upgrade(self, timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
         LOG.info('upgrading stack: %s', self.stack.stack_name)
-        self._update_stack(timeout_mins, UPGRADE_ENVIRONMENT_NAME)
-
-    def upgrade_post(self, timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
-        LOG.info('cleanup of stack upgrade for stack: %s',
-                 self.stack.stack_name)
-        self._update_stack(timeout_mins, UPGRADE_CLEANUP_ENVIRONMENT_NAME)
+        LOG.debug('stack upgrade params: %s', fields)
+        self.heatclient.stacks.update(**fields)
 
     def get_status(self):
         self.stack = self.heatclient.stacks.get(self.stack.id)
