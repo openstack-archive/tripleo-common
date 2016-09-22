@@ -135,7 +135,7 @@ workflows:
       plan_process_templates:
         action: tripleo.process_templates container=<% $.container %>
         on-success: plan_set_status_success
-        on-error: plan_set_status_failed
+        on-error: process_templates_set_status_failed
 
       plan_set_status_success:
         on-success: notify_zaqar
