@@ -67,10 +67,7 @@ class RegisterOrUpdateNodes(base.TripleOAction):
                 ramdisk_name=self.ramdisk_name)
         except Exception as err:
             LOG.exception("Error registering nodes with ironic.")
-            return mistral_workflow_utils.Result(
-                "",
-                err.message
-            )
+            return mistral_workflow_utils.Result(error=err)
 
 
 class ConfigureBootAction(base.TripleOAction):
@@ -133,7 +130,7 @@ class ConfigureBootAction(base.TripleOAction):
             LOG.debug("Configuring boot option for Node %s", self.node_uuid)
         except Exception as err:
             LOG.exception("Error configuring node boot options with Ironic.")
-            return mistral_workflow_utils.Result("", err)
+            return mistral_workflow_utils.Result(error=err)
 
 
 class ConfigureRootDeviceAction(base.TripleOAction):
@@ -288,6 +285,5 @@ class UpdateNodeCapability(base.TripleOAction):
         except Exception as err:
             LOG.exception("Error updating node capability in ironic.")
             return mistral_workflow_utils.Result(
-                "",
-                "%s: %s" % (type(err).__name__, str(err))
+                error="%s: %s" % (type(err).__name__, str(err))
             )

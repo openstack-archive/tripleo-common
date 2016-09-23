@@ -50,10 +50,7 @@ class CreateContainerAction(base.TripleOAction):
                               oc.get_account()[1]]:
             result_string = ("A container with the name %s already"
                              " exists.") % self.container
-            return mistral_workflow_utils.Result(
-                None,
-                result_string
-            )
+            return mistral_workflow_utils.Result(error=result_string)
         oc.put_container(self.container, headers=default_container_headers)
 
 
@@ -86,7 +83,7 @@ class CreatePlanAction(base.TripleOAction):
         else:
             message = ("Unable to create plan. The Mistral environment "
                        "already exists")
-            return mistral_workflow_utils.Result(None, message)
+            return mistral_workflow_utils.Result(error=message)
 
         try:
             # parses capabilities to get root_template, root_environment
@@ -281,7 +278,7 @@ class ListRolesAction(base.TripleOAction):
             err_msg = ("Error retrieving deployment plan: %s"
                        % mistral_err)
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(None, err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
 
         roles = []
         for resource, details in resources.items():

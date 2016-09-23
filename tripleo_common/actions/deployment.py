@@ -121,10 +121,7 @@ class OrchestrationDeployAction(base.TripleOAction):
             if body_json['deploy_status_code'] != 0:
                 error = "Heat deployment failed for '%s'" % self.name
 
-        return mistral_workflow_utils.Result(
-            body_json,
-            error
-        )
+        return mistral_workflow_utils.Result(data=body_json, error=error)
 
 
 class DeployStackAction(templates.ProcessTemplatesAction):

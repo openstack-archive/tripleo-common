@@ -48,10 +48,7 @@ class GetCapabilitiesAction(base.TripleOAction):
             err_msg = (
                 "Error parsing capabilities-map.yaml.")
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(
-                None,
-                err_msg
-            )
+            return mistral_workflow_utils.Result(error=err_msg)
         try:
             container_files = swift_client.get_container(self.container)
             container_file_list = [entry['name'] for entry
@@ -59,10 +56,7 @@ class GetCapabilitiesAction(base.TripleOAction):
         except Exception as swift_err:
             err_msg = ("Error retrieving plan files: %s" % swift_err)
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(
-                None,
-                err_msg
-            )
+            return mistral_workflow_utils.Result(error=err_msg)
         try:
             mistral_client = self._get_workflow_client()
             mistral_env = mistral_client.environments.get(self.container)
@@ -70,10 +64,7 @@ class GetCapabilitiesAction(base.TripleOAction):
             err_msg = ("Error retrieving mistral "
                        "environment. %s" % mistral_err)
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(
-                None,
-                err_msg
-            )
+            return mistral_workflow_utils.Result(error=err_msg)
 
         selected_envs = [item['path'] for item in
                          mistral_env.variables['environments']
@@ -175,10 +166,7 @@ class UpdateCapabilitiesAction(base.TripleOAction):
                 "Error retrieving mistral "
                 "environment. %s" % mistral_err)
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(
-                None,
-                err_msg
-            )
+            return mistral_workflow_utils.Result(error=err_msg)
 
         for k, v in self.environments.items():
             found = False
@@ -203,8 +191,5 @@ class UpdateCapabilitiesAction(base.TripleOAction):
             err_msg = (
                 "Error retrieving mistral environment. %s" % mistral_err)
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(
-                None,
-                err_msg
-            )
+            return mistral_workflow_utils.Result(error=err_msg)
         return mistral_env.variables
