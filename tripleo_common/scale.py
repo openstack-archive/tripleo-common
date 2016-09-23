@@ -96,7 +96,8 @@ class ScaleManager(object):
                       timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
 
         tpl_files, template = template_utils.get_template_contents(
-            template_file=os.path.join(self.tht_dir, constants.TEMPLATE_NAME))
+            template_file=os.path.join(self.tht_dir,
+                                       constants.OVERCLOUD_YAML_NAME))
 
         env_paths = []
         if self.environment_files:

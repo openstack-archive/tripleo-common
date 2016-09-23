@@ -52,7 +52,8 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
         stack_params = {'UpdateIdentifier': timestamp, 'StackAction': 'UPDATE'}
 
         tpl_files, template = template_utils.get_template_contents(
-            template_file=os.path.join(self.tht_dir, constants.TEMPLATE_NAME))
+            template_file=os.path.join(self.tht_dir,
+                                       constants.OVERCLOUD_YAML_NAME))
         env_paths = []
         if self.environment_files:
             env_paths.extend(self.environment_files)
