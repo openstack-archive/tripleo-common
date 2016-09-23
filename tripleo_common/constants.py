@@ -15,7 +15,6 @@
 
 
 #: The names of the root template in a standard tripleo-heat-template layout.
-TEMPLATE_NAME = 'overcloud-without-mergepy.yaml'
 OVERCLOUD_YAML_NAME = "overcloud.yaml"
 
 #: The name of the overcloud root template in jinja2 format.
