@@ -95,7 +95,7 @@ swift post "$CONTAINER_NAME"
 SWIFT_ACCOUNT=$(swift stat "$CONTAINER_NAME" 2>/dev/null | grep Account: | sed -e "s|.*Account..||")
 
 # This works with newer openstackclient which displays the endpoints in list
-SWIFT_INTERNAL_URL=$(openstack endpoint list | grep swift | grep internal | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
+SWIFT_INTERNAL_URL=$(openstack endpoint list | grep swift | grep internal | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|" || true)
 
 if [ -z "$SWIFT_INTERNAL_URL" ]; then
   # fallback to old openstack client 'show' which displays all the URLs
