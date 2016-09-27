@@ -56,7 +56,6 @@ _opts = [
                      """structured JSON format."""),
     cfg.MultiOpt('name',
                  item_type=types.String(),
-                 default=None,
                  help="""Name of image to build. May be specified multiple """
                       """times. If unspecified, will build all images in """
                       """given YAML files."""),
