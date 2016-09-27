@@ -51,6 +51,7 @@ workflows:
 
       notify_zaqar:
         action: zaqar.queue_post
+        retry: count=5 delay=1
         input:
           queue_name: <% $.queue_name %>
           messages:
@@ -108,6 +109,7 @@ workflows:
 
       notify_zaqar:
         action: zaqar.queue_post
+        retry: count=5 delay=1
         input:
           queue_name: <% $.queue_name %>
           messages:
@@ -203,6 +205,7 @@ workflows:
 
       notify_zaqar:
         action: zaqar.queue_post
+        retry: count=5 delay=1
         input:
           queue_name: <% $.queue_name %>
           messages:
