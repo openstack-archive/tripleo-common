@@ -68,6 +68,30 @@ class ProcessTemplatesAction(base.TripleOAction):
         super(ProcessTemplatesAction, self).__init__()
         self.container = container
 
+    def _j2_render_and_put(self, j2_template, j2_data, outfile_name=None):
+        swift = self._get_object_client()
+        yaml_f = outfile_name or j2_template.replace('.j2.yaml', '.yaml')
+
+        try:
+            # Render the j2 template
+            template = jinja2.Environment().from_string(j2_template)
+            r_template = template.render(**j2_data)
+        except jinja2.exceptions.TemplateError as ex:
+            error_msg = ("Error rendering template %s : %s"
+                         % (yaml_f, six.text_type(ex)))
+            LOG.error(error_msg)
+            raise Exception(error_msg)
+        try:
+            # write the template back to the plan container
+            LOG.info("Writing rendered template %s" % yaml_f)
+            swift.put_object(
+                self.container, yaml_f, r_template)
+        except swiftexceptions.ClientException as ex:
+            error_msg = ("Error storing file %s in container %s"
+                         % (yaml_f, self.container))
+            LOG.error(error_msg)
+            raise Exception(error_msg)
+
     def _process_custom_roles(self):
         swift = self._get_object_client()
         try:
@@ -78,6 +102,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.info("No %s file found, skipping jinja templating"
                      % constants.OVERCLOUD_J2_ROLES_NAME)
             return
+
         try:
             # Iterate over all files in the plan container
             # we j2 render any with the .j2.yaml suffix
@@ -88,32 +113,32 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.error(error_msg)
             raise Exception(error_msg)
 
+        role_names = [r.get('name') for r in role_data]
         for f in [f.get('name') for f in container_files[1]]:
-            # check to see if the file is a *.j2.yaml
-            # if it is, get it and template for roles
-            if f.endswith('.j2.yaml'):
+            # We do two templating passes here:
+            # 1. *.role.j2.yaml - we template just the role name
+            #    and create multiple files (one per role)
+            # 2. *.j2.yaml - we template with all roles_data,
+            #    and create one file common to all roles
+            if f.endswith('.role.j2.yaml'):
+                LOG.info("jinja2 rendering role template %s" % f)
+                j2_template = swift.get_object(self.container, f)[1]
+                LOG.info("jinja2 rendering roles %s" % ",".join(role_names))
+                for role in role_names:
+                    j2_data = {'role': role}
+                    LOG.info("jinja2 rendering role %s" % role)
+                    out_f = "-".join(
+                        [role.lower(),
+                         os.path.basename(f).replace('.role.j2.yaml',
+                                                     '.yaml')])
+                    out_f_path = os.path.join(os.path.dirname(f), out_f)
+                    self._j2_render_and_put(j2_template, j2_data, out_f_path)
+            elif f.endswith('.j2.yaml'):
                 LOG.info("jinja2 rendering %s" % f)
                 j2_template = swift.get_object(self.container, f)[1]
-
-                try:
-                    # Render the j2 template
-                    template = jinja2.Environment().from_string(j2_template)
-                    r_template = template.render(roles=role_data)
-                except jinja2.exceptions.TemplateError as ex:
-                    error_msg = ("Error rendering template %s : %s"
-                                 % (f, six.text_type(ex)))
-                    LOG.error(error_msg)
-                    raise Exception(error_msg)
-                try:
-                    # write the template back to the plan container
-                    yaml_f = f.replace('.j2.yaml', '.yaml')
-                    swift.put_object(
-                        self.container, yaml_f, r_template)
-                except swiftexceptions.ClientException as ex:
-                    error_msg = ("Error storing file %s in container %s"
-                                 % (yaml_f, self.container))
-                    LOG.error(error_msg)
-                    raise Exception(error_msg)
+                j2_data = {'roles': role_data}
+                out_f = f.replace('.j2.yaml', '.yaml')
+                self._j2_render_and_put(j2_template, j2_data, out_f)
 
     def run(self):
         error_text = None
