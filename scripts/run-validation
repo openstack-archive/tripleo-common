@@ -35,6 +35,9 @@ export ANSIBLE_PRIVATE_KEY_FILE=$IDENTITY_FILE
 
 export ANSIBLE_INVENTORY=$(which tripleo-ansible-inventory)
 
+# Use the custom validation-specific formatter
+export ANSIBLE_STDOUT_CALLBACK=validation_output
+
 # Environment variable is the easiest way to pass variables to an Ansible
 # dynamic inventory script
 export TRIPLEO_PLAN_NAME=${PLAN_NAME}
