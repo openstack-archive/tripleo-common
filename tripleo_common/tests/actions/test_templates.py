@@ -20,7 +20,6 @@ from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.tests import base
 
-
 JINJA_SNIPPET = """
 # Jinja loop for Role in role_data.yaml
 {% for role in roles %}
@@ -40,7 +39,6 @@ ROLE_DATA_YAML = """
   name: Controller
 """
 
-
 EXPECTED_JINJA_RESULT = """
 # Jinja loop for Role in role_data.yaml
 
@@ -54,6 +52,12 @@ EXPECTED_JINJA_RESULT = """
       EndpointMap: {get_attr: [EndpointMap, endpoint_map]}
       DefaultPasswords: {get_attr: [DefaultPasswords, passwords]}
 """
+
+JINJA_SNIPPET_CONFIG = """
+outputs:
+  OS::stack_id:
+    description: The software config which runs puppet on the {{role}} role
+    value: {get_resource: {{role}}PuppetConfigImpl}"""
 
 
 class UploadTemplatesActionTest(base.TestCase):
@@ -171,3 +175,23 @@ class ProcessTemplatesActionTest(base.TestCase):
         ]
         swift.put_object.assert_has_calls(
             put_object_mock_calls, any_order=True)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_j2_render_and_put(self, ctx_mock, get_obj_client_mock):
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object = mock.MagicMock()
+        swift.get_container = mock.MagicMock()
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        action._j2_render_and_put(JINJA_SNIPPET_CONFIG,
+                                  {'role': 'Controller'},
+                                  'controller-config.yaml')
+
+        action_result = swift.put_object._mock_mock_calls[0]
+
+        self.assertTrue("Controller" in str(action_result))
