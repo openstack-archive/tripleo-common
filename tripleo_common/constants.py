@@ -23,6 +23,9 @@ OVERCLOUD_J2_NAME = "overcloud.j2.yaml"
 #: The name of custom roles data file used when rendering the jinja template.
 OVERCLOUD_J2_ROLES_NAME = "roles_data.yaml"
 
+#: The name of custom roles excl file used when rendering the jinja template.
+OVERCLOUD_J2_EXCLUDES = "j2_excludes.yaml"
+
 #: The name of the type for resource groups.
 RESOURCE_GROUP_TYPE = 'OS::Heat::ResourceGroup'
 
