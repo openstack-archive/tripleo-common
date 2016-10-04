@@ -102,6 +102,14 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.info("No %s file found, skipping jinja templating"
                      % constants.OVERCLOUD_J2_ROLES_NAME)
             return
+        # FIXME: Check the default list of excluded template roles
+        # this list should be created using the content of
+        # j2_excludes.yaml
+        j2_excl_data = {"name": ["puppet/controller-role.yaml",
+                                 "puppet/compute-role.yaml",
+                                 "puppet/blockstorage-role.yaml",
+                                 "puppet/objectstorage-role.yaml",
+                                 "puppet/cephstorage-role.yaml"]}
 
         try:
             # Iterate over all files in the plan container
@@ -114,6 +122,8 @@ class ProcessTemplatesAction(base.TripleOAction):
             raise Exception(error_msg)
 
         role_names = [r.get('name') for r in role_data]
+        excl_templates = j2_excl_data.get('name')
+
         for f in [f.get('name') for f in container_files[1]]:
             # We do two templating passes here:
             # 1. *.role.j2.yaml - we template just the role name
@@ -123,7 +133,8 @@ class ProcessTemplatesAction(base.TripleOAction):
             if f.endswith('.role.j2.yaml'):
                 LOG.info("jinja2 rendering role template %s" % f)
                 j2_template = swift.get_object(self.container, f)[1]
-                LOG.info("jinja2 rendering roles %s" % ",".join(role_names))
+                LOG.info("jinja2 rendering roles %s" % ","
+                         .join(role_names))
                 for role in role_names:
                     j2_data = {'role': role}
                     LOG.info("jinja2 rendering role %s" % role)
@@ -132,7 +143,14 @@ class ProcessTemplatesAction(base.TripleOAction):
                          os.path.basename(f).replace('.role.j2.yaml',
                                                      '.yaml')])
                     out_f_path = os.path.join(os.path.dirname(f), out_f)
-                    self._j2_render_and_put(j2_template, j2_data, out_f_path)
+                    if not (out_f_path in excl_templates):
+                        self._j2_render_and_put(j2_template,
+                                                j2_data,
+                                                out_f_path)
+                    else:
+                        LOG.info("Skipping rendering of %s, defined in %s" %
+                                 (out_f_path, j2_excl_data))
+
             elif f.endswith('.j2.yaml'):
                 LOG.info("jinja2 rendering %s" % f)
                 j2_template = swift.get_object(self.container, f)[1]

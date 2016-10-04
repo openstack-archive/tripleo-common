@@ -36,18 +36,18 @@ JINJA_SNIPPET = """
 
 ROLE_DATA_YAML = """
 -
-  name: Controller
+  name: CustomRole
 """
 
 EXPECTED_JINJA_RESULT = """
 # Jinja loop for Role in role_data.yaml
 
-  # Resources generated for Controller Role
-  ControllerServiceChain:
+  # Resources generated for CustomRole Role
+  CustomRoleServiceChain:
     type: OS::TripleO::Services
     properties:
       Services:
-        get_param: ControllerServices
+        get_param: CustomRoleServices
       ServiceNetMap: {get_attr: [ServiceNetMap, service_net_map]}
       EndpointMap: {get_attr: [EndpointMap, endpoint_map]}
       DefaultPasswords: {get_attr: [DefaultPasswords, passwords]}
@@ -58,6 +58,15 @@ outputs:
   OS::stack_id:
     description: The software config which runs puppet on the {{role}} role
     value: {get_resource: {{role}}PuppetConfigImpl}"""
+
+J2_EXCLUDES = """
+name:
+  - puppet/controller-role.yaml
+  - puppet/compute-role.yaml
+  - puppet/blockstorage-role.yaml
+  - puppet/objectstorage-role.yaml
+  - puppet/cephstorage-role.yaml
+"""
 
 
 class UploadTemplatesActionTest(base.TestCase):
@@ -138,6 +147,8 @@ class ProcessTemplatesActionTest(base.TestCase):
                 return ['', JINJA_SNIPPET]
             if args[1] == 'foo.j2.yaml':
                 return ['', JINJA_SNIPPET]
+            if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
+                return ['', J2_EXCLUDES]
             elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
                 return ['', ROLE_DATA_YAML]
 
@@ -189,9 +200,9 @@ class ProcessTemplatesActionTest(base.TestCase):
         # Test
         action = templates.ProcessTemplatesAction()
         action._j2_render_and_put(JINJA_SNIPPET_CONFIG,
-                                  {'role': 'Controller'},
-                                  'controller-config.yaml')
+                                  {'role': 'CustomRole'},
+                                  'customrole-config.yaml')
 
         action_result = swift.put_object._mock_mock_calls[0]
 
-        self.assertTrue("Controller" in str(action_result))
+        self.assertTrue("CustomRole" in str(action_result))
