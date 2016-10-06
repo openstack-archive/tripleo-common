@@ -1,0 +1,41 @@
+---
+version: '2.0'
+name: tripleo.scale.v1
+description: TripleO Overcloud Deployment Workflows v1
+
+workflows:
+
+  delete_node:
+    description: deletes given overcloud nodes and updates the stack
+
+    input:
+      - container
+      - nodes
+      - timeout: 240
+      - queue_name: tripleo
+
+    tasks:
+
+      delete_node:
+        action: tripleo.scale.delete_node nodes=<% $.nodes %> timeout=<% $.timeout %> container=<% $.container %>
+        on-success: send_message
+        on-error: set_delete_node_failed
+
+      set_delete_node_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(delete_node).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.scale.v1.delete_node
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
