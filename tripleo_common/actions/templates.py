@@ -94,6 +94,7 @@ class ProcessTemplatesAction(base.TripleOAction):
 
     def _process_custom_roles(self):
         swift = self._get_object_client()
+
         try:
             j2_role_file = swift.get_object(
                 self.container, constants.OVERCLOUD_J2_ROLES_NAME)[1]
@@ -102,14 +103,16 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.info("No %s file found, skipping jinja templating"
                      % constants.OVERCLOUD_J2_ROLES_NAME)
             return
-        # FIXME: Check the default list of excluded template roles
-        # this list should be created using the content of
-        # j2_excludes.yaml
-        j2_excl_data = {"name": ["puppet/controller-role.yaml",
-                                 "puppet/compute-role.yaml",
-                                 "puppet/blockstorage-role.yaml",
-                                 "puppet/objectstorage-role.yaml",
-                                 "puppet/cephstorage-role.yaml"]}
+
+        try:
+            j2_excl_file = swift.get_object(
+                self.container, constants.OVERCLOUD_J2_EXCLUDES)[1]
+            j2_excl_data = yaml.safe_load(j2_excl_file)
+        except swiftexceptions.ClientException:
+            j2_excl_data = {"name": []}
+            LOG.info("No J2 exclude file found, defaulted to: %s"
+                     % j2_excl_data)
+            return
 
         try:
             # Iterate over all files in the plan container
