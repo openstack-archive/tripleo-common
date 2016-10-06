@@ -542,7 +542,11 @@ def _get_capability_patch(node, capability, value):
     capabilities = node.properties.get('capabilities')
     capabilities_dict = capabilities_to_dict(capabilities)
 
-    capabilities_dict[capability] = value
+    if value is None:
+        del capabilities_dict[capability]
+    else:
+        capabilities_dict[capability] = value
+
     capabilities = dict_to_capabilities(capabilities_dict)
 
     return [{

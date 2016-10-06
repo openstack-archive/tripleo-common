@@ -25,15 +25,15 @@ PARAMS = {
         'count': 'ComputeCount',
         'flavor': 'OvercloudComputeFlavor'
     },
-    'blockStorage': {
+    'block-storage': {
         'count': 'BlockStorageCount',
         'flavor': 'OvercloudBlockStorageFlavor'
     },
-    'objectStorage': {
+    'object-storage': {
         'count': 'ObjectStorageCount',
         'flavor': 'OvercloudSwiftStorageFlavor'
     },
-    'cephStorage': {
+    'ceph-storage': {
         'count': 'CephStorageCount',
         'flavor': 'OvercloudCephStorageFlavor'
     }
@@ -60,7 +60,14 @@ def get_flavor(role, compute_client):
 
 
 def set_count_and_flavor_params(role, baremetal_client, compute_client):
+    node_count = get_node_count(role, baremetal_client)
+
+    if node_count == 0:
+        flavor = 'baremetal'
+    else:
+        flavor = get_flavor(role, compute_client)
+
     return {
-        PARAMS[role]['count']: get_node_count(role, baremetal_client),
-        PARAMS[role]['flavor']: get_flavor(role, compute_client)
+        PARAMS[role]['count']: node_count,
+        PARAMS[role]['flavor']: flavor
     }
