@@ -48,6 +48,8 @@ def generate_overcloud_passwords():
             if not snmp_password:
                 LOG.warning("Undercloud ceilometer SNMPd password "
                             "missing!")
+        elif name in ('KeystoneCredential0', 'KeystoneCredential1'):
+            passwords[name] = create_keystone_credential()
         else:
             passwords[name] = passutils.generate_password(
                 size=_MIN_PASSWORD_SIZE)
@@ -73,3 +75,7 @@ def get_hiera_key(key_name):
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
     out, err = p.communicate()
     return out
+
+
+def create_keystone_credential():
+    return base64.urlsafe_b64encode(os.urandom(32))
