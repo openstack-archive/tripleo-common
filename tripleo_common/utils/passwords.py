@@ -16,7 +16,6 @@ import base64
 import logging
 import os
 import struct
-import subprocess
 import time
 
 import passlib.utils as passutils
@@ -27,12 +26,11 @@ _MIN_PASSWORD_SIZE = 25
 LOG = logging.getLogger(__name__)
 
 
-def generate_overcloud_passwords():
+def generate_overcloud_passwords(mistralclient):
     """Create the passwords needed for the overcloud
 
     This will create the set of passwords required by the overcloud, store
-    them in the output file path and return a dictionary of passwords. If the
-    file already exists the existing passwords will be returned instead,
+    them in the output file path and return a dictionary of passwords.
     """
 
     passwords = {}
@@ -41,13 +39,9 @@ def generate_overcloud_passwords():
         # CephX keys aren't random strings
         if name.startswith("Ceph"):
             passwords[name] = create_cephx_key()
+        # The SnmpdReadonlyUserPassword is stored in a mistral env.
         elif name == 'SnmpdReadonlyUserPassword':
-            snmp_password = get_hiera_key(
-                'snmpd_readonly_user_password')
-            passwords[name] = snmp_password
-            if not snmp_password:
-                LOG.warning("Undercloud ceilometer SNMPd password "
-                            "missing!")
+            passwords[name] = get_snmpd_readonly_user_password(mistralclient)
         elif name in ('KeystoneCredential0', 'KeystoneCredential1'):
             passwords[name] = create_keystone_credential()
         else:
@@ -64,17 +58,13 @@ def create_cephx_key():
     return base64.b64encode(header + key)
 
 
-def get_hiera_key(key_name):
-    """Retrieve a key from the hiera store
-
-    :param password_name: Name of the key to retrieve
-    :type  password_name: type
-    """
-
-    command = ["hiera", key_name]
-    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    out, err = p.communicate()
-    return out
+def get_snmpd_readonly_user_password(mistralclient):
+    mistral_env = mistralclient.environments.get("tripleo.undercloud-config")
+    try:
+        return mistral_env.variables['undercloud_ceilometer_snmpd_password']
+    except KeyError:
+        LOG.error("Undercloud ceilometer SNMPd password missing!")
+        raise
 
 
 def create_keystone_credential():
