@@ -151,7 +151,7 @@ class GeneratePasswordsAction(base.TripleOAction):
             LOG.exception(msg)
             return mistral_workflow_utils.Result("", msg)
 
-        passwords = password_utils.generate_overcloud_passwords()
+        passwords = password_utils.generate_overcloud_passwords(wc)
 
         # if passwords don't yet exist in mistral environment
         if 'passwords' not in wf_env.variables:
