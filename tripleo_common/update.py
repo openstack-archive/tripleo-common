@@ -14,7 +14,6 @@
 # under the License.
 
 import logging
-import os
 import time
 
 from heatclient.common import template_utils
@@ -35,31 +34,19 @@ def add_breakpoints_cleanup_into_env(env):
 
 
 class PackageUpdateManager(_stack_update.StackUpdateManager):
-    def __init__(self, heatclient, novaclient, stack_id,
-                 tht_dir=None, environment_files=None):
+    def __init__(self, heatclient, novaclient, stack_id, stack_fields):
         stack = heatclient.stacks.get(stack_id)
-        self.tht_dir = tht_dir
-        self.environment_files = environment_files
+        self.stack_fields = stack_fields
         super(PackageUpdateManager, self).__init__(
             heatclient=heatclient, novaclient=novaclient, stack=stack,
             hook_type='pre-update', nested_depth=5,
             hook_resource=constants.UPDATE_RESOURCE_NAME)
 
     def update(self, timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
-        # time rounded to seconds
-        timestamp = int(time.time())
+        env = {}
+        if 'environment' in self.stack_fields:
+            env = self.stack_fields['environment']
 
-        stack_params = {'UpdateIdentifier': timestamp, 'StackAction': 'UPDATE'}
-
-        tpl_files, template = template_utils.get_template_contents(
-            template_file=os.path.join(self.tht_dir,
-                                       constants.OVERCLOUD_YAML_NAME))
-        env_paths = []
-        if self.environment_files:
-            env_paths.extend(self.environment_files)
-        env_files, env = (
-            template_utils.process_multiple_environments_and_files(
-                env_paths=env_paths))
         template_utils.deep_update(env, {
             'resource_registry': {
                 'resources': {
@@ -72,15 +59,23 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
                 }
             }
         })
+
+        # time rounded to seconds
+        timestamp = int(time.time())
+
+        stack_params = {'UpdateIdentifier': timestamp, 'StackAction': 'UPDATE'}
+        template_utils.deep_update(env, {'parameter_defaults': stack_params})
+
+        self.stack_fields['environment'] = env
+
         fields = {
             'existing': True,
             'stack_id': self.stack.id,
-            'template': template,
-            'files': dict(list(tpl_files.items()) +
-                          list(env_files.items())),
-            'environment': env,
-            'parameters': stack_params,
+            'template': self.stack_fields['template'],
+            'files': self.stack_fields['files'],
+            'environment': self.stack_fields['environment'],
             'timeout_mins': timeout_mins,
+            'stack_name': self.stack_fields['stack_name'],
         }
 
         LOG.info('updating stack: %s', self.stack.stack_name)
