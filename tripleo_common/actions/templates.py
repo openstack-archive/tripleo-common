@@ -92,6 +92,23 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.error(error_msg)
             raise Exception(error_msg)
 
+    def _get_j2_excludes_file(self):
+        swift = self._get_object_client()
+        try:
+            j2_excl_file = swift.get_object(
+                self.container, constants.OVERCLOUD_J2_EXCLUDES)[1]
+            j2_excl_data = yaml.safe_load(j2_excl_file)
+            if (j2_excl_data is None or j2_excl_data.get('name') is None):
+                j2_excl_data = {"name": []}
+                LOG.info("j2_excludes.yaml is either empty or there are "
+                         "no templates to exclude, defaulting the J2 "
+                         "excludes list to: %s" % j2_excl_data)
+        except swiftexceptions.ClientException:
+            j2_excl_data = {"name": []}
+            LOG.info("No J2 exclude file found, defaulting "
+                     "the J2 excludes list to: %s" % j2_excl_data)
+        return j2_excl_data
+
     def _process_custom_roles(self):
         swift = self._get_object_client()
 
@@ -104,15 +121,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                      % constants.OVERCLOUD_J2_ROLES_NAME)
             return
 
-        try:
-            j2_excl_file = swift.get_object(
-                self.container, constants.OVERCLOUD_J2_EXCLUDES)[1]
-            j2_excl_data = yaml.safe_load(j2_excl_file)
-        except swiftexceptions.ClientException:
-            j2_excl_data = {"name": []}
-            LOG.info("No J2 exclude file found, defaulted to: %s"
-                     % j2_excl_data)
-            return
+        j2_excl_data = self._get_j2_excludes_file()
 
         try:
             # Iterate over all files in the plan container
