@@ -62,10 +62,13 @@ outputs:
 J2_EXCLUDES = """
 name:
   - puppet/controller-role.yaml
-  - puppet/compute-role.yaml
-  - puppet/blockstorage-role.yaml
-  - puppet/objectstorage-role.yaml
-  - puppet/cephstorage-role.yaml
+"""
+
+J2_EXCLUDES_EMPTY_LIST = """
+name:
+"""
+
+J2_EXCLUDES_EMPTY_FILE = """
 """
 
 
@@ -206,3 +209,35 @@ class ProcessTemplatesActionTest(base.TestCase):
         action_result = swift.put_object._mock_mock_calls[0]
 
         self.assertTrue("CustomRole" in str(action_result))
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_get_j2_excludes_file(self, ctx_mock, get_obj_client_mock):
+
+        swift = mock.MagicMock()
+        get_obj_client_mock.return_value = swift
+
+        def return_multiple_files(*args):
+            if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
+                return ['', J2_EXCLUDES]
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        # Test - J2 exclude file with valid templates
+        action = templates.ProcessTemplatesAction()
+        self.assertTrue({'name': ['puppet/controller-role.yaml']} ==
+                        action._get_j2_excludes_file())
+
+        def return_multiple_files(*args):
+            if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
+                return ['', J2_EXCLUDES_EMPTY_LIST]
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        # Test - J2 exclude file with no template to exlude
+        action = templates.ProcessTemplatesAction()
+        self.assertTrue({'name': []} == action._get_j2_excludes_file())
+
+        def return_multiple_files(*args):
+            if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
+                return ['', J2_EXCLUDES_EMPTY_FILE]
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        # Test - J2 exclude file empty
+        action = templates.ProcessTemplatesAction()
+        self.assertTrue({'name': []} == action._get_j2_excludes_file())
