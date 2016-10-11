@@ -2,14 +2,27 @@
 
 # Doing this in a separate script lets us do it step by step with a single docker layer.
 
-if [ -z "$OPENSTACK_RELEASE" ]; then
-    echo "Please, set OPENSTACK_RELEASE to the desired openstack version."
-    echo "You can run the build command as: "
-    echo "OPENSTACK_RELEASE=newton docker build -t tripleoupstream/heat-docker-agents:\$OPENSTACK_RELEASE --build-arg OPENSTACK_RELEASE=\$OPENSTACK_RELEASE ."
-    exit 1
+if [ -n "$OPENSTACK_RELEASE" ]; then
+    # Install specified OpenStack release
+    yum -y install http://rdoproject.org/repos/openstack-$OPENSTACK_RELEASE/rdo-release-$OPENSTACK_RELEASE.rpm
+else
+    # Install from master
+    curl -L -o /etc/yum.repos.d/delorean.repo \
+        http://buildlogs.centos.org/centos/7/cloud/x86_64/rdo-trunk-master-tripleo/delorean.repo
+    curl -L -o /etc/yum.repos.d/delorean-current.repo \
+        http://trunk.rdoproject.org/centos7/current/delorean.repo
+    sed -i 's/\[delorean\]/\[delorean-current\]/' /etc/yum.repos.d/delorean-current.repo
+    cat << EOF >> /etc/yum.repos.d/delorean-current.repo
+
+includepkgs=diskimage-builder,instack,instack-undercloud,os-apply-config,os-cloud-config,os-collect-config,os-net-config,os-refresh-config,python-tripleoclient,tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tripleo,openstack-tripleo-puppet-elements,openstack-puppet-modules
+EOF
+
+    curl -L -o /etc/yum.repos.d/delorean-deps.repo \
+        http://trunk.rdoproject.org/centos7/delorean-deps.repo
+
+    yum -y install yum-plugin-priorities
 fi
 
-yum -y install http://rdoproject.org/repos/openstack-$OPENSTACK_RELEASE/rdo-release-$OPENSTACK_RELEASE.rpm
 yum update -y
 
 # Install required packages
