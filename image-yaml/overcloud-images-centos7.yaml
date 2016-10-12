@@ -5,7 +5,7 @@ disk_images:
     type: qcow2
     distro: centos7
     elements:
-      - selinux-permissive epel
+      - selinux-permissive
     environment:
       FS_TYPE: xfs
   -
@@ -14,5 +14,5 @@ disk_images:
     type: qcow2
     distro: centos7
     elements:
-      - selinux-permissive epel
+      - selinux-permissive
 
