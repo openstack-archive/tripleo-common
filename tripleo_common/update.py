@@ -63,7 +63,11 @@ class PackageUpdateManager(_stack_update.StackUpdateManager):
         # time rounded to seconds
         timestamp = int(time.time())
 
-        stack_params = {'UpdateIdentifier': timestamp, 'StackAction': 'UPDATE'}
+        stack_params = {
+            'DeployIdentifier': timestamp,
+            'UpdateIdentifier': timestamp,
+            'StackAction': 'UPDATE'
+        }
         template_utils.deep_update(env, {'parameter_defaults': stack_params})
 
         self.stack_fields['environment'] = env
