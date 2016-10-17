@@ -62,6 +62,7 @@ class UpdateManagerTest(base.TestCase):
                     }
                 },
                 'parameter_defaults': {
+                    'DeployIdentifier': 123,
                     'UpdateIdentifier': 123,
                     'StackAction': 'UPDATE'
                 },
