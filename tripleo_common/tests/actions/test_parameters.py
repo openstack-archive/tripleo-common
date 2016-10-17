@@ -174,14 +174,14 @@ class UpdateParametersActionTest(base.TestCase):
 class GeneratePasswordsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.passwords.'
-                'get_hiera_key')
+                'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
+                '_get_workflow_client', return_value="TestPassword")
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client,
-                 mock_hiera_key):
+                 mock_get_snmpd_readonly_user_password):
 
-        mock_hiera_key.return_value = "TestPassword"
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
 
         mock_ctx.return_value = mock.MagicMock()
         mock_mistral = mock.MagicMock()
@@ -203,14 +203,14 @@ class GeneratePasswordsActionTest(base.TestCase):
                             "%s is not in %s" % (password_param_name, result))
 
     @mock.patch('tripleo_common.utils.passwords.'
-                'get_hiera_key')
+                'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 '_get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_run_passwords_exist(self, mock_ctx, mock_get_workflow_client,
-                                 mock_hiera_key):
+                                 mock_get_snmpd_readonly_user_password):
 
-        mock_hiera_key.return_value = "TestPassword"
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
 
         mock_ctx.return_value = mock.MagicMock()
         mock_mistral = mock.MagicMock()

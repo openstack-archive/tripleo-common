@@ -24,13 +24,13 @@ class TestPasswords(base.TestCase):
         key = password_utils.create_cephx_key()
         self.assertEqual(len(key), 40)
 
-    @mock.patch("subprocess.Popen")
-    def test_get_hiera_key(self, mock_popen):
+    def test_get_snmpd_readonly_user_password(self):
 
-        process_mock = mock.Mock()
-        process_mock.communicate.return_value = ["pa$$word", ""]
-        mock_popen.return_value = process_mock
+        mock_mistral = mock.Mock()
+        mock_mistral.environments.get.return_value = mock.Mock(variables={
+            "undercloud_ceilometer_snmpd_password": "78cbc32b858718267c355d4"
+        })
 
-        value = password_utils.get_hiera_key('password_name')
+        value = password_utils.get_snmpd_readonly_user_password(mock_mistral)
 
-        self.assertEqual(value, "pa$$word")
+        self.assertEqual(value, "78cbc32b858718267c355d4")
