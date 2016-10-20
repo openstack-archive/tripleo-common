@@ -35,7 +35,10 @@ class TripleOAction(base.Action):
 
         kwargs = {
             'preauthurl': obj_ep.url % {'tenant_id': ctx.project_id},
-            'preauthtoken': ctx.auth_token
+            'preauthtoken': ctx.auth_token,
+            'retries': 10,
+            'starting_backoff': 3,
+            'max_backoff': 120
         }
 
         return swift_client.Connection(**kwargs)
