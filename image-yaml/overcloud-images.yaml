@@ -17,6 +17,8 @@ disk_images:
       - openstack-neutron-bigswitch-lldp
       - openstack-neutron-bigswitch-agent
       - python-heat-agent-puppet
+      - python-heat-agent-hiera
+      - python-heat-agent-apply-config
     options:
       - "--min-tmpfs 5"
   -
