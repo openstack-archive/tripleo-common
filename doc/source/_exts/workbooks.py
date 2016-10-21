@@ -41,7 +41,7 @@ def _workbook_to_rst(name, workbook):
     if 'description' in workbook:
         yield workbook['description']
         yield ''
-    yield 'Workflows in the {} Workbook'.format(title)
+    yield 'Workflows in the {}'.format(title)
     yield ''
 
     for wf_name, workflow in sorted(workbook['workflows'].items()):
