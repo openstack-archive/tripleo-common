@@ -17,8 +17,11 @@ import logging
 import os
 import struct
 import time
+import uuid
 
 import passlib.utils as passutils
+import six
+
 from tripleo_common import constants
 
 
@@ -41,9 +44,13 @@ def generate_overcloud_passwords(mistralclient, stack_env=None):
         # a Heat stack that already exists.
         if stack_env and name in stack_env.get('parameter_defaults', {}):
             passwords[name] = stack_env['parameter_defaults'][name]
-        # CephX keys aren't random strings
         elif name.startswith("Ceph"):
-            passwords[name] = create_cephx_key()
+            if name == "CephClusterFSID":
+                # The FSID must be a UUID
+                passwords[name] = six.text_type(uuid.uuid1())
+            else:
+                # CephX keys aren't random strings
+                passwords[name] = create_cephx_key()
         # The SnmpdReadonlyUserPassword is stored in a mistral env.
         elif name == 'SnmpdReadonlyUserPassword':
             passwords[name] = get_snmpd_readonly_user_password(mistralclient)
