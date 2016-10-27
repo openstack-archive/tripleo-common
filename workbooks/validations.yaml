@@ -180,6 +180,38 @@ workflows:
       find_groups:
         action: tripleo.validations.list_groups
 
+  add_validation_ssh_key_parameter:
+    input:
+     - container
+     - queue_name: tripleo
+
+    tasks:
+      test_validations_enabled:
+        action: tripleo.validations.enabled
+        on-success: get_pubkey
+        on-error: unset_validation_key_parameter
+
+      get_pubkey:
+        action: tripleo.validations.get_pubkey
+        on-success: set_validation_key_parameter
+        publish:
+          pubkey: <% task(get_pubkey).result %>
+
+      set_validation_key_parameter:
+        action: tripleo.parameters.update
+        input:
+          parameters:
+            node_admin_extra_ssh_keys: <% $.pubkey %>
+          container: <% $.container %>
+
+      # NOTE(shadower): We need to clear keys from a previous deployment
+      unset_validation_key_parameter:
+        action: tripleo.parameters.update
+        input:
+          parameters:
+            node_admin_extra_ssh_keys: ""
+          container: <% $.container %>
+
   copy_ssh_key:
     input:
       - overcloud_admin: heat-admin
