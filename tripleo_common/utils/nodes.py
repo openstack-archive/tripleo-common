@@ -17,7 +17,6 @@ import logging
 import re
 import time
 
-from ironicclient import exc as ironicexp
 import six
 
 from tripleo_common import exception
@@ -256,13 +255,6 @@ def register_ironic_node(node, client=None, blocking=None):
     if not validation.power['result']:
         LOG.warning('Node %s did not pass power credentials validation: %s',
                     ironic_node.uuid, validation.power['reason'])
-
-    try:
-        client.node.set_power_state(ironic_node.uuid, 'off')
-    except ironicexp.Conflict:
-        # Conflict means the Ironic conductor does something with a node,
-        # ignore the exception.
-        pass
 
     return ironic_node
 

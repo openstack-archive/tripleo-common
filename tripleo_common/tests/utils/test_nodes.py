@@ -276,10 +276,8 @@ class NodesTest(base.TestCase):
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
-        power_off_call = mock.call(ironic.node.create.return_value.uuid, 'off')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        ironic.node.set_power_state.assert_has_calls([power_off_call])
 
     def test_register_all_nodes(self):
         node_list = [self._get_node()]
@@ -300,10 +298,8 @@ class NodesTest(base.TestCase):
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
-        power_off_call = mock.call(ironic.node.create.return_value.uuid, 'off')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        ironic.node.set_power_state.assert_has_calls([power_off_call])
 
     def test_register_all_nodes_kernel_ramdisk(self):
         node_list = [self._get_node()]
@@ -332,10 +328,8 @@ class NodesTest(base.TestCase):
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
-        power_off_call = mock.call(ironic.node.create.return_value.uuid, 'off')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        ironic.node.set_power_state.assert_has_calls([power_off_call])
 
     def test_register_all_nodes_uuid(self):
         node_list = [self._get_node()]
@@ -358,10 +352,8 @@ class NodesTest(base.TestCase):
                              uuid="abcdef")
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
-        power_off_call = mock.call(ironic.node.create.return_value.uuid, 'off')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        ironic.node.set_power_state.assert_has_calls([power_off_call])
 
     def test_register_all_nodes_caps_dict(self):
         node_list = [self._get_node()]
@@ -385,10 +377,8 @@ class NodesTest(base.TestCase):
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
-        power_off_call = mock.call(ironic.node.create.return_value.uuid, 'off')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        ironic.node.set_power_state.assert_has_calls([power_off_call])
 
     def test_register_update(self):
         node = self._get_node()
