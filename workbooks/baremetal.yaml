@@ -25,6 +25,26 @@ workflows:
           count: 400
           continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
 
+  set_power_state:
+    input:
+      - node_uuid
+      - state_action
+      - target_state
+
+    tasks:
+
+      set_provision_state:
+        on-success: wait_for_power_state
+        action: ironic.node_set_power_state node_id=<% $.node_uuid %> state=<% $.state_action %>
+
+      wait_for_power_state:
+        action: ironic.node_get node_id=<% $.node_uuid %>
+        timeout: 120 #2 minutes
+        retry:
+          delay: 6
+          count: 20
+          continue-on: <% task(wait_for_power_state).result.power_state != $.target_state %>
+
   register_or_update:
     description: Take nodes JSON and create nodes in a "manageable" state
 
@@ -97,19 +117,31 @@ workflows:
     tasks:
 
       set_nodes_available:
-        on-success: send_message
+        on-success: try_power_off
         on-error: set_status_failed_nodes_available
         with-items: uuid in <% $.node_uuids %>
         workflow: tripleo.baremetal.v1.set_node_state node_uuid=<% $.uuid %> state_action='provide' target_state='available'
-        publish:
-          status: SUCCESS
-          message: 'Successfully set nodes state to available.'
 
       set_status_failed_nodes_available:
         on-success: send_message
         publish:
           status: FAILED
           message: <% task(set_nodes_available).result %>
+
+      try_power_off:
+        on-success: send_message
+        on-error: power_off_failed
+        with-items: uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.set_power_state node_uuid=<% $.uuid %> state_action='off' target_state='power off'
+        publish:
+          status: SUCCESS
+          message: 'Successfully set nodes state to available.'
+
+      power_off_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(try_power_off).result %>
 
       send_message:
         action: zaqar.queue_post
