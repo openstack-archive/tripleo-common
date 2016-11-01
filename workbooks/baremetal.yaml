@@ -49,6 +49,7 @@ workflows:
            instance_boot_option: <% $.instance_boot_option %>
         publish:
           registered_nodes: <% task(register_or_update_nodes).result %>
+          new_nodes: <% task(register_or_update_nodes).result.where($.provision_state = 'enroll') %>
 
       set_status_failed_register_or_update_nodes:
         on-success: send_message
@@ -60,7 +61,7 @@ workflows:
       set_nodes_managed:
         on-success: send_message
         on-error: set_status_failed_nodes_managed
-        with-items: node in <% $.registered_nodes %>
+        with-items: node in <% $.new_nodes %>
         workflow: tripleo.baremetal.v1.set_node_state node_uuid=<% $.node.uuid %> state_action='manage' target_state='manageable'
         publish:
           status: SUCCESS
