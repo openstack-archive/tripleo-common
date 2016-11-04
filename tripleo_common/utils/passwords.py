@@ -26,7 +26,7 @@ _MIN_PASSWORD_SIZE = 25
 LOG = logging.getLogger(__name__)
 
 
-def generate_overcloud_passwords(mistralclient):
+def generate_overcloud_passwords(mistralclient, stack_env=None):
     """Create the passwords needed for the overcloud
 
     This will create the set of passwords required by the overcloud, store
@@ -36,8 +36,13 @@ def generate_overcloud_passwords(mistralclient):
     passwords = {}
 
     for name in constants.PASSWORD_PARAMETER_NAMES:
+
+        # Support users upgrading from Mitaka or otherwise creating a plan for
+        # a Heat stack that already exists.
+        if stack_env and name in stack_env.get('parameter_defaults', {}):
+            passwords[name] = stack_env['parameter_defaults'][name]
         # CephX keys aren't random strings
-        if name.startswith("Ceph"):
+        elif name.startswith("Ceph"):
             passwords[name] = create_cephx_key()
         # The SnmpdReadonlyUserPassword is stored in a mistral env.
         elif name == 'SnmpdReadonlyUserPassword':
