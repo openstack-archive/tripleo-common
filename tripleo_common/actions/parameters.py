@@ -28,6 +28,7 @@
 # under the License.
 import logging
 
+from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
 
 from tripleo_common.actions import base
@@ -143,6 +144,8 @@ class GeneratePasswordsAction(base.TripleOAction):
         self.container = container
 
     def run(self):
+
+        orchestration = self._get_orchestration_client()
         wc = self._get_workflow_client()
         try:
             wf_env = wc.environments.get(self.container)
@@ -151,7 +154,13 @@ class GeneratePasswordsAction(base.TripleOAction):
             LOG.exception(msg)
             return mistral_workflow_utils.Result("", msg)
 
-        passwords = password_utils.generate_overcloud_passwords(wc)
+        try:
+            stack_env = orchestration.stacks.environment(
+                stack_id=self.container)
+        except heat_exc.HTTPNotFound:
+            stack_env = None
+
+        passwords = password_utils.generate_overcloud_passwords(wc, stack_env)
 
         # if passwords don't yet exist in mistral environment
         if 'passwords' not in wf_env.variables:
