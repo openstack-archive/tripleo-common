@@ -173,13 +173,16 @@ class UpdateParametersActionTest(base.TestCase):
 
 class GeneratePasswordsActionTest(base.TestCase):
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 '_get_workflow_client', return_value="TestPassword")
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client,
-                 mock_get_snmpd_readonly_user_password):
+                 mock_get_snmpd_readonly_user_password,
+                 mock_get_orchestration_client):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
 
@@ -195,6 +198,12 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_mistral.environments.get.return_value = mock_env
         mock_get_workflow_client.return_value = mock_mistral
 
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+        mock_get_orchestration_client.return_value = mock_orchestration
+
         action = parameters.GeneratePasswordsAction()
         result = action.run()
 
@@ -202,13 +211,16 @@ class GeneratePasswordsActionTest(base.TestCase):
             self.assertTrue(password_param_name in result,
                             "%s is not in %s" % (password_param_name, result))
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 '_get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_run_passwords_exist(self, mock_ctx, mock_get_workflow_client,
-                                 mock_get_snmpd_readonly_user_password):
+                                 mock_get_snmpd_readonly_user_password,
+                                 mock_get_orchestration_client):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
 
@@ -225,8 +237,58 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_mistral.environments.get.return_value = mock_env
         mock_get_workflow_client.return_value = mock_mistral
 
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+        mock_get_orchestration_client.return_value = mock_orchestration
+
         action = parameters.GeneratePasswordsAction()
         result = action.run()
 
         # ensure old passwords used and no new generation
         self.assertEqual(_EXISTING_PASSWORDS, result)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_orchestration_client')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_workflow_client')
+    @mock.patch('mistral.context.ctx')
+    def test_passwords_exist_in_heat(self, mock_ctx, mock_get_workflow_client,
+                                     mock_get_snmpd_readonly_user_password,
+                                     mock_get_orchestration_client):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+
+        existing_passwords = _EXISTING_PASSWORDS.copy()
+        existing_passwords.pop("AdminPassword")
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.name = constants.DEFAULT_CONTAINER_NAME
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': existing_passwords
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {
+                'AdminPassword': 'ExistingPasswordInHeat',
+            }
+        }
+        mock_get_orchestration_client.return_value = mock_orchestration
+
+        action = parameters.GeneratePasswordsAction()
+        result = action.run()
+
+        existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
+        # ensure old passwords used and no new generation
+        self.assertEqual(existing_passwords, result)
