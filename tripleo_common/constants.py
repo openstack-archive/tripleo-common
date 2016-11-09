@@ -63,6 +63,7 @@ PASSWORD_PARAMETER_NAMES = (
     'CeilometerPassword',
     'CephAdminKey',
     'CephClientKey',
+    'CephClusterFSID',
     'CephMonKey',
     'CephRgwKey',
     'CinderPassword',
