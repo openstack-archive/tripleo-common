@@ -162,7 +162,6 @@ DRIVER_INFO = {
     '.*_ilo': PrefixedDriverInfo('ilo'),
     '.*_ucs': PrefixedDriverInfo(
         'ucs',
-        address_field='hostname',
         deprecated_mapping={
             'pm_service_profile': 'ucs_service_profile'
         }),
