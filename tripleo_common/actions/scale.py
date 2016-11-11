@@ -83,11 +83,6 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         fields = processed_data.copy()
         fields['timeout_mins'] = timeout_mins
         fields['existing'] = True
-        # TODO(rbrady): test against live overcloud to see if it is required
-        # to pass 'parameters' here to the stack update, or will storing the
-        # updated values in the plan and send them merged into the environment
-        # work as well
-        fields['parameters'] = parameters
 
         LOG.debug('stack update params: %s', fields)
         self._get_orchestration_client().stacks.update(self.container,
