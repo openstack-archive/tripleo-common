@@ -119,10 +119,4 @@ class ScaleDownActionTest(base.TestCase):
             environment=env,
             existing=True,
             files={},
-            timeout_mins=240,
-            parameters={
-                'ComputeCount': '0',
-                'ComputeRemovalPolicies': [
-                    {'resource_list': ['node0']}
-                ]
-            })
+            timeout_mins=240)
