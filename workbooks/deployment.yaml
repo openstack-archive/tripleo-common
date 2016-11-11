@@ -98,8 +98,10 @@ workflows:
                 message: <% task(deploy_on_servers).result %>
                 execution: <% execution() %>
 
-  # Deploys a workload cloud stack
   deploy_plan:
+
+    description: >
+      Deploy the overcloud for a plan.
 
     input:
       - container
@@ -113,7 +115,20 @@ workflows:
         input:
           container: <% $.container %>
           queue_name: <% $.queue_name %>
-        on-complete: deploy
+        on-complete: get_heat_stack
+
+      get_heat_stack:
+        action: heat.stacks_get stack_id=<% $.container %>
+        on-error: deploy
+        on-success:
+          - set_stack_in_progress: <% "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
+          - deploy: <% not "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
+
+      set_stack_in_progress:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: The Heat stack is busy.
 
       deploy:
         action: tripleo.deployment.deploy timeout=<% $.timeout %> container=<% $.container %>
