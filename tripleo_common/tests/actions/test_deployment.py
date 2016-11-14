@@ -14,7 +14,9 @@
 # under the License.
 import mock
 
+from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
+from mistralclient.api import base as mistralclient_exc
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import deployment
@@ -258,3 +260,84 @@ class DeployStackActionTest(base.TestCase):
             template={'heat_template_version': '2016-04-30'},
             timeout_mins=1,
         )
+
+
+class OvercloudRcActionTestCase(base.TestCase):
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('mistral.context.ctx')
+    def test_no_stack(self, mock_context, mock_get_orchestration,
+                      mock_get_workflow):
+
+        not_found = heat_exc.HTTPNotFound()
+        mock_get_orchestration.return_value.stacks.get.side_effect = not_found
+
+        action = deployment.OvercloudRcAction("overcast")
+        result = action.run()
+
+        self.assertEqual(result.error, (
+            "The Heat stack overcast cound not be found. Make sure you have "
+            "deployed before calling this action."
+        ))
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('mistral.context.ctx')
+    def test_no_env(self, mock_context, mock_get_orchestration,
+                    mock_get_workflow):
+
+        not_found = mistralclient_exc.APIException()
+        mock_get_workflow.return_value.environments.get.side_effect = not_found
+
+        action = deployment.OvercloudRcAction("overcast")
+        result = action.run()
+
+        self.assertEqual(
+            result.error,
+            "The Mistral environment overcast cound not be found.")
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('mistral.context.ctx')
+    def test_no_password(self, mock_context, mock_get_orchestration,
+                         mock_get_workflow):
+
+        mock_env = mock.MagicMock(variables={})
+        mock_get_workflow.return_value.environments.get.return_value = mock_env
+
+        action = deployment.OvercloudRcAction("overcast")
+        result = action.run()
+
+        self.assertEqual(
+            result.error,
+            "Unable to find the AdminPassword in the Mistral environment.")
+
+    @mock.patch('tripleo_common.utils.overcloudrc.create_overcloudrc')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('mistral.context.ctx')
+    def test_no_success(self, mock_context, mock_get_orchestration,
+                        mock_get_workflow, mock_create_overcloudrc):
+
+        mock_create_overcloudrc.return_value = {
+            "overcloudrc": "fake overcloudrc"
+        }
+        mock_env = mock.MagicMock(variables={
+            "parameter_defaults": {},
+            "passwords": {"AdminPassword": "SUPERSECUREPASSWORD"}
+        })
+        mock_get_workflow.return_value.environments.get.return_value = mock_env
+
+        action = deployment.OvercloudRcAction("overcast")
+        result = action.run()
+
+        self.assertEqual(result, {"overcloudrc": "fake overcloudrc"})
