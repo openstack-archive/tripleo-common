@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import mock
+import uuid
 
 from tripleo_common.tests import base
 from tripleo_common.utils import passwords as password_utils
@@ -34,3 +35,34 @@ class TestPasswords(base.TestCase):
         value = password_utils.get_snmpd_readonly_user_password(mock_mistral)
 
         self.assertEqual(value, "78cbc32b858718267c355d4")
+
+    @mock.patch('tripleo_common.utils.passwords.create_keystone_credential')
+    def test_fernet_keys_and_credentials(self, mock_create_creds):
+
+        keys = [uuid.uuid4().hex, uuid.uuid4().hex,
+                uuid.uuid4().hex, uuid.uuid4().hex]
+
+        snmpd_password = uuid.uuid4().hex
+
+        mock_mistral = mock.Mock()
+        mock_mistral.environments.get.return_value = mock.Mock(variables={
+            "undercloud_ceilometer_snmpd_password": snmpd_password
+        })
+
+        # generate_overcloud_passwords will be called multiple times
+        # but the order is based on how the strings are hashed, and thus
+        # not really predictable. So, make sure it is a unique one of the
+        # generated values
+
+        mock_create_creds.side_effect = keys
+        value = password_utils.generate_overcloud_passwords(mock_mistral)
+        self.assertIn(value['KeystoneCredential0'], keys)
+        self.assertIn(value['KeystoneCredential1'], keys)
+        self.assertIn(value['KeystoneFernetKey0'], keys)
+        self.assertIn(value['KeystoneFernetKey1'], keys)
+
+        self.assertNotEqual(value['KeystoneFernetKey0'],
+                            value['KeystoneFernetKey1'])
+
+        self.assertNotEqual(value['KeystoneCredential0'],
+                            value['KeystoneCredential1'])

@@ -54,7 +54,8 @@ def generate_overcloud_passwords(mistralclient, stack_env=None):
         # The SnmpdReadonlyUserPassword is stored in a mistral env.
         elif name == 'SnmpdReadonlyUserPassword':
             passwords[name] = get_snmpd_readonly_user_password(mistralclient)
-        elif name in ('KeystoneCredential0', 'KeystoneCredential1'):
+        elif name in ('KeystoneCredential0', 'KeystoneCredential1',
+                      'KeystoneFernetKey0', 'KeystoneFernetKey1'):
             passwords[name] = create_keystone_credential()
         else:
             passwords[name] = passutils.generate_password(
