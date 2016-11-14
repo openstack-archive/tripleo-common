@@ -8,6 +8,8 @@ disk_images:
       - selinux-permissive
     environment:
       FS_TYPE: xfs
+    packages:
+      - yum-plugin-priorities
   -
     imagename: ironic-python-agent
     arch: amd64
@@ -15,4 +17,6 @@ disk_images:
     distro: centos7
     elements:
       - selinux-permissive
+    packages:
+      - yum-plugin-priorities
 
