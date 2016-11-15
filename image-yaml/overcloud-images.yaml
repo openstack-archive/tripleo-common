@@ -10,7 +10,6 @@ disk_images:
       - python-debtcollector
       - plotnetcfg
       - sos
-      - python-networking-cisco
       - python-UcsSdk
       - device-mapper-multipath
       - python-networking-bigswitch
