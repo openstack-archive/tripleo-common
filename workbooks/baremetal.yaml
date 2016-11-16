@@ -99,11 +99,14 @@ workflows:
      - kernel_name: null
      - ramdisk_name: null
      - instance_boot_option: local
+     - initial_state: manageable
 
     tasks:
       register_or_update_nodes:
         action: tripleo.baremetal.register_or_update_nodes
-        on-success: set_nodes_managed
+        on-success:
+          - set_nodes_managed: <% $.initial_state != "enroll" %>
+          - send_message: <% $.initial_state = "enroll" %>
         on-error: set_status_failed_register_or_update_nodes
         input:
            nodes_json: <% $.nodes_json %>
@@ -123,7 +126,9 @@ workflows:
           registered_nodes: []
 
       set_nodes_managed:
-        on-success: send_message
+        on-success:
+          - set_nodes_available: <% $.initial_state = "available" %>
+          - send_message: <% $.initial_state != "available" %>
         on-error: set_status_failed_nodes_managed
         with-items: node in <% $.new_nodes %>
         workflow: tripleo.baremetal.v1.set_node_state node_uuid=<% $.node.uuid %> state_action='manage' target_state='manageable'
@@ -136,6 +141,20 @@ workflows:
         publish:
           status: FAILED
           message: <% task(set_nodes_managed).result %>
+
+      set_nodes_available:
+        on-success: send_message
+        on-error: set_status_failed_nodes_available
+        workflow: tripleo.baremetal.v1.provide node_uuids=<% $.new_nodes.uuid %> queue_name=<% $.queue_name %>
+        publish:
+          status: SUCCESS
+          message: Nodes set to available.
+
+      set_status_failed_nodes_available:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_nodes_available).result %>
 
       send_message:
         action: zaqar.queue_post
