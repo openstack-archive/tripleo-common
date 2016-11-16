@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 # Doing this in a separate script lets us do it step by step with a single docker layer.
 
 if [ -n "$OPENSTACK_RELEASE" ]; then
@@ -35,6 +37,8 @@ yum install -y \
         openstack-tripleo-puppet-elements \
         openvswitch \
         os-net-config \
+        python-heat-agent-apply-config \
+        python-heat-agent-hiera \
         python-heat-agent-puppet \
         python-ipaddr \
         python2-oslo-log
@@ -67,31 +71,6 @@ for package in $(ls *.rpm); do
 done
 cd $CUR && rm -Rf /tmp/packages
 
-# Also note gcc, python-devel, and libyaml-devel are required for
-# docker-compose. It would be nice to package that or use somethinge else.
-# Working on getting this into centos:7
-# https://admin.fedoraproject.org/pkgdb/package/rpms/docker-compose/
-yum install -y \
-    gcc \
-    libyaml-devel \
-    python-devel \
-    python-pip \
-    docker
-
-# heat-config-docker-compose
-# TODO: fix! yet another requirement for docker-compose
-pip install dpath functools32
-
-pip install -U docker-compose
-
-# NOTE(flaper87): We have to use `rpm --nodeps` because some packages that we
-# depend on happen to depend on python-devel, which we don't need for this
-# container.
-rpm -e --nodeps python-devel
-
-ln -sf /usr/share/openstack-heat-templates/software-config/elements/heat-config-docker-compose/install.d/hook-docker-compose.py \
-    /var/lib/heat-config/hooks/docker-compose
-
 # Install puppet modules
 mkdir -p /etc/puppet/modules
 ln -sf /usr/share/openstack-puppet/modules/* /etc/puppet/modules/
@@ -103,8 +82,6 @@ ln -sf /usr/share/tripleo-puppet-elements/hiera/os-apply-config/etc/puppet/hiera
 ln -sf /etc/puppet/hiera.yaml /etc/hiera.yaml
 
 # Configure os-*
-ln -sf /usr/share/openstack-heat-templates/software-config/elements/heat-config-docker-compose/os-refresh-config/configure.d/50-heat-config-docker-compose \
-    /usr/libexec/os-refresh-config/configure.d/
 ln -sf /usr/share/tripleo-puppet-elements/hiera/os-refresh-config/configure.d/40-hiera-datafiles \
     /usr/libexec/os-refresh-config/configure.d/
 mkdir -p /usr/libexec/os-refresh-config/post-configure.d
@@ -116,6 +93,5 @@ ln -sf /usr/share/tripleo-image-elements/os-net-config/os-apply-config/etc/os-ne
     /usr/libexec/os-apply-config/templates/etc/os-net-config/
 
 # Remove unnecessary packages
-yum remove gcc "*-devel"
 yum autoremove -y
 yum clean all

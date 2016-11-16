@@ -6,6 +6,8 @@ LABEL openstack_release=$OPENSTACK_RELEASE
 ENV container docker
 ENV DOCKER_HOST unix:///var/run/docker.sock
 
+ADD hook-docker-cmd.py /usr/libexec/heat-config/hooks/docker-cmd
+ADD 50-heat-config-docker-cmd /usr/libexec/os-refresh-config/configure.d/50-heat-config-hook-docker-cmd
 # Just use a script to configure the agent container.  This way we can
 # Split up the operations and do it all in a single layer.
 ADD configure_container.sh /tmp/
