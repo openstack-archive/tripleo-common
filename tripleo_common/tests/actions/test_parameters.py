@@ -171,6 +171,40 @@ class UpdateParametersActionTest(base.TestCase):
         )
 
 
+class UpdateRoleParametersActionTest(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.parameters.set_count_and_flavor_params')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_baremetal_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_compute_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                '_get_workflow_client')
+    @mock.patch('mistral.context.ctx')
+    def test_run(self, mock_ctx, mock_get_workflow_client,
+                 mock_get_compute_client, mock_get_baremetal_client,
+                 mock_set_count_and_flavor):
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.name = 'overcast'
+        mock_env.variables = {}
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        params = {'CephStorageCount': 1,
+                  'OvercloudCephStorageFlavor': 'ceph-storage'}
+        mock_set_count_and_flavor.return_value = params
+
+        action = parameters.UpdateRoleParametersAction('ceph-storage',
+                                                       'overcast')
+        action.run()
+
+        mock_mistral.environments.update.assert_called_once_with(
+            name='overcast', variables={'parameter_defaults': params})
+
+
 class GeneratePasswordsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
