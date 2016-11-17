@@ -43,7 +43,9 @@ yum install -y \
         python-heat-agent-hiera \
         python-heat-agent-puppet \
         python-ipaddr \
-        python2-oslo-log
+        python-memcached \
+        python2-oslo-log \
+        MySQL-python
 
 # NOTE(flaper87): openstack packages
 # We need these packages just to install the config files.
