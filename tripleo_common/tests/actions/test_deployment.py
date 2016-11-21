@@ -194,6 +194,7 @@ class DeployStackActionTest(base.TestCase):
     def setUp(self,):
         super(DeployStackActionTest, self).setUp()
 
+    @mock.patch('uuid.uuid1')
     @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -208,7 +209,8 @@ class DeployStackActionTest(base.TestCase):
                  mock_get_object_client, mock_get_workflow_client,
                  mock_get_template_contents,
                  mock_process_multiple_environments_and_files,
-                 mock_time):
+                 mock_time,
+                 mock_uuid1):
 
         mock_ctx.return_value = mock.MagicMock()
         # setup swift
@@ -240,11 +242,15 @@ class DeployStackActionTest(base.TestCase):
         # freeze time at datetime.datetime(2016, 9, 8, 16, 24, 24)
         mock_time.time.return_value = 1473366264
 
+        # fake an uuid1 for CephClusterFSID
+        mock_uuid1.return_value = 'some-uuid1'
+
         action = deployment.DeployStackAction(1, 'overcloud')
         action.run()
 
         # verify parameters are as expected
-        expected_defaults = {'DeployIdentifier': 1473366264,
+        expected_defaults = {'CephClusterFSID': 'some-uuid1',
+                             'DeployIdentifier': 1473366264,
                              'StackAction': 'CREATE',
                              'UpdateIdentifier': '',
                              'random_existing_data': 'a_value'}
