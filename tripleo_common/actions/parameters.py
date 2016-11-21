@@ -120,8 +120,9 @@ class UpdateParametersAction(base.TripleOAction):
 class UpdateRoleParametersAction(UpdateParametersAction):
     """Updates role related parameters in Mistral Environment ."""
 
-    def __init__(self, role):
-        super(UpdateRoleParametersAction, self).__init__(parameters=None)
+    def __init__(self, role, container=constants.DEFAULT_CONTAINER_NAME):
+        super(UpdateRoleParametersAction, self).__init__(parameters=None,
+                                                         container=container)
         self.role = role
 
     def run(self):

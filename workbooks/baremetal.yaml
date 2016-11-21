@@ -457,6 +457,7 @@ workflows:
       - tag_node_uuids
       - untag_node_uuids
       - role
+      - plan: overcloud
       - queue_name: tripleo
 
     task-defaults:
@@ -478,7 +479,7 @@ workflows:
 
       update_role_parameters:
         on-success: send_message
-        action: tripleo.parameters.update_role role=<% $.role %>
+        action: tripleo.parameters.update_role role=<% $.role %> container=<% $.plan %>
         publish:
           message: <% task(update_role_parameters).result %>
           status: SUCCESS
