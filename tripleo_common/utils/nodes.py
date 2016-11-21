@@ -15,7 +15,6 @@
 
 import logging
 import re
-import time
 
 import six
 
@@ -206,11 +205,7 @@ def _find_node_handler(fields):
     return _find_driver_handler(driver)
 
 
-def register_ironic_node(node, client=None, blocking=None):
-    if blocking is not None:
-        LOG.warning('blocking argument to register_ironic_node is deprecated '
-                    'and does nothing')
-
+def register_ironic_node(node, client):
     driver_info = {}
     handler = _find_node_handler(node)
 
@@ -303,7 +298,7 @@ def _get_node_id(node, handler, node_map):
         return list(candidates)[0]
 
 
-def _update_or_register_ironic_node(node, node_map, client=None):
+def _update_or_register_ironic_node(node, node_map, client):
     handler = _find_node_handler(node)
     node_uuid = _get_node_id(node, handler, node_map)
 
@@ -353,129 +348,16 @@ def _clean_up_extra_nodes(seen, client, remove=False):
             LOG.debug('Extra registered node %s found.' % node)
 
 
-def wait_for_provision_state(baremetal_client, node_uuid, provision_state,
-                             loops=10, sleep=1):
-    """Wait for a given Provisioning state in Ironic
-
-    Updating the provisioning state is an async operation, we
-    need to wait for it to be completed.
-
-    :param baremetal_client: Instance of Ironic client
-    :type  baremetal_client: ironicclient.v1.client.Client
-
-    :param node_uuid: The Ironic node UUID
-    :type  node_uuid: str
-
-    :param provision_state: The provisioning state name to wait for
-    :type  provision_state: str
-
-    :param loops: How many times to loop
-    :type loops: int
-
-    :param sleep: How long to sleep between loops
-    :type sleep: int
-
-    :raises exceptions.StateTransitionFailed: if node.last_error is set
-    """
-
-    for _l in range(0, loops):
-
-        # This will throw an exception if the UUID is not found, so no need to
-        # check for node == None
-        node = baremetal_client.node.get(node_uuid)
-
-        if node.provision_state == provision_state:
-            LOG.info('Node %s set to provision state %s',
-                     node_uuid, provision_state)
-            return
-
-        # node.last_error should be None after any successful operation
-        if node.last_error:
-            raise exception.StateTransitionFailed(node, provision_state)
-
-        time.sleep(sleep)
-
-    raise exception.Timeout(
-        "Node %(uuid)s did not reach provision state %(state)s. "
-        "Now in state %(actual)s." % {
-            'uuid': node_uuid,
-            'state': provision_state,
-            'actual': node.provision_state
-        }
-    )
-
-
-def set_nodes_state(baremetal_client, nodes, transition, target_state,
-                    skipped_states=()):
-    """Make all nodes available in the baremetal service for a deployment
-
-    For each node whose provision_state is not in skipped_states, apply the
-    specified transition and wait until its provision_state is target_state.
-
-    :param baremetal_client: Instance of Ironic client
-    :type  baremetal_client: ironicclient.v1.client.Client
-
-    :param nodes: List of Baremetal Nodes
-    :type  nodes: [ironicclient.v1.node.Node]
-
-    :param transition: The state to set for a node. The full list of states
-                       can be found in ironic.common.states.
-    :type  transition: string
-
-    :param target_state: The expected result state for a node. For example when
-                         transitioning to 'manage' the result is 'manageable'
-    :type  target_state: string
-
-    :param skipped_states: A set of states to skip, for example 'active' nodes
-                           are already deployed and the state can't always be
-                           changed.
-    :type  skipped_states: iterable of strings
-
-    :raises exception.Timeout: if a node takes too long to reach target state
-
-    :return List of nodes whose provision states have been altered. These
-            objects will be stale, and will not reflect the real node's current
-            provision_state.
-    """
-
-    log = logging.getLogger(__name__ + ".set_nodes_state")
-    altered_nodes = []
-
-    for node in nodes:
-
-        if node.provision_state in skipped_states:
-            continue
-
-        log.debug(
-            "Setting provision state from '{0}' to '{1}' for Node {2}"
-            .format(node.provision_state, transition, node.uuid))
-
-        baremetal_client.node.set_provision_state(node.uuid, transition)
-        try:
-            wait_for_provision_state(baremetal_client, node.uuid, target_state)
-        except exception.StateTransitionFailed as e:
-            log.error("FAIL: {0}".format(e))
-        except exception.Timeout as e:
-            log.error("FAIL: {0}".format(e))
-        altered_nodes.append(node)
-
-    return altered_nodes
-
-
-def register_all_nodes(nodes_list, client=None, remove=False, blocking=True,
-                       keystone_client=None, glance_client=None,
-                       kernel_name=None, ramdisk_name=None, provide=True):
+def register_all_nodes(nodes_list, client, remove=False, glance_client=None,
+                       kernel_name=None, ramdisk_name=None):
     """Register all nodes in nodes_list in the baremetal service.
 
     :param nodes_list: The list of nodes to register.
     :param client: An Ironic client object.
     :param remove: Should nodes not in the list be removed?
-    :param blocking: Ignored.
-    :param keystone_client: Ignored.
     :param glance_client: A Glance client object, for fetching ramdisk images.
     :param kernel_name: Glance ID of the kernel to use for the nodes.
     :param ramdisk_name: Glance ID of the ramdisk to use for the nodes.
-    :param provide: Should the node be transitioned to AVAILABLE state?
     :return: list of node objects representing the new nodes.
     """
 
@@ -498,16 +380,6 @@ def register_all_nodes(nodes_list, client=None, remove=False, blocking=True,
         seen.append(node)
 
     _clean_up_extra_nodes(seen, client, remove=remove)
-
-    if provide:
-        manageable_nodes = set_nodes_state(
-            client, seen, "manage", "manageable",
-            skipped_states={'manageable', 'available'}
-        )
-        set_nodes_state(
-            client, manageable_nodes, "provide", "available",
-            skipped_states={'available'}
-        )
 
     return seen
 

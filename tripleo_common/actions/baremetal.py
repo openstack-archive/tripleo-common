@@ -64,8 +64,7 @@ class RegisterOrUpdateNodes(base.TripleOAction):
                 remove=self.remove,
                 glance_client=image_client,
                 kernel_name=self.kernel_name,
-                ramdisk_name=self.ramdisk_name,
-                provide=False)
+                ramdisk_name=self.ramdisk_name)
         except Exception as err:
             LOG.exception("Error registering nodes with ironic.")
             return mistral_workflow_utils.Result(
