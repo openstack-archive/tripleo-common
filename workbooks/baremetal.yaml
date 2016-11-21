@@ -540,3 +540,62 @@ workflows:
                 status: <% $.get('status', 'FAILED') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+
+  create_raid_configuration:
+    description: Create and apply RAID configuration for given nodes
+    input:
+      - node_uuids
+      - configuration
+      - queue_name: tripleo
+
+    tasks:
+
+      set_configuration:
+        with-items: node_uuid in <% $.node_uuids %>
+        action: ironic.node_set_target_raid_config node_ident=<% $.node_uuid %> target_raid_config=<% $.configuration %>
+        on-success: apply_configuration
+        on-error: set_configuration_failed
+
+      set_configuration_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_configuration).result %>
+
+      apply_configuration:
+        with-items: node_uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.manual_cleaning
+        input:
+          node_uuid: <% $.node_uuid %>
+          clean_steps:
+            - interface: raid
+              step: delete_configuration
+            - interface: raid
+              step: create_configuration
+          timeout: 1800  # building RAID should be fast than general cleaning
+          retry_count: 180
+          retry_delay: 10
+        on-success: send_message
+        on-error: apply_configuration_failed
+        publish:
+          message: <% task(apply_configuration).result %>
+          status: SUCCESS
+
+      apply_configuration_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(apply_configuration).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.create_raid_configuration
+              payload:
+                status: <% $.get('status', 'FAILED') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
