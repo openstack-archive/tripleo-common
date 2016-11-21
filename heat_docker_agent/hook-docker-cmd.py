@@ -19,6 +19,7 @@ import subprocess
 import sys
 import yaml
 
+import six
 
 DOCKER_CMD = os.environ.get('HEAT_DOCKER_CMD', 'docker')
 
@@ -99,7 +100,7 @@ def main(argv=sys.argv):
             if key in ['environment', 'volumes', 'volumes_from']:
                 for value in config[container][key]:
                     # Somehow the lists get empty values sometimes
-                    if type(value) is unicode and not value.strip():
+                    if type(value) is six.text_type and not value.strip():
                         continue
                     cmd.append(docker_arg_map(key, value))
             elif key == 'image':
