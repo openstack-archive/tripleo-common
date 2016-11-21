@@ -14,7 +14,9 @@
 # under the License.
 import json
 import logging
+import six
 import time
+import uuid
 
 from heatclient.common import deployment_utils
 from heatclient import exc as heat_exc
@@ -150,6 +152,8 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         parameters['DeployIdentifier'] = int(time.time())
         parameters['UpdateIdentifier'] = ''
         parameters['StackAction'] = 'CREATE' if stack_is_new else 'UPDATE'
+        if stack_is_new:
+            parameters['CephClusterFSID'] = six.text_type(uuid.uuid1())
 
         if 'parameter_defaults' not in wf_env.variables:
             wf_env.variables['parameter_defaults'] = {}
