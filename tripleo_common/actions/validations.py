@@ -83,11 +83,11 @@ class Enabled(base.TripleOAction):
         return_value = {'stderr': ''}
         if self._validations_enabled():
             return_value['stdout'] = 'Validations are enabled'
-            mistral_result = (return_value, None)
+            mistral_result = {"data": return_value}
         else:
             return_value['stdout'] = 'Validations are disabled'
-            mistral_result = (None, return_value)
-        return mistral_workflow_utils.Result(*mistral_result)
+            mistral_result = {"error": return_value}
+        return mistral_workflow_utils.Result(**mistral_result)
 
 
 class ListValidationsAction(base.TripleOAction):
@@ -132,15 +132,15 @@ class RunValidationAction(base.TripleOAction):
                                                   identity_file,
                                                   self.plan)
             return_value = {'stdout': stdout, 'stderr': stderr}
-            mistral_result = (return_value, None)
+            mistral_result = {"data": return_value}
         except mistralclient_api.APIException as e:
             return_value = {'stdout': '', 'stderr': e.error_message}
-            mistral_result = (None, return_value)
+            mistral_result = {"error": return_value}
         except ProcessExecutionError as e:
             return_value = {'stdout': e.stdout, 'stderr': e.stderr}
             # Indicates to Mistral there was a failure
-            mistral_result = (None, return_value)
+            mistral_result = {"error": return_value}
         finally:
             if identity_file:
                 utils.cleanup_identity_file(identity_file)
-        return mistral_workflow_utils.Result(*mistral_result)
+        return mistral_workflow_utils.Result(**mistral_result)
