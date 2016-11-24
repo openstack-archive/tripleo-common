@@ -509,6 +509,38 @@ class NodesTest(base.TestCase):
             driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
                          'ucs_username': 'test'})
 
+    def test_register_ironic_node_pxe_ipmitool(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'pxe_ipmitool'
+        node['pm_port'] = '6230'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='pxe_ipmitool', name='node1', properties=node_properties,
+            driver_info={'ipmi_password': 'random', 'ipmi_address': 'foo.bar',
+                         'ipmi_username': 'test', 'ipmi_port': '6230'})
+
+    def test_register_ironic_node_pxe_drac(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'pxe_drac'
+        node['pm_port'] = '6230'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='pxe_drac', name='node1', properties=node_properties,
+            driver_info={'drac_password': 'random', 'drac_host': 'foo.bar',
+                         'drac_username': 'test', 'drac_port': '6230'})
+
     def test_register_ironic_node_update_int_values(self):
         node = self._get_node()
         ironic = mock.MagicMock()
