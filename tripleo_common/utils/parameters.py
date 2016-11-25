@@ -16,26 +16,15 @@
 
 from tripleo_common.utils import nodes
 
-PARAMS = {
+
+PARAM_EXCEPTIONS = {
     'control': {
         'count': 'ControllerCount',
         'flavor': 'OvercloudControlFlavor'
     },
-    'compute': {
-        'count': 'ComputeCount',
-        'flavor': 'OvercloudComputeFlavor'
-    },
-    'block-storage': {
-        'count': 'BlockStorageCount',
-        'flavor': 'OvercloudBlockStorageFlavor'
-    },
     'object-storage': {
         'count': 'ObjectStorageCount',
         'flavor': 'OvercloudSwiftStorageFlavor'
-    },
-    'ceph-storage': {
-        'count': 'CephStorageCount',
-        'flavor': 'OvercloudCephStorageFlavor'
     }
 }
 
@@ -59,7 +48,25 @@ def get_flavor(role, compute_client):
     return 'baremetal'
 
 
+def _get_count_key(role):
+    return '%sCount' % role.title().replace('-', '')
+
+
+def _get_flavor_key(role):
+    return 'Overcloud%sFlavor' % role.title().replace('-', '')
+
+
 def set_count_and_flavor_params(role, baremetal_client, compute_client):
+    """Returns the parameters for role count and flavor.
+
+    The parameter names are derived from the role name:
+
+        <camel case role name, no hyphens>Count
+        Overcloud<camel case role name, no hyphens>Flavor
+
+    Exceptions from this rule (the control and object-storage roles) are
+    defined in the PARAM_EXCEPTIONS dict.
+    """
     node_count = get_node_count(role, baremetal_client)
 
     if node_count == 0:
@@ -67,7 +74,12 @@ def set_count_and_flavor_params(role, baremetal_client, compute_client):
     else:
         flavor = get_flavor(role, compute_client)
 
+    if role in PARAM_EXCEPTIONS:
+        return {
+            PARAM_EXCEPTIONS[role]['count']: node_count,
+            PARAM_EXCEPTIONS[role]['flavor']: flavor
+        }
     return {
-        PARAMS[role]['count']: node_count,
-        PARAMS[role]['flavor']: flavor
+        _get_count_key(role): node_count,
+        _get_flavor_key(role): flavor
     }
