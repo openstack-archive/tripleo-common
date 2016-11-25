@@ -60,6 +60,7 @@ PASSWORD_PARAMETER_NAMES = (
     'CephAdminKey',
     'CephClientKey',
     'CephClusterFSID',
+    'CephMdsKey',
     'CephMonKey',
     'CephRgwKey',
     'CinderPassword',
