@@ -83,6 +83,7 @@ PASSWORD_PARAMETER_NAMES = (
     'NeutronMetadataProxySharedSecret',
     'NeutronPassword',
     'NovaPassword',
+    'PankoPassword',
     'RabbitPassword',
     'RedisPassword',
     'SaharaPassword',
