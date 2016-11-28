@@ -17,6 +17,10 @@
 from tripleo_common.utils import nodes
 
 
+FLAVOR_ROLE_EXCEPTIONS = {
+    'object-storage': 'swift-storage'
+}
+
 PARAM_EXCEPTIONS = {
     'control': {
         'count': 'ControllerCount',
@@ -43,7 +47,11 @@ def get_node_count(role, baremetal_client):
 def get_flavor(role, compute_client):
     for f in compute_client.flavors.list():
         flavor = compute_client.flavors.get(f.id)
-        if flavor.get_keys().get('capabilities:profile') == role:
+        # The flavor's capabilities:profile and the role must match,
+        # unless the role has a different profile name (as defined in
+        # FLAVOR_ROLE_EXCEPTIONS).
+        if (flavor.get_keys().get('capabilities:profile') ==
+                FLAVOR_ROLE_EXCEPTIONS.get(role, role)):
             return flavor.name
     return 'baremetal'
 
