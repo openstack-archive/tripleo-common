@@ -153,7 +153,7 @@ class GeneratePasswordsAction(base.TripleOAction):
         except Exception:
             msg = "Error retrieving mistral environment: %s" % self.container
             LOG.exception(msg)
-            return mistral_workflow_utils.Result("", msg)
+            return mistral_workflow_utils.Result(error=msg)
 
         try:
             stack_env = orchestration.stacks.environment(
