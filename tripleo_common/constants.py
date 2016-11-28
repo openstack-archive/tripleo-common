@@ -67,6 +67,7 @@ PASSWORD_PARAMETER_NAMES = (
     'CephMonKey',
     'CephRgwKey',
     'CinderPassword',
+    'Ec2ApiPassword',
     'GlancePassword',
     'GnocchiPassword',
     'HAProxyStatsPassword',
