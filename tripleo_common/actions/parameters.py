@@ -54,9 +54,9 @@ class GetParametersAction(templates.ProcessTemplatesAction):
         processed_data['show_nested'] = True
 
         # respect previously user set param values
-        wc = self._get_workflow_client()
+        wc = self.get_workflow_client()
         wf_env = wc.environments.get(self.container)
-        orc = self._get_orchestration_client()
+        orc = self.get_orchestration_client()
 
         params = wf_env.variables.get('parameter_defaults')
 
@@ -80,7 +80,7 @@ class ResetParametersAction(base.TripleOAction):
         self.container = container
 
     def run(self):
-        wc = self._get_workflow_client()
+        wc = self.get_workflow_client()
         wf_env = wc.environments.get(self.container)
 
         if 'parameter_defaults' in wf_env.variables:
@@ -104,7 +104,7 @@ class UpdateParametersAction(base.TripleOAction):
         self.parameters = parameters
 
     def run(self):
-        wc = self._get_workflow_client()
+        wc = self.get_workflow_client()
         wf_env = wc.environments.get(self.container)
         if 'parameter_defaults' not in wf_env.variables:
             wf_env.variables['parameter_defaults'] = {}
@@ -126,8 +126,8 @@ class UpdateRoleParametersAction(UpdateParametersAction):
         self.role = role
 
     def run(self):
-        baremetal_client = self._get_baremetal_client()
-        compute_client = self._get_compute_client()
+        baremetal_client = self.get_baremetal_client()
+        compute_client = self.get_compute_client()
         self.parameters = parameters.set_count_and_flavor_params(
             self.role, baremetal_client, compute_client)
         return super(UpdateRoleParametersAction, self).run()
@@ -146,8 +146,8 @@ class GeneratePasswordsAction(base.TripleOAction):
 
     def run(self):
 
-        orchestration = self._get_orchestration_client()
-        wc = self._get_workflow_client()
+        orchestration = self.get_orchestration_client()
+        wc = self.get_workflow_client()
         try:
             wf_env = wc.environments.get(self.container)
         except Exception:

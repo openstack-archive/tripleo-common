@@ -141,7 +141,7 @@ class GetCapabilitiesActionTest(base.TestCase):
         super(GetCapabilitiesActionTest, self).setUp()
         self.container_name = 'test-container'
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run_yaml_error(self, get_obj_client_mock):
         # setup swift
         swift = mock.MagicMock()
@@ -154,9 +154,9 @@ class GetCapabilitiesActionTest(base.TestCase):
             error="Error parsing capabilities-map.yaml.")
         self.assertEqual(expected, action.run())
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run_mistral_error(self, get_workflow_client_mock,
                                get_obj_client_mock):
 
@@ -177,9 +177,9 @@ class GetCapabilitiesActionTest(base.TestCase):
             error="Error retrieving mistral environment. ")
         self.assertEqual(expected, action.run())
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run(self, get_workflow_client_mock, get_obj_client_mock):
 
         # setup swift
@@ -239,7 +239,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         self.container_name = 'test-container'
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run(self, get_workflow_client_mock):
 
         # setup mistral
@@ -270,9 +270,9 @@ class UpdateCapabilitiesActionTest(base.TestCase):
             action.run())
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_object_client')
+        'tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run_mistral_error(self, get_workflow_client_mock,
                                get_obj_client_mock):
 

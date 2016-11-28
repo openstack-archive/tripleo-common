@@ -41,13 +41,13 @@ class ScaleDownActionTest(base.TestCase):
         self.image = collections.namedtuple('image', ['id'])
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_object_client,
                  mock_get_workflow_client, mock_get_template_contents,

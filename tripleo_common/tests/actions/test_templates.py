@@ -75,7 +75,7 @@ J2_EXCLUDES_EMPTY_FILE = """
 class UploadTemplatesActionTest(base.TestCase):
 
     @mock.patch('tempfile.NamedTemporaryFile')
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.utils.tarball.'
                 'tarball_extract_to_swift_container')
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
@@ -99,8 +99,8 @@ class ProcessTemplatesActionTest(base.TestCase):
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_object_client,
                  mock_get_workflow_client, mock_get_template_contents,
@@ -141,7 +141,7 @@ class ProcessTemplatesActionTest(base.TestCase):
             }
         })
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('mistral.context.ctx')
     def test_process_custom_roles(self, ctx_mock, get_obj_client_mock):
 
@@ -190,7 +190,7 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.put_object.assert_has_calls(
             put_object_mock_calls, any_order=True)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('mistral.context.ctx')
     def test_j2_render_and_put(self, ctx_mock, get_obj_client_mock):
 
@@ -210,7 +210,7 @@ class ProcessTemplatesActionTest(base.TestCase):
 
         self.assertTrue("CustomRole" in str(action_result))
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('mistral.context.ctx')
     def test_get_j2_excludes_file(self, ctx_mock, get_obj_client_mock):
 

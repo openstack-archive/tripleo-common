@@ -55,7 +55,7 @@ class OrchestrationDeployActionTest(base.TestCase):
         self.assertEqual('built_params', action._build_sc_params('swift_url'))
         build_derived_config_params_mock.assert_called_once()
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_wait_for_data(self, get_obj_client_mock):
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, 'body')
@@ -67,7 +67,7 @@ class OrchestrationDeployActionTest(base.TestCase):
         get_obj_client_mock.assert_called_once()
         swift.get_object.assert_called_once_with('container', 'object')
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('time.sleep')
     def test_wait_for_data_timeout(self, sleep, get_obj_client_mock):
         swift = mock.MagicMock()
@@ -83,9 +83,9 @@ class OrchestrationDeployActionTest(base.TestCase):
         # Trying every 3 seconds, so 4 times for a timeout of 10 seconds
         self.assertEqual(swift.get_object.call_count, 4)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('heatclient.common.deployment_utils.create_temp_url')
     @mock.patch('tripleo_common.actions.deployment.OrchestrationDeployAction.'
                 '_extract_container_object_from_swift_url')
@@ -122,9 +122,9 @@ class OrchestrationDeployActionTest(base.TestCase):
                                                            'object')
         get_obj_client_mock.delete_container.called_once_with('container')
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('heatclient.common.deployment_utils.create_temp_url')
     @mock.patch('tripleo_common.actions.deployment.OrchestrationDeployAction.'
                 '_extract_container_object_from_swift_url')
@@ -155,9 +155,9 @@ class OrchestrationDeployActionTest(base.TestCase):
                                                            'object')
         get_obj_client_mock.delete_container.called_once_with('container')
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('heatclient.common.deployment_utils.create_temp_url')
     @mock.patch('tripleo_common.actions.deployment.OrchestrationDeployAction.'
                 '_extract_container_object_from_swift_url')
@@ -199,10 +199,10 @@ class DeployStackActionTest(base.TestCase):
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_orchestration_client')
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, get_orchestration_client_mock,
                  mock_get_object_client, mock_get_workflow_client,

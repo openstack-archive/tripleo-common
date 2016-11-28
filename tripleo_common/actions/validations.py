@@ -30,7 +30,7 @@ class GetPubkeyAction(base.TripleOAction):
         super(GetPubkeyAction, self).__init__()
 
     def run(self):
-        mc = self._get_workflow_client()
+        mc = self.get_workflow_client()
         try:
             env = mc.environments.get('ssh_keys')
             public_key = env.variables['public_key']
@@ -68,7 +68,7 @@ class Enabled(base.TripleOAction):
 
     def _validations_enabled(self):
         """Detect whether the validations are enabled on the undercloud."""
-        mistral = self._get_workflow_client()
+        mistral = self.get_workflow_client()
         try:
             # NOTE: the `ssh_keys` environment is created by
             # instack-undercloud only when the validations are enabled on the
@@ -121,7 +121,7 @@ class RunValidationAction(base.TripleOAction):
         self.plan = plan
 
     def run(self):
-        mc = self._get_workflow_client()
+        mc = self.get_workflow_client()
         identity_file = None
         try:
             env = mc.environments.get('ssh_keys')

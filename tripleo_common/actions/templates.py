@@ -52,7 +52,7 @@ class UploadTemplatesAction(base.TripleOAction):
         with tf.NamedTemporaryFile() as tmp_tarball:
             tarball.create_tarball(tht_base_path, tmp_tarball.name)
             tarball.tarball_extract_to_swift_container(
-                self._get_object_client(),
+                self.get_object_client(),
                 tmp_tarball.name,
                 self.container)
 
@@ -69,7 +69,7 @@ class ProcessTemplatesAction(base.TripleOAction):
         self.container = container
 
     def _j2_render_and_put(self, j2_template, j2_data, outfile_name=None):
-        swift = self._get_object_client()
+        swift = self.get_object_client()
         yaml_f = outfile_name or j2_template.replace('.j2.yaml', '.yaml')
 
         try:
@@ -93,7 +93,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             raise Exception(error_msg)
 
     def _get_j2_excludes_file(self):
-        swift = self._get_object_client()
+        swift = self.get_object_client()
         try:
             j2_excl_file = swift.get_object(
                 self.container, constants.OVERCLOUD_J2_EXCLUDES)[1]
@@ -110,7 +110,7 @@ class ProcessTemplatesAction(base.TripleOAction):
         return j2_excl_data
 
     def _process_custom_roles(self):
-        swift = self._get_object_client()
+        swift = self.get_object_client()
 
         try:
             j2_role_file = swift.get_object(
@@ -173,8 +173,8 @@ class ProcessTemplatesAction(base.TripleOAction):
     def run(self):
         error_text = None
         ctx = context.ctx()
-        swift = self._get_object_client()
-        mistral = self._get_workflow_client()
+        swift = self.get_object_client()
+        mistral = self.get_workflow_client()
         try:
             mistral_environment = mistral.environments.get(self.container)
         except Exception as mistral_err:

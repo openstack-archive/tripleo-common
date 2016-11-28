@@ -65,7 +65,7 @@ class OrchestrationDeployAction(base.TripleOAction):
     def _wait_for_data(self, container_name, object_name):
         body = None
         count_check = 0
-        swift_client = self._get_object_client()
+        swift_client = self.get_object_client()
         while not body:
             headers, body = swift_client.get_object(
                 container_name,
@@ -79,8 +79,8 @@ class OrchestrationDeployAction(base.TripleOAction):
         return body
 
     def run(self):
-        heat = self._get_orchestration_client()
-        swift_client = self._get_object_client()
+        heat = self.get_orchestration_client()
+        swift_client = self.get_object_client()
 
         swift_url = deployment_utils.create_temp_url(swift_client,
                                                      self.name,
@@ -131,7 +131,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
 
     def run(self):
         # check to see if the stack exists
-        heat = self._get_orchestration_client()
+        heat = self.get_orchestration_client()
         try:
             stack = heat.stacks.get(self.container)
         except heat_exc.HTTPNotFound:
@@ -140,7 +140,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         stack_is_new = stack is None
 
         # update StackAction, DeployIdentifier and UpdateIdentifier
-        wc = self._get_workflow_client()
+        wc = self.get_workflow_client()
         wf_env = wc.environments.get(self.container)
 
         parameters = dict()

@@ -27,7 +27,7 @@ from tripleo_common.tests.utils import test_validations
 class GetPubkeyActionTest(base.TestCase):
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run_existing_pubkey(self, get_workflow_client_mock):
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
@@ -39,7 +39,7 @@ class GetPubkeyActionTest(base.TestCase):
         self.assertEqual('existing_pubkey', action.run())
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     @mock.patch('tripleo_common.utils.validations.create_ssh_keypair')
     @mock.patch('tempfile.mkdtemp')
     @mock.patch('shutil.rmtree')
@@ -65,7 +65,7 @@ class GetPubkeyActionTest(base.TestCase):
 class Enabled(base.TestCase):
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_validations_enabled(self, get_workflow_client_mock):
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
@@ -75,7 +75,7 @@ class Enabled(base.TestCase):
         self.assertEqual(result, True)
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_validations_disabled(self, get_workflow_client_mock):
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
@@ -87,7 +87,7 @@ class Enabled(base.TestCase):
     @mock.patch(
         'tripleo_common.actions.validations.Enabled._validations_enabled')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_success_with_validations_enabled(self, get_workflow_client_mock,
                                               validations_enabled_mock):
         validations_enabled_mock.return_value = True
@@ -100,7 +100,7 @@ class Enabled(base.TestCase):
     @mock.patch(
         'tripleo_common.actions.validations.Enabled._validations_enabled')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_success_with_validations_disabled(self, get_workflow_client_mock,
                                                validations_enabled_mock):
         validations_enabled_mock.return_value = False
@@ -146,7 +146,7 @@ class ListGroupsActionTest(base.TestCase):
 class RunValidationActionTest(base.TestCase):
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     @mock.patch('tripleo_common.utils.validations.write_identity_file')
     @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
     @mock.patch('tripleo_common.utils.validations.run_validation')
@@ -177,7 +177,7 @@ class RunValidationActionTest(base.TestCase):
             'identity_file_path')
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     @mock.patch('tripleo_common.utils.validations.write_identity_file')
     @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
     @mock.patch('tripleo_common.utils.validations.run_validation')

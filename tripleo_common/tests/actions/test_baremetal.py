@@ -38,14 +38,14 @@ class TestConfigureBootAction(base.TestCase):
 
         self.ironic = mock.MagicMock()
         ironic_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction._get_baremetal_client',
+            'tripleo_common.actions.base.TripleOAction.get_baremetal_client',
             return_value=self.ironic)
         self.mock_ironic = ironic_patcher.start()
         self.addCleanup(ironic_patcher.stop)
 
         self.glance = mock.MagicMock()
         glance_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction._get_image_client',
+            'tripleo_common.actions.base.TripleOAction.get_image_client',
             return_value=self.glance)
         self.mock_glance = glance_patcher.start()
         self.addCleanup(glance_patcher.stop)
@@ -160,7 +160,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
         # Ironic mocks
         self.ironic = mock.MagicMock()
         ironic_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction._get_baremetal_client',
+            'tripleo_common.actions.base.TripleOAction.get_baremetal_client',
             return_value=self.ironic)
         self.mock_ironic = ironic_patcher.start()
         self.addCleanup(ironic_patcher.stop)
@@ -176,7 +176,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
         self.inspector = mock.MagicMock()
         inspector_patcher = mock.patch(
             'tripleo_common.actions.base.TripleOAction.'
-            '_get_baremetal_introspection_client',
+            'get_baremetal_introspection_client',
             return_value=self.inspector)
         self.mock_inspector = inspector_patcher.start()
         self.addCleanup(inspector_patcher.stop)

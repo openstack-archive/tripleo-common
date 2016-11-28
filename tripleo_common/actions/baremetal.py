@@ -54,8 +54,8 @@ class RegisterOrUpdateNodes(base.TripleOAction):
             caps.setdefault('boot_option', self.instance_boot_option)
             node['capabilities'] = nodes.dict_to_capabilities(caps)
 
-        baremetal_client = self._get_baremetal_client()
-        image_client = self._get_image_client()
+        baremetal_client = self.get_baremetal_client()
+        image_client = self.get_image_client()
 
         try:
             return nodes.register_all_nodes(
@@ -89,8 +89,8 @@ class ConfigureBootAction(base.TripleOAction):
         self.instance_boot_option = instance_boot_option
 
     def run(self):
-        baremetal_client = self._get_baremetal_client()
-        image_client = self._get_image_client()
+        baremetal_client = self.get_baremetal_client()
+        image_client = self.get_image_client()
 
         try:
             image_ids = {'kernel': None, 'ramdisk': None}
@@ -158,7 +158,7 @@ class ConfigureRootDeviceAction(base.TripleOAction):
         if not self.root_device:
             return
 
-        baremetal_client = self._get_baremetal_client()
+        baremetal_client = self.get_baremetal_client()
         node = baremetal_client.node.get(self.node_uuid)
         self._apply_root_device_strategy(
             node, self.root_device, self.minimum_size, self.overwrite)
@@ -178,7 +178,7 @@ class ConfigureRootDeviceAction(base.TripleOAction):
                         node.uuid)
             return
 
-        inspector_client = self._get_baremetal_introspection_client()
+        inspector_client = self.get_baremetal_introspection_client()
         try:
             data = inspector_client.get_data(node.uuid)
         except ironic_inspector_client.ClientError:
@@ -244,7 +244,7 @@ class ConfigureRootDeviceAction(base.TripleOAction):
         # This -1 is what we always do to account for partitioning
         new_size -= 1
 
-        bm_client = self._get_baremetal_client()
+        bm_client = self.get_baremetal_client()
         bm_client.node.update(
             node.uuid,
             [{'op': 'add', 'path': '/properties/root_device', 'value': hint},
@@ -273,7 +273,7 @@ class UpdateNodeCapability(base.TripleOAction):
         self.value = value
 
     def run(self):
-        baremetal_client = self._get_baremetal_client()
+        baremetal_client = self.get_baremetal_client()
 
         try:
             return nodes.update_node_capability(

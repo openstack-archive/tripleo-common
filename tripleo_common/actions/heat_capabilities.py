@@ -40,7 +40,7 @@ class GetCapabilitiesAction(base.TripleOAction):
 
     def run(self):
         try:
-            swift_client = self._get_object_client()
+            swift_client = self.get_object_client()
             map_file = swift_client.get_object(
                 self.container, 'capabilities-map.yaml')
             capabilities = yaml.safe_load(map_file[1])
@@ -58,7 +58,7 @@ class GetCapabilitiesAction(base.TripleOAction):
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(error=err_msg)
         try:
-            mistral_client = self._get_workflow_client()
+            mistral_client = self.get_workflow_client()
             mistral_env = mistral_client.environments.get(self.container)
         except Exception as mistral_err:
             err_msg = ("Error retrieving mistral "
@@ -157,7 +157,7 @@ class UpdateCapabilitiesAction(base.TripleOAction):
         self.environments = environments
 
     def run(self):
-        mistral_client = self._get_workflow_client()
+        mistral_client = self.get_workflow_client()
         mistral_env = None
         try:
             mistral_env = mistral_client.environments.get(self.container)

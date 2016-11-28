@@ -85,8 +85,8 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         fields['existing'] = True
 
         LOG.debug('stack update params: %s', fields)
-        self._get_orchestration_client().stacks.update(self.container,
-                                                       **fields)
+        self.get_orchestration_client().stacks.update(self.container,
+                                                      **fields)
 
     def _get_removal_params_from_heat(self, resources_by_role, resources):
         stack_params = {}
@@ -111,7 +111,7 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         return stack_params
 
     def run(self):
-        heatclient = self._get_orchestration_client()
+        heatclient = self.get_orchestration_client()
         resources = heatclient.resources.list(self.container, nested_depth=5)
         resources_by_role = collections.defaultdict(list)
         instance_list = list(self.nodes)

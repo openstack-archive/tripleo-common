@@ -61,10 +61,10 @@ class GetParametersActionTest(base.TestCase):
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_object_client,
                  mock_get_workflow_client, mock_get_orchestration_client,
@@ -109,7 +109,7 @@ class GetParametersActionTest(base.TestCase):
 class ResetParametersActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
+                'get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client):
 
@@ -140,7 +140,7 @@ class ResetParametersActionTest(base.TestCase):
 class UpdateParametersActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
+                'get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client):
 
@@ -175,11 +175,11 @@ class UpdateRoleParametersActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.parameters.set_count_and_flavor_params')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_baremetal_client')
+                'get_baremetal_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_compute_client')
+                'get_compute_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
+                'get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client,
                  mock_get_compute_client, mock_get_baremetal_client,
@@ -208,11 +208,11 @@ class UpdateRoleParametersActionTest(base.TestCase):
 class GeneratePasswordsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client', return_value="TestPassword")
+                'get_workflow_client', return_value="TestPassword")
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client,
                  mock_get_snmpd_readonly_user_password,
@@ -246,11 +246,11 @@ class GeneratePasswordsActionTest(base.TestCase):
                             "%s is not in %s" % (password_param_name, result))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
+                'get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_run_passwords_exist(self, mock_ctx, mock_get_workflow_client,
                                  mock_get_snmpd_readonly_user_password,
@@ -284,11 +284,11 @@ class GeneratePasswordsActionTest(base.TestCase):
         self.assertEqual(_EXISTING_PASSWORDS, result)
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_orchestration_client')
+                'get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                '_get_workflow_client')
+                'get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_passwords_exist_in_heat(self, mock_ctx, mock_get_workflow_client,
                                      mock_get_snmpd_readonly_user_password,

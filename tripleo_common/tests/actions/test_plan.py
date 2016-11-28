@@ -89,7 +89,7 @@ class CreateContainerActionTest(base.TestCase):
         self.container_name = 'test-container'
         self.expected_list = ['', [{'name': 'test1'}, {'name': 'test2'}]]
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run(self, get_obj_client_mock):
 
         # Setup
@@ -107,7 +107,7 @@ class CreateContainerActionTest(base.TestCase):
             headers=plan.default_container_headers
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run_container_exists(self, get_obj_client_mock):
 
         # Setup
@@ -137,7 +137,7 @@ class CreatePlanActionTest(base.TestCase):
         self.swift = mock.MagicMock()
         self.swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
         swift_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction._get_object_client',
+            'tripleo_common.actions.base.TripleOAction.get_object_client',
             return_value=self.swift)
         swift_patcher.start()
         self.addCleanup(swift_patcher.stop)
@@ -146,7 +146,7 @@ class CreatePlanActionTest(base.TestCase):
         self.mistral = mock.MagicMock()
         self.mistral.environments.get.side_effect = mistral_base.APIException
         mistral_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction._get_workflow_client',
+            'tripleo_common.actions.base.TripleOAction.get_workflow_client',
             return_value=self.mistral)
         mistral_patcher.start()
         self.addCleanup(mistral_patcher.stop)
@@ -230,9 +230,9 @@ class ListPlansActionTest(base.TestCase):
         super(ListPlansActionTest, self).setUp()
         self.container = 'overcloud'
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run(self, get_workflow_client_mock, get_obj_client_mock):
 
         # setup swift
@@ -278,7 +278,7 @@ class DeletePlanActionTest(base.TestCase):
         )
 
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_orchestration_client')
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
     def test_run_stack_exists(self, get_orchestration_client):
 
         # setup heat
@@ -291,11 +291,11 @@ class DeletePlanActionTest(base.TestCase):
         self.assertRaises(exception.StackInUseError, action.run)
         heat.stacks.get.assert_called_with(self.container_name)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_orchestration_client')
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run(self, get_workflow_client_mock, get_orchestration_client,
                  get_obj_client_mock):
 
@@ -354,9 +354,9 @@ class RoleListActionTest(base.TestCase):
         super(RoleListActionTest, self).setUp()
         self.container = 'overcloud'
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction._get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction._get_workflow_client')
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run(self, workflow_client_mock, get_obj_client_mock):
 
         # setup mistral

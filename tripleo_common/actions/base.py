@@ -29,7 +29,7 @@ class TripleOAction(base.Action):
     def __init__(self):
         super(TripleOAction, self).__init__()
 
-    def _get_object_client(self):
+    def get_object_client(self):
         ctx = context.ctx()
         obj_ep = keystone_utils.get_endpoint_for_project('swift')
 
@@ -43,7 +43,7 @@ class TripleOAction(base.Action):
 
         return swift_client.Connection(**kwargs)
 
-    def _get_baremetal_client(self):
+    def get_baremetal_client(self):
         ctx = context.ctx()
 
         ironic_endpoint = keystone_utils.get_endpoint_for_project('ironic')
@@ -66,7 +66,7 @@ class TripleOAction(base.Action):
             retry_interval=5,
         )
 
-    def _get_baremetal_introspection_client(self):
+    def get_baremetal_introspection_client(self):
         ctx = context.ctx()
 
         bmi_endpoint = keystone_utils.get_endpoint_for_project(
@@ -79,7 +79,7 @@ class TripleOAction(base.Action):
             auth_token=ctx.auth_token
         )
 
-    def _get_image_client(self):
+    def get_image_client(self):
         ctx = context.ctx()
 
         glance_endpoint = keystone_utils.get_endpoint_for_project('glance')
@@ -89,7 +89,7 @@ class TripleOAction(base.Action):
             region_name=glance_endpoint.region
         )
 
-    def _get_orchestration_client(self):
+    def get_orchestration_client(self):
         ctx = context.ctx()
         heat_endpoint = keystone_utils.get_endpoint_for_project('heat')
 
@@ -105,7 +105,7 @@ class TripleOAction(base.Action):
             username=ctx.user_name
         )
 
-    def _get_workflow_client(self):
+    def get_workflow_client(self):
         ctx = context.ctx()
         mistral_endpoint = keystone_utils.get_endpoint_for_project('mistral')
 
@@ -114,7 +114,7 @@ class TripleOAction(base.Action):
 
         return mc
 
-    def _get_compute_client(self):
+    def get_compute_client(self):
         ctx = context.ctx()
         keystone_endpoint = keystone_utils.get_endpoint_for_project('keystone')
         nova_endpoint = keystone_utils.get_endpoint_for_project('nova')
