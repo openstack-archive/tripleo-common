@@ -18,6 +18,7 @@ disk_images:
       - python-heat-agent-puppet
       - python-heat-agent-hiera
       - python-heat-agent-apply-config
+      - python-heat-agent-ansible
     options:
       - "--min-tmpfs 5"
   -
