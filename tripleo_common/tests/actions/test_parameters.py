@@ -51,7 +51,12 @@ _EXISTING_PASSWORDS = {
     'HeatPassword': 'bREnsXtMHKTHxt8XW6NXAYr48',
     'MysqlClustercheckPassword': 'jN4RMMWWJ4sycaRwh7UvrAtfX',
     'CephClientKey': b'AQCQXtlXAAAAABAAKyc+8St8i9onHyu2mPk+vg==',
-    'NeutronPassword': 'ZxAjdU2UXCV4GM3WyPKrzAZXD'
+    'NeutronPassword': 'ZxAjdU2UXCV4GM3WyPKrzAZXD',
+    'KeystoneCredential0': 'ftJNQ_XlDUK7Lgvv1kdWf3SyqVsrvNDgoNV4kJg3yzw=',
+    'KeystoneCredential1': 'c4MFq82TQLFLKpiiUjrKkp15dafE2ALcD3jbaIu3rfE=',
+    'KeystoneFernetKey0': 'O8NSPxr4zXBBAoGIj-5aUmtE7-Jk5a4ptVsEhzJ8Vd8=',
+    'KeystoneFernetKey1': 'AueoL37kd6eLjV29AG-Ruxu5szW47osgXx6aPOqtI6I=',
+    'CephClusterFSID': u'97c16f44-b62c-11e6-aed3-185e0f73fdc5',
 }
 
 
@@ -266,7 +271,7 @@ class GeneratePasswordsActionTest(base.TestCase):
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
-            'passwords': _EXISTING_PASSWORDS
+            'passwords': _EXISTING_PASSWORDS.copy()
         }
         mock_mistral.environments.get.return_value = mock_env
         mock_get_workflow_client.return_value = mock_mistral
@@ -307,7 +312,7 @@ class GeneratePasswordsActionTest(base.TestCase):
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
-            'passwords': existing_passwords
+            'passwords': existing_passwords.copy()
         }
         mock_mistral.environments.get.return_value = mock_env
         mock_get_workflow_client.return_value = mock_mistral
