@@ -34,9 +34,11 @@ class BaseImageManager(object):
         self.images = images
 
     def _extend_or_set_attribute(self, existing_image, image, attribute_name):
-        attribute = image.get(attribute_name, [])
+        attribute = image.get(attribute_name)
         if attribute:
             try:
+                existing_image[attribute_name].update(attribute)
+            except AttributeError:
                 existing_image[attribute_name].extend(attribute)
             except KeyError:
                 existing_image[attribute_name] = attribute

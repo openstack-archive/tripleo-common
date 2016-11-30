@@ -54,6 +54,8 @@ class TestBaseImageManager(testbase.TestCase):
         self.assertRaises(IOError, base_manager.load_config_files,
                           'disk_images')
 
+    @mock.patch('tripleo_common.image.base.BaseImageManager.APPEND_ATTRIBUTES',
+                ['elements', 'options', 'packages', 'environment'])
     @mock.patch('yaml.load', autospec=True)
     @mock.patch('os.path.isfile', autospec=True)
     def test_load_config_files_multiple_files(self, mock_os_path_isfile,
@@ -64,7 +66,8 @@ class TestBaseImageManager(testbase.TestCase):
                 'imagename': 'overcloud',
                 'distro': 'some_awesome_distro',
                 'type': 'qcow2',
-                'elements': ['image_element']
+                'elements': ['image_element'],
+                'environment': {'test_env': '1'},
             }]},
             {
             'disk_images': [{
@@ -72,6 +75,7 @@ class TestBaseImageManager(testbase.TestCase):
                 'elements': ['another_image_element'],
                 'packages': ['a_package'],
                 'otherkey': 'some_other_key',
+                'environment': {'test_env2': '0'},
             }]}]
 
         mock_os_path_isfile.return_value = True
@@ -92,6 +96,7 @@ class TestBaseImageManager(testbase.TestCase):
             'elements': ['image_element', 'another_image_element'],
             'packages': ['a_package'],
             'otherkey': 'some_other_key',
+            'environment': {'test_env': '1', 'test_env2': '0'},
         }], disk_images)
 
     @mock.patch('yaml.load', autospec=True)
