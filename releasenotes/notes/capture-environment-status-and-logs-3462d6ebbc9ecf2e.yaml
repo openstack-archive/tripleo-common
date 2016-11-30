@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Implemented new Mistral workflows to execute sosreport on overcloud nodes
+    and upload them to a Swift container on the undercloud.

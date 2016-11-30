@@ -15,10 +15,37 @@
 
 import uuid
 
+from mistral import context
+from mistral.workflow import utils as mistral_workflow_utils
 from six.moves import urllib
 from swiftclient import exceptions as swiftexceptions
 from swiftclient.utils import generate_temp_url
 from tripleo_common.actions import base
+
+
+class SwiftInformationAction(base.TripleOAction):
+    """Gets swift information for a given container
+
+    This action gets the swift url for a container and an auth key that can be
+    used to write to the container.
+    """
+    def __init__(self, container):
+        super(SwiftInformationAction, self).__init__()
+        self.container = container
+
+    def run(self):
+        data = None
+        error = None
+        try:
+            oc = self.get_object_client()
+            oc.head_container(self.container)
+            container_url = "{}/{}".format(oc.url, self.container)
+            auth_key = context.ctx().auth_token
+            data = {'container_url': container_url, 'auth_key': auth_key}
+        except Exception as err:
+            error = str(err)
+
+        return mistral_workflow_utils.Result(data=data, error=error)
 
 
 class SwiftTempUrlAction(base.TripleOAction):
