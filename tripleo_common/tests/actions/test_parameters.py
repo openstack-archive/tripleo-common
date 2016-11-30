@@ -42,6 +42,7 @@ _EXISTING_PASSWORDS = {
     'HeatStackDomainAdminPassword': 'GgTRyWzKYsxK4mReTJ4CM6sMc',
     'CephRgwKey': b'AQCQXtlXAAAAABAAUKcqUMu6oMjAXMjoUV4/3A==',
     'AodhPassword': '8VZXehsKc2HbmFFMKYuqxTJHn',
+    'PankoPassword': 'cVZXehsSc2KdmFFMKDudxTLKn',
     'ManilaPassword': 'NYJN86Fua3X8AVFWmMhQa2zTH',
     'NeutronMetadataProxySharedSecret': 'Q2YgUCwmBkYdqsdhhCF4hbghu',
     'CephMonKey': b'AQCQXtlXAAAAABAA9l+59N3yH+C49Y0JiKeGFg==',
