@@ -19,10 +19,12 @@ import time
 from heatclient.common import deployment_utils
 from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
+from mistralclient.api import base as mistralclient_exc
 
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
+from tripleo_common.utils import overcloudrc
 
 LOG = logging.getLogger(__name__)
 
@@ -176,3 +178,55 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         LOG.info("Performing Heat stack update")
         stack_args['existing'] = 'true'
         return heat.stacks.update(stack.id, **stack_args)
+
+
+class OvercloudRcAction(base.TripleOAction):
+    """Generate the overcloudrc and overcloudrc.v3 for a plan
+
+    Given the name of a container, generate the overcloudrc files needed to
+    access the overcloud via the CLI.
+
+    no_proxy is optional and is a comma-separated string of hosts that
+    shouldn't be proxied
+    """
+
+    def __init__(self, container, no_proxy=""):
+        self.container = container
+        self.no_proxy = no_proxy
+
+    def run(self):
+        orchestration_client = self.get_orchestration_client()
+        workflow_client = self.get_workflow_client()
+
+        try:
+            stack = orchestration_client.stacks.get(self.container)
+        except heat_exc.HTTPNotFound:
+            error = (
+                "The Heat stack {} cound not be found. Make sure you have "
+                "deployed before calling this action.").format(self.container)
+            return mistral_workflow_utils.Result(error=error)
+
+        try:
+            environment = workflow_client.environments.get(self.container)
+        except mistralclient_exc.APIException:
+            error = "The Mistral environment {} cound not be found.".format(
+                self.container)
+            return mistral_workflow_utils.Result(error=error)
+
+        # We need to check parameter_defaults first for a user provided
+        # password. If that doesn't exist, we then should look in the
+        # automatically generated passwords.
+        # TODO(d0ugal): Abstract this operation somewhere. We shouldn't need to
+        # know about the structure of the environment to get a password.
+        try:
+            parameter_defaults = environment.variables['parameter_defaults']
+            passwords = environment.variables['passwords']
+            admin_pass = parameter_defaults.get('AdminPassword')
+            if admin_pass is None:
+                admin_pass = passwords['AdminPassword']
+        except KeyError:
+            error = ("Unable to find the AdminPassword in the Mistral "
+                     "environment.")
+            return mistral_workflow_utils.Result(error=error)
+
+        return overcloudrc.create_overcloudrc(stack, self.no_proxy, admin_pass)
