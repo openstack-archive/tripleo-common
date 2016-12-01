@@ -45,6 +45,50 @@ workflows:
           count: 20
           continue-on: <% task(wait_for_power_state).result.power_state != $.target_state %>
 
+  manual_cleaning:
+    input:
+      - node_uuid
+      - clean_steps
+      - timeout: 7200  # 2 hours (cleaning can take really long)
+      - retry_delay: 10
+      - retry_count: 720
+      - queue_name: tripleo
+
+    tasks:
+
+      set_provision_state:
+        on-success: wait_for_provision_state
+        on-error: set_provision_state_failed
+        action: ironic.node_set_provision_state node_uuid=<% $.node_uuid %> state='clean' cleansteps=<% $.clean_steps %>
+
+      set_provision_state_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_provision_state).result %>
+
+      wait_for_provision_state:
+        on-success: send_message
+        action: ironic.node_get node_id=<% $.node_uuid %>
+        timeout: <% $.timeout %>
+        retry:
+          delay: <% $.retry_delay %>
+          count: <% $.retry_count %>
+          continue-on: <% task(wait_for_provision_state).result.provision_state != 'manageable' %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.manual_cleaning
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
   register_or_update:
     description: Take nodes JSON and create nodes in a "manageable" state
 
