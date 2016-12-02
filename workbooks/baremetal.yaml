@@ -126,7 +126,12 @@ workflows:
         on-success: send_message
         on-error: set_status_failed_nodes_managed
         with-items: node in <% $.new_nodes %>
-        workflow: tripleo.baremetal.v1.set_node_state node_uuid=<% $.node.uuid %> state_action='manage' target_state='manageable'
+        workflow: tripleo.baremetal.v1.set_node_state
+        input:
+          node_uuid: <% $.node.uuid %>
+          queue_name: <% $.queue_name %>
+          state_action: 'manage'
+          target_state: 'manageable'
         publish:
           status: SUCCESS
           message: Nodes set to managed.
@@ -164,7 +169,12 @@ workflows:
         on-success: try_power_off
         on-error: set_status_failed_nodes_available
         with-items: uuid in <% $.node_uuids %>
-        workflow: tripleo.baremetal.v1.set_node_state node_uuid=<% $.uuid %> state_action='provide' target_state='available'
+        workflow: tripleo.baremetal.v1.set_node_state
+        input:
+          node_uuid: <% $.uuid %>
+          queue_name: <% $.queue_name %>
+          state_action: 'provide'
+          target_state: 'available'
 
       set_status_failed_nodes_available:
         on-success: send_message
@@ -176,7 +186,12 @@ workflows:
         on-success: send_message
         on-error: power_off_failed
         with-items: uuid in <% $.node_uuids %>
-        workflow: tripleo.baremetal.v1.set_power_state node_uuid=<% $.uuid %> state_action='off' target_state='power off'
+        workflow: tripleo.baremetal.v1.set_power_state 
+        input:
+          node_uuid: <% $.uuid %>
+          queue_name: <% $.queue_name %>
+          state_action: 'off'
+          target_state: 'power off'
         publish:
           status: SUCCESS
           message: 'Successfully set nodes state to available.'
@@ -511,13 +526,20 @@ workflows:
 
       tag_nodes:
         with-items: node_uuid in <% $.tag_node_uuids %>
-        workflow: tripleo.baremetal.v1.tag_node node_uuid=<% $.node_uuid %> role=<% $.role %>
+        workflow: tripleo.baremetal.v1.tag_node
+        input:
+          node_uuid: <% $.node_uuid %>
+          queue_name: <% $.queue_name %>
+          role: <% $.role %>
         concurrency: 1
         on-success: untag_nodes
 
       untag_nodes:
         with-items: node_uuid in <% $.untag_node_uuids %>
-        workflow: tripleo.baremetal.v1.tag_node node_uuid=<% $.node_uuid %>
+        workflow: tripleo.baremetal.v1.tag_node
+        input:
+          node_uuid: <% $.node_uuid %>
+          queue_name: <% $.queue_name %>
         concurrency: 1
         on-success: update_role_parameters
 

@@ -109,7 +109,10 @@ workflows:
     tasks:
 
       add_validation_ssh_key:
-        workflow: tripleo.validations.v1.add_validation_ssh_key_parameter container=<% $.container %>
+        workflow: tripleo.validations.v1.add_validation_ssh_key_parameter
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
         on-complete: deploy
 
       deploy:
