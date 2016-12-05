@@ -58,6 +58,7 @@ _EXISTING_PASSWORDS = {
     'KeystoneFernetKey0': 'O8NSPxr4zXBBAoGIj-5aUmtE7-Jk5a4ptVsEhzJ8Vd8=',
     'KeystoneFernetKey1': 'AueoL37kd6eLjV29AG-Ruxu5szW47osgXx6aPOqtI6I=',
     'CephClusterFSID': u'97c16f44-b62c-11e6-aed3-185e0f73fdc5',
+    'Ec2ApiPassword': 'FPvz2WiWxrHVWrmSSvv44bqmr'
 }
 
 
