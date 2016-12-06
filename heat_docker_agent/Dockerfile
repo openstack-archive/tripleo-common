@@ -13,14 +13,6 @@ ADD 50-heat-config-docker-cmd /usr/libexec/os-refresh-config/configure.d/50-heat
 ADD configure_container.sh /tmp/
 RUN /tmp/configure_container.sh && rm /tmp/configure_container.sh
 
-# This is a script which:
-# - Copies the existing network interface configs from the host to the agent.
-# - Configures os-net-config
-# - Runs os-net-config in the agent.
-#
-# All of this is triggered from the heat templates.
-ADD run-os-net-config /usr/local/bin/
-
 # create volumes to share the host directories
 VOLUME [ "/var/lib/cloud"]
 VOLUME [ "/var/lib/heat-cfntools" ]
