@@ -63,6 +63,7 @@ _opts = [
 ]
 CONF.register_group(image_opt_group)
 CONF.register_cli_opts(_opts, group=image_opt_group)
+CONF.set_default('use_stderr', True)
 log.setup(CONF, 'build-overcloud-images')
 
 def main(argv=sys.argv):
