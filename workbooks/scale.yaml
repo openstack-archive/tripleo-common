@@ -18,14 +18,26 @@ workflows:
 
       delete_node:
         action: tripleo.scale.delete_node nodes=<% $.nodes %> timeout=<% $.timeout %> container=<% $.container %>
+        on-success: wait_for_stack_in_progress
+        on-error: set_delete_node_failed last_result=<% task(delete_node).result %>
+
+      wait_for_stack_in_progress:
+        workflow: tripleo.stack.v1.wait_for_stack_in_progress stack=<% $.container %>
+        on-success: wait_for_stack_complete
+        on-error: set_delete_node_failed last_result=<% task(wait_for_stack_in_progress).result %>
+
+      wait_for_stack_complete:
+        workflow: tripleo.stack.v1.wait_for_stack_complete_or_failed stack=<% $.container %>
         on-success: send_message
-        on-error: set_delete_node_failed
+        on-error: set_delete_node_failed last_result=<% task(wait_for_stack_complete).result %>
 
       set_delete_node_failed:
+        input:
+          last_result: 'Task failed'
         on-success: send_message
         publish:
           status: FAILED
-          message: <% task(delete_node).result %>
+          message: <% last_result %>
 
       send_message:
         action: zaqar.queue_post
