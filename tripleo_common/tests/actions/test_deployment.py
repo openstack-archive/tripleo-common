@@ -279,7 +279,7 @@ class OvercloudRcActionTestCase(base.TestCase):
         result = action.run()
 
         self.assertEqual(result.error, (
-            "The Heat stack overcast cound not be found. Make sure you have "
+            "The Heat stack overcast could not be found. Make sure you have "
             "deployed before calling this action."
         ))
 
@@ -299,7 +299,7 @@ class OvercloudRcActionTestCase(base.TestCase):
 
         self.assertEqual(
             result.error,
-            "The Mistral environment overcast cound not be found.")
+            "The Mistral environment overcast could not be found.")
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
