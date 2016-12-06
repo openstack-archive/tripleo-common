@@ -202,14 +202,14 @@ class OvercloudRcAction(base.TripleOAction):
             stack = orchestration_client.stacks.get(self.container)
         except heat_exc.HTTPNotFound:
             error = (
-                "The Heat stack {} cound not be found. Make sure you have "
+                "The Heat stack {} could not be found. Make sure you have "
                 "deployed before calling this action.").format(self.container)
             return mistral_workflow_utils.Result(error=error)
 
         try:
             environment = workflow_client.environments.get(self.container)
         except mistralclient_exc.APIException:
-            error = "The Mistral environment {} cound not be found.".format(
+            error = "The Mistral environment {} could not be found.".format(
                 self.container)
             return mistral_workflow_utils.Result(error=error)
 
