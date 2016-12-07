@@ -13,7 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import mock
-import uuid
+
+from oslo_utils import uuidutils
 
 from tripleo_common.tests import base
 from tripleo_common.utils import passwords as password_utils
@@ -39,10 +40,12 @@ class TestPasswords(base.TestCase):
     @mock.patch('tripleo_common.utils.passwords.create_keystone_credential')
     def test_fernet_keys_and_credentials(self, mock_create_creds):
 
-        keys = [uuid.uuid4().hex, uuid.uuid4().hex,
-                uuid.uuid4().hex, uuid.uuid4().hex]
+        keys = [uuidutils.generate_uuid(dashed=False),
+                uuidutils.generate_uuid(dashed=False),
+                uuidutils.generate_uuid(dashed=False),
+                uuidutils.generate_uuid(dashed=False)]
 
-        snmpd_password = uuid.uuid4().hex
+        snmpd_password = uuidutils.generate_uuid(dashed=False)
 
         mock_mistral = mock.Mock()
         mock_mistral.environments.get.return_value = mock.Mock(variables={
