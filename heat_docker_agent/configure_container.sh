@@ -82,7 +82,9 @@ ln -sf /usr/share/tripleo-puppet-elements/hiera/os-apply-config/etc/puppet/hiera
 ln -sf /etc/puppet/hiera.yaml /etc/hiera.yaml
 
 # Configure os-*
-ln -sf /usr/share/tripleo-puppet-elements/hiera/os-refresh-config/configure.d/40-hiera-datafiles \
+ln -sf /usr/share/tripleo-puppet-elements/hiera/40-hiera-datafiles \
+    /usr/libexec/os-refresh-config/configure.d/
+ln -sf /usr/share/tripleo-puppet-elements/hiera/10-hiera-disable \
     /usr/libexec/os-refresh-config/configure.d/
 mkdir -p /usr/libexec/os-refresh-config/post-configure.d
 ln -sf /usr/share/tripleo-image-elements/os-refresh-config/os-refresh-config/post-configure.d/99-refresh-completed \
