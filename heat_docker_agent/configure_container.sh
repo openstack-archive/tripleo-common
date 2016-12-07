@@ -40,6 +40,7 @@ yum install -y \
         dhclient \
         ethtool \
         python-heat-agent-apply-config \
+        python-heat-agent-docker-cmd \
         python-heat-agent-hiera \
         python-heat-agent-puppet \
         python-ipaddr \
