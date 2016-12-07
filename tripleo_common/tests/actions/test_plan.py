@@ -86,7 +86,8 @@ class CreateContainerActionTest(base.TestCase):
 
     def setUp(self):
         super(CreateContainerActionTest, self).setUp()
-        self.container_name = 'test-container'
+        # A container that name enforces all validation rules
+        self.container_name = 'Test-container-7'
         self.expected_list = ['', [{'name': 'test1'}, {'name': 'test2'}]]
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
@@ -113,7 +114,7 @@ class CreateContainerActionTest(base.TestCase):
         # Setup
         swift = mock.MagicMock()
         swift.get_account.return_value = [
-            '', [{'name': 'test-container'}, {'name': 'test2'}]]
+            '', [{'name': 'Test-container-7'}, {'name': 'test2'}]]
         get_obj_client_mock.return_value = swift
 
         # Test
@@ -125,12 +126,28 @@ class CreateContainerActionTest(base.TestCase):
         self.assertEqual(result, mistral_workflow_utils.Result(
             None, error_str))
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_invalid_name(self, get_obj_client_mock):
+        # Setup
+        swift = mock.MagicMock()
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = plan.CreateContainerAction("invalid_underscore")
+        result = action.run()
+
+        error_str = ("Unable to create plan. The plan name must only contain "
+                     "letters, numbers or dashes")
+        self.assertEqual(result, mistral_workflow_utils.Result(
+            None, error_str))
+
 
 class CreatePlanActionTest(base.TestCase):
 
     def setUp(self):
         super(CreatePlanActionTest, self).setUp()
-        self.container_name = 'test-container'
+        # A container that name enforces all validation rules
+        self.container_name = 'Test-container-3'
         self.capabilities_name = 'capabilities-map.yaml'
 
         # setup swift
@@ -162,7 +179,7 @@ class CreatePlanActionTest(base.TestCase):
         )
 
         self.mistral.environments.create.assert_called_once_with(
-            name='test-container',
+            name='Test-container-3',
             variables=('{"environments":'
                        ' [{"path": "/path/to/environment.yaml"}], '
                        '"template": "/path/to/overcloud.yaml"}')
@@ -187,6 +204,16 @@ class CreatePlanActionTest(base.TestCase):
         result = action.run()
 
         error_str = 'Error occurred creating plan'
+        # don't bother checking the exact error (python versions different)
+        self.assertEqual(result.error.split(':')[0], error_str)
+
+    def test_run_with_invalid_plan_name(self):
+
+        action = plan.CreatePlanAction("invalid_underscore")
+        result = action.run()
+
+        error_str = ("Unable to create plan. The plan name must only contain "
+                     "letters, numbers or dashes")
         # don't bother checking the exact error (python versions different)
         self.assertEqual(result.error.split(':')[0], error_str)
 

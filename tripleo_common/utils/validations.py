@@ -15,6 +15,7 @@
 import glob
 import logging
 import os
+import re
 import tempfile
 import yaml
 
@@ -114,3 +115,10 @@ def cleanup_identity_file(path):
     """Write the SSH private key to disk"""
     LOG.debug('Cleaning up identity file at %s', path)
     processutils.execute('/usr/bin/sudo', '/usr/bin/rm', '-f', path)
+
+
+def pattern_validator(pattern, value):
+    LOG.debug('Validating %s with pattern %s', value, pattern)
+    if not re.match(pattern, value):
+        return False
+    return True
