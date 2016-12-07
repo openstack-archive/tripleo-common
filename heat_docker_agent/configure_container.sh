@@ -37,6 +37,8 @@ yum install -y \
         openstack-tripleo-puppet-elements \
         openvswitch \
         os-net-config \
+        dhclient \
+        ethtool \
         python-heat-agent-apply-config \
         python-heat-agent-hiera \
         python-heat-agent-puppet \
