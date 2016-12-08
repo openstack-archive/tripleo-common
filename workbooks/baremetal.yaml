@@ -91,6 +91,43 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  validate_nodes:
+    description: Validate nodes JSON
+
+    input:
+     - nodes_json
+     - queue_name: tripleo
+
+    tasks:
+
+      validate_nodes:
+        action: tripleo.baremetal.validate_nodes
+        on-success: send_message
+        on-error: validation_failed
+        input:
+           nodes_json: <% $.nodes_json %>
+
+      validation_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(validate_nodes).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.validate_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   register_or_update:
     description: Take nodes JSON and create nodes in a "manageable" state
 
@@ -104,6 +141,22 @@ workflows:
      - initial_state: manageable
 
     tasks:
+
+      validate_input:
+        workflow: tripleo.baremetal.v1.validate_nodes
+        on-success: register_or_update_nodes
+        on-error: validation_failed
+        input:
+          nodes_json: <% $.nodes_json %>
+          queue_name: <% $.queue_name %>
+
+      validation_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(validate_input).result %>
+          registered_nodes: []
+
       register_or_update_nodes:
         action: tripleo.baremetal.register_or_update_nodes
         on-success:
