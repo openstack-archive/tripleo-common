@@ -53,13 +53,8 @@ yum install -y \
 yum install -y --downloadonly --downloaddir=/tmp/packages \
         libvirt-daemon-config-nwfilter \
         libvirt-daemon-kvm \
-        openstack-ceilometer-compute \
-        openstack-neutron \
-        openstack-neutron-ml2 \
-        openstack-neutron-openvswitch \
-        openstack-nova-common \
-        openstack-nova-compute \
-        python-nova
+        python-nova \
+        openstack-*
 
 CUR=$(pwd)
 cd /tmp/packages
