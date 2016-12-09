@@ -19,11 +19,13 @@ import yaml
 from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
 from mistralclient.api import base as mistralclient_base
+import six
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
+from tripleo_common.utils import swift as swiftutils
 from tripleo_common.utils.validations import pattern_validator
 
 
@@ -235,38 +237,20 @@ class DeletePlanAction(base.TripleOAction):
 
         try:
             swift = self.get_object_client()
-            if self.container in [container["name"] for container in
-                                  swift.get_account()[1]]:
-                box = swift.get_container(self.container)
-                # ensure container is a plan
-                if box[0].get(constants.TRIPLEO_META_USAGE_KEY) != 'plan':
-                    error_text = ("The {name} container does not contain a "
-                                  "TripleO deployment plan and was not "
-                                  "deleted.".format(name=self.container))
-                else:
-                    # FIXME(rbrady): remove delete_object loop when
-                    # LP#1615830 is fixed.  See LP#1615825 for more info.
-                    # delete files from plan
-                    for data in box[1]:
-                        swift.delete_object(self.container, data['name'])
-                    # delete plan container
-                    swift.delete_container(self.container)
-                    # if mistral environment exists, delete it too
-                    mistral = self.get_workflow_client()
-                    if self.container in [env.name for env in
-                                          mistral.environments.list()]:
-                        # deletes environment
-                        mistral.environments.delete(self.container)
-            else:
-                # container does not exist
-                error_text = "The {name} container does not exist.".format(
-                    name=self.container)
+            swiftutils.delete_container(swift, self.container)
+
+            # if mistral environment exists, delete it too
+            mistral = self.get_workflow_client()
+            if self.container in [env.name for env in
+                                  mistral.environments.list()]:
+                # deletes environment
+                mistral.environments.delete(self.container)
         except swiftexceptions.ClientException as ce:
             LOG.exception("Swift error deleting plan.")
             error_text = ce.msg
         except Exception as err:
             LOG.exception("Error deleting plan.")
-            error_text = err
+            error_text = six.text_type(err)
 
         if error_text:
             return mistral_workflow_utils.Result(error=error_text)
