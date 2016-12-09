@@ -48,7 +48,7 @@ class TripleoCommonException(Exception):
             # kwargs doesn't match a variable in the message
             # log the issue and the kwargs
             LOG.exception(_LE('Exception in string format operation'))
-            for name, value in six.iteritems(kwargs):
+            for name, value in kwargs.items():
                 LOG.error(_LE("%(name)s: %(value)s"),
                           {'name': name, 'value': value})  # noqa
 

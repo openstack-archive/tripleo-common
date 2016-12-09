@@ -12,9 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-
-import six
-
 import json
 import os
 import yaml
@@ -74,7 +71,7 @@ class BaseImageManager(object):
                                                       attr)
 
                     # If a new key is introduced, add it.
-                    for key, value in six.iteritems(item):
+                    for key, value in item.items():
                         if key not in existing_image:
                             existing_image[key] = item[key]
 
