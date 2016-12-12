@@ -10,12 +10,7 @@ disk_images:
       - python-debtcollector
       - plotnetcfg
       - sos
-      - python-networking-cisco
-      - python-UcsSdk
       - device-mapper-multipath
-      - python-networking-bigswitch
-      - openstack-neutron-bigswitch-lldp
-      - openstack-neutron-bigswitch-agent
       - python-heat-agent-puppet
     options:
       - "--min-tmpfs 5"
