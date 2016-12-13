@@ -17,6 +17,7 @@ import logging
 import ironic_inspector_client
 from mistral.workflow import utils as mistral_workflow_utils
 from oslo_utils import units
+import six
 
 from tripleo_common.actions import base
 from tripleo_common import exception
@@ -67,7 +68,7 @@ class RegisterOrUpdateNodes(base.TripleOAction):
                 ramdisk_name=self.ramdisk_name)
         except Exception as err:
             LOG.exception("Error registering nodes with ironic.")
-            return mistral_workflow_utils.Result(error=err)
+            return mistral_workflow_utils.Result(error=six.text_type(err))
 
 
 class ConfigureBootAction(base.TripleOAction):
@@ -130,7 +131,7 @@ class ConfigureBootAction(base.TripleOAction):
             LOG.debug("Configuring boot option for Node %s", self.node_uuid)
         except Exception as err:
             LOG.exception("Error configuring node boot options with Ironic.")
-            return mistral_workflow_utils.Result(error=err)
+            return mistral_workflow_utils.Result(error=six.text_type(err))
 
 
 class ConfigureRootDeviceAction(base.TripleOAction):
