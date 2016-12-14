@@ -161,7 +161,7 @@ class GeneratePasswordsAction(base.TripleOAction):
         except heat_exc.HTTPNotFound:
             stack_env = None
 
-        passwords = password_utils.generate_overcloud_passwords(wc, stack_env)
+        passwords = password_utils.generate_passwords(wc, stack_env)
 
         # if passwords don't yet exist in mistral environment
         if 'passwords' not in wf_env.variables:

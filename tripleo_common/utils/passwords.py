@@ -29,11 +29,14 @@ _MIN_PASSWORD_SIZE = 25
 LOG = logging.getLogger(__name__)
 
 
-def generate_overcloud_passwords(mistralclient, stack_env=None):
-    """Create the passwords needed for the overcloud
+def generate_passwords(mistralclient=None, stack_env=None):
+    """Create the passwords needed for deploying OpenStack via t-h-t.
 
-    This will create the set of passwords required by the overcloud, store
-    them in the output file path and return a dictionary of passwords.
+    This will create the set of passwords required by the undercloud and
+    overcloud installers that use tripleo-heat-templates and return them
+    as a dict. The mistralclient is optional and only used to obtain
+    the previously stored SnmpdReadonlyUserPassword supplied by the
+    undercloud to the overcloud deployment.
     """
 
     passwords = {}
@@ -51,8 +54,9 @@ def generate_overcloud_passwords(mistralclient, stack_env=None):
             else:
                 # CephX keys aren't random strings
                 passwords[name] = create_cephx_key()
-        # The SnmpdReadonlyUserPassword is stored in a mistral env.
-        elif name == 'SnmpdReadonlyUserPassword':
+        # The underclouds SnmpdReadonlyUserPassword is stored in a mistral env
+        # for the overcloud.
+        elif mistralclient and name == 'SnmpdReadonlyUserPassword':
             passwords[name] = get_snmpd_readonly_user_password(mistralclient)
         elif name in ('KeystoneCredential0', 'KeystoneCredential1',
                       'KeystoneFernetKey0', 'KeystoneFernetKey1'):
