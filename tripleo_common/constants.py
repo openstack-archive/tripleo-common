@@ -49,10 +49,6 @@ DEFAULT_VALIDATIONS_PATH = \
 # Swift via SwiftPlanStorageBackend to identify them from other containers
 TRIPLEO_META_USAGE_KEY = 'x-container-meta-usage-tripleo'
 
-# OBJECT_META_KEY_PREFIX is used to prefix Swift metadata keys per object
-# in SwiftPlanStorageBackend
-OBJECT_META_KEY_PREFIX = 'x-object-meta-'
-
 #: List of names of parameters that contain passwords
 PASSWORD_PARAMETER_NAMES = (
     'AdminPassword',
