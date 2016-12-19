@@ -135,13 +135,10 @@ workflows:
           - set_nodes_available: <% $.initial_state = "available" %>
           - send_message: <% $.initial_state != "available" %>
         on-error: set_status_failed_nodes_managed
-        with-items: node in <% $.new_nodes %>
-        workflow: tripleo.baremetal.v1.set_node_state
+        workflow: tripleo.baremetal.v1.manage
         input:
-          node_uuid: <% $.node.uuid %>
+          node_uuids: <% $.new_nodes.uuid %>
           queue_name: <% $.queue_name %>
-          state_action: 'manage'
-          target_state: 'manageable'
         publish:
           status: SUCCESS
           message: Nodes set to managed.
@@ -288,6 +285,49 @@ workflows:
           messages:
             body:
               type: tripleo.baremetal.v1.provide_manageable_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  manage:
+    description: Set a list of nodes to 'manageable' state
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tasks:
+
+      set_nodes_manageable:
+        on-success: send_message
+        on-error: set_status_failed_nodes_manageable
+        with-items: uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.set_node_state
+        input:
+          node_uuid: <% $.uuid %>
+          state_action: 'manage'
+          target_state: 'manageable'
+
+      set_status_failed_nodes_manageable:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_nodes_manageable).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.manage
               payload:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
