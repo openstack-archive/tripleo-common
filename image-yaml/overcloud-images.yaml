@@ -31,6 +31,7 @@ disk_images:
       - python-heat-agent-hiera
       - python-heat-agent-apply-config
       - python-heat-agent-ansible
+      - python-heat-agent-docker-cmd
     options:
       - "--min-tmpfs 5"
   -
