@@ -110,7 +110,47 @@ workflows:
 
       add_validation_ssh_key:
         workflow: tripleo.validations.v1.add_validation_ssh_key_parameter container=<% $.container %>
-        on-complete: deploy
+        on-complete: check_container
+
+      check_container:
+        action: swift.head_container container=<% $.container %>
+        on-success: get_tempurl
+        on-error: create_container
+
+      create_container:
+        action: tripleo.plan.create_container container="<% $.container %>-swift-rings"
+        on-success: get_tempurl
+
+      get_tempurl:
+        action: tripleo.swift.tempurl
+        on-success: set_get_tempurl
+        input:
+          container: "<% $.container %>-swift-rings"
+          obj: "swift-rings.tar.gz"
+
+      set_get_tempurl:
+        action: tripleo.parameters.update
+        input:
+          parameters:
+            SwiftRingGetTempurl: <% task(get_tempurl).result %>
+          container: <% $.container %>
+        on-success: put_tempurl
+
+      put_tempurl:
+        action: tripleo.swift.tempurl
+        on-success: set_put_tempurl
+        input:
+          container: "<% $.container %>-swift-rings"
+          obj: "swift-rings.tar.gz"
+          method: "PUT"
+
+      set_put_tempurl:
+        action: tripleo.parameters.update
+        input:
+          parameters:
+            SwiftRingPutTempurl: <% task(put_tempurl).result %>
+          container: <% $.container %>
+        on-success: deploy
 
       deploy:
         action: tripleo.deployment.deploy timeout=<% $.timeout %> container=<% $.container %>
