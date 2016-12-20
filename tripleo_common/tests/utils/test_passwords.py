@@ -49,13 +49,13 @@ class TestPasswords(base.TestCase):
             "undercloud_ceilometer_snmpd_password": snmpd_password
         })
 
-        # generate_overcloud_passwords will be called multiple times
+        # generate_passwords will be called multiple times
         # but the order is based on how the strings are hashed, and thus
         # not really predictable. So, make sure it is a unique one of the
         # generated values
 
         mock_create_creds.side_effect = keys
-        value = password_utils.generate_overcloud_passwords(mock_mistral)
+        value = password_utils.generate_passwords(mock_mistral)
         self.assertIn(value['KeystoneCredential0'], keys)
         self.assertIn(value['KeystoneCredential1'], keys)
         self.assertIn(value['KeystoneFernetKey0'], keys)
