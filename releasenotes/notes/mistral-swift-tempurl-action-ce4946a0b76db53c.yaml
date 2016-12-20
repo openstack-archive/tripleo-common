@@ -1,0 +1,6 @@
+---
+features:
+  - A new Mistral action has been added to create signed temporary URLs. It
+    also sets the required metadata with a random key if not yet existing.
+    This can be used on overcloud nodes to pull and push objects, for example
+    to distribute Swift rings across all nodes.
