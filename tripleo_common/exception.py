@@ -66,10 +66,6 @@ class StackInUseError(TripleoCommonException):
     msg_fmt = _("Cannot delete a plan that has an associated stack.")
 
 
-class HeatValidationFailedError(TripleoCommonException):
-    msg_fmt = _("The plan failed to validate via the Heat service. %(msg)s")
-
-
 class InvalidNode(ValueError):
     """Node data is invalid."""
 
