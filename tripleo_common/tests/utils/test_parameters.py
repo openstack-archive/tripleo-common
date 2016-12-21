@@ -74,3 +74,50 @@ class ParametersTest(base.TestCase):
         }
         params = parameters.set_count_and_flavor_params('my-custom-role', 1, 1)
         self.assertEqual(expected, params)
+
+    def test_swift_flavor_detected(self):
+        compute_client = mock.MagicMock()
+
+        # Mock for a compute_client.flavors.list result item and
+        # compute_client.flavors.get
+        flavor = mock.MagicMock()
+        flavor.id = 1
+        flavor.name = 'swift-storage'
+
+        # Mock result of <flavor instance>.get_keys()
+        flavor_keys = mock.MagicMock()
+        flavor_keys.get.side_effect = ('swift-storage', )
+
+        # Connecting the mock instances...
+        flavor.get_keys.side_effect = (flavor_keys, )
+        compute_client.flavors.list.side_effect = ((flavor, ),)
+        compute_client.flavors.get.side_effect = (flavor, )
+
+        # Calling `get_flavor` with an 'object-storage' role should return
+        # the 'swift-storage' flavor.
+        self.assertEqual(parameters.get_flavor('object-storage',
+                                               compute_client),
+                         'swift-storage')
+
+    def test_compute_flavor_detected(self):
+        compute_client = mock.MagicMock()
+
+        # Mock for a compute_client.flavors.list result item and
+        # compute_client.flavors.get
+        flavor = mock.MagicMock()
+        flavor.id = 1
+        flavor.name = 'compute'
+
+        # Mock result of <flavor instance>.get_keys()
+        flavor_keys = mock.MagicMock()
+        flavor_keys.get.side_effect = ('compute', )
+
+        # Connecting the mock instances...
+        flavor.get_keys.side_effect = (flavor_keys, )
+        compute_client.flavors.list.side_effect = ((flavor, ),)
+        compute_client.flavors.get.side_effect = (flavor, )
+
+        # Calling `get_flavor` with a 'compute' role should return
+        # the 'compute' flavor.
+        self.assertEqual(parameters.get_flavor('compute', compute_client),
+                         'compute')
