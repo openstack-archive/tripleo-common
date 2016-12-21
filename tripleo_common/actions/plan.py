@@ -239,7 +239,11 @@ class DeletePlanAction(base.TripleOAction):
                                   swift.get_account()[1]]:
                 box = swift.get_container(self.container)
                 # ensure container is a plan
-                if box[0].get(constants.TRIPLEO_META_USAGE_KEY) == 'plan':
+                if box[0].get(constants.TRIPLEO_META_USAGE_KEY) != 'plan':
+                    error_text = ("The {name} container does not contain a "
+                                  "TripleO deployment plan and was not "
+                                  "deleted.".format(name=self.container))
+                else:
                     # FIXME(rbrady): remove delete_object loop when
                     # LP#1615830 is fixed.  See LP#1615825 for more info.
                     # delete files from plan
@@ -253,7 +257,10 @@ class DeletePlanAction(base.TripleOAction):
                                           mistral.environments.list()]:
                         # deletes environment
                         mistral.environments.delete(self.container)
-
+            else:
+                # container does not exist
+                error_text = "The {name} container does not exist.".format(
+                    name=self.container)
         except swiftexceptions.ClientException as ce:
             LOG.exception("Swift error deleting plan.")
             error_text = ce.msg
