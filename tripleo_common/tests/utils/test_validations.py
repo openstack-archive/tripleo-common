@@ -17,6 +17,7 @@ from collections import namedtuple
 import mock
 import yaml
 
+from tripleo_common.constants import PLAN_NAME_PATTERN
 from tripleo_common.tests import base
 from tripleo_common.utils import validations
 
@@ -208,3 +209,19 @@ class RunValidationTest(base.TestCase):
             'plan'
         )
         mock_find_validation.assert_called_once_with('validation')
+
+
+class RunPatternValidatorTest(base.TestCase):
+
+    def test_valid_patterns(self):
+        self.assertTrue(validations.pattern_validator("^$", ""))
+        self.assertTrue(
+            validations.pattern_validator(PLAN_NAME_PATTERN, "foo"))
+        self.assertTrue(
+            validations.pattern_validator(PLAN_NAME_PATTERN, "Foo-1"))
+
+    def test_invalid_patterns(self):
+        self.assertFalse(
+            validations.pattern_validator("^$", "foo"))
+        self.assertFalse(
+            validations.pattern_validator(PLAN_NAME_PATTERN, "foo_1"))

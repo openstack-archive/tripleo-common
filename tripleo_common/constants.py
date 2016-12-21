@@ -90,3 +90,5 @@ PASSWORD_PARAMETER_NAMES = (
     'TrovePassword',
     'ZaqarPassword',
 )
+
+PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'

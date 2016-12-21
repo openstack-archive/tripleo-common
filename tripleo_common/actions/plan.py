@@ -24,6 +24,8 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
+from tripleo_common.utils.validations import pattern_validator
+
 
 LOG = logging.getLogger(__name__)
 
@@ -45,6 +47,13 @@ class CreateContainerAction(base.TripleOAction):
 
     def run(self):
         oc = self.get_object_client()
+
+        # checks to see if a container has a valid name
+        if not pattern_validator(constants.PLAN_NAME_PATTERN, self.container):
+            message = ("Unable to create plan. The plan name must "
+                       "only contain letters, numbers or dashes")
+            return mistral_workflow_utils.Result(error=message)
+
         # checks to see if a container with that name exists
         if self.container in [container["name"] for container in
                               oc.get_account()[1]]:
@@ -73,6 +82,11 @@ class CreatePlanAction(base.TripleOAction):
         }
         env_vars = {}
         error_text = None
+
+        if not pattern_validator(constants.PLAN_NAME_PATTERN, self.container):
+            message = ("Unable to create plan. The plan name must "
+                       "only contain letters, numbers or dashes")
+            return mistral_workflow_utils.Result(error=message)
 
         # Check to see if an environment with that name already exists
         try:
