@@ -66,10 +66,6 @@ class StackInUseError(TripleoCommonException):
     msg_fmt = _("Cannot delete a plan that has an associated stack.")
 
 
-class ContainerAlreadyExistsError(TripleoCommonException):
-    msg_fmt = _("A container with the name %(name)s already exists.")
-
-
 class HeatValidationFailedError(TripleoCommonException):
     msg_fmt = _("The plan failed to validate via the Heat service. %(msg)s")
 
