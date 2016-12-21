@@ -4,7 +4,6 @@ disk_images:
     arch: amd64
     type: qcow2
     elements:
-      - hosts
       - baremetal
       - dhcp-all-interfaces
       - overcloud-agent

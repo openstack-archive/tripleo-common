@@ -8,7 +8,6 @@ disk_images:
          elements:
            - ntp
            - sysctl
-           - hosts
            - baremetal
            - dhcp-all-interfaces
            - os-collect-config
