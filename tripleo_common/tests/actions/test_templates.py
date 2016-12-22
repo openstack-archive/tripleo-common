@@ -71,6 +71,27 @@ name:
 J2_EXCLUDES_EMPTY_FILE = """
 """
 
+ROLE_DATA_DISABLE_CONSTRAINTS_YAML = """
+- name: RoleWithDisableConstraints
+  disable_constraints: True
+"""
+
+JINJA_SNIPPET_DISABLE_CONSTRAINTS = """
+  {{role}}Image:
+    type: string
+    default: overcloud-full
+{% if disable_constraints is not defined %}
+    constraints:
+      - custom_constraint: glance.image
+{% endif %}
+"""
+
+EXPECTED_JINJA_RESULT_DISABLE_CONSTRAINTS = """
+  RoleWithDisableConstraintsImage:
+    type: string
+    default: overcloud-full
+"""
+
 
 class UploadTemplatesActionTest(base.TestCase):
 
@@ -189,6 +210,44 @@ class ProcessTemplatesActionTest(base.TestCase):
         ]
         swift.put_object.assert_has_calls(
             put_object_mock_calls, any_order=True)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_process_custom_roles_disable_constraints(
+            self, ctx_mock, get_obj_client_mock):
+
+        def return_multiple_files(*args):
+            if args[1] == constants.OVERCLOUD_J2_NAME:
+                return ['', JINJA_SNIPPET_DISABLE_CONSTRAINTS]
+            if args[1] == 'disable-constraints.role.j2.yaml':
+                return ['', JINJA_SNIPPET_DISABLE_CONSTRAINTS]
+            if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
+                return ['', J2_EXCLUDES]
+            elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
+                return ['', ROLE_DATA_DISABLE_CONSTRAINTS_YAML]
+
+        def return_container_files(*args):
+            return ('headers', [{'name': constants.OVERCLOUD_J2_NAME},
+                                {'name': 'disable-constraints.role.j2.yaml'},
+                                {'name': constants.OVERCLOUD_J2_ROLES_NAME}])
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        action._process_custom_roles()
+
+        put_object_mock_call = mock.call(
+            constants.DEFAULT_CONTAINER_NAME,
+            "rolewithdisableconstraints-disable-constraints.yaml",
+            EXPECTED_JINJA_RESULT_DISABLE_CONSTRAINTS)
+        self.assertEqual(swift.put_object.call_args_list[1],
+                         put_object_mock_call)
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('mistral.context.ctx')

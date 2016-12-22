@@ -134,6 +134,9 @@ class ProcessTemplatesAction(base.TripleOAction):
             raise Exception(error_msg)
 
         role_names = [r.get('name') for r in role_data]
+        r_map = {}
+        for r in role_data:
+            r_map[r.get('name')] = r
         excl_templates = j2_excl_data.get('name')
 
         for f in [f.get('name') for f in container_files[1]]:
@@ -150,6 +153,8 @@ class ProcessTemplatesAction(base.TripleOAction):
                 for role in role_names:
                     j2_data = {'role': role}
                     LOG.info("jinja2 rendering role %s" % role)
+                    if r_map[role].get('disable_constraints', False):
+                        j2_data['disable_constraints'] = True
                     out_f = "-".join(
                         [role.lower(),
                          os.path.basename(f).replace('.role.j2.yaml',
