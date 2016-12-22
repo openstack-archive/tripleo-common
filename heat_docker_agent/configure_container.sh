@@ -70,6 +70,9 @@ for package in $(ls *.rpm); do
 done
 cd $CUR && rm -Rf /tmp/packages
 
+# Make libvirt work without virtlogd
+sed -i -r "s/^[# ]*stdio_handler *=.+$/stdio_handler = \"file\"/" /etc/libvirt/qemu.conf
+
 # Install puppet modules
 mkdir -p /etc/puppet/modules
 ln -sf /usr/share/openstack-puppet/modules/* /etc/puppet/modules/
