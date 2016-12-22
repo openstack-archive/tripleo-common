@@ -11,6 +11,11 @@ features:
   - Add an new Action which generates environment parameters for configuring
     fencing.
   - Add utility functions for deleting/emptying swift containers.
+  - Enhance the plan create and plan update workflows to support plan import.
+    A new plan environment file (located in t-h-t) is now used to store the
+    Mistral environment, so it can easily be imported and exported. Root
+    template and root environment settings (previously stored in the
+    capabilities map file) are now being stored in this file.
 fixes:
   - Fixes `bug 1644756 <https://bugs.launchpad.net/tripleo/+bug/1644756>`__ so
     that flavour matching works as expected with the object-storage role.

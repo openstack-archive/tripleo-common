@@ -12,6 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import json
 import mock
 
 from heatclient import exc as heatexceptions
@@ -20,52 +21,49 @@ from mistralclient.api import base as mistral_base
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import plan
+from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.tests import base
 
-MAPPING_YAML_CONTENTS = """root_template: /path/to/overcloud.yaml
-root_environment: /path/to/environment.yaml
-topics:
-  - title: Fake Single Environment Group Configuration
-    description:
-    environment_groups:
-      - title:
-        description: Random fake string of text
-        environments:
-          - file: /path/to/network-isolation.json
-            title: Default Configuration
-            description:
+JSON_CONTENTS = json.dumps({
+    "environments": [{
+        "path": "overcloud-resource-registry-puppet.yaml"
+    }, {
+        "path": "environments/services/sahara.yaml"
+    }],
+    "parameter_defaults": {
+        "BlockStorageCount": 42,
+        "OvercloudControlFlavor": "yummy"
+    },
+    "passwords": {
+        "AdminPassword": "aaaa",
+        "ZaqarPassword": "zzzz"
+    },
+    "template": "overcloud.yaml",
+    "version": 1.0
+}, sort_keys=True)
 
-  - title: Fake Multiple Environment Group Configuration
-    description:
-    environment_groups:
-      - title: Random Fake 1
-        description: Random fake string of text
-        environments:
-          - file: /path/to/ceph-storage-env.yaml
-            title: Fake1
-            description: Random fake string of text
 
-      - title: Random Fake 2
-        description:
-        environments:
-          - file: /path/to/poc-custom-env.yaml
-            title: Fake2
-            description:
+YAML_CONTENTS = """
+version: 1.0
+
+template: overcloud.yaml
+environments:
+-  path: overcloud-resource-registry-puppet.yaml
+-  path: environments/services/sahara.yaml
+parameter_defaults:
+  BlockStorageCount: 42
+  OvercloudControlFlavor: yummy
+passwords:
+  AdminPassword: aaaa
+  ZaqarPassword: zzzz
 """
 
-INVALID_MAPPING_CONTENTS = """
-root_environment: /path/to/environment.yaml
-topics:
-  - title: Fake Single Environment Group Configuration
-    description:
-    environment_groups:
-      - title:
-        description: Random fake string of text
-        environments:
-          - file: /path/to/network-isolation.json
-            title: Default Configuration
-            description:
+YAML_CONTENTS_INVALID = "{bad_yaml"
+
+# `environments` is missing
+YAML_CONTENTS_MISSING_KEY = """
+template: overcloud.yaml
 """
 
 RESOURCES_YAML_CONTENTS = """heat_template_version: 2016-04-08
@@ -148,11 +146,11 @@ class CreatePlanActionTest(base.TestCase):
         super(CreatePlanActionTest, self).setUp()
         # A container that name enforces all validation rules
         self.container_name = 'Test-container-3'
-        self.capabilities_name = 'capabilities-map.yaml'
+        self.plan_environment_name = constants.PLAN_ENVIRONMENT
 
         # setup swift
         self.swift = mock.MagicMock()
-        self.swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
+        self.swift.get_object.return_value = ({}, YAML_CONTENTS)
         swift_patcher = mock.patch(
             'tripleo_common.actions.base.TripleOAction.get_object_client',
             return_value=self.swift)
@@ -168,47 +166,23 @@ class CreatePlanActionTest(base.TestCase):
         mistral_patcher.start()
         self.addCleanup(mistral_patcher.stop)
 
-    def test_run(self):
-
+    def test_run_success(self):
         action = plan.CreatePlanAction(self.container_name)
         action.run()
 
         self.swift.get_object.assert_called_once_with(
             self.container_name,
-            self.capabilities_name
+            self.plan_environment_name
         )
+
+        self.swift.delete_object.assert_called_once()
 
         self.mistral.environments.create.assert_called_once_with(
             name='Test-container-3',
-            variables=('{"environments":'
-                       ' [{"path": "/path/to/environment.yaml"}], '
-                       '"template": "/path/to/overcloud.yaml"}')
+            variables=JSON_CONTENTS
         )
 
-    def test_run_with_invalid_yaml(self):
-
-        self.swift.get_object.return_value = ({}, 'invalid: %')
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run()
-
-        error_str = 'Error parsing the yaml file'
-        # don't bother checking the exact yaml error (it's long)
-        self.assertEqual(result.error.split(':')[0], error_str)
-
-    def test_run_with_invalid_string(self):
-
-        self.swift.get_object.return_value = ({}, 'this is just a string')
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run()
-
-        error_str = 'Error occurred creating plan'
-        # don't bother checking the exact error (python versions different)
-        self.assertEqual(result.error.split(':')[0], error_str)
-
-    def test_run_with_invalid_plan_name(self):
-
+    def test_run_invalid_plan_name(self):
         action = plan.CreatePlanAction("invalid_underscore")
         result = action.run()
 
@@ -216,27 +190,6 @@ class CreatePlanActionTest(base.TestCase):
                      "letters, numbers or dashes")
         # don't bother checking the exact error (python versions different)
         self.assertEqual(result.error.split(':')[0], error_str)
-
-    def test_run_with_no_file(self):
-
-        self.swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run()
-
-        error_str = 'File missing from container: atest2'
-        self.assertEqual(result.error, error_str)
-
-    def test_run_with_missing_key(self):
-
-        self.swift.get_object.return_value = ({}, INVALID_MAPPING_CONTENTS)
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run()
-
-        error_str = "capabilities-map.yaml missing key: 'root_template'"
-        self.assertEqual(result.error, error_str)
 
     def test_run_mistral_env_already_exists(self):
         self.mistral.environments.get.side_effect = None
@@ -249,6 +202,119 @@ class CreatePlanActionTest(base.TestCase):
                      "exists")
         self.assertEqual(result.error, error_str)
         self.mistral.environments.create.assert_not_called()
+
+    def test_run_missing_file(self):
+        self.swift.get_object.side_effect = swiftexceptions.ClientException(
+            self.plan_environment_name)
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = ('File missing from container: %s' %
+                     self.plan_environment_name)
+        self.assertEqual(result.error, error_str)
+
+    def test_run_invalid_yaml(self):
+        self.swift.get_object.return_value = ({}, YAML_CONTENTS_INVALID)
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = 'Error parsing the yaml file'
+        self.assertEqual(result.error.split(':')[0], error_str)
+
+    def test_run_missing_key(self):
+        self.swift.get_object.return_value = ({}, YAML_CONTENTS_MISSING_KEY)
+
+        action = plan.CreatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = ("%s missing key: environments" %
+                     self.plan_environment_name)
+        self.assertEqual(result.error, error_str)
+
+
+class UpdatePlanActionTest(base.TestCase):
+
+    def setUp(self):
+        super(UpdatePlanActionTest, self).setUp()
+        self.container_name = 'Test-container-3'
+        self.plan_environment_name = constants.PLAN_ENVIRONMENT
+
+        # setup swift
+        self.swift = mock.MagicMock()
+        self.swift.get_object.return_value = ({}, YAML_CONTENTS)
+        swift_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction.get_object_client',
+            return_value=self.swift)
+        swift_patcher.start()
+        self.addCleanup(swift_patcher.stop)
+
+        # setup mistral
+        self.mistral = mock.MagicMock()
+        mistral_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction.get_workflow_client',
+            return_value=self.mistral)
+        mistral_patcher.start()
+        self.addCleanup(mistral_patcher.stop)
+
+    def test_run_success(self):
+        action = plan.UpdatePlanAction(self.container_name)
+        action.run()
+
+        self.swift.get_object.assert_called_once_with(
+            self.container_name,
+            self.plan_environment_name
+        )
+
+        self.swift.delete_object.assert_called_once()
+
+        self.mistral.environments.update.assert_called_once_with(
+            name='Test-container-3',
+            variables=JSON_CONTENTS
+        )
+
+    def test_run_mistral_env_missing(self):
+        self.mistral.environments.update.side_effect = (
+            mistral_base.APIException)
+
+        action = plan.UpdatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = ("Error updating mistral environment: %s" %
+                     self.container_name)
+        self.assertEqual(result.error, error_str)
+        self.swift.delete_object.assert_not_called()
+
+    def test_run_missing_file(self):
+        self.swift.get_object.side_effect = swiftexceptions.ClientException(
+            self.plan_environment_name)
+
+        action = plan.UpdatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = ('File missing from container: %s' %
+                     self.plan_environment_name)
+        self.assertEqual(result.error, error_str)
+
+    def test_run_invalid_yaml(self):
+        self.swift.get_object.return_value = ({}, YAML_CONTENTS_INVALID)
+
+        action = plan.UpdatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = 'Error parsing the yaml file'
+        self.assertEqual(result.error.split(':')[0], error_str)
+
+    def test_run_missing_key(self):
+        self.swift.get_object.return_value = ({}, YAML_CONTENTS_MISSING_KEY)
+
+        action = plan.UpdatePlanAction(self.container_name)
+        result = action.run()
+
+        error_str = ("%s missing key: environments" %
+                     self.plan_environment_name)
+        self.assertEqual(result.error, error_str)
 
 
 class ListPlansActionTest(base.TestCase):

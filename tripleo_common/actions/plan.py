@@ -36,6 +36,58 @@ default_container_headers = {
 }
 
 
+class PlanEnvMixin(object):
+    @staticmethod
+    def get_plan_env_dict(swift, container):
+        """Retrieves the plan environment from Swift.
+
+        Loads a plan environment file with a given container name from Swift.
+        Makes sure that the file contains valid YAML and that the mandatory
+        fields are present in the environment.
+
+        If the plan environment file is missing from Swift, fall back to the
+        capabilities-map.yaml.
+
+        Returns the plan environment dictionary, and a boolean indicator
+        whether the plan environment file was missing from Swift.
+        """
+        plan_env_missing = False
+
+        try:
+            plan_env = swift.get_object(container,
+                                        constants.PLAN_ENVIRONMENT)[1]
+        except swiftexceptions.ClientException:
+            # If the plan environment file is missing from Swift, look for
+            # capabilities-map.yaml instead
+            plan_env_missing = True
+            try:
+                plan_env = swift.get_object(container,
+                                            'capabilities-map.yaml')[1]
+            except swiftexceptions.ClientException as err:
+                raise exception.PlanOperationError(
+                    "File missing from container: %s" % err)
+
+        try:
+            plan_env_dict = yaml.safe_load(plan_env)
+        except yaml.YAMLError as err:
+            raise exception.PlanOperationError(
+                "Error parsing the yaml file: %s" % err)
+
+        if plan_env_missing:
+            plan_env_dict = {
+                'environments': [{'path': plan_env_dict['root_environment']}],
+                'template': plan_env_dict['root_template'],
+                'version': 1.0
+            }
+
+        for key in ('environments', 'template', 'version'):
+            if key not in plan_env_dict:
+                raise exception.PlanOperationError(
+                    "%s missing key: %s" % (constants.PLAN_ENVIRONMENT, key))
+
+        return plan_env_dict, plan_env_missing
+
+
 class CreateContainerAction(base.TripleOAction):
     """Creates an object container
 
@@ -65,12 +117,13 @@ class CreateContainerAction(base.TripleOAction):
         oc.put_container(self.container, headers=default_container_headers)
 
 
-class CreatePlanAction(base.TripleOAction):
+class CreatePlanAction(base.TripleOAction, PlanEnvMixin):
     """Creates a plan
 
-    Given a container, creates a Mistral environment with the same name,
-    parses the capabilities map file and sets initial plan template and
-    environment files.
+    Given a container, creates a Mistral environment with the same name.
+    The contents of the environment are imported from the plan environment
+    file, which must contain entries for `template`, `environments` and
+    `version` at a minimum.
     """
 
     def __init__(self, container):
@@ -78,12 +131,11 @@ class CreatePlanAction(base.TripleOAction):
         self.container = container
 
     def run(self):
-        oc = self.get_object_client()
+        swift = self.get_object_client()
+        mistral = self.get_workflow_client()
         env_data = {
             'name': self.container,
         }
-        env_vars = {}
-        error_text = None
 
         if not pattern_validator(constants.PLAN_NAME_PATTERN, self.container):
             message = ("Unable to create plan. The plan name must "
@@ -92,7 +144,7 @@ class CreatePlanAction(base.TripleOAction):
 
         # Check to see if an environment with that name already exists
         try:
-            self.get_workflow_client().environments.get(self.container)
+            mistral.environments.get(self.container)
         except mistralclient_base.APIException:
             # The environment doesn't exist, as expected. Proceed.
             pass
@@ -101,41 +153,44 @@ class CreatePlanAction(base.TripleOAction):
                        "already exists")
             return mistral_workflow_utils.Result(error=message)
 
+        # Get plan environment from Swift
         try:
-            # parses capabilities to get root_template, root_environment
-            mapfile = yaml.safe_load(
-                oc.get_object(self.container, 'capabilities-map.yaml')[1])
+            plan_env_dict, plan_env_missing = self.get_plan_env_dict(
+                swift, self.container)
+        except exception.PlanOperationError as err:
+            return mistral_workflow_utils.Result(error=six.text_type(err))
 
-            if mapfile['root_template']:
-                env_vars['template'] = mapfile['root_template']
-            if mapfile['root_environment']:
-                env_vars['environments'] = [
-                    {'path': mapfile['root_environment']}]
-
-            env_data['variables'] = json.dumps(env_vars, sort_keys=True,)
-            # creates environment
-            self.get_workflow_client().environments.create(**env_data)
-        except yaml.YAMLError as yaml_err:
-            error_text = "Error parsing the yaml file: %s" % yaml_err
-        except swiftexceptions.ClientException as obj_err:
-            error_text = "File missing from container: %s" % obj_err
-        except KeyError as key_err:
-            error_text = ("capabilities-map.yaml missing key: "
-                          "%s" % key_err)
+        # Create mistral environment
+        env_data['variables'] = json.dumps(plan_env_dict, sort_keys=True)
+        try:
+            mistral.environments.create(**env_data)
         except Exception as err:
-            error_text = "Error occurred creating plan: %s" % err
+            message = "Error occurred creating plan: %s" % err
+            return mistral_workflow_utils.Result(error=message)
 
-        if error_text:
-            return mistral_workflow_utils.Result(error=error_text)
+        # Delete the plan environment file from Swift, as it is no long needed.
+        # (If we were to leave the environment file behind, we would have to
+        # take care to keep it in sync with the actual contents of the Mistral
+        # environment. To avoid that, we simply delete it.)
+        # TODO(akrivoka): Once the 'Deployment plan management changes' spec
+        # (https://review.openstack.org/#/c/438918/) is implemented, we will no
+        # longer use Mistral environments for holding the plan data, so this
+        # code can go away.
+        if not plan_env_missing:
+            try:
+                swift.delete_object(self.container, constants.PLAN_ENVIRONMENT)
+            except swiftexceptions.ClientException as err:
+                message = "Error deleting file from container: %s" % err
+                return mistral_workflow_utils.Result(error=message)
 
 
-class UpdatePlanAction(base.TripleOAction):
-    """Update a plan
+class UpdatePlanAction(base.TripleOAction, PlanEnvMixin):
+    """Updates a plan
 
-    Given a container, update the Mistral environment with the same name,
-    parses the capabilities map file and sets the initial plan template
-    and environment files if they have changed since the plan was originally
-    created.
+    Given a container, update the Mistral environment with the same name.
+    The contents of the environment are imported (overwritten) from the plan
+    environment file, which must contain entries for `template`, `environments`
+     and `version` at a minimum.
     """
 
     def __init__(self, container):
@@ -146,41 +201,36 @@ class UpdatePlanAction(base.TripleOAction):
         swift = self.get_object_client()
         mistral = self.get_workflow_client()
 
-        error_text = None
-
+        # Get plan environment from Swift
         try:
-            mapobject = swift.get_object(self.container,
-                                         'capabilities-map.yaml')[1]
-            mapfile = yaml.safe_load(mapobject)
+            plan_env_dict, plan_env_missing = self.get_plan_env_dict(
+                swift, self.container)
+        except exception.PlanOperationError as err:
+            return mistral_workflow_utils.Result(error=six.text_type(err))
 
-            mistral_env = mistral.environments.get(self.container)
-
-            # We always want the root template to match whatever is in the
-            # capabilities map, so update that regardless.
-            mistral_env.variables['root_template'] = mapfile['root_template']
-
-            # Check to see if the root environment is already listed, if it
-            # isn't - add it.
-            # TODO(d0ugal): Users could get into a situation where they have
-            #               an old root environment still added and they
-            #               then have two after the new one is added.
-            root_env = {'path': mapfile['root_environment']}
-            if root_env not in mistral_env.variables['environments']:
-                mistral_env.variables['environments'].insert(0, root_env)
-
+        # Update mistral environment with contents from plan environment file
+        variables = json.dumps(plan_env_dict, sort_keys=True)
+        try:
             mistral.environments.update(
-                name=self.container,
-                variables=mistral_env.variables,
-            )
-        except yaml.YAMLError as yaml_err:
-            error_text = "Error parsing the yaml file: %s" % yaml_err
-        except swiftexceptions.ClientException as obj_err:
-            error_text = "File missing from container: %s" % obj_err
-        except KeyError as key_err:
-            error_text = ("capabilities-map.yaml missing key: "
-                          "%s" % key_err)
-        if error_text:
-            return mistral_workflow_utils.Result(error=error_text)
+                name=self.container, variables=variables)
+        except mistralclient_base.APIException:
+            message = "Error updating mistral environment: %s" % self.container
+            return mistral_workflow_utils.Result(error=message)
+
+        # Delete the plan environment file from Swift, as it is no long needed.
+        # (If we were to leave the environment file behind, we would have to
+        # take care to keep it in sync with the actual contents of the Mistral
+        # environment. To avoid that, we simply delete it.)
+        # TODO(akrivoka): Once the 'Deployment plan management changes' spec
+        # (https://review.openstack.org/#/c/438918/) is implemented, we will no
+        # longer use Mistral environments for holding the plan data, so this
+        # code can go away.
+        if not plan_env_missing:
+            try:
+                swift.delete_object(self.container, constants.PLAN_ENVIRONMENT)
+            except swiftexceptions.ClientException as err:
+                message = "Error deleting file from container: %s" % err
+                return mistral_workflow_utils.Result(error=message)
 
 
 class ListPlansAction(base.TripleOAction):

@@ -21,9 +21,7 @@ from tripleo_common.actions import heat_capabilities
 from tripleo_common.tests import base
 
 
-MAPPING_YAML_CONTENTS = """root_template: /path/to/overcloud.yaml
-root_environment: /path/to/environment.yaml
-topics:
+MAPPING_YAML_CONTENTS = """topics:
   - title: Fake Single Environment Group Configuration
     description:
     environment_groups:

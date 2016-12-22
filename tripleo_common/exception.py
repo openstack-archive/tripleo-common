@@ -103,3 +103,7 @@ class StateTransitionFailed(Exception):
 
 class RootDeviceDetectionError(Exception):
     """Failed to detect the root device"""
+
+
+class PlanOperationError(Exception):
+    """Error while performing a deployment plan operation"""
