@@ -231,11 +231,11 @@ workflows:
 
       verify_environment_exists:
         action: mistral.environments_get name=<% $.container %>
-        on-success: get_or_generate_passwords
+        on-success: get_environement_passwords
         on-error: verify_environment_set_status_failed
 
-      get_or_generate_passwords:
-        action: tripleo.parameters.generate_passwords container=<% $.container %>
+      get_environement_passwords:
+        action: tripleo.parameters.get_passwords container=<% $.container %>
         on-success: get_passwords_set_status_success
         on-error: get_passwords_set_status_failed
 
@@ -243,13 +243,13 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(get_or_generate_passwords).result %>
+          message: <% task(get_environement_passwords).result %>
 
       get_passwords_set_status_failed:
         on-success: notify_zaqar
         publish:
           status: FAILED
-          message: <% task(get_or_generate_passwords).result %>
+          message: <% task(get_environement_passwords).result %>
 
       verify_container_set_status_failed:
         on-success: notify_zaqar
