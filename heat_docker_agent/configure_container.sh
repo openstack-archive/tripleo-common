@@ -8,19 +8,33 @@ if [ -n "$OPENSTACK_RELEASE" ]; then
     # Install specified OpenStack release
     yum -y install http://rdoproject.org/repos/openstack-$OPENSTACK_RELEASE/rdo-release-$OPENSTACK_RELEASE.rpm
 else
-    # Install from master
-    curl -L -o /etc/yum.repos.d/delorean.repo \
-        http://buildlogs.centos.org/centos/7/cloud/x86_64/rdo-trunk-master-tripleo/delorean.repo
-    curl -L -o /etc/yum.repos.d/delorean-current.repo \
-        http://trunk.rdoproject.org/centos7/current/delorean.repo
-    sed -i 's/\[delorean\]/\[delorean-current\]/' /etc/yum.repos.d/delorean-current.repo
-    cat << EOF >> /etc/yum.repos.d/delorean-current.repo
+    # The variables don't make a ton of sense this way, but they are
+    # defined so that the rest of the trunk repository setup can be
+    # exactly taken from tripleo.sh (after removing 'sudo'). This
+    # should help avoid unwanted differences between containerized and
+    # non-containerized trunk software sources.
+    REPO_PREFIX=/etc/yum.repos.d
+    DELOREAN_REPO_URL=http://trunk.rdoproject.org/centos7/current-tripleo/
+    DELOREAN_REPO_FILE=delorean.repo
 
-includepkgs=diskimage-builder,instack,instack-undercloud,os-apply-config,os-cloud-config,os-collect-config,os-net-config,os-refresh-config,python-tripleoclient,tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tripleo,openstack-tripleo-puppet-elements,openstack-puppet-modules
-EOF
+    # Enable the Delorean Deps repository
+    curl -Lvo $REPO_PREFIX/delorean-deps.repo http://trunk.rdoproject.org/centos7/delorean-deps.repo
+    sed -i -e 's%priority=.*%priority=30%' $REPO_PREFIX/delorean-deps.repo
+    cat $REPO_PREFIX/delorean-deps.repo
 
-    curl -L -o /etc/yum.repos.d/delorean-deps.repo \
-        http://trunk.rdoproject.org/centos7/delorean-deps.repo
+    # Enable last known good RDO Trunk Delorean repository
+    curl -Lvo $REPO_PREFIX/delorean.repo $DELOREAN_REPO_URL/$DELOREAN_REPO_FILE
+    sed -i -e 's%priority=.*%priority=20%' $REPO_PREFIX/delorean.repo
+    cat $REPO_PREFIX/delorean.repo
+
+    # Enable latest RDO Trunk Delorean repository
+    curl -Lvo $REPO_PREFIX/delorean-current.repo http://trunk.rdoproject.org/centos7/current/delorean.repo
+    sed -i -e 's%priority=.*%priority=10%' $REPO_PREFIX/delorean-current.repo
+    sed -i 's/\[delorean\]/\[delorean-current\]/' $REPO_PREFIX/delorean-current.repo
+    /bin/bash -c "cat <<-EOF>>$REPO_PREFIX/delorean-current.repo
+includepkgs=diskimage-builder,instack,instack-undercloud,os-apply-config,os-cloud-config,os-collect-config,os-net-config,os-refresh-config,python-tripleoclient,openstack-tripleo-common,openstack-tripleo-heat-templates,openstack-tripleo-image-elements,openstack-tripleo,openstack-tripleo-puppet-elements,openstack-puppet-modules,openstack-tripleo-ui,puppet-*
+EOF"
+    cat $REPO_PREFIX/delorean-current.repo
 
     yum -y install yum-plugin-priorities
 fi
