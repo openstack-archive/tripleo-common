@@ -343,9 +343,29 @@ workflows:
 
     input:
       - node_uuids
+      - run_validations: False
       - queue_name: tripleo
 
     tasks:
+      pre_run_validations:
+        on-complete:
+          - run_validations: <% $.run_validations %>
+          - start_introspection: <% not $.run_validations %>
+
+      run_validations:
+        workflow: tripleo.validations.v1.run_groups
+        input:
+          group_names:
+            - 'pre-introspection'
+          queue_name: <% $.queue_name %>
+        on-success: start_introspection
+        on-error: set_validations_failed
+
+      set_validations_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(run_validations).result %>
 
       start_introspection:
         on-success: wait_for_introspection_to_finish
@@ -394,6 +414,7 @@ workflows:
     description: Introspect all nodes in a 'manageable' state.
 
     input:
+      - run_validations: False
       - queue_name: tripleo
 
     tasks:
@@ -417,6 +438,7 @@ workflows:
         workflow: tripleo.baremetal.v1.introspect
         input:
           node_uuids: <% $.managed_nodes %>
+          run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
           introspected_nodes: <% task(introspect_manageable).result.introspected_nodes %>
