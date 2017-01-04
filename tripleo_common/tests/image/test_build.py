@@ -42,7 +42,7 @@ class TestImageBuildManager(base.TestCase):
         self.assertEqual(1, mock_load_config_files.call_count)
 
         mock_builder.build_image.assert_called_with(
-            './overcloud.qcow2', 'qcow2', 'some_awesome_os', 'amd64',
+            './overcloud', 'qcow2', 'some_awesome_os', 'amd64',
             ['image_element'], [], [],
             {'skip_base': False, 'docker_target': None, 'environment': {}})
 
