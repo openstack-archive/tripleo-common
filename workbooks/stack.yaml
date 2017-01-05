@@ -1,0 +1,36 @@
+---
+version: '2.0'
+name: tripleo.stack.v1
+description: TripleO Stack Workflows
+
+workflows:
+
+  wait_for_stack_complete_or_failed:
+    input:
+      - stack
+      - timeout: 14400 # 4 hours. Default timeout of stack deployment
+
+    tasks:
+
+      wait_for_stack_status:
+        action: heat.stacks_get stack_id=<% $.stack %>
+        timeout: <% $.timeout %>
+        retry:
+          delay: 15
+          count: <% $.timeout / 15 %>
+          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS'] %>
+
+  wait_for_stack_in_progress:
+    input:
+      - stack
+      - timeout: 600 # 10 minutes. Should not take much longer for a stack to transition to IN_PROGRESS
+
+    tasks:
+
+      wait_for_stack_status:
+        action: heat.stacks_get stack_id=<% $.stack %>
+        timeout: <% $.timeout %>
+        retry:
+          delay: 15
+          count: <% $.timeout / 15 %>
+          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED'] %>
