@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    The create_deployment_plan workflow has been updated to provide support for
+    creating a deployment plan from a git repository of heat templates.  A tag
+    or branch can be specified in the repo url with an '@'.
+    Example: https://github.com/openstack/project.git@stable/newton
+deprecations:
+  - |
+    The tripleo.plan_management.v1.create_default_deployment_plan is deprecated
+    and will be removed in the Queens release.  The udpates to the
+    tripleo.plan_management.v1.create_deployment_plan ensures that it provides
+    the same functionality.

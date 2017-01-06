@@ -78,14 +78,15 @@ class J2SwiftLoader(jinja2.BaseLoader):
 
 class UploadTemplatesAction(base.TripleOAction):
     """Upload default heat templates for TripleO."""
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
+                 templates_path=constants.DEFAULT_TEMPLATES_PATH):
         super(UploadTemplatesAction, self).__init__()
         self.container = container
+        self.templates_path = templates_path
 
     def run(self):
-        tht_base_path = constants.DEFAULT_TEMPLATES_PATH
         with tf.NamedTemporaryFile() as tmp_tarball:
-            tarball.create_tarball(tht_base_path, tmp_tarball.name)
+            tarball.create_tarball(self.templates_path, tmp_tarball.name)
             tarball.tarball_extract_to_swift_container(
                 self.get_object_client(),
                 tmp_tarball.name,
