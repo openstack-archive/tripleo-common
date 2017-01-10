@@ -88,6 +88,11 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   register_or_update:
     description: Take nodes JSON and create nodes in a "manageable" state
@@ -174,6 +179,12 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
                 registered_nodes: <% $.registered_nodes or [] %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
 
   provide:
     description: Take a list of nodes and move them to "available"
@@ -233,6 +244,11 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   provide_manageable_nodes:
     description: Provide all nodes in a 'manageable' state.
@@ -276,6 +292,11 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   introspect:
     description: Take a list of nodes and move them through introspection.
@@ -322,6 +343,11 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
                 introspected_nodes: <% $.get('introspected_nodes', []) %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
 
   introspect_manageable_nodes:
@@ -376,6 +402,11 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
                 introspected_nodes: <% $.get('introspected_nodes', []) %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   configure:
     description: Take a list of manageable nodes and update their boot configuration.
@@ -431,6 +462,11 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
 
   configure_manageable_nodes:
@@ -494,6 +530,11 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
 
   tag_node:
@@ -527,6 +568,11 @@ workflows:
                 status: <% $.get('status', 'FAILED') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
 
   tag_nodes:
@@ -581,6 +627,11 @@ workflows:
                 status: <% $.get('status', 'FAILED') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   create_raid_configuration:
     description: Create and apply RAID configuration for given nodes
@@ -640,3 +691,8 @@ workflows:
                 status: <% $.get('status', 'FAILED') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
