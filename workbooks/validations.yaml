@@ -59,6 +59,11 @@ workflows:
                 stdout: <% $.stdout %>
                 stderr: <% $.stderr %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   run_validations:
     input:
@@ -109,6 +114,11 @@ workflows:
                 plan: <% $.plan %>
                 status: <% $.get('status', 'SUCCESS') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   run_groups:
     input:
@@ -167,6 +177,11 @@ workflows:
                 plan: <% $.plan %>
                 status: <% $.get('status', 'SUCCESS') %>
                 execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
 
   list:
     input:
