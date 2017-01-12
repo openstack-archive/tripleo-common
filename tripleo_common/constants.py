@@ -84,6 +84,8 @@ PASSWORD_PARAMETER_NAMES = (
     'NeutronMetadataProxySharedSecret',
     'NeutronPassword',
     'NovaPassword',
+    'OctaviaHeartbeatKey',
+    'OctaviaPassword',
     'PankoPassword',
     'RabbitPassword',
     'RedisPassword',
