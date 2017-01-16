@@ -22,6 +22,7 @@ disk_images:
       - enable-packages-install
       - pip-and-virtualenv-override
       - ntp
+      - overcloud-dracut
     packages:
       - python-psutil
       - python-debtcollector
