@@ -1,0 +1,103 @@
+---
+version: '2.0'
+name: tripleo.package_update.v1
+description: TripleO update workflows
+
+workflows:
+
+  # Updates a workload cloud stack
+  package_update_plan:
+    description: Take a container and perform a package update with possible breakpoints
+
+    input:
+      - container
+      - timeout: 240
+      - queue_name: tripleo
+
+    tasks:
+      update:
+        action: tripleo.package_update.update_stack container=<% $.container %> timeout=<% $.timeout %>
+        on-success: send_message
+        on-error: set_update_failed
+
+      set_update_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(update).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.package_update.v1.package_update_plan
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
+  # Clear an update breakpoint
+  clear_breakpoints:
+    description: Clear any pending breakpoints and continue with update
+
+    input:
+      - stack_id
+      - refs
+      - queue_name: tripleo
+
+    tasks:
+      clear:
+        action: tripleo.package_update.clear_breakpoints stack_id=<% $.stack_id %> refs=<% $.refs %>
+        on-success: send_message
+        on-error: set_clear_breakpoints_failed
+
+      set_clear_breakpoints_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(clear).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.package_update.v1.clear_breakpoints
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+
+  cancel_stack_update:
+    description: Cancel a currently running stack update
+
+    input:
+      - stack_id
+      - queue_name: tripleo
+
+    tasks:
+      cancel_stack_update:
+        action: tripleo.package_update.cancel_stack_update stack_id=<% $.stack_id %>
+        on-success: send_message
+        on-error: set_cancel_stack_update_failed
+
+      set_cancel_stack_update_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(cancel_stack_update).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name
+          messages:
+            body:
+              type: tripleo.package_update.v1.cancel_stack_update
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
