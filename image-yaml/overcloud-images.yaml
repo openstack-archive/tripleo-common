@@ -38,6 +38,7 @@ disk_images:
     type: qcow2
     elements:
       - ironic-agent
+      - ironic-agent-multipath
       - dynamic-login
       - element-manifest
       - network-gateway
