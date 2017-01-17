@@ -35,7 +35,10 @@ disk_images:
   -
     imagename: ironic-python-agent
     arch: amd64
+    # This is bogus, but there's no initrd type in diskimage-builder
     type: qcow2
+    # So we just override the extension instead
+    imageext: initramfs
     elements:
       - ironic-agent
       - dynamic-login

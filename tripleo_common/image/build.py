@@ -60,11 +60,10 @@ class ImageBuildManager(BaseImageManager):
                 raise ImageSpecificationException('distro is required')
             self.logger.info('imagename: %s' % image_name)
             image_extension = image.get('imageext', image_type)
-            image_path = '%s/%s.%s' % (
-                self.output_directory, image_name, image_extension)
+            image_path = os.path.join(self.output_directory, image_name)
             if self.skip:
                 self.logger.info('looking for image at path: %s' % image_path)
-                if os.path.exists(image_path):
+                if os.path.exists('%s.%s' % (image_path, image_extension)):
                     self.logger.info('Image file exists for image name: %s' %
                                      image_name)
                     self.logger.info('Skipping image build')
