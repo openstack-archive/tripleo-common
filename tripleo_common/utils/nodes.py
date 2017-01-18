@@ -432,3 +432,14 @@ def update_node_capability(node_uuid, capability, value, client):
     node = client.node.get(node_uuid)
     patch = _get_capability_patch(node, capability, value)
     return client.node.update(node_uuid, patch)
+
+
+def generate_hostmap(baremetal_client, compute_client):
+    """Create a map between Compute nodes and Baremetal nodes"""
+    hostmap = {}
+    for node in compute_client.servers.list():
+        bm_node = baremetal_client.node.get_by_instance_uuid(node.id)
+        for port in baremetal_client.port.list(node=bm_node.uuid):
+            hostmap[port.address] = {"compute_name": node.name,
+                                     "baremetal_name": bm_node.name}
+    return hostmap

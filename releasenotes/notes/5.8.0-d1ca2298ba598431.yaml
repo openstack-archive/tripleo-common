@@ -8,6 +8,8 @@ features:
   - Add a new Workflow which can be used to wait for Heat stacks finish with
     COMPLETE or FAILED.
   - CephMdsKey is now a generated Heat parameter.
+  - Add an new Action which generates environment parameters for configuring
+    fencing.
 fixes:
   - Fixes `bug 1644756 <https://bugs.launchpad.net/tripleo/+bug/1644756>`__ so
     that flavour matching works as expected with the object-storage role.
