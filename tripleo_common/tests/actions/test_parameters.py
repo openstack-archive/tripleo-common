@@ -335,3 +335,99 @@ class GeneratePasswordsActionTest(base.TestCase):
         existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
         # ensure old passwords used and no new generation
         self.assertEqual(existing_passwords, result)
+
+
+class GetPasswordsActionTest(base.TestCase):
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('mistral.context.ctx')
+    def test_password_from_parameter_defaults(self, mock_ctx,
+                                              mock_get_workflow_client,
+                                              mock_get_orchestration_client):
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.name = constants.DEFAULT_CONTAINER_NAME
+        mock_env.variables = {
+            "parameter_defaults": _EXISTING_PASSWORDS,
+        }
+
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_orchestration = mock.MagicMock()
+        mock_get_orchestration_client.return_value = mock_orchestration
+
+        action = parameters.GetPasswordsAction()
+        result = action.run()
+
+        # ensure old passwords used and no new generation
+        self.assertEqual(_EXISTING_PASSWORDS, result)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('mistral.context.ctx')
+    def test_password_from_generated_passwords(self, mock_ctx,
+                                               mock_get_workflow_client,
+                                               mock_get_orchestration_client):
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.name = constants.DEFAULT_CONTAINER_NAME
+
+        mock_env.variables = {
+            "parameter_defaults": {},
+            "passwords": _EXISTING_PASSWORDS,
+        }
+
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_orchestration = mock.MagicMock()
+        mock_get_orchestration_client.return_value = mock_orchestration
+
+        action = parameters.GetPasswordsAction()
+        result = action.run()
+
+        # ensure old passwords used and no new generation
+        self.assertEqual(_EXISTING_PASSWORDS, result)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('mistral.context.ctx')
+    def test_password_merging_passwords(self, mock_ctx,
+                                        mock_get_workflow_client,
+                                        mock_get_orchestration_client):
+
+        parameter_defaults = _EXISTING_PASSWORDS.copy()
+        passwords = {"AdminPassword": parameter_defaults.pop("AdminPassword")}
+
+        mock_ctx.return_value = mock.MagicMock()
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.name = constants.DEFAULT_CONTAINER_NAME
+        mock_env.variables = {
+            "parameter_defaults": parameter_defaults,
+            "passwords": passwords
+        }
+
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_orchestration = mock.MagicMock()
+        mock_get_orchestration_client.return_value = mock_orchestration
+
+        action = parameters.GetPasswordsAction()
+        result = action.run()
+
+        # ensure old passwords used and no new generation
+        self.assertEqual(_EXISTING_PASSWORDS, result)

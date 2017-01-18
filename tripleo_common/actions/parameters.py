@@ -181,3 +181,32 @@ class GeneratePasswordsAction(base.TripleOAction):
         wc.environments.update(**env_kwargs)
 
         return wf_env.variables['passwords']
+
+
+class GetPasswordsAction(base.TripleOAction):
+    """Get passwords from the environment
+
+    This method returns the list passwords which are used for the deployment.
+    It will return a merged list of user provided passwords and generated
+    passwords, giving priority to the user provided passwords.
+    """
+
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        self.container = container
+
+    def run(self):
+        wc = self.get_workflow_client()
+        try:
+            wf_env = wc.environments.get(self.container)
+        except Exception:
+            msg = "Error retrieving mistral environment: %s" % self.container
+            LOG.exception(msg)
+            return mistral_workflow_utils.Result(error=msg)
+
+        parameter_defaults = wf_env.variables.get('parameter_defaults', {})
+        passwords = wf_env.variables.get('passwords', {})
+        for name in constants.PASSWORD_PARAMETER_NAMES:
+            if name in parameter_defaults:
+                passwords[name] = parameter_defaults[name]
+
+        return passwords
