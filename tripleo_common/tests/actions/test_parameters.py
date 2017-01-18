@@ -46,6 +46,7 @@ _EXISTING_PASSWORDS = {
     'ManilaPassword': 'NYJN86Fua3X8AVFWmMhQa2zTH',
     'NeutronMetadataProxySharedSecret': 'Q2YgUCwmBkYdqsdhhCF4hbghu',
     'CephMdsKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
+    'CephManilaClientKey': b'AQANOFFY1NW6AxAAu6jWI3YSOsp2QWusb5Y3DQ==',
     'CephMonKey': b'AQCQXtlXAAAAABAA9l+59N3yH+C49Y0JiKeGFg==',
     'SwiftHashSuffix': 'td8mV6k7TYEGKCDvjVBwckpn9',
     'SnmpdReadonlyUserPassword': 'TestPassword',
