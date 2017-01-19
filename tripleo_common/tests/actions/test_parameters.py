@@ -43,6 +43,8 @@ _EXISTING_PASSWORDS = {
     'CephRgwKey': b'AQCQXtlXAAAAABAAUKcqUMu6oMjAXMjoUV4/3A==',
     'AodhPassword': '8VZXehsKc2HbmFFMKYuqxTJHn',
     'PankoPassword': 'cVZXehsSc2KdmFFMKDudxTLKn',
+    'OctaviaHeartbeatKey': 'oct-heartbeat-key',
+    'OctaviaPassword': 'NMl7j3nKk1VVwMxUZC8Cgw==',
     'ManilaPassword': 'NYJN86Fua3X8AVFWmMhQa2zTH',
     'NeutronMetadataProxySharedSecret': 'Q2YgUCwmBkYdqsdhhCF4hbghu',
     'CephMdsKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
