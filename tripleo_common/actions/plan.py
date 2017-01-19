@@ -192,9 +192,6 @@ class ListPlansAction(base.TripleOAction):
     name as the container.
     """
 
-    def __init__(self):
-        super(ListPlansAction, self).__init__()
-
     def run(self):
         # plans consist of a container object and mistral environment
         # with the same name.  The container is marked with metadata

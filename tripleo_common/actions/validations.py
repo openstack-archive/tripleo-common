@@ -26,8 +26,6 @@ from tripleo_common.utils import validations as utils
 
 
 class GetPubkeyAction(base.TripleOAction):
-    def __init__(self):
-        super(GetPubkeyAction, self).__init__()
 
     def run(self):
         mc = self.get_workflow_client()
@@ -62,9 +60,6 @@ class GetPubkeyAction(base.TripleOAction):
 
 class Enabled(base.TripleOAction):
     """Indicate whether the validations have been enabled."""
-
-    def __init__(self):
-        super(Enabled, self).__init__()
 
     def _validations_enabled(self):
         """Detect whether the validations are enabled on the undercloud."""
@@ -102,8 +97,6 @@ class ListValidationsAction(base.TripleOAction):
 
 class ListGroupsAction(base.TripleOAction):
     """Return a set of TripleO validation groups"""
-    def __init__(self):
-        super(ListGroupsAction, self).__init__()
 
     def run(self):
         validations = utils.load_validations()

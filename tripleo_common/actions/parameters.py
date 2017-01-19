@@ -143,6 +143,7 @@ class GeneratePasswordsAction(base.TripleOAction):
     """
 
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        super(GeneratePasswordsAction, self).__init__()
         self.container = container
 
     def run(self):
@@ -193,6 +194,7 @@ class GetPasswordsAction(base.TripleOAction):
     """
 
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        super(GetPasswordsAction, self).__init__()
         self.container = container
 
     def run(self):
