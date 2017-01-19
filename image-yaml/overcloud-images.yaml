@@ -18,6 +18,7 @@ disk_images:
       - grub2
       - element-manifest
       - dynamic-login
+      - iptables
       - enable-packages-install
       - pip-and-virtualenv-override
     packages:
