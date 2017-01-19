@@ -20,6 +20,7 @@ disk_images:
       - dynamic-login
       - enable-packages-install
       - pip-and-virtualenv-override
+      - ntp
     packages:
       - python-psutil
       - python-debtcollector
