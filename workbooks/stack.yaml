@@ -18,7 +18,7 @@ workflows:
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS'] %>
+          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'DELETE_IN_PROGRESS'] %>
 
   wait_for_stack_in_progress:
     input:
@@ -33,4 +33,75 @@ workflows:
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED'] %>
+          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED', 'DELETE_FAILED'] %>
+
+  wait_for_stack_does_not_exist:
+    input:
+      - stack
+      - timeout: 3600
+
+    tasks:
+      wait_for_stack_does_not_exist:
+        action: heat.stacks_list
+        timeout: <% $.timeout %>
+        retry:
+          delay: 15
+          count: <% $.timeout / 15 %>
+          continue-on: <% $.stack in task(wait_for_stack_does_not_exist).result.select($.stack_name) %>
+
+  delete_stack:
+    input:
+      - stack
+      - queue_name: tripleo
+
+    tasks:
+      delete_the_stack:
+        action: heat.stacks_delete stack_id=<% $.stack %>
+        on-success: wait_for_stack_in_progress
+        on-error: delete_the_stack_failed
+
+      delete_the_stack_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(delete_the_stack).result %>
+
+      wait_for_stack_in_progress:
+        workflow: tripleo.stack.v1.wait_for_stack_in_progress stack=<% $.stack %>
+        on-success: wait_for_stack_does_not_exist
+        on-error: wait_for_stack_in_progress_failed
+
+      wait_for_stack_in_progress_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(wait_for_stack_in_progress).result %>
+
+      wait_for_stack_does_not_exist:
+        workflow: tripleo.stack.v1.wait_for_stack_does_not_exist stack=<% $.stack %>
+        on-success: send_message
+        on-error: wait_for_stack_does_not_exist_failed
+
+      wait_for_stack_does_not_exist_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(wait_for_stack_does_not_exist).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.scale.v1.delete_stack
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
