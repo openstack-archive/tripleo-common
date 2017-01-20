@@ -1,25 +1,10 @@
 uploads:
-    - imagename: tripleoupstream/heat-docker-agents:newton
+    - imagename: tripleoupstream/centos-binary-nova-compute:latest
       uploader: docker
       pull_source: docker.io
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-compute:newton
+    - imagename: tripleoupstream/centos-binary-nova-libvirt:latest
       uploader: docker
       pull_source: docker.io
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-libvirt:newton
+    - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:latest
       uploader: docker
       pull_source: docker.io
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:newton
-      uploader: docker
-      pull_source: docker.io
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-openvswitch-vswitchd:newton
-      uploader: docker
-      pull_source: docker.io
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-openvswitch-db-server:newton
-      uploader: docker
-      pull_source: docker.io
-      push_destination: localhost:8787
