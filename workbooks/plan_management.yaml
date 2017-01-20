@@ -9,10 +9,13 @@ workflows:
     input:
       - container
       - queue_name: tripleo
+      - generate_passwords: true
     tasks:
       create_plan:
         action: tripleo.plan.create container=<% $.container %>
-        on-success: ensure_passwords_exist
+        on-success:
+          - ensure_passwords_exist: <% $.generate_passwords = true %>
+          - process_templates: <% $.generate_passwords != true %>
         on-error: create_plan_set_status_failed
 
       ensure_passwords_exist:
@@ -71,10 +74,13 @@ workflows:
     input:
       - container
       - queue_name: tripleo
+      - generate_passwords: true
     tasks:
       update_plan:
         action: tripleo.plan.update container=<% $.container %>
-        on-success: ensure_passwords_exist
+        on-success:
+          - ensure_passwords_exist: <% $.generate_passwords = true %>
+          - process_templates: <% $.generate_passwords != true %>
         on-error: update_plan_set_status_failed
 
       process_templates:
@@ -134,6 +140,7 @@ workflows:
     input:
       - container
       - queue_name: tripleo
+      - generate_passwords: true
     tasks:
 
       verify_container_doesnt_exist:
@@ -164,7 +171,9 @@ workflows:
 
       create_plan:
         action: tripleo.plan.create container=<% $.container %>
-        on-success: ensure_passwords_exist
+        on-success:
+          - ensure_passwords_exist: <% $.generate_passwords = true %>
+          - plan_process_templates: <% $.generate_passwords != true %>
         on-error: plan_set_status_failed
 
       ensure_passwords_exist:
