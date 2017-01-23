@@ -216,7 +216,7 @@ workflows:
         on-success: send_message
         on-error: power_off_failed
         with-items: uuid in <% $.node_uuids %>
-        workflow: tripleo.baremetal.v1.set_power_state 
+        workflow: tripleo.baremetal.v1.set_power_state
         input:
           node_uuid: <% $.uuid %>
           queue_name: <% $.queue_name %>
