@@ -54,6 +54,13 @@ def generate_passwords(mistralclient=None, stack_env=None):
             else:
                 # CephX keys aren't random strings
                 passwords[name] = create_cephx_key()
+        # Since by default generate_password uses all digits and ascii upper
+        # & lowercase letters, it provides ~5.95 entropy per character.
+        # Make the size of the default authkey 4096 bytes, which should give us
+        # ~24000 bits of randomness
+        elif name.startswith("PacemakerRemoteAuthkey"):
+            passwords[name] = passutils.generate_password(
+                size=4096)
         # The underclouds SnmpdReadonlyUserPassword is stored in a mistral env
         # for the overcloud.
         elif mistralclient and name == 'SnmpdReadonlyUserPassword':

@@ -84,6 +84,7 @@ PASSWORD_PARAMETER_NAMES = (
     'NovaPassword',
     'OctaviaHeartbeatKey',
     'OctaviaPassword',
+    'PacemakerRemoteAuthkey',
     'PankoPassword',
     'RabbitPassword',
     'RedisPassword',
