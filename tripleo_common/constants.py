@@ -92,6 +92,7 @@ PASSWORD_PARAMETER_NAMES = (
     'SnmpdReadonlyUserPassword',
     'SwiftHashSuffix',
     'SwiftPassword',
+    'TackerPassword',
     'TrovePassword',
     'ZaqarPassword',
 )

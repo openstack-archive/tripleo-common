@@ -36,6 +36,7 @@ _EXISTING_PASSWORDS = {
     'RabbitPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
     'CephAdminKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
     'HAProxyStatsPassword': 'P8tbdK6n4YUkTaUyy8XgEVTe6',
+    'TackerPassword': 'DwcKvMqXMuNYYFU4zTCuG4234',
     'TrovePassword': 'V7A7zegkMdRFnYuN23gdc4KQC',
     'CeilometerPassword': 'RRdpwK6qf2pbKz2UtzxqauAdk',
     'GnocchiPassword': 'cRYHcUkMuJeK3vyU9pCaznUZc',
