@@ -33,6 +33,7 @@ disk_images:
       - python-heat-agent-apply-config
       - python-heat-agent-ansible
       - python-heat-agent-docker-cmd
+      - python-heat-agent-json-file
     options:
       - "--min-tmpfs 5"
   -
