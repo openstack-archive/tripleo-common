@@ -32,6 +32,7 @@ _EXISTING_PASSWORDS = {
     'SaharaPassword': 'spFvYGezdFwnTk7NPxgYTbUPh',
     'AdminToken': 'jq6G6HyZtj7dcZEvuyhAfjutM',
     'CinderPassword': 'dcxC3xyUcrmvzfrrxpAd3REcm',
+    'CongressPassword': 'DwcKvMqXMuNYYFU4zTCuG4234',
     'GlancePassword': 'VqJYNEdKKsGZtgnHct77XBtrV',
     'RabbitPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
     'CephAdminKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',

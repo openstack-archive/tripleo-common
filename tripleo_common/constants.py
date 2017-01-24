@@ -65,6 +65,7 @@ PASSWORD_PARAMETER_NAMES = (
     'CephMonKey',
     'CephRgwKey',
     'CinderPassword',
+    'CongressPassword',
     'Ec2ApiPassword',
     'GlancePassword',
     'GnocchiPassword',
