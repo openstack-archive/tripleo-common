@@ -44,6 +44,7 @@ disk_images:
     imageext: initramfs
     elements:
       - ironic-agent
+      - ironic-agent-multipath
       - dynamic-login
       - element-manifest
       - network-gateway
