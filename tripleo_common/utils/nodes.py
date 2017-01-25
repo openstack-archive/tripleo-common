@@ -18,6 +18,7 @@ import re
 
 import six
 
+from oslo_concurrency import processutils
 from tripleo_common import exception
 from tripleo_common.utils import glance
 
@@ -381,6 +382,7 @@ def register_all_nodes(nodes_list, client, remove=False, glance_client=None,
         seen.append(node)
 
     _clean_up_extra_nodes(seen, client, remove=remove)
+    run_nova_cell_v2_discovery()
 
     return seen
 
@@ -443,3 +445,12 @@ def generate_hostmap(baremetal_client, compute_client):
             hostmap[port.address] = {"compute_name": node.name,
                                      "baremetal_name": bm_node.name}
     return hostmap
+
+
+def run_nova_cell_v2_discovery():
+    return processutils.execute(
+        '/usr/bin/sudo',
+        '/bin/nova-manage',
+        'cell_v2',
+        'discover_hosts'
+    )
