@@ -41,6 +41,41 @@ def _create_temp_file(data):
     return env_temp_file
 
 
+class J2SwiftLoader(jinja2.BaseLoader):
+    """Jinja2 loader to fetch included files from swift
+
+    This attempts to fetch a template include file from the given container.
+    An optional search path or list of search paths can be provided. By default
+    only the absolute path relative to the container root is searched.
+    """
+
+    def __init__(self, swift, container, searchpath=None):
+        self.swift = swift
+        self.container = container
+        if searchpath is not None:
+            if isinstance(searchpath, six.string_types):
+                self.searchpath = [searchpath]
+            else:
+                self.searchpath = list(searchpath)
+        else:
+            self.searchpath = []
+        # Always search the absolute path from the root of the swift container
+        if '' not in self.searchpath:
+            self.searchpath.append('')
+
+    def get_source(self, environment, template):
+        pieces = jinja2.loaders.split_template_path(template)
+        for searchpath in self.searchpath:
+            template_path = os.path.join(searchpath, *pieces)
+            try:
+                source = self.swift.get_object(
+                    self.container, template_path)[1]
+                return source, None, False
+            except swiftexceptions.ClientException:
+                pass
+        raise jinja2.exceptions.TemplateNotFound(template)
+
+
 class UploadTemplatesAction(base.TripleOAction):
     """Upload default heat templates for TripleO."""
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
@@ -72,9 +107,14 @@ class ProcessTemplatesAction(base.TripleOAction):
         swift = self.get_object_client()
         yaml_f = outfile_name or j2_template.replace('.j2.yaml', '.yaml')
 
+        # Search for templates relative to the current template path first
+        template_base = os.path.dirname(yaml_f)
+        j2_loader = J2SwiftLoader(swift, self.container, template_base)
+
         try:
             # Render the j2 template
-            template = jinja2.Environment().from_string(j2_template)
+            template = jinja2.Environment(loader=j2_loader).from_string(
+                j2_template)
             r_template = template.render(**j2_data)
         except jinja2.exceptions.TemplateError as ex:
             error_msg = ("Error rendering template %s : %s"

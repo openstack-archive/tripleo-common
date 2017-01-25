@@ -12,6 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import jinja2
 import mock
 
 from swiftclient import exceptions as swiftexceptions
@@ -20,7 +21,7 @@ from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.tests import base
 
-JINJA_SNIPPET = """
+JINJA_SNIPPET = r"""
 # Jinja loop for Role in role_data.yaml
 {% for role in roles %}
   # Resources generated for {{role.name}} Role
@@ -34,12 +35,12 @@ JINJA_SNIPPET = """
       DefaultPasswords: {get_attr: [DefaultPasswords, passwords]}
 {% endfor %}"""
 
-ROLE_DATA_YAML = """
+ROLE_DATA_YAML = r"""
 -
   name: CustomRole
 """
 
-EXPECTED_JINJA_RESULT = """
+EXPECTED_JINJA_RESULT = r"""
 # Jinja loop for Role in role_data.yaml
 
   # Resources generated for CustomRole Role
@@ -53,30 +54,30 @@ EXPECTED_JINJA_RESULT = """
       DefaultPasswords: {get_attr: [DefaultPasswords, passwords]}
 """
 
-JINJA_SNIPPET_CONFIG = """
+JINJA_SNIPPET_CONFIG = r"""
 outputs:
   OS::stack_id:
     description: The software config which runs puppet on the {{role}} role
     value: {get_resource: {{role}}PuppetConfigImpl}"""
 
-J2_EXCLUDES = """
+J2_EXCLUDES = r"""
 name:
   - puppet/controller-role.yaml
 """
 
-J2_EXCLUDES_EMPTY_LIST = """
+J2_EXCLUDES_EMPTY_LIST = r"""
 name:
 """
 
-J2_EXCLUDES_EMPTY_FILE = """
+J2_EXCLUDES_EMPTY_FILE = r"""
 """
 
-ROLE_DATA_DISABLE_CONSTRAINTS_YAML = """
+ROLE_DATA_DISABLE_CONSTRAINTS_YAML = r"""
 - name: RoleWithDisableConstraints
   disable_constraints: True
 """
 
-JINJA_SNIPPET_DISABLE_CONSTRAINTS = """
+JINJA_SNIPPET_DISABLE_CONSTRAINTS = r"""
   {{role}}Image:
     type: string
     default: overcloud-full
@@ -86,7 +87,7 @@ JINJA_SNIPPET_DISABLE_CONSTRAINTS = """
 {% endif %}
 """
 
-EXPECTED_JINJA_RESULT_DISABLE_CONSTRAINTS = """
+EXPECTED_JINJA_RESULT_DISABLE_CONSTRAINTS = r"""
   RoleWithDisableConstraintsImage:
     type: string
     default: overcloud-full
@@ -112,6 +113,69 @@ class UploadTemplatesActionTest(base.TestCase):
             constants.DEFAULT_TEMPLATES_PATH, 'test')
         mock_extract_tar.assert_called_once_with(
             mock_get_swift.return_value, 'test', 'tar-container')
+
+
+class J2SwiftLoaderTest(base.TestCase):
+    @staticmethod
+    def _setup_swift():
+        def return_multiple_files(*args):
+            if args[1] == 'bar/foo.yaml':
+                return ['', 'I am foo']
+            else:
+                raise swiftexceptions.ClientException('not found')
+        swift = mock.MagicMock()
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        return swift
+
+    def test_include_absolute_path(self):
+        j2_loader = templates.J2SwiftLoader(self._setup_swift(), None)
+        template = jinja2.Environment(loader=j2_loader).from_string(
+            r'''
+            Included this:
+            {% include 'bar/foo.yaml' %}
+            ''')
+        self.assertEqual(
+            template.render(),
+            '''
+            Included this:
+            I am foo
+            ''')
+
+    def test_include_search_path(self):
+        j2_loader = templates.J2SwiftLoader(self._setup_swift(), None, 'bar')
+        template = jinja2.Environment(loader=j2_loader).from_string(
+            r'''
+            Included this:
+            {% include 'foo.yaml' %}
+            ''')
+        self.assertEqual(
+            template.render(),
+            '''
+            Included this:
+            I am foo
+            ''')
+
+    def test_include_not_found(self):
+        j2_loader = templates.J2SwiftLoader(self._setup_swift(), None)
+        template = jinja2.Environment(loader=j2_loader).from_string(
+            r'''
+            Included this:
+            {% include 'bar.yaml' %}
+            ''')
+        self.assertRaises(
+            jinja2.exceptions.TemplateNotFound,
+            template.render)
+
+    def test_include_invalid_path(self):
+        j2_loader = templates.J2SwiftLoader(self._setup_swift(), 'bar')
+        template = jinja2.Environment(loader=j2_loader).from_string(
+            r'''
+            Included this:
+            {% include '../foo.yaml' %}
+            ''')
+        self.assertRaises(
+            jinja2.exceptions.TemplateNotFound,
+            template.render)
 
 
 class ProcessTemplatesActionTest(base.TestCase):
@@ -264,6 +328,65 @@ class ProcessTemplatesActionTest(base.TestCase):
         action._j2_render_and_put(JINJA_SNIPPET_CONFIG,
                                   {'role': 'CustomRole'},
                                   'customrole-config.yaml')
+
+        action_result = swift.put_object._mock_mock_calls[0]
+
+        self.assertTrue("CustomRole" in str(action_result))
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_j2_render_and_put_include(self, ctx_mock, get_obj_client_mock):
+
+        def return_multiple_files(*args):
+            if args[1] == 'foo.yaml':
+                return ['', JINJA_SNIPPET_CONFIG]
+
+        def return_container_files(*args):
+            return ('headers', [{'name': 'foo.yaml'}])
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        action._j2_render_and_put(r"{% include 'foo.yaml' %}",
+                                  {'role': 'CustomRole'},
+                                  'customrole-config.yaml')
+
+        action_result = swift.put_object._mock_mock_calls[0]
+
+        self.assertTrue("CustomRole" in str(action_result))
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_j2_render_and_put_include_relative(
+            self,
+            ctx_mock,
+            get_obj_client_mock):
+
+        def return_multiple_files(*args):
+            if args[1] == 'bar/foo.yaml':
+                return ['', JINJA_SNIPPET_CONFIG]
+
+        def return_container_files(*args):
+            return ('headers', [{'name': 'bar/foo.yaml'}])
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        action._j2_render_and_put(r"{% include 'foo.yaml' %}",
+                                  {'role': 'CustomRole'},
+                                  'bar/customrole-config.yaml')
 
         action_result = swift.put_object._mock_mock_calls[0]
 
