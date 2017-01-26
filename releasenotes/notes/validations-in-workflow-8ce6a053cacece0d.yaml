@@ -1,0 +1,7 @@
+---
+features:
+  - Adds support for calling the external TripleO
+    validations from the deployment and introspection
+    workflows. They default to off, and can be enabled
+    by passing 'True' to the run_validations parameters
+    of these workflows.

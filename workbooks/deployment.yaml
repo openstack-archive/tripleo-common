@@ -114,6 +114,7 @@ workflows:
 
     input:
       - container
+      - run_validations: False
       - timeout: 240
       - queue_name: tripleo
 
@@ -124,7 +125,25 @@ workflows:
         input:
           container: <% $.container %>
           queue_name: <% $.queue_name %>
-        on-complete: get_heat_stack
+        on-complete:
+          - run_validations: <% $.run_validations %>
+          - get_heat_stack: <% not $.run_validations %>
+
+      run_validations:
+        workflow: tripleo.validations.v1.run_groups
+        input:
+          group_names:
+            - 'pre-deployment'
+          plan: <% $.container %>
+          queue_name: <% $.queue_name %>
+        on-success: get_heat_stack
+        on-error: set_validations_failed
+
+      set_validations_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(run_validations).result %>
 
       get_heat_stack:
         action: heat.stacks_get stack_id=<% $.container %>
@@ -140,7 +159,10 @@ workflows:
           message: The Heat stack is busy.
 
       deploy:
-        action: tripleo.deployment.deploy timeout=<% $.timeout %> container=<% $.container %>
+        action: tripleo.deployment.deploy
+        input:
+          timeout: <% $.timeout %>
+          container: <% $.container %>
         on-success: send_message
         on-error: set_deployment_failed
 
