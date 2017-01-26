@@ -1,0 +1,4 @@
+---
+fixes:
+  - Fixes `bug 1657461 <https://bugs.launchpad.net/tripleo/+bug/1657461>`__ by
+    adding a workflow to delete a Heat stack.

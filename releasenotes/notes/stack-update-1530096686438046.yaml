@@ -1,0 +1,4 @@
+---
+fixes:
+  - Fixes `bug 1614928 <https://bugs.launchpad.net/tripleo/+bug/1614928>`__ by
+    adding workflows to support the package update command.
