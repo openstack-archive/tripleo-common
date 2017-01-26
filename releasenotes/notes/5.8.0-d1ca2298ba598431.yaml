@@ -33,3 +33,4 @@ fixes:
 other:
   - Add a script that pulls the latest puppet source
   - Force qemu to log to a file when containerized
+  - Add passwords for Congress and Tacker
