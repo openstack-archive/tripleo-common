@@ -10,6 +10,7 @@ features:
   - CephMdsKey is now a generated Heat parameter.
   - Add an new Action which generates environment parameters for configuring
     fencing.
+  - Add utility functions for deleting/emptying swift containers.
 fixes:
   - Fixes `bug 1644756 <https://bugs.launchpad.net/tripleo/+bug/1644756>`__ so
     that flavour matching works as expected with the object-storage role.
