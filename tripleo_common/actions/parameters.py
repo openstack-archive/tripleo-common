@@ -34,6 +34,7 @@ from mistral.workflow import utils as mistral_workflow_utils
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
+from tripleo_common.utils import nodes
 from tripleo_common.utils import parameters
 from tripleo_common.utils import passwords as password_utils
 
@@ -210,3 +211,87 @@ class GetPasswordsAction(base.TripleOAction):
                 passwords[name] = parameter_defaults[name]
 
         return passwords
+
+
+class GenerateFencingParametersAction(base.TripleOAction):
+    """Generates fencing configuration for a deployment.
+
+    :param nodes_json: list of nodes & attributes in json format
+    :param os_auth: dictionary of OS client auth data (if using pxe_ssh)
+    :param fence_action: action to take when fencing nodes
+    :param delay: time to wait before taking fencing action
+    :param ipmi_level: IPMI user level to use
+    :param ipmi_cipher: IPMI cipher suite to use
+    :param ipmi_lanplus: whether to use IPMIv2.0
+    """
+
+    def __init__(self, nodes_json, os_auth, fence_action, delay,
+                 ipmi_level, ipmi_cipher, ipmi_lanplus):
+        super(GenerateFencingParametersAction, self).__init__()
+        self.nodes_json = nodes_json
+        self.os_auth = os_auth
+        self.fence_action = fence_action
+        self.delay = delay
+        self.ipmi_level = ipmi_level
+        self.ipmi_cipher = ipmi_cipher
+        self.ipmi_lanplus = ipmi_lanplus
+
+    def run(self):
+        """Returns the parameters for fencing controller nodes"""
+        hostmap = nodes.generate_hostmap(self.get_baremetal_client(),
+                                         self.get_compute_client())
+        fence_params = {"EnableFencing": True, "FencingConfig": {}}
+        devices = []
+
+        for node in self.nodes_json:
+            node_data = {}
+            params = {}
+            if "mac" in node:
+                # Not all Ironic drivers present a MAC address, so we only
+                # capture it if it's present
+                mac_addr = node["mac"][0]
+                node_data["host_mac"] = mac_addr
+
+            # Build up fencing parameters based on which Ironic driver this
+            # node is using
+            if node["pm_type"] == "pxe_ssh":
+                # Ironic fencing driver
+                node_data["agent"] = "fence_ironic"
+                params["action"] = self.fence_action
+                params["auth_url"] = self.os_auth["auth_url"]
+                params["login"] = self.os_auth["login"]
+                params["passwd"] = self.os_auth["passwd"]
+                params["tenant_name"] = self.os_auth["tenant_name"]
+                params["pcmk_host_map"] = "%(compute_name)s:%(bm_name)s" % (
+                    {"compute_name": hostmap[mac_addr]["compute_name"],
+                     "bm_name": hostmap[mac_addr]["baremetal_name"]})
+                if self.delay:
+                    params["delay"] = self.delay
+            elif node["pm_type"].split('_')[1] in ("ipmitool", "ilo", "drac"):
+                # IPMI fencing driver
+                node_data["agent"] = "fence_ipmilan"
+                params["action"] = self.fence_action
+                params["ipaddr"] = node["pm_addr"]
+                params["passwd"] = node["pm_password"]
+                params["login"] = node["pm_user"]
+                params["pcmk_host_list"] = hostmap[mac_addr]["compute_name"]
+                if "pm_port" in node:
+                    params["ipport"] = node["pm_port"]
+                if self.ipmi_lanplus:
+                    params["lanplus"] = self.ipmi_lanplus
+                if self.delay:
+                    params["delay"] = self.delay
+                if self.ipmi_cipher:
+                    params["cipher"] = self.ipmi_cipher
+                if self.ipmi_level:
+                    params["privlvl"] = self.ipmi_level
+            else:
+                error = ("Unable to generate fencing parameters for %s" %
+                         node["pm_type"])
+                raise ValueError(error)
+
+            node_data["params"] = params
+            devices.append(node_data)
+
+        fence_params["FencingConfig"]["devices"] = devices
+        return {"parameter_defaults": fence_params}

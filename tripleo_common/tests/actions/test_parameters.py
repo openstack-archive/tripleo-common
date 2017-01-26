@@ -497,3 +497,99 @@ class GetPasswordsActionTest(base.TestCase):
 
         # ensure old passwords used and no new generation
         self.assertEqual(_EXISTING_PASSWORDS, result)
+
+
+class GenerateFencingParametersActionTestCase(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.nodes.'
+                'generate_hostmap')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_compute_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_baremetal_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('mistral.context.ctx')
+    def test_no_success(self, mock_ctx, mock_get_orchestration,
+                        mock_get_workflow, mock_get_baremetal,
+                        mock_get_compute, mock_generate_hostmap):
+        test_hostmap = {
+            "00:11:22:33:44:55": {
+                "compute_name": "compute_name_0",
+                "baremetal_name": "baremetal_name_0"
+                },
+            "11:22:33:44:55:66": {
+                "compute_name": "compute_name_1",
+                "baremetal_name": "baremetal_name_1"
+                }
+            }
+        mock_generate_hostmap.return_value = test_hostmap
+
+        test_envjson = [{
+            "name": "control-0",
+            "pm_password": "control-0-password",
+            "pm_type": "pxe_ipmitool",
+            "pm_user": "control-0-admin",
+            "pm_addr": "0.1.2.3",
+            "pm_port": "0123",
+            "mac": [
+                "00:11:22:33:44:55"
+            ]
+        }, {
+            "name": "control-1",
+            "pm_password": "control-1-password",
+            "pm_type": "pxe_ssh",
+            "pm_user": "control-1-admin",
+            "pm_addr": "1.2.3.4",
+            "mac": [
+                "11:22:33:44:55:66"
+            ]
+        }]
+        test_osauth = {
+            "auth_url": "test://auth.url",
+            "login": "test_os_username",
+            "passwd": "test_os_password",
+            "tenant_name": "test_os_tenant_name",
+            }
+
+        action = parameters.GenerateFencingParametersAction(test_envjson,
+                                                            test_osauth,
+                                                            "test_action",
+                                                            28,
+                                                            5,
+                                                            0,
+                                                            True)
+
+        result = action.run()["parameter_defaults"]
+
+        self.assertTrue(result["EnableFencing"])
+        self.assertEqual(result["FencingConfig"]["devices"][0], {
+                         "agent": "fence_ipmilan",
+                         "host_mac": "00:11:22:33:44:55",
+                         "params": {
+                             "action": "test_action",
+                             "delay": 28,
+                             "ipaddr": "0.1.2.3",
+                             "ipport": "0123",
+                             "lanplus": True,
+                             "privlvl": 5,
+                             "login": "control-0-admin",
+                             "passwd": "control-0-password",
+                             "pcmk_host_list": "compute_name_0"
+                             }
+                         })
+        self.assertEqual(result["FencingConfig"]["devices"][1], {
+                         "agent": "fence_ironic",
+                         "host_mac": "11:22:33:44:55:66",
+                         "params": {
+                             "auth_url": "test://auth.url",
+                             "delay": 28,
+                             "action": "test_action",
+                             "login": "test_os_username",
+                             "passwd": "test_os_password",
+                             "tenant_name": "test_os_tenant_name",
+                             "pcmk_host_map": "compute_name_1:baremetal_name_1"
+                             }
+                         })
