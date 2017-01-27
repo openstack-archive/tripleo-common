@@ -19,25 +19,35 @@ workflows:
       delete_node:
         action: tripleo.scale.delete_node nodes=<% $.nodes %> timeout=<% $.timeout %> container=<% $.container %>
         on-success: wait_for_stack_in_progress
-        on-error: set_delete_node_failed last_result=<% task(delete_node).result %>
+        on-error: set_delete_node_failed
+
+      set_delete_node_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(delete_node).result %>
 
       wait_for_stack_in_progress:
         workflow: tripleo.stack.v1.wait_for_stack_in_progress stack=<% $.container %>
         on-success: wait_for_stack_complete
-        on-error: set_delete_node_failed last_result=<% task(wait_for_stack_in_progress).result %>
+        on-error: wait_for_stack_in_progress_failed
+
+      wait_for_stack_in_progress_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(wait_for_stack_in_progress).result %>
 
       wait_for_stack_complete:
         workflow: tripleo.stack.v1.wait_for_stack_complete_or_failed stack=<% $.container %>
         on-success: send_message
-        on-error: set_delete_node_failed last_result=<% task(wait_for_stack_complete).result %>
+        on-error: wait_for_stack_complete_failed
 
-      set_delete_node_failed:
-        input:
-          last_result: 'Task failed'
+      wait_for_stack_complete_failed:
         on-success: send_message
         publish:
           status: FAILED
-          message: <% last_result %>
+          message: <% task(wait_for_stack_complete).result %>
 
       send_message:
         action: zaqar.queue_post
