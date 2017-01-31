@@ -58,6 +58,7 @@ yum install -y \
         python-heat-agent-docker-cmd \
         python-heat-agent-hiera \
         python-heat-agent-puppet \
+        python-heat-agent-json-file \
         python-ipaddr \
         python-memcached \
         python2-oslo-log \
