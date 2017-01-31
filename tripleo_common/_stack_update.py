@@ -42,6 +42,7 @@ class StackUpdateManager(object):
         succeeds = []
         fails = []
         for ref in refs:
+            server_name = None
             try:
                 res = resources['on_breakpoint'][ref]
                 server_name = self._server_name(ref)
@@ -55,7 +56,7 @@ class StackUpdateManager(object):
                 succeeds.append(ref)
             except Exception as err:
                 LOG.error("failed to remove breakpoint on %s: %s",
-                          server_name, err)
+                          server_name or ref, err)
                 fails.append(ref)
         return (succeeds, fails)
 
