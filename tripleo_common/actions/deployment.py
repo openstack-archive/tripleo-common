@@ -191,6 +191,7 @@ class OvercloudRcAction(base.TripleOAction):
     """
 
     def __init__(self, container, no_proxy=""):
+        super(OvercloudRcAction, self).__init__()
         self.container = container
         self.no_proxy = no_proxy
 
