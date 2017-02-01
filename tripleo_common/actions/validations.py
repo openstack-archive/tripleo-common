@@ -173,3 +173,70 @@ class CheckBootImagesAction(base.TripleOAction):
             image_id = found_images[0]
 
         return image_id
+
+
+class CheckFlavorsAction(base.TripleOAction):
+    """Validate and collect nova flavors in use.
+
+    Ensure that selected flavors (--ROLE-flavor) are valid in nova.
+    Issue a warning if local boot is not set for a flavor.
+    """
+
+    # TODO(bcrochet): The validation actions are temporary. This logic should
+    #                 move to the tripleo-validations project eventually.
+    def __init__(self, flavors, roles_info):
+        super(CheckFlavorsAction, self).__init__()
+        self.flavors = flavors
+        self.roles_info = roles_info
+
+    def run(self):
+        """Validate and collect nova flavors in use.
+
+        Ensure that selected flavors (--ROLE-flavor) are valid in nova.
+        Issue a warning if local boot is not set for a flavor.
+
+        :returns: dictionary flavor name -> (flavor object, scale)
+        """
+        flavors = {f['name']: f for f in self.flavors}
+        result = {}
+        warnings = []
+        errors = []
+
+        message = "Flavor '{1}' provided for the role '{0}', does not exist"
+
+        for target, (flavor_name, scale) in self.roles_info.items():
+            if flavor_name is None or not scale:
+                continue
+
+            old_flavor_name, old_scale = result.get(flavor_name, (None, None))
+
+            if old_flavor_name:
+                result[flavor_name] = (old_flavor_name, old_scale + scale)
+            else:
+                flavor = flavors.get(flavor_name)
+
+                if flavor:
+                    if flavor.get('capabilities:boot_option', '') == 'netboot':
+                        warnings.append(
+                            'Flavor %s "capabilities:boot_option" is set to '
+                            '"netboot". Nodes will PXE boot from the ironic '
+                            'conductor instead of using a local bootloader. '
+                            'Make sure that enough nodes are marked with the '
+                            '"boot_option" capability set to "netboot".'
+                            % flavor_name)
+
+                    result[flavor_name] = (flavor, scale)
+                else:
+                    errors.append(message.format(target, flavor_name))
+
+        return_value = {
+            'flavors': result,
+            'errors': errors,
+            'warnings': warnings,
+        }
+        if errors:
+            mistral_result = {'error': return_value}
+        else:
+            mistral_result = {'data': return_value}
+
+        return mistral_workflow_utils.Result(**mistral_result)
