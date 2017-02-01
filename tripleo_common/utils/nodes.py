@@ -382,7 +382,6 @@ def register_all_nodes(nodes_list, client, remove=False, glance_client=None,
         seen.append(node)
 
     _clean_up_extra_nodes(seen, client, remove=remove)
-    run_nova_cell_v2_discovery()
 
     return seen
 
@@ -452,5 +451,6 @@ def run_nova_cell_v2_discovery():
         '/usr/bin/sudo',
         '/bin/nova-manage',
         'cell_v2',
-        'discover_hosts'
+        'discover_hosts',
+        '--verbose'
     )

@@ -288,3 +288,25 @@ class UpdateNodeCapability(base.TripleOAction):
             return mistral_workflow_utils.Result(
                 error="%s: %s" % (type(err).__name__, str(err))
             )
+
+
+class CellV2DiscoverHostsAction(base.TripleOAction):
+    """Run cell_v2 host discovery
+
+    Runs cell_v2 host discovery to map any newly available ironic nodes.
+
+    """
+
+    def run(self):
+        try:
+            result = nodes.run_nova_cell_v2_discovery()
+            LOG.info(
+                'Successfully ran cell_v2 discover_hosts\n'
+                'stdout: %(stdout)r\n',
+                {"stdout": result[0]}
+            )
+        except Exception as err:
+            LOG.exception("Error running cell_v2 discover_hosts")
+            return mistral_workflow_utils.Result(
+                error="%s: %s" % (type(err).__name__, str(err))
+            )

@@ -15,6 +15,7 @@ import mock
 
 from glanceclient import exc as glance_exceptions
 import ironic_inspector_client
+from oslo_concurrency import processutils
 from oslo_utils import units
 
 from tripleo_common.actions import baremetal
@@ -330,3 +331,25 @@ class TestConfigureRootDeviceAction(base.TestCase):
                                 "Cannot find a disk",
                                 action.run)
         self.assertEqual(self.ironic.node.update.call_count, 0)
+
+
+class TestCellV2DiscoverHostsAction(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
+    def test_run(self, mock_command):
+        action = baremetal.CellV2DiscoverHostsAction()
+        action.run()
+        mock_command.assert_called_once()
+
+    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
+    def test_failure(self, mock_command):
+        mock_command.side_effect = processutils.ProcessExecutionError(
+            exit_code=1,
+            stdout='captured stdout',
+            stderr='captured stderr',
+            cmd='command'
+        )
+        action = baremetal.CellV2DiscoverHostsAction()
+        result = action.run()
+        self.assertTrue(result.is_error())
+        mock_command.assert_called_once()

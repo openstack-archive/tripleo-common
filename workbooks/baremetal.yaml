@@ -193,7 +193,7 @@ workflows:
     tasks:
 
       set_nodes_available:
-        on-success: try_power_off
+        on-success: wait_for_nova_resources
         on-error: set_status_failed_nodes_available
         with-items: uuid in <% $.node_uuids %>
         workflow: tripleo.baremetal.v1.set_node_state
@@ -208,6 +208,36 @@ workflows:
         publish:
           status: FAILED
           message: <% task(set_nodes_available).result %>
+
+      wait_for_nova_resources:
+        on-success: cell_v2_discover_hosts
+        on-error: wait_for_nova_resources_failed
+        with-items: node_uuid in <% $.node_uuids %>
+        action: nova.hypervisors_find hypervisor_hostname=<% $.node_uuid %>
+        timeout: 900 #15 minutes
+        retry:
+          delay: 30
+          count: 30
+
+      wait_for_nova_resources_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(wait_for_nova_resources).result %>
+
+      cell_v2_discover_hosts:
+        on-success: try_power_off
+        on-error: cell_v2_discover_hosts_failed
+        workflow: tripleo.baremetal.v1.cellv2_discovery
+        input:
+          node_uuids: <% $.node_uuids %>
+          queue_name: <% $.queue_name %>
+
+      cell_v2_discover_hosts_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(cell_v2_discover_hosts).result %>
 
       try_power_off:
         on-success: send_message
@@ -751,6 +781,45 @@ workflows:
               type: tripleo.baremetal.v1.create_raid_configuration
               payload:
                 status: <% $.get('status', 'FAILED') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+
+  cellv2_discovery:
+    description: Run cell_v2 host discovery
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tasks:
+
+      cell_v2_discover_hosts:
+        on-success: send_message
+        on-error: cell_v2_discover_hosts_failed
+        action: tripleo.baremetal.cell_v2_discover_hosts
+
+      cell_v2_discover_hosts_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(cell_v2_discover_hosts).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.cellv2_discovery
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
