@@ -190,8 +190,7 @@ class NodesTest(base.TestCase):
                 'pm_password': 'random', 'pm_type': 'pxe_ssh', 'name': 'node1',
                 'capabilities': 'num_nics:6'}
 
-    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
-    def test_register_all_nodes_ironic_no_hw_stats(self, mock_discovery):
+    def test_register_all_nodes_ironic_no_hw_stats(self):
         node_list = [self._get_node()]
 
         # Remove the hardware stats from the node dictionary
@@ -219,10 +218,8 @@ class NodesTest(base.TestCase):
                               address='aaa')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        mock_discovery.assert_called_once()
 
-    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
-    def test_register_all_nodes(self, mock_discovery):
+    def test_register_all_nodes(self):
         node_list = [self._get_node()]
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
@@ -243,10 +240,8 @@ class NodesTest(base.TestCase):
                               address='aaa')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        mock_discovery.assert_called_once()
 
-    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
-    def test_register_all_nodes_kernel_ramdisk(self, mock_discovery):
+    def test_register_all_nodes_kernel_ramdisk(self):
         node_list = [self._get_node()]
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
@@ -275,10 +270,8 @@ class NodesTest(base.TestCase):
                               address='aaa')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        mock_discovery.assert_called_once()
 
-    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
-    def test_register_all_nodes_uuid(self, mock_discovery):
+    def test_register_all_nodes_uuid(self):
         node_list = [self._get_node()]
         node_list[0]['uuid'] = 'abcdef'
         node_properties = {"cpus": "1",
@@ -301,10 +294,8 @@ class NodesTest(base.TestCase):
                               address='aaa')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        mock_discovery.assert_called_once()
 
-    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
-    def test_register_all_nodes_caps_dict(self, mock_discovery):
+    def test_register_all_nodes_caps_dict(self):
         node_list = [self._get_node()]
         node_list[0]['capabilities'] = {
             'num_nics': 7
@@ -328,7 +319,6 @@ class NodesTest(base.TestCase):
                               address='aaa')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
-        mock_discovery.assert_called_once()
 
     def test_register_update(self):
         node = self._get_node()
