@@ -380,3 +380,78 @@ class TestCheckFlavorsAction(base.TestCase):
         }
         action = validations.CheckFlavorsAction(**action_args)
         self.assertEqual(expected, action.run())
+
+
+class TestCheckNodeBootConfigurationAction(base.TestCase):
+    def setUp(self):
+        super(TestCheckNodeBootConfigurationAction, self).setUp()
+        self.kernel_id = '12345'
+        self.ramdisk_id = '67890'
+        self.node = {
+            'uuid': '100f2cf6-06de-480e-a73e-6fdf6c9962b7',
+            'driver_info': {
+                'deploy_kernel': '12345',
+                'deploy_ramdisk': '67890',
+            },
+            'properties': {
+                'capabilities': 'boot_option:local',
+            }
+        }
+
+    def test_run_success(self):
+        expected = mistral_workflow_utils.Result(
+            data={'errors': [], 'warnings': []}
+        )
+
+        action_args = {
+            'node': self.node,
+            'kernel_id': self.kernel_id,
+            'ramdisk_id': self.ramdisk_id,
+        }
+        action = validations.CheckNodeBootConfigurationAction(**action_args)
+        self.assertEqual(expected, action.run())
+
+    def test_run_invalid_ramdisk(self):
+        expected = mistral_workflow_utils.Result(
+            error={
+                'errors': [
+                    'Node 100f2cf6-06de-480e-a73e-6fdf6c9962b7 has an '
+                    'incorrectly configured driver_info/deploy_ramdisk. '
+                    'Expected "67890" but got "98760".'
+                ],
+                'warnings': []})
+
+        node = self.node.copy()
+        node['driver_info']['deploy_ramdisk'] = '98760'
+        action_args = {
+            'node': node,
+            'kernel_id': self.kernel_id,
+            'ramdisk_id': self.ramdisk_id,
+        }
+        action = validations.CheckNodeBootConfigurationAction(**action_args)
+        self.assertEqual(expected, action.run())
+
+    def test_no_boot_option_local(self):
+        expected = mistral_workflow_utils.Result(
+            data={
+                'errors': [],
+                'warnings': [
+                    'Node 100f2cf6-06de-480e-a73e-6fdf6c9962b7 is not '
+                    'configured to use boot_option:local in capabilities. '
+                    'It will not be used for deployment with flavors that '
+                    'require boot_option:local.'
+                ]
+            }
+        )
+
+        node = self.node.copy()
+        node['properties']['capabilities'] = 'boot_option:not_local'
+
+        action_args = {
+            'node': node,
+            'kernel_id': self.kernel_id,
+            'ramdisk_id': self.ramdisk_id,
+        }
+
+        action = validations.CheckNodeBootConfigurationAction(**action_args)
+        self.assertEqual(expected, action.run())
