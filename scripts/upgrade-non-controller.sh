@@ -16,10 +16,11 @@
 
 #
 # Utility script that will be invoked by the operator as part of the documented
-# tripleo upgrades workflow at [FIXME(marios): update this].
-# In short the upgrade scripts are delivered to the non-controller nodes as
-# part of the automated (heat delivered) controller upgrade. These are then
-# invoked from this script by the operator. See -h for options.
+# upgrades workflow. Those roles that have disable_upgrade_deployment set to
+# true will have had a /root/tripleo_upgrade_node.sh script delivered during
+# the composable ansible upgrade steps. This tripleo_upgrade_node.sh is then
+# invoked over ssh by the operator using the simple utility delivered in this
+# file. See -h for options.
 #
 set -eu
 set -o pipefail
@@ -45,8 +46,24 @@ function show_options {
     echo "                                  has the upgrade script. Also, tail"
     echo "                                  yum.log for any package update info"
     echo
-    echo "Invoke the tripleo upgrade script on non controller nodes as part of"
-    echo " the tripleo upgrade workflow."
+    echo "Invoke the /root/tripleo_upgrade_node.sh script on roles that have"
+    echo " disable_upgrade_deployment flag set true, as part of the tripleo"
+    echo " upgrade workflow. The tripleo_upgrade_node.sh is delivered when you"
+    echo " execute the composable ansible upgrade steps. This utility is used"
+    echo " by the operator to invoke the tripleo_upgrade_node.sh on a given"
+    echo " named node (by nova name or uuid). Logfiles are generated in the"
+    echo " current working directory by node name/uuid"
+    echo
+    echo "  Example invocations:"
+    echo
+    echo "    upgrade-non-controller.sh --upgrade overcloud-compute-0 "
+    echo
+    echo "  You can run on multiple nodes in parallel: "
+
+    echo "    for i in \$(seq 0 2); do "
+    echo "      upgrade-non-controller.sh --upgrade overcloud-compute-\$i &"
+    echo "    # Remove the '&' above to have these upgrade in sequence"
+    echo "    # rather than in parallel."
     echo
     exit $1
 }
@@ -72,9 +89,11 @@ while true ; do
     esac
 done
 
+LOGFILE="$SCRIPT_NAME"-$UPGRADE_NODE$QUERY_NODE
 function log {
-  echo "`date` $SCRIPT_NAME $1"
+  echo "`date` $SCRIPT_NAME $1" 2>&1 | tee -a  $LOGFILE
 }
+log "Logging to $LOGFILE"
 
 function find_nova_node_by_name_or_id {
   name_or_id=$1
@@ -114,7 +133,7 @@ if [ -n "$UPGRADE_NODE" ]; then
   confirm_script_on_node $UPGRADE_NODE
   node_ip=$(nova show $UPGRADE_NODE | grep "ctlplane network" | awk '{print $5}')
   log "Executing $UPGRADE_SCRIPT on $node_ip"
-  ssh $UPGRADE_NODE_USER@$node_ip sudo $UPGRADE_SCRIPT
+  ssh $UPGRADE_NODE_USER@$node_ip sudo $UPGRADE_SCRIPT 2>&1 | tee -a $LOGFILE
 fi
 
 if [ -n "$QUERY_NODE" ]; then
@@ -124,5 +143,5 @@ if [ -n "$QUERY_NODE" ]; then
   node_ip=$(nova show $QUERY_NODE | grep "ctlplane network" | awk '{print $5}')
   log "We can't remotely tell if the upgrade has run on $QUERY_NODE."
   log "We can check for package updates... trying to tail yum.log on $QUERY_NODE:"
-  ssh $UPGRADE_NODE_USER@$node_ip "sudo tail /var/log/yum.log"
+  ssh $UPGRADE_NODE_USER@$node_ip "sudo tail /var/log/yum.log" 2>&1 | tee -a $LOGFILE
 fi
