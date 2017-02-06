@@ -295,3 +295,92 @@ class CheckNodeBootConfigurationAction(base.TripleOAction):
             mistral_result = {'data': return_value}
 
         return mistral_workflow_utils.Result(**mistral_result)
+
+
+class VerifyProfilesAction(base.TripleOAction):
+    """Verify that the profiles have enough nodes"""
+
+    # TODO(bcrochet): The validation actions are temporary. This logic should
+    #                 move to the tripleo-validations project eventually.
+    def __init__(self, nodes, flavors):
+        super(VerifyProfilesAction, self).__init__()
+
+        self.nodes = nodes
+        self.flavors = flavors
+
+    def run(self):
+        errors = []
+        warnings = []
+
+        bm_nodes = {node['uuid']: node for node in self.nodes
+                    if node['provision_state'] in ('available', 'active')}
+        free_node_caps = {uu: self._node_get_capabilities(node)
+                          for uu, node in bm_nodes.items()}
+
+        profile_flavor_used = False
+        for flavor_name, (flavor, scale) in self.flavors.items():
+            if not scale:
+                continue
+
+            profile = flavor.get('capabilities:profile')
+
+            if not profile and len(self.flavors) > 1:
+                message = ('Error: The {flavor} flavor has no profile '
+                           'associated.\n'
+                           'Recommendation: assign a profile with openstack '
+                           'flavor set --property '
+                           '"capabilities:profile"="PROFILE_NAME" {flavor}')
+
+                errors.append(message.format(flavor=flavor_name))
+                continue
+
+            profile_flavor_used = True
+
+            assigned_nodes = [uu for uu, caps in free_node_caps.items()
+                              if caps.get('profile') == profile]
+            required_count = scale - len(assigned_nodes)
+
+            if required_count < 0:
+                warnings.append('%d nodes with profile %s won\'t be used '
+                                'for deployment now' % (-required_count,
+                                                        profile))
+                required_count = 0
+
+            for uu in assigned_nodes:
+                free_node_caps.pop(uu)
+
+            if required_count > 0:
+                message = ('Error: only {total} of {scale} requested ironic '
+                           'nodes are tagged to profile {profile} (for flavor '
+                           '{flavor}).\n'
+                           'Recommendation: tag more nodes using openstack '
+                           'baremetal node set --property "capabilities='
+                           'profile:{profile},boot_option:local" <NODE ID>')
+                errors.append(message.format(total=scale - required_count,
+                                             scale=scale,
+                                             profile=profile,
+                                             flavor=flavor_name))
+
+        nodes_without_profile = [uu for uu, caps in free_node_caps.items()
+                                 if not caps.get('profile')]
+        if nodes_without_profile and profile_flavor_used:
+            warnings.append("There are %d ironic nodes with no profile that "
+                            "will not be used: %s" % (
+                                len(nodes_without_profile),
+                                ', '.join(nodes_without_profile)))
+
+        return_value = {
+            'errors': errors,
+            'warnings': warnings,
+        }
+        if errors:
+            mistral_result = {'error': return_value}
+        else:
+            mistral_result = {'data': return_value}
+
+        return mistral_workflow_utils.Result(**mistral_result)
+
+    def _node_get_capabilities(self, node):
+        """Get node capabilities."""
+        return nodeutils.capabilities_to_dict(
+            node['properties'].get('capabilities'))

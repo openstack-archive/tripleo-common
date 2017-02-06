@@ -1,0 +1,4 @@
+---
+features:
+  - Adds an action and workflow used to verify the profiles
+    assigned to nodes and their count.
