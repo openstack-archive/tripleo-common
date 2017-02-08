@@ -15,8 +15,7 @@
 
 
 import mock
-
-import six
+import subprocess
 
 from tripleo_common.image.exception import ImageBuilderException
 from tripleo_common.image.image_builder import DibImageBuilder
@@ -41,27 +40,68 @@ class TestDibImageBuilder(base.TestCase):
         super(TestDibImageBuilder, self).setUp()
         self.builder = DibImageBuilder()
 
-    # The open method is in a different module for
-    # python2 vs. python3
-    if six.PY2:
-        open_module = '__builtin__.open'
-    else:
-        open_module = 'builtins.open'
-
-    @mock.patch(open_module)
-    @mock.patch('subprocess.check_call')
-    def test_build_image(self, mock_check_call, mock_open):
+    @mock.patch('tripleo_common.image.image_builder.open',
+                create=True)
+    @mock.patch('subprocess.Popen')
+    def test_build_image(self, mock_popen, mock_open):
+        mock_process = mock.Mock()
+        mock_process.stdout.readline.side_effect = ['foo\n', 'bar\n', '']
+        mock_process.poll.side_effect = [0, 0, 1]
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        mock_open.return_value = mock.MagicMock()
+        mock_file = mock.Mock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        self.builder.logger = mock.Mock()
         self.builder.build_image('image/path', 'imgtype', 'node_dist', 'arch',
                                  ['element1', 'element2'], ['options'],
                                  ['package1', 'package2'],
                                  {'skip_base': True,
                                   'docker_target': 'docker-target'})
-        mock_check_call.assert_called_once_with(
+        mock_popen.assert_called_once_with(
             ['disk-image-create', '-a', 'arch', '-o', 'image/path',
              '-t', 'imgtype',
              '-p', 'package1,package2', 'options', '-n',
              '--docker-target', 'docker-target', 'node_dist',
              'element1', 'element2'],
-            stdout=mock.ANY,
-            stderr=mock.ANY)
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         mock_open.assert_called_once_with('image/path.log', 'w')
+        self.assertEqual([mock.call(u'foo\n'),
+                          mock.call(u'bar\n')],
+                         mock_file.write.mock_calls)
+        self.builder.logger.info.assert_has_calls([mock.call(u'foo'),
+                                                   mock.call(u'bar')])
+
+    @mock.patch('tripleo_common.image.image_builder.open',
+                create=True)
+    @mock.patch('subprocess.Popen')
+    def test_build_image_fails(self, mock_popen, mock_open):
+        mock_process = mock.Mock()
+        mock_process.stdout.readline.side_effect = ['error\n', '']
+        mock_process.poll.side_effect = [0, 1]
+        mock_process.returncode = 1
+        mock_popen.return_value = mock_process
+        mock_open.return_value = mock.MagicMock()
+        mock_file = mock.Mock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        self.builder.logger = mock.Mock()
+        self.assertRaises(subprocess.CalledProcessError,
+                          self.builder.build_image,
+                          'image/path', 'imgtype', 'node_dist', 'arch',
+                          ['element1', 'element2'], ['options'],
+                          ['package1', 'package2'],
+                          {'skip_base': True,
+                           'docker_target': 'docker-target'})
+        mock_popen.assert_called_once_with(
+            ['disk-image-create', '-a', 'arch', '-o', 'image/path',
+             '-t', 'imgtype',
+             '-p', 'package1,package2', 'options', '-n',
+             '--docker-target', 'docker-target', 'node_dist',
+             'element1', 'element2'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        mock_open.assert_called_once_with('image/path.log', 'w')
+        self.assertEqual([mock.call(u'error\n')],
+                         mock_file.write.mock_calls)
+        self.builder.logger.info.assert_has_calls([mock.call(u'error')])

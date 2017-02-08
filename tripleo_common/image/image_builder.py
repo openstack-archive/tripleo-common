@@ -19,6 +19,7 @@ import logging
 import os
 import six
 import subprocess
+import sys
 
 from tripleo_common.image.exception import ImageBuilderException
 
@@ -44,9 +45,30 @@ class DibImageBuilder(ImageBuilder):
     """Build images using diskimage-builder"""
 
     logger = logging.getLogger(__name__ + '.DibImageBuilder')
+    handler = logging.StreamHandler(sys.stdout)
+
+    # NOTE(bnemec): This may not play nicely with callers other than the
+    # openstackclient.  However, since at this time there are no such other
+    # callers we can deal with that if/when it happens.
+    def _configure_logging(self):
+        """Ensure our info level log output gets seen
+
+        The default openstackclient logging level is warning, which means
+        our info messages for the image build are not visible to the user.
+        By adding our own local handler we can ensure that the messages get
+        logged in a visible way.
+
+        To avoid duplicate log messages, we need to not propagate them to
+        parent loggers.  Otherwise we end up with both our handler and the
+        parent handler logging warning and above messages.
+        """
+        if not self.logger.handlers:
+            self.logger.addHandler(self.handler)
+            self.logger.propagate = False
 
     def build_image(self, image_path, image_type, node_dist, arch, elements,
                     options, packages, extra_options={}):
+        self._configure_logging()
         env = os.environ.copy()
 
         elements_path = env.get('ELEMENTS_PATH')
@@ -90,6 +112,23 @@ class DibImageBuilder(ImageBuilder):
         log_file = '%s.log' % image_path
 
         self.logger.info('Running %s' % cmd)
-        self.logger.debug('Logging output to %s' % log_file)
-        with open(log_file, 'w') as log_fd:
-            subprocess.check_call(cmd, stdout=log_fd, stderr=log_fd)
+        self.logger.info('Logging output to %s' % log_file)
+        process = subprocess.Popen(cmd,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+        with open(log_file, 'w') as f:
+            while True:
+                line = process.stdout.readline()
+                try:
+                    line = line.decode('utf-8')
+                except AttributeError:
+                    # In Python 3 there is no decode method, but we don't need
+                    # to decode because strings are always unicode.
+                    pass
+                if line:
+                    self.logger.info(line.rstrip())
+                    f.write(line)
+                if line == '' and process.poll() is not None:
+                    break
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
