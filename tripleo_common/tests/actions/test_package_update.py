@@ -139,5 +139,13 @@ class UpdateStackActionTest(base.TestCase):
             DeployIdentifier=1473366264,
             UpdateIdentifier=1473366264,
             existing='true',
-            timeout_mins=1
-        )
+            timeout_mins=1,
+            environment={
+                'resource_registry': {
+                    'resources': {
+                        '*': {
+                            '*': {'UpdateDeployment': {'hooks': 'pre-update'}}
+                        }
+                    }
+                }
+            })

@@ -89,18 +89,6 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             'name': wf_env.name,
             'variables': wf_env.variables,
         }
-        template_utils.deep_update(wf_env.variables, {
-            'resource_registry': {
-                'resources': {
-                    '*': {
-                        '*': {
-                            constants.UPDATE_RESOURCE_NAME: {
-                                'hooks': 'pre-update'}
-                        }
-                    }
-                }
-            }
-        })
 
         # store params changes back to db before call to process templates
         wc.environments.update(**env_kwargs)
@@ -114,6 +102,22 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             return processed_data
 
         stack_args = processed_data.copy()
+
+        env = stack_args.get('environment', {})
+        template_utils.deep_update(env, {
+            'resource_registry': {
+                'resources': {
+                    '*': {
+                        '*': {
+                            constants.UPDATE_RESOURCE_NAME: {
+                                'hooks': 'pre-update'}
+                        }
+                    }
+                }
+            }
+        })
+        stack_args['environment'] = env
+
         stack_args['timeout_mins'] = self.timeout_mins
         stack_args['existing'] = 'true'
 
