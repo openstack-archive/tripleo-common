@@ -37,6 +37,8 @@ disk_images:
       - python-heat-agent-json-file
     options:
       - "--min-tmpfs 5"
+    environment:
+      DIB_PYTHON_VERSION: '2'
   -
     imagename: ironic-python-agent
     arch: amd64
@@ -56,4 +58,5 @@ disk_images:
       - python-hardware-detect
     options:
       - "--min-tmpfs=5"
-
+    environment:
+      DIB_PYTHON_VERSION: '2'
