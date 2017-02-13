@@ -66,7 +66,7 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         except heat_exc.HTTPNotFound:
             msg = "Error retrieving stack: %s" % self.container
             LOG.exception(msg)
-            return mistral_workflow_utils.Result("", msg)
+            return mistral_workflow_utils.Result(error=msg)
 
         parameters = dict()
         timestamp = int(time.time())
@@ -80,7 +80,7 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         except Exception:
             msg = "Error retrieving mistral environment: %s" % self.container
             LOG.exception(msg)
-            return mistral_workflow_utils.Result("", msg)
+            return mistral_workflow_utils.Result(error=msg)
 
         if 'parameter_defaults' not in wf_env.variables:
             wf_env.variables['parameter_defaults'] = {}
