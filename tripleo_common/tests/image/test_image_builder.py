@@ -66,7 +66,8 @@ class TestDibImageBuilder(base.TestCase):
              'element1', 'element2'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        mock_open.assert_called_once_with('image/path.log', 'w')
+        mock_open.assert_called_once_with(
+            'image/path.log', 'w', encoding='utf-8')
         self.assertEqual([mock.call(u'foo\n'),
                           mock.call(u'bar\n')],
                          mock_file.write.mock_calls)
@@ -101,7 +102,8 @@ class TestDibImageBuilder(base.TestCase):
              'element1', 'element2'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        mock_open.assert_called_once_with('image/path.log', 'w')
+        mock_open.assert_called_once_with(
+            'image/path.log', 'w', encoding='utf-8')
         self.assertEqual([mock.call(u'error\n')],
                          mock_file.write.mock_calls)
         self.builder.logger.info.assert_has_calls([mock.call(u'error')])

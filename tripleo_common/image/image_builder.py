@@ -23,6 +23,11 @@ import sys
 
 from tripleo_common.image.exception import ImageBuilderException
 
+if sys.version_info[0] < 3:
+    import codecs
+    _open = open
+    open = codecs.open
+
 
 @six.add_metaclass(abc.ABCMeta)
 class ImageBuilder(object):
@@ -116,7 +121,7 @@ class DibImageBuilder(ImageBuilder):
         process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
-        with open(log_file, 'w') as f:
+        with open(log_file, 'w', encoding='utf-8') as f:
             while True:
                 line = process.stdout.readline()
                 try:
