@@ -119,8 +119,21 @@ class TripleOAction(base.Action):
         keystone_endpoint = keystone_utils.get_endpoint_for_project('keystone')
         nova_endpoint = keystone_utils.get_endpoint_for_project('nova')
 
-        nc = nova_client(2, username=ctx.user_name, auth_token=ctx.auth_token,
-                         auth_url=keystone_endpoint.url, url=nova_endpoint.url,
-                         project_id=ctx.project_id)
-        nc.client.management_url = nova_endpoint.url
-        return nc
+        client = nova_client(
+            2,
+            username=None,
+            api_key=None,
+            service_type='compute',
+            auth_token=ctx.auth_token,
+            tenant_id=ctx.project_id,
+            region_name=keystone_endpoint.region,
+            auth_url=keystone_endpoint.url,
+            insecure=ctx.insecure
+        )
+
+        client.client.management_url = keystone_utils.format_url(
+            nova_endpoint.url,
+            {'tenant_id': ctx.project_id}
+        )
+
+        return client
