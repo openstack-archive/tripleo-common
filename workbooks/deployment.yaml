@@ -43,10 +43,7 @@ workflows:
                 stderr: <% task(deploy_config).result.deploy_stderr %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>
 
   deploy_on_servers:
 
@@ -102,10 +99,7 @@ workflows:
                 status: FAILED
                 message: <% task(deploy_on_servers).result %>
                 execution: <% execution() %>
-        on-success: fail_workflow
-
-      fail_workflow:
-        action: std.fail
+        on-success: fail
 
   deploy_plan:
 
@@ -225,7 +219,4 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>

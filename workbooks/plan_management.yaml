@@ -65,10 +65,7 @@ workflows:
                 message: <% $.message or '' %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>
 
   update_deployment_plan:
     input:
@@ -131,10 +128,7 @@ workflows:
                 message: <% $.message or '' %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>
 
   create_default_deployment_plan:
     input:
@@ -235,10 +229,7 @@ workflows:
                 message: <% $.message or '' %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>
 
   get_passwords:
     description: Retrieves passwords for a given plan
@@ -299,7 +290,4 @@ workflows:
                 message: <% $.message or '' %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>

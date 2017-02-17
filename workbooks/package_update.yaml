@@ -37,6 +37,8 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
 
   # Clear an update breakpoint
   clear_breakpoints:
@@ -70,6 +72,8 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
 
   cancel_stack_update:
     description: Cancel a currently running stack update
@@ -101,3 +105,5 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>

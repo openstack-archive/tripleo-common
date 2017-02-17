@@ -60,10 +60,7 @@ workflows:
                 stderr: <% $.stderr %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>
 
   run_validations:
     input:
@@ -115,10 +112,7 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>
 
   run_groups:
     input:
@@ -178,10 +172,7 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 execution: <% execution() %>
         on-success:
-          - fail_workflow: <% $.get('status') = "FAILED" %>
-
-      fail_workflow:
-        action: std.fail
+          - fail: <% $.get('status') = "FAILED" %>
 
   list:
     input:
