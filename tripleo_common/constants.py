@@ -23,6 +23,9 @@ OVERCLOUD_J2_NAME = "overcloud.j2.yaml"
 #: The name of custom roles data file used when rendering the jinja template.
 OVERCLOUD_J2_ROLES_NAME = "roles_data.yaml"
 
+#: The name of custom roles network data file used when rendering j2 templates.
+OVERCLOUD_J2_NETWORKS_NAME = "network_data.yaml"
+
 #: The name of custom roles excl file used when rendering the jinja template.
 OVERCLOUD_J2_EXCLUDES = "j2_excludes.yaml"
 

@@ -161,6 +161,16 @@ class ProcessTemplatesAction(base.TripleOAction):
                      % constants.OVERCLOUD_J2_ROLES_NAME)
             return
 
+        try:
+            j2_network_file = swift.get_object(
+                self.container, constants.OVERCLOUD_J2_NETWORKS_NAME)[1]
+            network_data = yaml.safe_load(j2_network_file)
+        except swiftexceptions.ClientException:
+            # Until t-h-t contains network_data.yaml we tolerate a missing file
+            LOG.warning("No %s file found, ignoring"
+                        % constants.OVERCLOUD_J2_ROLES_NAME)
+            network_data = []
+
         j2_excl_data = self._get_j2_excludes_file()
 
         try:
@@ -211,7 +221,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             elif f.endswith('.j2.yaml'):
                 LOG.info("jinja2 rendering %s" % f)
                 j2_template = swift.get_object(self.container, f)[1]
-                j2_data = {'roles': role_data}
+                j2_data = {'roles': role_data, 'networks': network_data}
                 out_f = f.replace('.j2.yaml', '.yaml')
                 self._j2_render_and_put(j2_template, j2_data, out_f)
 

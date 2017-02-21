@@ -40,6 +40,11 @@ ROLE_DATA_YAML = r"""
   name: CustomRole
 """
 
+NETWORK_DATA_YAML = r"""
+-
+  name: anetwork
+"""
+
 EXPECTED_JINJA_RESULT = r"""
 # Jinja loop for Role in role_data.yaml
 
@@ -239,11 +244,15 @@ class ProcessTemplatesActionTest(base.TestCase):
                 return ['', J2_EXCLUDES]
             elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
                 return ['', ROLE_DATA_YAML]
+            elif args[1] == constants.OVERCLOUD_J2_NETWORKS_NAME:
+                return ['', NETWORK_DATA_YAML]
 
         def return_container_files(*args):
-            return ('headers', [{'name': constants.OVERCLOUD_J2_NAME},
-                                {'name': 'foo.j2.yaml'},
-                                {'name': constants.OVERCLOUD_J2_ROLES_NAME}])
+            return ('headers', [
+                {'name': constants.OVERCLOUD_J2_NAME},
+                {'name': 'foo.j2.yaml'},
+                {'name': constants.OVERCLOUD_J2_ROLES_NAME},
+                {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}])
 
         # setup swift
         swift = mock.MagicMock()
@@ -289,11 +298,15 @@ class ProcessTemplatesActionTest(base.TestCase):
                 return ['', J2_EXCLUDES]
             elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
                 return ['', ROLE_DATA_DISABLE_CONSTRAINTS_YAML]
+            elif args[1] == constants.OVERCLOUD_J2_NETWORKS_NAME:
+                return ['', NETWORK_DATA_YAML]
 
         def return_container_files(*args):
-            return ('headers', [{'name': constants.OVERCLOUD_J2_NAME},
-                                {'name': 'disable-constraints.role.j2.yaml'},
-                                {'name': constants.OVERCLOUD_J2_ROLES_NAME}])
+            return ('headers', [
+                {'name': constants.OVERCLOUD_J2_NAME},
+                {'name': 'disable-constraints.role.j2.yaml'},
+                {'name': constants.OVERCLOUD_J2_ROLES_NAME},
+                {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}])
 
         # setup swift
         swift = mock.MagicMock()
