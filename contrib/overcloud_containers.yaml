@@ -1,10 +1,94 @@
 uploads:
+    - imagename: tripleoupstream/centos-binary-glance-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-heat-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-heat-api-cfn:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-heat-engine:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-ironic-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-ironic-conductor:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-ironic-pxe:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-keystone:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-mariadb:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-memcached:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-mistral-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-mistral-engine:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-mistral-executor:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-mongodb:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-neutron-dhcp-agent:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-neutron-server:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-nova-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-nova-base:latest
+      uploader: docker
+      pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-nova-compute:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-nova-conductor:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-nova-compute-ironic:latest
       uploader: docker
       pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-nova-libvirt:latest
       uploader: docker
       pull_source: docker.io
-    - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:latest
+    - imagename: tripleoupstream/centos-binary-nova-placement-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-nova-scheduler:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-rabbitmq:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-swift-account:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-swift-container:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-swift-proxy-server:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-swift-object:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-zaqar:latest
       uploader: docker
       pull_source: docker.io
