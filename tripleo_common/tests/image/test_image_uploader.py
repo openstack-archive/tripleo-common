@@ -39,7 +39,6 @@ filedata = six.u(
     - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
       uploader: docker
       pull_source: docker.io
-      push_destination: localhost:8787
 """)
 
 
@@ -53,8 +52,9 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('tripleo_common.image.base.open',
                 mock.mock_open(read_data=filedata), create=True)
     @mock.patch('os.path.isfile', return_value=True)
+    @mock.patch('fcntl.ioctl', side_effect=Exception)
     @mock.patch('tripleo_common.image.image_uploader.Client')
-    def test_file_parsing(self, mockpath, mockdocker):
+    def test_file_parsing(self, mockpath, mockioctl, mockdocker):
         print(filedata)
         manager = ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()
@@ -65,7 +65,7 @@ class TestImageUploadManager(base.TestCase):
                                       key=operator.itemgetter('imagename'))
         sorted_parsed_data = sorted(parsed_data,
                                     key=operator.itemgetter('imagename'))
-        self.assertEqual(sorted_parsed_data, sorted_expected_data)
+        self.assertEqual(sorted_expected_data, sorted_parsed_data)
 
 
 class TestImageUploader(base.TestCase):
