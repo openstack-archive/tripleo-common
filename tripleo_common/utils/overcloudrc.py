@@ -89,6 +89,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
         'no_proxy': ','.join(no_proxy_list),
         'PYTHONWARNINGS': ('"ignore:Certificate has no, ignore:A true '
                            'SSLContext object is not available"'),
+        'OS_AUTH_TYPE': 'password',
         'OS_PASSWORD': admin_password,
         'OS_AUTH_URL': overcloud_endpoint,
         'OS_BAREMETAL_API_VERSION': constants.DEFAULT_BAREMETAL_API_VERSION,

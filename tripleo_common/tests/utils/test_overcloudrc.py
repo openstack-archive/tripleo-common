@@ -43,3 +43,5 @@ class OvercloudRcTest(base.TestCase):
         expected_prompt = 'export PROMPT_COMMAND="echo -n \'(OVERCAST) \'"'
         self.assertIn(expected_prompt, result['overcloudrc'])
         self.assertIn(expected_prompt, result['overcloudrc.v3'])
+        self.assertIn("OS_AUTH_TYPE=password", result['overcloudrc'])
+        self.assertIn("OS_AUTH_TYPE=password", result['overcloudrc.v3'])
