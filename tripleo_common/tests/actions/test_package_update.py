@@ -39,6 +39,11 @@ class ClearBreakpointsActionTest(base.TestCase):
         self.assertEqual(None, result)
         mock_compute_client.assert_called_once()
         mock_orchestration_client.assert_called_once()
+        mock_update_manager.assert_called_once_with(
+            mock_orchestration_client(),
+            mock_compute_client(),
+            self.stack_id,
+            stack_fields={})
         mock_update_manager().clear_breakpoints.assert_called_once_with(
             self.refs)
 
@@ -62,6 +67,11 @@ class CancelStackUpdateActionTest(base.TestCase):
         self.assertEqual(None, result)
         mock_compute_client.assert_called_once()
         mock_orchestration_client.assert_called_once()
+        mock_update_manager.assert_called_once_with(
+            mock_orchestration_client(),
+            mock_compute_client(),
+            self.stack_id,
+            stack_fields={})
         mock_update_manager().cancel.assert_called_once()
 
 

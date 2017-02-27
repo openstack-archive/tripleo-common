@@ -36,7 +36,8 @@ class ClearBreakpointsAction(base.TripleOAction):
     def run(self):
         heat = self.get_orchestration_client()
         nova = self.get_compute_client()
-        update_manager = PackageUpdateManager(heat, nova, self.stack_id)
+        update_manager = PackageUpdateManager(
+            heat, nova, self.stack_id, stack_fields={})
         update_manager.clear_breakpoints(self.refs)
 
 
@@ -48,7 +49,8 @@ class CancelStackUpdateAction(base.TripleOAction):
     def run(self):
         heat = self.get_orchestration_client()
         nova = self.get_compute_client()
-        update_manager = PackageUpdateManager(heat, nova, self.stack_id)
+        update_manager = PackageUpdateManager(
+            heat, nova, self.stack_id, stack_fields={})
         update_manager.cancel()
 
 
