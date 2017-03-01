@@ -97,7 +97,7 @@ workflows:
       send_message:
         action: zaqar.queue_post
         input:
-          queue_name: <% $.queue_name
+          queue_name: <% $.queue_name %>
           messages:
             body:
               type: tripleo.package_update.v1.cancel_stack_update
