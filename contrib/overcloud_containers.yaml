@@ -47,6 +47,9 @@ uploads:
     - imagename: tripleoupstream/centos-binary-neutron-l3-agent:latest
       uploader: docker
       pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-neutron-metadata-agent:latest
+      uploader: docker
+      pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:latest
       uploader: docker
       pull_source: docker.io
