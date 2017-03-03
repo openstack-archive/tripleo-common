@@ -310,3 +310,17 @@ class CellV2DiscoverHostsAction(base.TripleOAction):
             return mistral_workflow_utils.Result(
                 error="%s: %s" % (type(err).__name__, str(err))
             )
+
+
+class GetProfileAction(base.TripleOAction):
+    """Return the profile associated with the given node """
+
+    def __init__(self, node):
+        super(GetProfileAction, self).__init__()
+        self.node = node
+
+    def run(self):
+        result = {}
+        result['profile'] = nodes.get_node_profile(self.node)
+        result['uuid'] = self.node.get('uuid')
+        return result

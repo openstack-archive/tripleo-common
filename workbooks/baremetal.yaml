@@ -687,6 +687,54 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  nodes_with_profile:
+    description: Find nodes with a specific profile
+    input:
+      - profile
+      - queue_name: tripleo
+
+    tasks:
+      get_available_nodes:
+        action: ironic.node_list maintenance=false provision_state='available' detail=true
+        on-success: get_matching_nodes
+        on-error: set_status_failed_get_available_nodes
+
+      get_matching_nodes:
+        with-items: node in <% task(get_available_nodes).result %>
+        action: tripleo.baremetal.get_profile node=<% $.node %>
+        on-success: send_message
+        on-error: set_status_failed_get_matching_nodes
+        publish:
+          matching_nodes: <% let(input_profile_name => $.profile) -> task(get_matching_nodes).result.where($.profile = $input_profile_name).uuid %>
+
+      set_status_failed_get_available_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_available_nodes).result %>
+
+      set_status_failed_get_matching_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_matching_nodes).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.nodes_with_profile
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                matching_nodes: <% $.matching_nodes or [] %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   create_raid_configuration:
     description: Create and apply RAID configuration for given nodes
     input:
