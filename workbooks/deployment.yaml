@@ -121,7 +121,7 @@ workflows:
           queue_name: <% $.queue_name %>
         on-complete:
           - run_validations: <% $.run_validations %>
-          - get_heat_stack: <% not $.run_validations %>
+          - check_container: <% not $.run_validations %>
 
       run_validations:
         workflow: tripleo.validations.v1.run_groups
@@ -130,7 +130,7 @@ workflows:
             - 'pre-deployment'
           plan: <% $.container %>
           queue_name: <% $.queue_name %>
-        on-success: get_heat_stack
+        on-success: check_container
         on-error: set_validations_failed
 
       set_validations_failed:
@@ -138,19 +138,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(run_validations).result %>
-
-      get_heat_stack:
-        action: heat.stacks_get stack_id=<% $.container %>
-        on-error: check_container
-        on-success:
-          - set_stack_in_progress: <% "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
-          - deploy: <% not "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
-
-      set_stack_in_progress:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: The Heat stack is busy.
 
       check_container:
         action: swift.head_container container=<% $.container %>
@@ -190,7 +177,20 @@ workflows:
           parameters:
             SwiftRingPutTempurl: <% task(put_tempurl).result %>
           container: <% $.container %>
-        on-success: deploy
+        on-success: get_heat_stack
+
+      get_heat_stack:
+        action: heat.stacks_get stack_id=<% $.container %>
+        on-error: deploy
+        on-success:
+          - set_stack_in_progress: <% "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
+          - deploy: <% not "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
+
+      set_stack_in_progress:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: The Heat stack is busy.
 
       deploy:
         action: tripleo.deployment.deploy
