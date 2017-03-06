@@ -1,5 +1,26 @@
 uploads:
+    - imagename: tripleoupstream/centos-binary-aodh-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-aodh-evaluator:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-aodh-notifier:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-aodh-listener:latest
+      uploader: docker
+      pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-glance-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-gnocchi-api:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-gnocchi-metricd:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-gnocchi-statsd:latest
       uploader: docker
       pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-heat-api:latest
@@ -75,6 +96,9 @@ uploads:
       uploader: docker
       pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-nova-scheduler:latest
+      uploader: docker
+      pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-panko-api:latest
       uploader: docker
       pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-rabbitmq:latest
