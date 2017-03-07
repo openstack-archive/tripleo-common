@@ -259,7 +259,8 @@ class GenerateFencingParametersAction(base.TripleOAction):
             if node["pm_type"] == "pxe_ssh":
                 # Ironic fencing driver
                 node_data["agent"] = "fence_ironic"
-                params["action"] = self.fence_action
+                if self.fence_action:
+                    params["action"] = self.fence_action
                 params["auth_url"] = self.os_auth["auth_url"]
                 params["login"] = self.os_auth["login"]
                 params["passwd"] = self.os_auth["passwd"]
@@ -272,7 +273,8 @@ class GenerateFencingParametersAction(base.TripleOAction):
             elif node["pm_type"].split('_')[1] in ("ipmitool", "ilo", "drac"):
                 # IPMI fencing driver
                 node_data["agent"] = "fence_ipmilan"
-                params["action"] = self.fence_action
+                if self.fence_action:
+                    params["action"] = self.fence_action
                 params["ipaddr"] = node["pm_addr"]
                 params["passwd"] = node["pm_password"]
                 params["login"] = node["pm_user"]
