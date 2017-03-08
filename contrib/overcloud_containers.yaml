@@ -29,6 +29,9 @@ uploads:
     - imagename: tripleoupstream/centos-binary-heat-api-cfn:latest
       uploader: docker
       pull_source: docker.io
+    - imagename: tripleoupstream/centos-binary-heat-api-cloudwatch:latest
+      uploader: docker
+      pull_source: docker.io
     - imagename: tripleoupstream/centos-binary-heat-engine:latest
       uploader: docker
       pull_source: docker.io
