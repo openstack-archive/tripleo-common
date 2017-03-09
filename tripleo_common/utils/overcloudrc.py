@@ -77,6 +77,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
                         [no_proxy, overcloud_host, overcloud_admin_vip])
 
     rc_params = {
+        'PROMPT_COMMAND': '"echo -n \'(%s) \'"' % stack.stack_name.upper(),
         'NOVA_VERSION': '1.1',
         'COMPUTE_API_VERSION': '1.1',
         'OS_USERNAME': 'admin',

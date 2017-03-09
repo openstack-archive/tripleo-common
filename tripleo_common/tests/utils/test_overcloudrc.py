@@ -40,3 +40,6 @@ class OvercloudRcTest(base.TestCase):
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc.v3'])
         self.assertNotIn("OS_IDENTITY_API_VERSION=3", result['overcloudrc'])
         self.assertIn("OS_IDENTITY_API_VERSION=3", result['overcloudrc.v3'])
+        expected_prompt = 'export PROMPT_COMMAND="echo -n \'(OVERCAST) \'"'
+        self.assertIn(expected_prompt, result['overcloudrc'])
+        self.assertIn(expected_prompt, result['overcloudrc.v3'])
