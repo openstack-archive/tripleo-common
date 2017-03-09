@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    The default ``OS_BAREMETAL_API_VERSION`` and ``IRONIC_API_VERSION`` in
+    ``overcloudrc`` were bumped to 1.29, which corresponds to Ocata final and
+    allows using all recent features without specifying an explicit version.

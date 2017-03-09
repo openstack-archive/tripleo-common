@@ -16,6 +16,8 @@ import socket
 
 from six.moves import urllib
 
+from tripleo_common import constants
+
 
 def get_service_ips(stack):
     service_ips = {}
@@ -88,6 +90,8 @@ def create_overcloudrc(stack, no_proxy, admin_password):
                            'SSLContext object is not available"'),
         'OS_PASSWORD': admin_password,
         'OS_AUTH_URL': overcloud_endpoint,
+        'OS_BAREMETAL_API_VERSION': constants.DEFAULT_BAREMETAL_API_VERSION,
+        'IRONIC_API_VERSION': constants.DEFAULT_BAREMETAL_API_VERSION,
     }
 
     overcloudrc = CLEAR_ENV
