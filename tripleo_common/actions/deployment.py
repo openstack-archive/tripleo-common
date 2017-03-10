@@ -20,6 +20,7 @@ from heatclient.common import deployment_utils
 from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
 from mistralclient.api import base as mistralclient_exc
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
@@ -172,6 +173,16 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         stack_args['timeout_mins'] = self.timeout_mins
 
         if stack_is_new:
+            swift_client = self.get_object_client()
+            try:
+                swift_client.copy_object(
+                    "%s-swift-rings" % self.container, "swift-rings.tar.gz",
+                    "%s-swift-rings/%s-%d" % (
+                        self.container, "swift-rings.tar.gz", time.time()))
+                swift_client.delete_object(
+                    "%s-swift-rings" % self.container, "swift-rings.tar.gz")
+            except swiftexceptions.ClientException:
+                pass
             LOG.info("Perfoming Heat stack create")
             return heat.stacks.create(**stack_args)
 

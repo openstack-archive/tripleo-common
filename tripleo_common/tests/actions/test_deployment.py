@@ -260,6 +260,11 @@ class DeployStackActionTest(base.TestCase):
             template={'heat_template_version': '2016-04-30'},
             timeout_mins=1,
         )
+        swift.delete_object.assert_called_once_with(
+            "overcloud-swift-rings", "swift-rings.tar.gz")
+        swift.copy_object.assert_called_once_with(
+            "overcloud-swift-rings", "swift-rings.tar.gz",
+            "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
 
 
 class OvercloudRcActionTestCase(base.TestCase):
