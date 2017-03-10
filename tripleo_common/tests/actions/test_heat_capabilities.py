@@ -270,6 +270,37 @@ class UpdateCapabilitiesActionTest(base.TestCase):
             action.run())
 
     @mock.patch(
+        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
+    def test_run_purge_missing(self, get_workflow_client_mock):
+
+        # setup mistral
+        mistral = mock.MagicMock()
+        mocked_env = mock.MagicMock()
+        mocked_env.variables = {
+            'environments': [
+                {'path': '/path/to/overcloud-default-env.yaml'},
+                {'path': '/path/to/ceph-storage-env.yaml'},
+            ]
+        }
+        mistral.environments.get.return_value = mocked_env
+        get_workflow_client_mock.return_value = mistral
+
+        environments = {
+            '/path/to/overcloud-default-env.yaml': True,
+            '/path/to/network-isolation.json': False,
+            '/path/to/poc-custom-env.yaml': True
+        }
+
+        action = heat_capabilities.UpdateCapabilitiesAction(
+            environments, self.container_name, True)
+        self.assertEqual({
+            'environments': [
+                {'path': '/path/to/overcloud-default-env.yaml'},
+                {'path': '/path/to/poc-custom-env.yaml'}
+            ]},
+            action.run())
+
+    @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')

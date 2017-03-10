@@ -145,16 +145,24 @@ class UpdateCapabilitiesAction(base.TripleOAction):
     Takes a list of environment files and depending on the value of the
     enabled flag, adds or removes them from the Mistral Environment.
 
-    :param environments: list of environments
+    :param environments: map of environments {'environment_path': True}
+                         the value passed can be false for disabled
+                         environments, these will be removed from the
+                         mistral environment.
     :param container: name of the swift container / plan name
+    :param purge_missing: remove any environments from the mistral environment
+                          that aren't included in the environments map
+                          defaults to False
     :return: the updated mistral environment
     """
 
     def __init__(self, environments,
-                 container=constants.DEFAULT_CONTAINER_NAME):
+                 container=constants.DEFAULT_CONTAINER_NAME,
+                 purge_missing=False):
         super(UpdateCapabilitiesAction, self).__init__()
         self.container = container
         self.environments = environments
+        self.purge_missing = purge_missing
 
     def run(self):
         mistral_client = self.get_workflow_client()
@@ -180,6 +188,11 @@ class UpdateCapabilitiesAction(base.TripleOAction):
             else:
                 if found:
                     mistral_env.variables['environments'].remove({'path': k})
+
+        if self.purge_missing:
+            for env in mistral_env.variables['environments']:
+                if env.get('path') not in self.environments:
+                    mistral_env.variables['environments'].remove(env)
 
         env_kwargs = {
             'name': mistral_env.name,
