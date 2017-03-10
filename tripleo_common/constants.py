@@ -116,3 +116,6 @@ PLAN_ENVIRONMENT = 'plan-environment.yaml'
 DEFAULT_DEPLOY_KERNEL_NAME = 'bm-deploy-kernel'
 
 DEFAULT_DEPLOY_RAMDISK_NAME = 'bm-deploy-ramdisk'
+
+# The name for the swift container to host the cache for tripleo
+TRIPLEO_CACHE_CONTAINER = "__cache__"

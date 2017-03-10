@@ -125,6 +125,7 @@ class ProcessTemplatesAction(base.TripleOAction):
         try:
             # write the template back to the plan container
             LOG.info("Writing rendered template %s" % yaml_f)
+            self.cache_delete(self.container, "tripleo.parameters.get")
             swift.put_object(
                 self.container, yaml_f, r_template)
         except swiftexceptions.ClientException as ex:

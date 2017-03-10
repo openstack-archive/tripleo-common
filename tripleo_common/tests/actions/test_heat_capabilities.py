@@ -236,9 +236,11 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         super(UpdateCapabilitiesActionTest, self).setUp()
         self.container_name = 'test-container'
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run(self, get_workflow_client_mock):
+    def test_run(self, get_workflow_client_mock, mock_cache):
 
         # setup mistral
         mistral = mock.MagicMock()
@@ -267,9 +269,16 @@ class UpdateCapabilitiesActionTest(base.TestCase):
             ]},
             action.run())
 
+        mock_cache.assert_called_once_with(
+            self.container_name,
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run_purge_missing(self, get_workflow_client_mock):
+    def test_run_purge_missing(self, get_workflow_client_mock, mock_cache):
 
         # setup mistral
         mistral = mock.MagicMock()
@@ -297,6 +306,10 @@ class UpdateCapabilitiesActionTest(base.TestCase):
                 {'path': '/path/to/poc-custom-env.yaml'}
             ]},
             action.run())
+        mock_cache.assert_called_once_with(
+            self.container_name,
+            "tripleo.parameters.get"
+        )
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_object_client')
