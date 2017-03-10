@@ -254,6 +254,11 @@ class GenerateFencingParametersAction(base.TripleOAction):
                 mac_addr = node["mac"][0]
                 node_data["host_mac"] = mac_addr
 
+                # If the MAC isn't in the hostmap, this node hasn't been
+                # provisioned, so no fencing parameters are necessary
+                if mac_addr not in hostmap:
+                    continue
+
             # Build up fencing parameters based on which Ironic driver this
             # node is using
             if node["pm_type"] == "pxe_ssh":
