@@ -23,6 +23,7 @@ disk_images:
       - pip-and-virtualenv-override
       - ntp
       - overcloud-dracut
+      - remove-machine-id
     packages:
       - python-psutil
       - python-debtcollector
