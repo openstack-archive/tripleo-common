@@ -21,6 +21,7 @@ disk_images:
       - enable-packages-install
       - pip-and-virtualenv-override
       - overcloud-dracut
+      - remove-machine-id
     packages:
       - python-psutil
       - python-debtcollector
