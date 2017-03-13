@@ -48,7 +48,7 @@ class BaseImageManager(object):
         for config_file in self.config_files:
             if os.path.isfile(config_file):
                 with open(config_file) as cf:
-                    data = yaml.load(cf.read()).get(section)
+                    data = yaml.safe_load(cf.read()).get(section)
                     if not data:
                         return None
                     self.logger.debug('%s JSON: %s' % (section, str(data)))

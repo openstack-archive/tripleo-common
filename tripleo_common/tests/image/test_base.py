@@ -26,7 +26,7 @@ class TestBaseImageManager(testbase.TestCase):
     def setUp(self):
         super(TestBaseImageManager, self).setUp()
 
-    @mock.patch('yaml.load', autospec=True)
+    @mock.patch('yaml.safe_load', autospec=True)
     @mock.patch('os.path.isfile', autospec=True)
     def test_load_config_files(self, mock_os_path_isfile, mock_yaml_load):
         mock_yaml_load.return_value = fakes.create_disk_images()
@@ -56,7 +56,7 @@ class TestBaseImageManager(testbase.TestCase):
 
     @mock.patch('tripleo_common.image.base.BaseImageManager.APPEND_ATTRIBUTES',
                 ['elements', 'options', 'packages', 'environment'])
-    @mock.patch('yaml.load', autospec=True)
+    @mock.patch('yaml.safe_load', autospec=True)
     @mock.patch('os.path.isfile', autospec=True)
     def test_load_config_files_multiple_files(self, mock_os_path_isfile,
                                               mock_yaml_load):
@@ -99,7 +99,7 @@ class TestBaseImageManager(testbase.TestCase):
             'environment': {'test_env': '1', 'test_env2': '0'},
         }], disk_images)
 
-    @mock.patch('yaml.load', autospec=True)
+    @mock.patch('yaml.safe_load', autospec=True)
     @mock.patch('os.path.isfile', autospec=True)
     def test_load_config_files_missing_image_name(self, mock_os_path_isfile,
                                                   mock_yaml_load):
@@ -125,7 +125,7 @@ class TestBaseImageManager(testbase.TestCase):
             self.assertRaises(ImageSpecificationException,
                               base_manager.load_config_files, 'disk_images')
 
-    @mock.patch('yaml.load', autospec=True)
+    @mock.patch('yaml.safe_load', autospec=True)
     @mock.patch('os.path.isfile', autospec=True)
     def test_load_config_files_single_image(self, mock_os_path_isfile,
                                             mock_yaml_load):
