@@ -3,6 +3,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-aodh-evaluator:latest
 - imagename: tripleoupstream/centos-binary-aodh-notifier:latest
 - imagename: tripleoupstream/centos-binary-aodh-listener:latest
+- imagename: tripleoupstream/centos-binary-etcd:latest
 - imagename: tripleoupstream/centos-binary-glance-api:latest
 - imagename: tripleoupstream/centos-binary-gnocchi-api:latest
 - imagename: tripleoupstream/centos-binary-gnocchi-metricd:latest
