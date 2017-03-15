@@ -13,7 +13,6 @@
 
 import copy
 
-import six
 
 from heat.engine.resources.openstack.neutron import net
 from heat.engine.resources.openstack.neutron import port
@@ -32,7 +31,7 @@ class ImmutableNet(net.Net):
 
     properties_schema = {
         k: _copy_schema_immutable(v)
-        for k, v in six.iteritems(net.Net.properties_schema)
+        for k, v in net.Net.properties_schema.items()
     }
 
 
@@ -41,7 +40,7 @@ class ImmutablePort(port.Port):
 
     properties_schema = {
         k: _copy_schema_immutable(v)
-        for k, v in six.iteritems(port.Port.properties_schema)
+        for k, v in port.Port.properties_schema.items()
     }
 
 
@@ -50,7 +49,7 @@ class ImmutableSubnet(subnet.Subnet):
 
     properties_schema = {
         k: _copy_schema_immutable(v)
-        for k, v in six.iteritems(subnet.Subnet.properties_schema)
+        for k, v in subnet.Subnet.properties_schema.items()
     }
 
 
