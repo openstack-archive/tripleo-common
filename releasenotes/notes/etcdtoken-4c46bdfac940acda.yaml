@@ -1,0 +1,7 @@
+---
+security:
+  - |
+    Add EtcdInitialClusterToken to the list of passwords
+    to generate, so users don't have to pick a string or
+    rely on a default value.
+    Fixes `bug 1673266 <https://bugs.launchpad.net/tripleo/+bug/1673266>`__.
