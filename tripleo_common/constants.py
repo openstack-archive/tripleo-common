@@ -67,6 +67,7 @@ PASSWORD_PARAMETER_NAMES = (
     'CinderPassword',
     'CongressPassword',
     'Ec2ApiPassword',
+    'EtcdInitialClusterToken',
     'GlancePassword',
     'GnocchiPassword',
     'HAProxyStatsPassword',

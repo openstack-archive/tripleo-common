@@ -65,6 +65,7 @@ _EXISTING_PASSWORDS = {
     'KeystoneFernetKey1': 'AueoL37kd6eLjV29AG-Ruxu5szW47osgXx6aPOqtI6I=',
     'CephClusterFSID': u'97c16f44-b62c-11e6-aed3-185e0f73fdc5',
     'Ec2ApiPassword': 'FPvz2WiWxrHVWrmSSvv44bqmr',
+    'EtcdInitialClusterToken': 'fcVZXehsSc2KdmFFMKDudxTLKa',
     'PacemakerRemoteAuthkey':
         'bCfHQx4fX7FqENVBbDfBnKvf6FTH6mPfVdNjfzakEjuF4UbmZJHAxWdheEr6feEyZmtM'
         'XEd4w3qM8nMVrzjnDCmqAFDmMDQfKcuNgTnqGnkbVUDGpym67Ry4vNCPHyp9tGGyfjNX'
