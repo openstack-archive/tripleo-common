@@ -40,7 +40,9 @@ class ImageUploadManager(BaseImageManager):
 
         self.logger.info('Using config files: %s' % self.config_files)
 
-        upload_images = self.load_config_files(self.CONFIG_SECTIONS[1])
+        uploads = self.load_config_files(self.UPLOADS) or []
+        container_images = self.load_config_files(self.CONTAINER_IMAGES) or []
+        upload_images = uploads + container_images
         default_push_destination = self.get_ctrl_plane_ip() + ':8787'
 
         for item in upload_images:

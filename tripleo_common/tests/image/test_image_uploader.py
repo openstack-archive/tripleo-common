@@ -27,6 +27,19 @@ from tripleo_common.tests.image import fakes
 
 
 filedata = six.u(
+    """container_images:
+    - imagename: tripleoupstream/heat-docker-agents-centos:latest
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-nova-compute:liberty
+      uploader: docker
+      pull_source: docker.io
+      push_destination: localhost:8787
+    - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
+      uploader: docker
+      pull_source: docker.io
+""")
+
+legacy_filedata = six.u(
     """uploads:
     - imagename: tripleoupstream/heat-docker-agents-centos:latest
       push_destination: localhost:8787
@@ -54,6 +67,23 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.Client')
     def test_file_parsing(self, mockpath, mockioctl, mockdocker):
         print(filedata)
+        manager = ImageUploadManager(self.filelist, debug=True)
+        parsed_data = manager.upload()
+        mockpath(self.filelist[0])
+
+        expected_data = fakes.create_parsed_upload_images()
+        sorted_expected_data = sorted(expected_data,
+                                      key=operator.itemgetter('imagename'))
+        sorted_parsed_data = sorted(parsed_data,
+                                    key=operator.itemgetter('imagename'))
+        self.assertEqual(sorted_expected_data, sorted_parsed_data)
+
+    @mock.patch('tripleo_common.image.base.open',
+                mock.mock_open(read_data=legacy_filedata), create=True)
+    @mock.patch('os.path.isfile', return_value=True)
+    @mock.patch('fcntl.ioctl', side_effect=Exception)
+    @mock.patch('tripleo_common.image.image_uploader.Client')
+    def test_legacy_file_parsing(self, mockpath, mockioctl, mockdocker):
         manager = ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()
         mockpath(self.filelist[0])

@@ -1,4 +1,4 @@
-uploads:
+container_images:
 - imagename: tripleoupstream/centos-binary-aodh-api:latest
 - imagename: tripleoupstream/centos-binary-aodh-evaluator:latest
 - imagename: tripleoupstream/centos-binary-aodh-notifier:latest
