@@ -45,8 +45,8 @@ class ImageUploadManager(BaseImageManager):
 
         for item in upload_images:
             image_name = item.get('imagename')
-            uploader = item.get('uploader')
-            pull_source = item.get('pull_source')
+            uploader = item.get('uploader', 'docker')
+            pull_source = item.get('pull_source', 'docker.io')
             push_destination = item.get('push_destination',
                                         default_push_destination)
 
