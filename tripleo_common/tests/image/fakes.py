@@ -30,9 +30,7 @@ def create_disk_images():
 def create_parsed_upload_images():
     uploads = [
         {'imagename': 'tripleoupstream/heat-docker-agents-centos:latest',
-         'push_destination': 'localhost:8787',
-         'pull_source': 'docker.io',
-         'uploader': 'docker'},
+         'push_destination': 'localhost:8787'},
         {'imagename': 'tripleoupstream/centos-binary-nova-compute:liberty',
          'push_destination': 'localhost:8787',
          'pull_source': 'docker.io',
