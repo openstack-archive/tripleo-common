@@ -14,11 +14,11 @@ else
     # should help avoid unwanted differences between containerized and
     # non-containerized trunk software sources.
     REPO_PREFIX=/etc/yum.repos.d
-    DELOREAN_REPO_URL=http://trunk.rdoproject.org/centos7/current-tripleo/
+    DELOREAN_REPO_URL=https://trunk.rdoproject.org/centos7/current-tripleo/
     DELOREAN_REPO_FILE=delorean.repo
 
     # Enable the Delorean Deps repository
-    curl -Lvo $REPO_PREFIX/delorean-deps.repo http://trunk.rdoproject.org/centos7/delorean-deps.repo
+    curl -Lvo $REPO_PREFIX/delorean-deps.repo https://trunk.rdoproject.org/centos7/delorean-deps.repo
     sed -i -e 's%priority=.*%priority=30%' $REPO_PREFIX/delorean-deps.repo
     cat $REPO_PREFIX/delorean-deps.repo
 
@@ -28,7 +28,7 @@ else
     cat $REPO_PREFIX/delorean.repo
 
     # Enable latest RDO Trunk Delorean repository
-    curl -Lvo $REPO_PREFIX/delorean-current.repo http://trunk.rdoproject.org/centos7/current/delorean.repo
+    curl -Lvo $REPO_PREFIX/delorean-current.repo https://trunk.rdoproject.org/centos7/current/delorean.repo
     sed -i -e 's%priority=.*%priority=10%' $REPO_PREFIX/delorean-current.repo
     sed -i 's/\[delorean\]/\[delorean-current\]/' $REPO_PREFIX/delorean-current.repo
     /bin/bash -c "cat <<-EOF>>$REPO_PREFIX/delorean-current.repo
