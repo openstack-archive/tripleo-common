@@ -61,3 +61,52 @@ disk_images:
       - "--min-tmpfs=5"
     environment:
       DIB_PYTHON_VERSION: '2'
+
+  -
+    imagename: overcloud-security-hardened-full
+    arch: amd64
+    type: qcow2
+    elements:
+      - dhcp-all-interfaces
+      - overcloud-agent
+      - overcloud-full
+      - overcloud-controller
+      - overcloud-compute
+      - overcloud-ceph-storage
+      - puppet-modules
+      - hiera
+      - os-net-config
+      - stable-interface-names
+      - bootloader
+      - element-manifest
+      - dynamic-login
+      - iptables
+      - enable-packages-install
+      - pip-and-virtualenv-override
+      - ntp
+      - dracut-regenerate
+      - remove-machine-id
+      - modprobe-blacklist
+      - overcloud-secure
+    packages:
+      - python-psutil
+      - python-debtcollector
+      - plotnetcfg
+      - sos
+      - device-mapper-multipath
+      - python-heat-agent-puppet
+      - python-heat-agent-hiera
+      - python-heat-agent-apply-config
+      - python-heat-agent-ansible
+      - python-heat-agent-docker-cmd
+      - python-heat-agent-json-file
+      - screen
+    options:
+      - "--min-tmpfs 5"
+    environment:
+      DIB_PYTHON_VERSION: '2'
+      DIB_MODPROBE_BLACKLIST: 'usb-storage cramfs freevxfs jffs2 hfs hfsplus squashfs udf vfat bluetooth'
+      DIB_BOOTLOADER_DEFAULT_CMDLINE: 'nofb nomodeset vga=normal console=tty0 console=ttyS0,115200 audit=1 nousb'
+      DIB_IMAGE_SIZE: '20'
+      COMPRESS_IMAGE: '1'
+

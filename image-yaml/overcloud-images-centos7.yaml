@@ -19,4 +19,12 @@ disk_images:
       - selinux-permissive
     packages:
       - yum-plugin-priorities
-
+  -
+    imagename: overcloud-security-hardened-full
+    arch: amd64
+    type: qcow2
+    distro: centos7
+    elements:
+      - selinux-permissive
+    packages:
+      - yum-plugin-priorities
