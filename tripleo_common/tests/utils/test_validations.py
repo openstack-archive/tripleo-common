@@ -90,13 +90,6 @@ VALIDATION_GROUPS_1_2_PARSED = {
 class ValidationsKeyTest(base.TestCase):
 
     @mock.patch("oslo_concurrency.processutils.execute")
-    def test_create_ssh_keypair(self, mock_execute):
-        validations.create_ssh_keypair('/path/to/key')
-        mock_execute.assert_called_once_with(
-            '/usr/bin/ssh-keygen', '-t', 'rsa', '-N', '',
-            '-f', '/path/to/key', '-C', 'tripleo-validations')
-
-    @mock.patch("oslo_concurrency.processutils.execute")
     @mock.patch('tempfile.mkstemp')
     def test_write_identity_file(self, mock_mkstemp, mock_execute):
         mock_open_context = mock.mock_open()

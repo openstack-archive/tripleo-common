@@ -93,13 +93,6 @@ def run_validation(validation, identity_file, plan):
     )
 
 
-def create_ssh_keypair(key_path):
-    """Create SSH keypair"""
-    LOG.debug('Creating SSH keypair at %s', key_path)
-    processutils.execute('/usr/bin/ssh-keygen', '-t', 'rsa', '-N', '',
-                         '-f', key_path, '-C', 'tripleo-validations')
-
-
 def write_identity_file(key):
     """Write the SSH private key to disk"""
     fd, path = tempfile.mkstemp(prefix='validations_identity_')
@@ -112,7 +105,7 @@ def write_identity_file(key):
 
 
 def cleanup_identity_file(path):
-    """Write the SSH private key to disk"""
+    """Remove the SSH private key from disk"""
     LOG.debug('Cleaning up identity file at %s', path)
     processutils.execute('/usr/bin/sudo', '/usr/bin/rm', '-f', path)
 
