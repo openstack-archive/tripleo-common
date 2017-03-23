@@ -90,14 +90,6 @@ class StackUpdateManagerTest(base.TestCase):
         self.assertEqual(good, [])
         self.assertEqual(bad, ['resource_id'])
 
-    def test_cancel(self):
-        self.stack_update_manager.cancel()
-        self.heatclient.actions.cancel_update.assert_called_once_with('123')
-        self.heatclient.resources.signal.assert_called_once_with(
-            stack_id='123',
-            resource_name='logical_id',
-            data={'unset_hook': 'pre-update'})
-
     def test_intput_to_refs_regexp(self):
         result = self.stack_update_manager._input_to_refs(
             'instance_name.*', ['instance_id'])

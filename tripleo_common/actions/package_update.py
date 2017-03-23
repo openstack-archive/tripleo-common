@@ -41,19 +41,6 @@ class ClearBreakpointsAction(base.TripleOAction):
         update_manager.clear_breakpoints(self.refs)
 
 
-class CancelStackUpdateAction(base.TripleOAction):
-    def __init__(self, stack_id):
-        super(CancelStackUpdateAction, self).__init__()
-        self.stack_id = stack_id
-
-    def run(self):
-        heat = self.get_orchestration_client()
-        nova = self.get_compute_client()
-        update_manager = PackageUpdateManager(
-            heat, nova, self.stack_id, stack_fields={})
-        update_manager.cancel()
-
-
 class UpdateStackAction(templates.ProcessTemplatesAction):
 
     def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME):
