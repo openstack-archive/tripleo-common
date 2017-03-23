@@ -21,7 +21,6 @@ import six
 from six import reraise as raise_
 
 from tripleo_common.i18n import _
-from tripleo_common.i18n import _LE
 
 _FATAL_EXCEPTION_FORMAT_ERRORS = False
 
@@ -47,9 +46,9 @@ class TripleoCommonException(Exception):
             exc_info = sys.exc_info()
             # kwargs doesn't match a variable in the message
             # log the issue and the kwargs
-            LOG.exception(_LE('Exception in string format operation'))
+            LOG.exception('Exception in string format operation')
             for name, value in kwargs.items():
-                LOG.error(_LE("%(name)s: %(value)s"),
+                LOG.error("%(name)s: %(value)s",
                           {'name': name, 'value': value})  # noqa
 
             if _FATAL_EXCEPTION_FORMAT_ERRORS:
