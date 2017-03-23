@@ -81,6 +81,7 @@ PASSWORD_PARAMETER_NAMES = (
     'NeutronMetadataProxySharedSecret',
     'NeutronPassword',
     'NovaPassword',
+    'MigrationSshKey',
     'RabbitPassword',
     'RedisPassword',
     'SaharaPassword',

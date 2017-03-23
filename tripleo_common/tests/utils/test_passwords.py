@@ -34,3 +34,9 @@ class TestPasswords(base.TestCase):
         value = password_utils.get_snmpd_readonly_user_password(mock_mistral)
 
         self.assertEqual(value, "78cbc32b858718267c355d4")
+
+    def test_create_ssh_keypair(self):
+
+        value = password_utils.create_ssh_keypair(comment="Foo")
+        self.assertEqual('ssh-rsa', value['public_key'][:7])
+        self.assertEqual('Foo', value['public_key'][-3:])

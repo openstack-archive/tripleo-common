@@ -1,0 +1,4 @@
+---
+features:
+  - Add MigrationSshKey to generated passwords. This ssh key-pair is used by
+    nova cold-migration and libvirt live-migration unless TLS is enabled.

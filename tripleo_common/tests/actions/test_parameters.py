@@ -51,7 +51,11 @@ _EXISTING_PASSWORDS = {
     'HeatPassword': 'bREnsXtMHKTHxt8XW6NXAYr48',
     'MysqlClustercheckPassword': 'jN4RMMWWJ4sycaRwh7UvrAtfX',
     'CephClientKey': b'AQCQXtlXAAAAABAAKyc+8St8i9onHyu2mPk+vg==',
-    'NeutronPassword': 'ZxAjdU2UXCV4GM3WyPKrzAZXD'
+    'NeutronPassword': 'ZxAjdU2UXCV4GM3WyPKrzAZXD',
+    'MigrationSshKey': {
+        'private_key': 'private_key',
+        'public_key': 'public_key'
+        },
 }
 
 
@@ -248,15 +252,20 @@ class GeneratePasswordsActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 '_get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 '_get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_run_passwords_exist(self, mock_ctx, mock_get_workflow_client,
                                  mock_get_snmpd_readonly_user_password,
+                                 mock_create_ssh_keypair,
                                  mock_get_orchestration_client):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
 
         mock_ctx.return_value = mock.MagicMock()
         mock_mistral = mock.MagicMock()
@@ -286,15 +295,20 @@ class GeneratePasswordsActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 '_get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 '_get_workflow_client')
     @mock.patch('mistral.context.ctx')
     def test_passwords_exist_in_heat(self, mock_ctx, mock_get_workflow_client,
                                      mock_get_snmpd_readonly_user_password,
+                                     mock_create_ssh_keypair,
                                      mock_get_orchestration_client):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
 
         existing_passwords = _EXISTING_PASSWORDS.copy()
         existing_passwords.pop("AdminPassword")
