@@ -69,3 +69,9 @@ class TestPasswords(base.TestCase):
 
         self.assertNotEqual(value['KeystoneCredential0'],
                             value['KeystoneCredential1'])
+
+    def test_create_ssh_keypair(self):
+
+        value = password_utils.create_ssh_keypair(comment="Foo")
+        self.assertEqual('ssh-rsa', value['public_key'][:7])
+        self.assertEqual('Foo', value['public_key'][-3:])
