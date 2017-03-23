@@ -48,33 +48,6 @@ class ClearBreakpointsActionTest(base.TestCase):
             self.refs)
 
 
-class CancelStackUpdateActionTest(base.TestCase):
-
-    def setUp(self,):
-        super(CancelStackUpdateActionTest, self).setUp()
-        self.stack_id = 'stack_id'
-
-    @mock.patch('tripleo_common.actions.package_update.PackageUpdateManager')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_compute_client')
-    def test_run(self, mock_compute_client,
-                 mock_orchestration_client,
-                 mock_update_manager):
-        action = package_update.CancelStackUpdateAction(self.stack_id)
-        result = action.run()
-        self.assertEqual(None, result)
-        mock_compute_client.assert_called_once()
-        mock_orchestration_client.assert_called_once()
-        mock_update_manager.assert_called_once_with(
-            mock_orchestration_client(),
-            mock_compute_client(),
-            self.stack_id,
-            stack_fields={})
-        mock_update_manager().cancel.assert_called_once()
-
-
 class UpdateStackActionTest(base.TestCase):
 
     def setUp(self,):

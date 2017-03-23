@@ -79,13 +79,6 @@ class StackUpdateManager(object):
         LOG.debug('%s status: %s', self.stack.stack_name, status)
         return (status, resources)
 
-    def cancel(self):
-        LOG.info("canceling update")
-        self.heatclient.actions.cancel_update(self.stack.id)
-        # removing existing breakpoints
-        resources = self._resources_by_state()
-        self.clear_breakpoints(resources['on_breakpoint'].keys())
-
     def do_interactive_update(self):
         status, _ = self.get_status()
 
@@ -105,16 +98,12 @@ class StackUpdateManager(object):
                 user_input = six.moves.input(
                     "Breakpoint reached, continue? Regexp or "
                     "Enter=proceed (will clear %s), "
-                    "no=cancel update, C-c=quit interactive mode: "
+                    "C-c=quit interactive mode: "
                     % resources['on_breakpoint'].keys()[-1])
-                if user_input.strip().lower() == 'no':
-                    print("canceling update, doing rollback")
-                    self.cancel()
-                else:
-                    refs = self._input_to_refs(
-                        user_input.strip(),
-                        resources['on_breakpoint'].keys())
-                    self.clear_breakpoints(refs)
+                refs = self._input_to_refs(
+                    user_input.strip(),
+                    resources['on_breakpoint'].keys())
+                self.clear_breakpoints(refs)
             time.sleep(5)
         print('update finished with status {0}'.format(status))
 

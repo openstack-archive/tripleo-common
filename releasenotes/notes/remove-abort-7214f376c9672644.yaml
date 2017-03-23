@@ -1,0 +1,8 @@
+---
+fixes:
+  - The update abort command was introduced many releases ago. However, it is
+    not a safe operation in the context of TripleO. The TripleO Heat stack
+    could become irrepairably damage should a rollback be attempted. As such,
+    it is best to remove this functionality without a deprecation period.
+    The workaround for this command is to wait until the stack times out or
+    completes the update.
