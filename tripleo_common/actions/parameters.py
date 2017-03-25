@@ -27,6 +27,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
+import uuid
 
 from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
@@ -316,3 +317,71 @@ class GenerateFencingParametersAction(base.TripleOAction):
 
         fence_params["FencingConfig"]["devices"] = devices
         return {"parameter_defaults": fence_params}
+
+
+class GetFlattenedParametersAction(GetParametersAction):
+    """Get the heat stack tree and parameters in flattened structure.
+
+    This method validates the stack of the container and returns the
+    parameters and the heat stack tree. The heat stack tree is flattened
+    for easy consumption.
+    """
+
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        super(GetFlattenedParametersAction, self).__init__(container)
+
+    def _processParams(self, flattened, params):
+        for item in params:
+            if item not in flattened['parameters']:
+                param_obj = {}
+                for key, value in params.get(item).items():
+                    camel_case_key = key[0].lower() + key[1:]
+                    param_obj[camel_case_key] = value
+                param_obj['name'] = item
+                flattened['parameters'][item] = param_obj
+        return list(params)
+
+    def _process(self, flattened, name, data):
+        key = str(uuid.uuid4())
+        value = {}
+        value.update({
+            'name': name,
+            'id': key
+        })
+        if 'Type' in data:
+            value['type'] = data['Type']
+        if 'Description' in data:
+            value['description'] = data['Description']
+        if 'Parameters' in data:
+            value['parameters'] = self._processParams(flattened,
+                                                      data['Parameters'])
+        if 'NestedParameters' in data:
+            nested = data['NestedParameters']
+            nested_ids = []
+            for nested_key in nested.keys():
+                nested_data = self._process(flattened, nested_key,
+                                            nested.get(nested_key))
+                # nested_data will always have one key (and only one)
+                nested_ids.append(list(nested_data)[0])
+
+            value['resources'] = nested_ids
+
+        flattened['resources'][key] = value
+        return {key: value}
+
+    def run(self):
+        # process all plan files and create or update a stack
+        processed_data = super(GetFlattenedParametersAction, self).run()
+
+        # If we receive a 'Result' instance it is because the parent action
+        # had an error.
+        if isinstance(processed_data, mistral_workflow_utils.Result):
+            return processed_data
+
+        if processed_data['heat_resource_tree']:
+            flattened = {'resources': {}, 'parameters': {}}
+            self._process(flattened, 'Root',
+                          processed_data['heat_resource_tree'])
+            processed_data['heat_resource_tree'] = flattened
+
+        return processed_data
