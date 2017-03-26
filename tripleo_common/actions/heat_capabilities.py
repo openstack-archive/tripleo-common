@@ -90,8 +90,6 @@ class GetCapabilitiesAction(base.TripleOAction):
 
         # change capabilities format
         data_to_return = {}
-        capabilities.pop('root_environment')
-        capabilities.pop('root_template')
 
         for topic in capabilities['topics']:
             title = topic.get('title', '_title_holder')
