@@ -24,7 +24,11 @@ from tripleo_common.image.exception import ImageSpecificationException
 class BaseImageManager(object):
     logger = log.getLogger(__name__ + '.BaseImageManager')
     APPEND_ATTRIBUTES = ['elements', 'options', 'packages']
-    CONFIG_SECTIONS = ['disk_images', 'uploads']
+    CONFIG_SECTIONS = (
+        DISK_IMAGES, UPLOADS, CONTAINER_IMAGES
+    ) = (
+        'disk_images', 'uploads', 'container_images'
+    )
 
     def __init__(self, config_files, images=None):
         self.config_files = config_files
@@ -83,5 +87,5 @@ class BaseImageManager(object):
 
     def json_output(self):
         self.logger.info('Using config files: %s' % self.config_files)
-        disk_images = self.load_config_files(self.CONFIG_SECTIONS[0])
+        disk_images = self.load_config_files(self.DISK_IMAGES)
         print(json.dumps(disk_images))

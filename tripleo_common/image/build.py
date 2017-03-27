@@ -45,7 +45,7 @@ class ImageBuildManager(BaseImageManager):
 
         self.logger.info('Using config files: %s' % self.config_files)
 
-        disk_images = self.load_config_files(self.CONFIG_SECTIONS[0])
+        disk_images = self.load_config_files(self.DISK_IMAGES)
 
         for image in disk_images:
             arch = image.get('arch', 'amd64')
