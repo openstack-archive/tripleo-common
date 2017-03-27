@@ -547,6 +547,17 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
             "mac": [
                 "11:22:33:44:55:66"
             ]
+        }, {
+            # This is an extra node that is not in the hostmap, to ensure we
+            # cope with unprovisioned nodes
+            "name": "control-2",
+            "pm_password": "control-2-password",
+            "pm_type": "pxe_ipmitool",
+            "pm_user": "control-2-admin",
+            "pm_addr": "2.3.4.5",
+            "mac": [
+                "22:33:44:55:66:77"
+            ]
         }]
         test_osauth = {
             "auth_url": "test://auth.url",
@@ -566,6 +577,7 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
         result = action.run()["parameter_defaults"]
 
         self.assertTrue(result["EnableFencing"])
+        self.assertEqual(len(result["FencingConfig"]["devices"]), 2)
         self.assertEqual(result["FencingConfig"]["devices"][0], {
                          "agent": "fence_ipmilan",
                          "host_mac": "00:11:22:33:44:55",
