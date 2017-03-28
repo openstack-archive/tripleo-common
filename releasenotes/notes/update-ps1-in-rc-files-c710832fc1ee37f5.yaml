@@ -3,5 +3,5 @@ features:
   - |
     When sourcing the overcloudrc on the undercloud, the command prompt will
     show that the credentials have been loaded by being preprended with
-    the overcloud stack name in all capital letters. For example,
-    '(OVERCLOUD) [stack@undercloud ~]$'
+    the overcloud stack name. For example,
+    '(overcloud) [stack@undercloud ~]$'
