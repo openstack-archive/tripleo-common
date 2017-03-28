@@ -14,11 +14,15 @@
 # under the License.
 import json
 import logging
+import os
+import shutil
+import tempfile
 import yaml
 
 from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
 from mistralclient.api import base as mistralclient_base
+from oslo_concurrency import processutils
 import six
 from swiftclient import exceptions as swiftexceptions
 
@@ -26,6 +30,7 @@ from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import swift as swiftutils
+from tripleo_common.utils import tarball
 from tripleo_common.utils.validations import pattern_validator
 
 
@@ -337,3 +342,90 @@ class ListRolesAction(base.TripleOAction):
             if details['type'] == constants.RESOURCE_GROUP_TYPE:
                 roles.append(resource)
         return roles
+
+
+class ExportPlanAction(base.TripleOAction):
+    """Exports a deployment plan
+
+    This action exports a deployment plan with a given name. First, the plan
+    templates are downloaded from the Swift container. Then the plan
+    environment file is generated from the associated Mistral environment.
+    Finally, both the templates and the plan environment file are packaged up
+    in a tarball and uploaded to Swift.
+    """
+
+    def __init__(self, plan, delete_after, exports_container):
+        super(ExportPlanAction, self).__init__()
+        self.plan = plan
+        self.delete_after = delete_after
+        self.exports_container = exports_container
+
+    def _download_templates(self, swift, tmp_dir):
+        """Download templates to a temp folder."""
+        template_files = swift.get_container(self.plan)[1]
+
+        for tf in template_files:
+            filename = tf['name']
+            contents = swift.get_object(self.plan, filename)[1]
+            path = os.path.join(tmp_dir, filename)
+            dirname = os.path.dirname(path)
+
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+
+            with open(path, 'w') as f:
+                f.write(contents)
+
+    def _generate_plan_env_file(self, mistral, tmp_dir):
+        """Generate plan environment file and add it to specified folder."""
+        environment = mistral.environments.get(self.plan).variables
+        yaml_string = yaml.safe_dump(environment, default_flow_style=False)
+        path = os.path.join(tmp_dir, constants.PLAN_ENVIRONMENT)
+
+        with open(path, 'w') as f:
+            f.write(yaml_string)
+
+    def _create_and_upload_tarball(self, swift, tmp_dir):
+        """Create a tarball containing the tmp_dir and upload it to Swift."""
+        tarball_name = '%s.tar.gz' % self.plan
+        headers = {'X-Delete-After': self.delete_after}
+
+        # make sure the root container which holds all plan exports exists
+        try:
+            swift.get_container(self.exports_container)
+        except swiftexceptions.ClientException:
+            swift.put_container(self.exports_container)
+
+        with tempfile.NamedTemporaryFile() as tmp_tarball:
+            tarball.create_tarball(tmp_dir, tmp_tarball.name)
+
+            swift.put_object(self.exports_container, tarball_name, tmp_tarball,
+                             headers=headers)
+
+    def run(self):
+        swift = self.get_object_client()
+        mistral = self.get_workflow_client()
+        tmp_dir = tempfile.mkdtemp()
+
+        try:
+            self._download_templates(swift, tmp_dir)
+            self._generate_plan_env_file(mistral, tmp_dir)
+            self._create_and_upload_tarball(swift, tmp_dir)
+        except swiftexceptions.ClientException as err:
+            msg = "Error attempting an operation on container: %s" % err
+            return mistral_workflow_utils.Result(error=msg)
+        except mistralclient_base.APIException:
+            msg = ("The Mistral environment %s could not be found."
+                   % self.plan)
+            return mistral_workflow_utils.Result(error=msg)
+        except (OSError, IOError) as err:
+            msg = "Error while writing file: %s" % err
+            return mistral_workflow_utils.Result(error=msg)
+        except processutils.ProcessExecutionError as err:
+            msg = "Error while creating a tarball: %s" % err
+            return mistral_workflow_utils.Result(error=msg)
+        except Exception as err:
+            msg = "Error exporting plan: %s" % err
+            return mistral_workflow_utils.Result(error=msg)
+        finally:
+            shutil.rmtree(tmp_dir)

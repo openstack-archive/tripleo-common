@@ -18,6 +18,7 @@ import mock
 from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
 from mistralclient.api import base as mistral_base
+from oslo_concurrency import processutils
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import plan
@@ -489,3 +490,103 @@ class RoleListActionTest(base.TestCase):
         self.assertEqual(expected, result)
         self.assertEqual('overcloud.yaml', template_name)
         swift.get_object.assert_called_with(self.container, template_name)
+
+
+class ExportPlanActionTest(base.TestCase):
+
+    def setUp(self):
+        super(ExportPlanActionTest, self).setUp()
+        self.plan = 'overcloud'
+        self.delete_after = 3600
+        self.exports_container = 'plan-exports'
+
+        # setup swift
+        self.template_files = (
+            'some-name.yaml',
+            'some-other-name.yaml',
+            'yet-some-other-name.yaml',
+            'finally-another-name.yaml'
+        )
+        self.swift = mock.MagicMock()
+        self.swift.get_container.return_value = (
+            {'x-container-meta-usage-tripleo': 'plan'}, [
+                {'name': tf} for tf in self.template_files
+            ]
+        )
+        self.swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
+        swift_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction.get_object_client',
+            return_value=self.swift)
+        swift_patcher.start()
+        self.addCleanup(swift_patcher.stop)
+
+        # setup mistral
+        self.mistral = mock.MagicMock()
+        env_item = mock.Mock()
+        env_item.variables = {
+            'template': 'overcloud.yaml',
+            'environments': [
+                {'path': 'overcloud-resource-registry-puppet.yaml'}
+            ]
+        }
+        self.mistral.environments.get.return_value = env_item
+        mistral_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction.get_workflow_client',
+            return_value=self.mistral)
+        mistral_patcher.start()
+        self.addCleanup(mistral_patcher.stop)
+
+    @mock.patch('tripleo_common.utils.tarball.create_tarball')
+    @mock.patch('tempfile.mkdtemp')
+    def test_run_success(self, mock_mkdtemp, mock_create_tarball):
+        get_object_mock_calls = [
+            mock.call(self.plan, tf) for tf in self.template_files
+        ]
+        get_container_mock_calls = [
+            mock.call(self.plan),
+            mock.call('plan-exports')
+        ]
+        mock_mkdtemp.return_value = '/tmp/test123'
+
+        action = plan.ExportPlanAction(self.plan, self.delete_after,
+                                       self.exports_container)
+        action.run()
+
+        self.swift.get_container.assert_has_calls(get_container_mock_calls)
+        self.swift.get_object.assert_has_calls(
+            get_object_mock_calls, any_order=True)
+        self.mistral.environments.get.assert_called_once_with(self.plan)
+        self.swift.put_object.assert_called_once()
+        mock_create_tarball.assert_called_once()
+
+    def test_run_container_does_not_exist(self):
+        self.swift.get_container.side_effect = swiftexceptions.ClientException(
+            self.plan)
+
+        action = plan.ExportPlanAction(self.plan, self.delete_after,
+                                       self.exports_container)
+        result = action.run()
+
+        error = "Error attempting an operation on container: %s" % self.plan
+        self.assertIn(error, result.error)
+
+    def test_run_environment_does_not_exist(self):
+        self.mistral.environments.get.side_effect = mistral_base.APIException
+
+        action = plan.ExportPlanAction(self.plan, self.delete_after,
+                                       self.exports_container)
+        result = action.run()
+
+        error = "The Mistral environment %s could not be found." % self.plan
+        self.assertEqual(error, result.error)
+
+    @mock.patch('tripleo_common.utils.tarball.create_tarball')
+    def test_run_error_creating_tarball(self, mock_create_tarball):
+        mock_create_tarball.side_effect = processutils.ProcessExecutionError
+
+        action = plan.ExportPlanAction(self.plan, self.delete_after,
+                                       self.exports_container)
+        result = action.run()
+
+        error = "Error while creating a tarball"
+        self.assertIn(error, result.error)

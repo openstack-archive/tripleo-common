@@ -16,6 +16,8 @@ features:
     Mistral environment, so it can easily be imported and exported. Root
     template and root environment settings (previously stored in the
     capabilities map file) are now being stored in this file.
+  - Add a new plan export action which exports contents of a deployment plan
+    to a tarball and uploads the tarball to Swift.
 fixes:
   - Fixes `bug 1644756 <https://bugs.launchpad.net/tripleo/+bug/1644756>`__ so
     that flavour matching works as expected with the object-storage role.

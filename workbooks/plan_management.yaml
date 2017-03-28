@@ -291,3 +291,62 @@ workflows:
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  export_deployment_plan:
+    description: Creates an export tarball for a given plan
+    input:
+      - plan
+      - queue_name: tripleo
+
+    tasks:
+
+      export_plan:
+        action: tripleo.plan.export
+        input:
+          plan: <% $.plan %>
+          delete_after: 3600
+          exports_container: "plan-exports"
+        on-success: create_tempurl
+        on-error: export_plan_set_status_failed
+
+      create_tempurl:
+        action: tripleo.swift.tempurl
+        on-success: set_status_success
+        on-error: create_tempurl_set_status_failed
+        input:
+          container: "plan-exports"
+          obj: "<% $.plan %>.tar.gz"
+          valid: 3600
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(create_tempurl).result %>
+
+      export_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(export_plan).result %>
+
+      create_tempurl_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_tempurl).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.export_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
+                tempurl: <% task(create_tempurl).result %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
