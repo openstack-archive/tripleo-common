@@ -161,9 +161,11 @@ class StackUpdateManager(object):
                     state = 'on_breakpoint'
                 elif ev.resource_status_reason == hook_clear_reason:
                     state = 'in_progress'
-                elif ev.resource_status == 'UPDATE_IN_PROGRESS':
+                elif ev.resource_status in ('CREATE_IN_PROGRESS',
+                                            'UPDATE_IN_PROGRESS'):
                     state = 'in_progress'
-                elif ev.resource_status == 'UPDATE_COMPLETE':
+                elif ev.resource_status in ('CREATE_COMPLETE',
+                                            'UPDATE_COMPLETE'):
                     state = 'completed'
             resources[state][res.physical_resource_id] = res
 
