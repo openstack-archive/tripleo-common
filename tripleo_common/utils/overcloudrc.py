@@ -63,6 +63,14 @@ def bracket_ipv6(address):
 CLEAR_ENV = """# Clear any old environment that may conflict.
 for key in $( set | awk '{FS=\"=\"}  /^OS_/ {print $1}' ); do unset $key ; done
 """
+CLOUDPROMPT = """
+# Add OS_CLOUDNAME to PS1
+if [ -z "${CLOUDPROMPT_ENABLED:-}" ]; then
+    export PS1=${PS1:-""}
+    export PS1=\${OS_CLOUDNAME:+"(\$OS_CLOUDNAME)"}\ $PS1
+    export CLOUDPROMPT_ENABLED=1
+fi
+"""
 
 
 def create_overcloudrc(stack, no_proxy, admin_password):
@@ -79,7 +87,6 @@ def create_overcloudrc(stack, no_proxy, admin_password):
                         [no_proxy, overcloud_host, overcloud_admin_vip])
 
     rc_params = {
-        'PROMPT_COMMAND': '"echo -n \'(%s) \'"' % stack.stack_name.upper(),
         'NOVA_VERSION': '1.1',
         'COMPUTE_API_VERSION': '1.1',
         'OS_USERNAME': 'admin',
@@ -100,6 +107,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
     for key, value in rc_params.items():
         line = "export %(key)s=%(value)s\n" % {'key': key, 'value': value}
         overcloudrc = overcloudrc + line
+    overcloudrc = overcloudrc + CLOUDPROMPT
 
     rc_params.update({
         'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', '') + '/v3',
@@ -112,6 +120,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
     for key, value in rc_params.items():
         line = "export %(key)s=%(value)s\n" % {'key': key, 'value': value}
         overcloudrc_v3 = overcloudrc_v3 + line
+    overcloudrc_v3 = overcloudrc_v3 + CLOUDPROMPT
 
     return {
         "overcloudrc": overcloudrc,
