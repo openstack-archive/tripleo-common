@@ -1,0 +1,10 @@
+---
+features:
+  - Add a new action argument, skip_deploy_identifier to DeployStackAction. The
+    argument will disable setting a unique value for the DeployIdentifier
+    parameter, which means the SoftwareDeployment resources in the templates
+    will only be triggered if there is an actual change to their configuration.
+    This argument can be used to avoid always applying configuration, such as
+    during node scale out. This option should be used with Caution, and only if
+    there is confidence that the software configuration does not need to be
+    run, such as when scaling out certain roles.
