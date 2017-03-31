@@ -110,6 +110,7 @@ workflows:
       - container
       - run_validations: False
       - timeout: 240
+      - skip_deploy_identifier: False
       - queue_name: tripleo
 
     tasks:
@@ -197,6 +198,7 @@ workflows:
         input:
           timeout: <% $.timeout %>
           container: <% $.container %>
+          skip_deploy_identifier: <% $.skip_deploy_identifier %>
         on-success: send_message
         on-error: set_deployment_failed
 

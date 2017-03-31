@@ -266,6 +266,77 @@ class DeployStackActionTest(base.TestCase):
             "overcloud-swift-rings", "swift-rings.tar.gz",
             "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
 
+    @mock.patch('tripleo_common.actions.deployment.time')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
+    @mock.patch('mistral.context.ctx')
+    def test_run_skip_deploy_identifier(
+            self, mock_ctx, get_orchestration_client_mock,
+            mock_get_object_client, mock_get_workflow_client,
+            mock_get_template_contents,
+            mock_process_multiple_environments_and_files,
+            mock_time):
+
+        mock_ctx.return_value = mock.MagicMock()
+        # setup swift
+        swift = mock.MagicMock(url="http://test.com")
+        swift.get_object.side_effect = swiftexceptions.ClientException(
+            'atest2')
+        mock_get_object_client.return_value = swift
+
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = None
+        get_orchestration_client_mock.return_value = heat
+
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'parameter_defaults': {'random_existing_data': 'a_value'},
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        # freeze time at datetime.datetime(2016, 9, 8, 16, 24, 24)
+        mock_time.time.return_value = 1473366264
+
+        action = deployment.DeployStackAction(1, 'overcloud',
+                                              skip_deploy_identifier=True)
+        action.run()
+
+        # verify parameters are as expected
+        expected_defaults = {'StackAction': 'CREATE',
+                             'UpdateIdentifier': '',
+                             'random_existing_data': 'a_value'}
+        self.assertEqual(expected_defaults,
+                         mock_env.variables['parameter_defaults'])
+
+        heat.stacks.create.assert_called_once_with(
+            environment={},
+            files={},
+            stack_name='overcloud',
+            template={'heat_template_version': '2016-04-30'},
+            timeout_mins=1,
+        )
+        swift.delete_object.assert_called_once_with(
+            "overcloud-swift-rings", "swift-rings.tar.gz")
+        swift.copy_object.assert_called_once_with(
+            "overcloud-swift-rings", "swift-rings.tar.gz",
+            "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
+
 
 class OvercloudRcActionTestCase(base.TestCase):
 
