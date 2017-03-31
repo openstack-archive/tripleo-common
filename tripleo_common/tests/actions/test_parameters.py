@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import mock
+import yaml
 
 from swiftclient import exceptions as swiftexceptions
 
@@ -147,11 +148,9 @@ class GetParametersActionTest(base.TestCase):
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run(self, mock_get_object_client,
-                 mock_get_workflow_client, mock_get_orchestration_client,
+                 mock_get_orchestration_client,
                  mock_get_template_contents,
                  mock_process_multiple_environments_and_files,
                  mock_cache_get,
@@ -159,19 +158,17 @@ class GetParametersActionTest(base.TestCase):
 
         mock_ctx = mock.MagicMock()
         swift = mock.MagicMock(url="http://test.com")
-        swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
-        mock_get_object_client.return_value = swift
-
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.variables = {
+        mock_env = yaml.safe_dump({
             'temp_environment': 'temp_environment',
             'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2'),
+            ({}, mock_env)
+        )
+        mock_get_object_client.return_value = swift
 
         mock_get_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
@@ -201,7 +198,7 @@ class GetParametersActionTest(base.TestCase):
             mock_ctx,
             "overcloud",
             "tripleo.parameters.get",
-            {'heat_resource_tree': {}, 'mistral_environment_parameters': None}
+            {'heat_resource_tree': {}, 'environment_parameters': None}
         )
 
 
@@ -209,31 +206,36 @@ class ResetParametersActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'cache_delete')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
-    def test_run(self, mock_get_workflow_client,
-                 mock_cache):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run(self, mock_get_object_client, mock_cache):
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
-        mock_env.variables = {
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
             'parameter_defaults': {'SomeTestParameter': 42}
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
+
         # Test
         action = parameters.ResetParametersAction()
+
         action.run(mock_ctx)
-        mock_mistral.environments.update.assert_called_once_with(
-            name=constants.DEFAULT_CONTAINER_NAME,
-            variables={
-                'template': 'template',
-                'environments': [{u'path': u'environments/test.yaml'}],
-            }
+
+        mock_env_reset = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+
+        swift.put_object.assert_called_once_with(
+            constants.DEFAULT_CONTAINER_NAME,
+            constants.PLAN_ENVIRONMENT,
+            mock_env_reset
         )
         mock_cache.assert_called_once_with(
             mock_ctx,
@@ -246,34 +248,38 @@ class UpdateParametersActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'cache_delete')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
-    def test_run(self, mock_get_workflow_client, mock_cache):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run(self, mock_get_object_client, mock_cache):
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
-        mock_env.variables = {
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         # Test
         test_parameters = {'SomeTestParameter': 42}
         action = parameters.UpdateParametersAction(test_parameters)
         action.run(mock_ctx)
 
-        mock_mistral.environments.update.assert_called_once_with(
-            name=constants.DEFAULT_CONTAINER_NAME,
-            variables={
-                'temp_environment': 'temp_environment',
-                'template': 'template',
-                'environments': [{u'path': u'environments/test.yaml'}],
-                'parameter_defaults': {'SomeTestParameter': 42}}
+        mock_env_updated = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'parameter_defaults': {'SomeTestParameter': 42},
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+
+        swift.put_object.assert_called_once_with(
+            constants.DEFAULT_CONTAINER_NAME,
+            constants.PLAN_ENVIRONMENT,
+            mock_env_updated
         )
         mock_cache.assert_called_once_with(
             mock_ctx,
@@ -291,19 +297,18 @@ class UpdateRoleParametersActionTest(base.TestCase):
                 'get_baremetal_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_compute_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
-    def test_run(self, mock_get_workflow_client,
-                 mock_get_compute_client, mock_get_baremetal_client,
-                 mock_set_count_and_flavor, mock_cache):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run(self, mock_get_object_client, mock_get_compute_client,
+                 mock_get_baremetal_client, mock_set_count_and_flavor,
+                 mock_cache):
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = 'overcast'
-        mock_env.variables = {}
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({'name': 'overcast'},
+                                  default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         params = {'CephStorageCount': 1,
                   'OvercloudCephStorageFlavor': 'ceph-storage'}
@@ -313,8 +318,16 @@ class UpdateRoleParametersActionTest(base.TestCase):
                                                        'overcast')
         action.run(mock_ctx)
 
-        mock_mistral.environments.update.assert_called_once_with(
-            name='overcast', variables={'parameter_defaults': params})
+        mock_env_updated = yaml.safe_dump({
+            'name': 'overcast',
+            'parameter_defaults': params,
+        }, default_flow_style=False)
+
+        swift.put_object.assert_called_once_with(
+            'overcast',
+            constants.PLAN_ENVIRONMENT,
+            mock_env_updated
+        )
         mock_cache.assert_called_once_with(
             mock_ctx,
             "overcast",
@@ -332,23 +345,24 @@ class GeneratePasswordsActionTest(base.TestCase):
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client', return_value="TestPassword")
-    def test_run(self, mock_get_workflow_client,
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run(self, mock_get_object_client,
+                 mock_get_workflow_client,
                  mock_get_snmpd_readonly_user_password,
                  mock_get_orchestration_client, mock_cache):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
-
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
-        mock_env.variables = {
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': 'overcast',
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
@@ -378,7 +392,9 @@ class GeneratePasswordsActionTest(base.TestCase):
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
-    def test_run_passwords_exist(self, mock_get_workflow_client,
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_passwords_exist(self, mock_get_object_client,
+                                 mock_get_workflow_client,
                                  mock_get_snmpd_readonly_user_password,
                                  mock_create_ssh_keypair,
                                  mock_get_orchestration_client,
@@ -389,17 +405,17 @@ class GeneratePasswordsActionTest(base.TestCase):
                                                 'private_key': 'Bar'}
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
-        mock_env.variables = {
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
             'passwords': _EXISTING_PASSWORDS.copy()
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
@@ -428,7 +444,9 @@ class GeneratePasswordsActionTest(base.TestCase):
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
-    def test_passwords_exist_in_heat(self, mock_get_workflow_client,
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_passwords_exist_in_heat(self, mock_get_object_client,
+                                     mock_get_workflow_client,
                                      mock_get_snmpd_readonly_user_password,
                                      mock_create_ssh_keypair,
                                      mock_get_orchestration_client,
@@ -442,17 +460,17 @@ class GeneratePasswordsActionTest(base.TestCase):
         existing_passwords.pop("AdminPassword")
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
-        mock_env.variables = {
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
             'passwords': existing_passwords.copy()
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        }, default_flow_style=False)
+
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
@@ -479,22 +497,20 @@ class GetPasswordsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_password_from_parameter_defaults(self,
-                                              mock_get_workflow_client,
+                                              mock_get_object_client,
                                               mock_get_orchestration_client):
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
-        mock_env.variables = {
-            "parameter_defaults": _EXISTING_PASSWORDS,
-        }
 
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            "name": constants.DEFAULT_CONTAINER_NAME,
+            "parameter_defaults": _EXISTING_PASSWORDS,
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
         mock_get_orchestration_client.return_value = mock_orchestration
@@ -507,24 +523,22 @@ class GetPasswordsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_password_from_generated_passwords(self,
-                                               mock_get_workflow_client,
+                                               mock_get_object_client,
                                                mock_get_orchestration_client):
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
 
-        mock_env.variables = {
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            "name": constants.DEFAULT_CONTAINER_NAME,
             "parameter_defaults": {},
             "passwords": _EXISTING_PASSWORDS,
-        }
 
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
         mock_get_orchestration_client.return_value = mock_orchestration
@@ -537,26 +551,25 @@ class GetPasswordsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_password_merging_passwords(self,
-                                        mock_get_workflow_client,
+                                        mock_get_object_client,
                                         mock_get_orchestration_client):
 
         parameter_defaults = _EXISTING_PASSWORDS.copy()
         passwords = {"AdminPassword": parameter_defaults.pop("AdminPassword")}
 
         mock_ctx = mock.MagicMock()
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.name = constants.DEFAULT_CONTAINER_NAME
-        mock_env.variables = {
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            "name": constants.DEFAULT_CONTAINER_NAME,
             "parameter_defaults": parameter_defaults,
             "passwords": passwords
-        }
+        }, default_flow_style=False)
 
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
         mock_get_orchestration_client.return_value = mock_orchestration
@@ -570,19 +583,13 @@ class GetPasswordsActionTest(base.TestCase):
 
 class GenerateFencingParametersActionTestCase(base.TestCase):
 
-    @mock.patch('tripleo_common.utils.nodes.'
-                'generate_hostmap')
+    @mock.patch('tripleo_common.utils.nodes.generate_hostmap')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_compute_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_baremetal_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_orchestration_client')
-    def test_no_success(self, mock_get_orchestration,
-                        mock_get_workflow, mock_get_baremetal,
-                        mock_get_compute, mock_generate_hostmap):
+    def test_no_success(self, mock_get_baremetal, mock_get_compute,
+                        mock_generate_hostmap):
         mock_ctx = mock.MagicMock()
         test_hostmap = {
             "00:11:22:33:44:55": {
@@ -678,35 +685,37 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
 
 class GetFlattenedParametersActionTest(base.TestCase):
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_empty_resource_tree(self, mock_get_object_client,
-                                 mock_get_workflow_client,
                                  mock_get_orchestration_client,
                                  mock_get_template_contents,
-                                 mock_process_multiple_environments_and_files):
+                                 mock_process_multiple_environments_and_files,
+                                 mock_cache_get,
+                                 mock_cache_set):
 
         mock_ctx = mock.MagicMock()
+        mock_cache_get.return_value = None
         swift = mock.MagicMock(url="http://test.com")
-        swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
-        mock_get_object_client.return_value = swift
-
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.variables = {
+        mock_env = yaml.safe_dump({
             'temp_environment': 'temp_environment',
             'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2'),
+            ({}, mock_env)
+        )
+        mock_get_object_client.return_value = swift
 
         mock_get_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
@@ -720,7 +729,7 @@ class GetFlattenedParametersActionTest(base.TestCase):
 
         expected_value = {
             'heat_resource_tree': {},
-            'mistral_environment_parameters': None,
+            'environment_parameters': None,
         }
 
         # Test
@@ -734,37 +743,39 @@ class GetFlattenedParametersActionTest(base.TestCase):
         )
         self.assertEqual(result, expected_value)
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_get')
     @mock.patch('uuid.uuid4', side_effect=['1', '2'])
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_valid_resource_tree(self, mock_get_object_client,
-                                 mock_get_workflow_client,
                                  mock_get_orchestration_client,
                                  mock_get_template_contents,
                                  mock_process_multiple_environments_and_files,
-                                 mock_uuid):
+                                 mock_uuid,
+                                 mock_cache_get,
+                                 mock_cache_set):
 
         mock_ctx = mock.MagicMock()
+        mock_cache_get.return_value = None
         swift = mock.MagicMock(url="http://test.com")
-        swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
-        mock_get_object_client.return_value = swift
-
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.variables = {
+        mock_env = yaml.safe_dump({
             'temp_environment': 'temp_environment',
             'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2'),
+            ({}, mock_env)
+        )
+        mock_get_object_client.return_value = swift
 
         mock_get_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
@@ -816,7 +827,7 @@ class GetFlattenedParametersActionTest(base.TestCase):
                     }
                 },
             },
-            'mistral_environment_parameters': None,
+            'environment_parameters': None,
         }
 
         # Test

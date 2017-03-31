@@ -68,7 +68,7 @@ workflows:
         description: >
           If using the default templates or importing templates from a git
           repository, a new container needs to be created.  If using an existing
-          container containing templates, skip straight to create_plan
+          container containing templates, skip straight to create_plan.
         on-success:
           - verify_container_doesnt_exist: <% $.use_default_templates or $.source_url %>
           - create_plan: <% $.use_default_templates = false and $.source_url = null %>
@@ -76,18 +76,10 @@ workflows:
       verify_container_doesnt_exist:
         action: swift.head_container container=<% $.container %>
         on-success: notify_zaqar
-        on-error: verify_environment_doesnt_exist
-        publish:
-          status: FAILED
-          message: "Unable to create plan. The Swift container already exists"
-
-      verify_environment_doesnt_exist:
-        action: mistral.environments_get name=<% $.container %>
-        on-success: notify_zaqar
         on-error: create_container
         publish:
           status: FAILED
-          message: "Unable to create plan. The Mistral environment already exists"
+          message: "Unable to create plan. The Swift container already exists"
 
       create_container:
         action: tripleo.plan.create_container container=<% $.container %>
@@ -119,11 +111,15 @@ workflows:
         on-error: upload_to_container_set_status_failed
 
       create_plan:
-        action: tripleo.plan.create container=<% $.container %>
+        description: >
+          Migrate the plan if needed, then continue with the workflow.
+          TODO(jpichon) - In Queens, the tripleo.plan.migrate action and on_error will
+          be removed, but the on-success will still be needed.
+        action: tripleo.plan.migrate plan=<% $.container %>
         on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
           - process_templates: <% $.generate_passwords != true %>
-        on-error: create_plan_set_status_failed
+        on-error: migrate_plan_set_status_failed
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
@@ -139,7 +135,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(create_plan).result %>
+          message: 'Plan created.'
 
       create_container_set_status_failed:
         on-success: notify_zaqar
@@ -165,12 +161,6 @@ workflows:
           status: FAILED
           message: <% task(upload_default_templates).result %>
 
-      create_plan_set_status_failed:
-        on-success: notify_zaqar
-        publish:
-          status: FAILED
-          message: <% task(create_plan).result %>
-
       ensure_passwords_exist_set_status_failed:
         on-success: notify_zaqar
         publish:
@@ -182,6 +172,12 @@ workflows:
         publish:
           status: FAILED
           message: <% task(process_templates).result %>
+
+      migrate_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_plan).result %>
 
       notify_zaqar:
         action: zaqar.queue_post
@@ -225,27 +221,31 @@ workflows:
         action: tripleo.git.clean container=<% $.container %>
 
       update_plan:
-        action: tripleo.plan.update container=<% $.container %>
+        description: >
+          Migrate the plan if needed, then continue with the workflow.
+          TODO(jpichon) - In Queens, the tripleo.plan.migrate action and on_error will
+          be removed, but the on-success will still be needed.
+        action: tripleo.plan.migrate plan=<% $.container %>
         on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
           - process_templates: <% $.generate_passwords != true %>
-        on-error: update_plan_set_status_failed
-
-      process_templates:
-        action: tripleo.templates.process container=<% $.container %>
-        on-success: set_status_success
-        on-error: process_templates_set_status_failed
+        on-error: migrate_plan_set_status_failed
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
         on-success: process_templates
         on-error: ensure_passwords_exist_set_status_failed
 
+      process_templates:
+        action: tripleo.templates.process container=<% $.container %>
+        on-success: set_status_success
+        on-error: process_templates_set_status_failed
+
       set_status_success:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(update_plan).result %>
+          message: 'Plan updated.'
 
       clone_git_repo_set_status_failed:
         on-success: notify_zaqar
@@ -259,12 +259,6 @@ workflows:
           status: FAILED
           message: <% task(upload_templates_directory).result %>
 
-      update_plan_set_status_failed:
-        on-success: notify_zaqar
-        publish:
-          status: FAILED
-          message: <% task(update_plan).result %>
-
       process_templates_set_status_failed:
         on-success: notify_zaqar
         publish:
@@ -276,6 +270,12 @@ workflows:
         publish:
           status: FAILED
           message: <% task(ensure_passwords_exist).result %>
+
+      migrate_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(update_plan).result %>
 
       notify_zaqar:
         action: zaqar.queue_post
@@ -302,15 +302,10 @@ workflows:
 
       verify_container_exists:
         action: swift.head_container container=<% $.container %>
-        on-success: verify_environment_exists
+        on-success: get_environment_passwords
         on-error: verify_container_set_status_failed
 
-      verify_environment_exists:
-        action: mistral.environments_get name=<% $.container %>
-        on-success: get_environement_passwords
-        on-error: verify_environment_set_status_failed
-
-      get_environement_passwords:
+      get_environment_passwords:
         action: tripleo.parameters.get_passwords container=<% $.container %>
         on-success: get_passwords_set_status_success
         on-error: get_passwords_set_status_failed
@@ -319,25 +314,19 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(get_environement_passwords).result %>
+          message: <% task(get_environment_passwords).result %>
 
       get_passwords_set_status_failed:
         on-success: notify_zaqar
         publish:
           status: FAILED
-          message: <% task(get_environement_passwords).result %>
+          message: <% task(get_environment_passwords).result %>
 
       verify_container_set_status_failed:
         on-success: notify_zaqar
         publish:
           status: FAILED
           message: <% task(verify_container_exists).result %>
-
-      verify_environment_set_status_failed:
-        on-success: notify_zaqar
-        publish:
-          status: FAILED
-          message: <% task(verify_environment_exists).result %>
 
       notify_zaqar:
         action: zaqar.queue_post

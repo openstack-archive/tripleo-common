@@ -13,13 +13,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import mock
+import yaml
 
 from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
-from mistralclient.api import base as mistralclient_exc
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import deployment
+from tripleo_common import constants
 from tripleo_common.tests import base
 
 
@@ -210,38 +211,34 @@ class DeployStackActionTest(base.TestCase):
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
     def test_run(self, get_orchestration_client_mock,
-                 mock_get_object_client, mock_get_workflow_client,
-                 mock_get_template_contents,
+                 mock_get_object_client, mock_get_template_contents,
                  mock_process_multiple_environments_and_files,
                  mock_time):
 
         mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock(url="http://test.com")
-        swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
+        mock_env = yaml.safe_dump({
+            'name': 'overcloud',
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'parameter_defaults': {'random_existing_data': 'a_value'},
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
         mock_get_object_client.return_value = swift
 
         heat = mock.MagicMock()
         heat.stacks.get.return_value = None
         get_orchestration_client_mock.return_value = heat
-
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.variables = {
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-            'parameter_defaults': {'random_existing_data': 'a_value'},
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
 
         mock_get_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
@@ -259,8 +256,20 @@ class DeployStackActionTest(base.TestCase):
                              'StackAction': 'CREATE',
                              'UpdateIdentifier': '',
                              'random_existing_data': 'a_value'}
-        self.assertEqual(expected_defaults,
-                         mock_env.variables['parameter_defaults'])
+
+        mock_env_updated = yaml.safe_dump({
+            'name': 'overcloud',
+            'temp_environment': 'temp_environment',
+            'parameter_defaults': expected_defaults,
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+
+        swift.put_object.assert_called_once_with(
+            'overcloud',
+            constants.PLAN_ENVIRONMENT,
+            mock_env_updated
+        )
 
         heat.stacks.create.assert_called_once_with(
             environment={},
@@ -279,39 +288,36 @@ class DeployStackActionTest(base.TestCase):
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
     def test_run_skip_deploy_identifier(
             self, get_orchestration_client_mock,
-            mock_get_object_client, mock_get_workflow_client,
-            mock_get_template_contents,
+            mock_get_object_client, mock_get_template_contents,
             mock_process_multiple_environments_and_files,
             mock_time):
 
         mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock(url="http://test.com")
-        swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
         mock_get_object_client.return_value = swift
 
         heat = mock.MagicMock()
         heat.stacks.get.return_value = None
         get_orchestration_client_mock.return_value = heat
 
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.variables = {
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
             'parameter_defaults': {'random_existing_data': 'a_value'},
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
 
         mock_get_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
@@ -326,11 +332,21 @@ class DeployStackActionTest(base.TestCase):
         action.run(mock_ctx)
 
         # verify parameters are as expected
-        expected_defaults = {'StackAction': 'CREATE',
-                             'UpdateIdentifier': '',
-                             'random_existing_data': 'a_value'}
-        self.assertEqual(expected_defaults,
-                         mock_env.variables['parameter_defaults'])
+        mock_env_updated = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'parameter_defaults': {'StackAction': 'CREATE',
+                                   'UpdateIdentifier': '',
+                                   'random_existing_data': 'a_value'},
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+
+        swift.put_object.assert_called_once_with(
+            constants.DEFAULT_CONTAINER_NAME,
+            constants.PLAN_ENVIRONMENT,
+            mock_env_updated
+        )
 
         heat.stacks.create.assert_called_once_with(
             environment={},
@@ -347,13 +363,11 @@ class DeployStackActionTest(base.TestCase):
 
 
 class OvercloudRcActionTestCase(base.TestCase):
-
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
+                'get_object_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    def test_no_stack(self, mock_get_orchestration,
-                      mock_get_workflow):
+    def test_no_stack(self, mock_get_orchestration, mock_get_object):
 
         mock_ctx = mock.MagicMock()
 
@@ -369,59 +383,64 @@ class OvercloudRcActionTestCase(base.TestCase):
         ))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
+                'get_object_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    def test_no_env(self, mock_get_orchestration,
-                    mock_get_workflow):
+    def test_no_env(self, mock_get_orchestration, mock_get_object):
 
         mock_ctx = mock.MagicMock()
 
-        not_found = mistralclient_exc.APIException()
-        mock_get_workflow.return_value.environments.get.side_effect = not_found
+        mock_get_object.return_value.get_object.side_effect = (
+            swiftexceptions.ClientException("overcast"))
+
+        action = deployment.OvercloudRcAction("overcast")
+        result = action.run(mock_ctx)
+        self.assertEqual(result.error, "Error retrieving environment for plan "
+                                       "overcast: overcast")
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_no_password(self, mock_get_orchestration, mock_get_object):
+        mock_ctx = mock.MagicMock()
+
+        mock_get_object.return_value.get_object.return_value = (
+            {}, "version: 1.0")
 
         action = deployment.OvercloudRcAction("overcast")
         result = action.run(mock_ctx)
 
         self.assertEqual(
             result.error,
-            "The Mistral environment overcast could not be found.")
+            "Unable to find the AdminPassword in the plan environment.")
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_orchestration_client')
-    def test_no_password(self, mock_get_orchestration,
-                         mock_get_workflow):
-        mock_ctx = mock.MagicMock()
-
-        mock_env = mock.MagicMock(variables={})
-        mock_get_workflow.return_value.environments.get.return_value = mock_env
-
-        action = deployment.OvercloudRcAction("overcast")
-        result = action.run(mock_ctx)
-
-        self.assertEqual(
-            result.error,
-            "Unable to find the AdminPassword in the Mistral environment.")
-
+                'get_object_client')
     @mock.patch('tripleo_common.utils.overcloudrc.create_overcloudrc')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    def test_no_success(self, mock_get_orchestration,
-                        mock_get_workflow, mock_create_overcloudrc):
+    def test_success(self, mock_get_orchestration, mock_create_overcloudrc,
+                     mock_get_object):
         mock_ctx = mock.MagicMock()
 
+        mock_env = """
+        version: 1.0
+
+        template: overcloud.yaml
+        environments:
+        - path: overcloud-resource-registry-puppet.yaml
+        - path: environments/services/sahara.yaml
+        parameter_defaults:
+          BlockStorageCount: 42
+          OvercloudControlFlavor: yummy
+        passwords:
+          AdminPassword: SUPERSECUREPASSWORD
+        """
+        mock_get_object.return_value.get_object.return_value = ({}, mock_env)
         mock_create_overcloudrc.return_value = {
             "overcloudrc": "fake overcloudrc"
         }
-        mock_env = mock.MagicMock(variables={
-            "parameter_defaults": {},
-            "passwords": {"AdminPassword": "SUPERSECUREPASSWORD"}
-        })
-        mock_get_workflow.return_value.environments.get.return_value = mock_env
 
         action = deployment.OvercloudRcAction("overcast")
         result = action.run(mock_ctx)

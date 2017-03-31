@@ -16,6 +16,7 @@ import mock
 import yaml
 
 from mistral.workflow import utils as mistral_workflow_utils
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import heat_capabilities
 from tripleo_common.tests import base
@@ -155,38 +156,40 @@ class GetCapabilitiesActionTest(base.TestCase):
         self.assertEqual(expected, action.run(mock_ctx))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run_mistral_error(self, get_workflow_client_mock,
-                               get_obj_client_mock):
+    def test_run_env_missing(self, get_obj_client_mock):
 
         mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
-        swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
+        swift.get_object.side_effect = (
+            ({}, MAPPING_YAML_CONTENTS),
+            swiftexceptions.ClientException(self.container_name)
+        )
         get_obj_client_mock.return_value = swift
-
-        # setup mistral
-        mistral = mock.MagicMock()
-        mistral.environments.get = mock.Mock(
-            side_effect=Exception)
-        get_workflow_client_mock.return_value = mistral
 
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)
         expected = mistral_workflow_utils.Result(
             data=None,
-            error="Error retrieving mistral environment. ")
+            error="Error retrieving environment for plan test-container: "
+                  "test-container")
         self.assertEqual(expected, action.run(mock_ctx))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run(self, get_workflow_client_mock, get_obj_client_mock):
+    def test_run(self, get_obj_client_mock):
 
         mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
-        swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
+
+        mock_env = """
+        template: overcloud
+        environments:
+        - path: /path/to/network-isolation.json
+        """
+        swift.get_object.side_effect = (
+            ({}, MAPPING_YAML_CONTENTS),
+            ({}, mock_env)
+        )
         swift_files_data = ({
             u'x-container-meta-usage-tripleo': u'plan',
             u'content-length': u'54271', u'x-container-object-count': u'3',
@@ -217,18 +220,6 @@ class GetCapabilitiesActionTest(base.TestCase):
         swift.get_container.return_value = swift_files_data
         get_obj_client_mock.return_value = swift
 
-        # setup mistral
-        mistral = mock.MagicMock()
-        get_workflow_client_mock.return_value = mistral
-
-        mock_env = mock.MagicMock()
-        mock_env.name = self.container_name
-        mock_env.variables = {
-            'template': 'overcloud',
-            'environments': [{'path': '/path/to/network-isolation.json'}]
-        }
-        mistral.environments.get.return_value = mock_env
-
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)
         yaml_mapping = yaml.safe_load(MAPPING_JSON_CONTENTS)
         self.assertEqual(yaml_mapping, action.run(mock_ctx))
@@ -242,23 +233,21 @@ class UpdateCapabilitiesActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'cache_delete')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run(self, get_workflow_client_mock, mock_cache):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run(self, get_object_client_mock, mock_cache):
 
         mock_ctx = mock.MagicMock()
 
-        # setup mistral
-        mistral = mock.MagicMock()
-        mocked_env = mock.MagicMock()
-        mocked_env.variables = {
-            'environments': [
-                {'path': '/path/to/overcloud-default-env.yaml'},
-                {'path': '/path/to/ceph-storage-env.yaml'},
-            ]
-        }
-        mistral.environments.get.return_value = mocked_env
-        get_workflow_client_mock.return_value = mistral
+        # setup swift
+        swift = mock.MagicMock()
+        mocked_env = """
+        name: test-container
+        environments:
+        - path: /path/to/overcloud-default-env.yaml
+        - path: /path/to/ceph-storage-env.yaml
+        """
+        swift.get_object.return_value = ({}, mocked_env)
+        get_object_client_mock.return_value = swift
 
         environments = {
             '/path/to/ceph-storage-env.yaml': False,
@@ -269,6 +258,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         action = heat_capabilities.UpdateCapabilitiesAction(
             environments, self.container_name)
         self.assertEqual({
+            'name': 'test-container',
             'environments': [
                 {'path': '/path/to/overcloud-default-env.yaml'},
                 {'path': '/path/to/poc-custom-env.yaml'}
@@ -284,22 +274,21 @@ class UpdateCapabilitiesActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'cache_delete')
     @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run_purge_missing(self, get_workflow_client_mock, mock_cache):
+        'tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_purge_missing(self, get_object_client_mock, mock_cache):
 
         mock_ctx = mock.MagicMock()
 
-        # setup mistral
-        mistral = mock.MagicMock()
-        mocked_env = mock.MagicMock()
-        mocked_env.variables = {
-            'environments': [
-                {'path': '/path/to/overcloud-default-env.yaml'},
-                {'path': '/path/to/ceph-storage-env.yaml'},
-            ]
-        }
-        mistral.environments.get.return_value = mocked_env
-        get_workflow_client_mock.return_value = mistral
+        # setup swift
+        swift = mock.MagicMock()
+        mocked_env = """
+        name: test-container
+        environments:
+        - path: /path/to/overcloud-default-env.yaml
+        - path: /path/to/ceph-storage-env.yaml
+        """
+        swift.get_object.return_value = ({}, mocked_env)
+        get_object_client_mock.return_value = swift
 
         environments = {
             '/path/to/overcloud-default-env.yaml': True,
@@ -310,6 +299,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         action = heat_capabilities.UpdateCapabilitiesAction(
             environments, self.container_name, True)
         self.assertEqual({
+            'name': 'test-container',
             'environments': [
                 {'path': '/path/to/overcloud-default-env.yaml'},
                 {'path': '/path/to/poc-custom-env.yaml'}
@@ -321,28 +311,21 @@ class UpdateCapabilitiesActionTest(base.TestCase):
             "tripleo.parameters.get"
         )
 
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run_mistral_error(self, get_workflow_client_mock,
-                               get_obj_client_mock):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_env_missing(self, get_obj_client_mock):
 
         mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
-        swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
+        swift.get_object.side_effect = (
+            swiftexceptions.ClientException(self.container_name))
         get_obj_client_mock.return_value = swift
-
-        # setup mistral
-        mistral = mock.MagicMock()
-        mistral.environments.get = mock.Mock(
-            side_effect=Exception)
-        get_workflow_client_mock.return_value = mistral
 
         action = heat_capabilities.UpdateCapabilitiesAction(
             {}, self.container_name)
         expected = mistral_workflow_utils.Result(
             data=None,
-            error="Error retrieving mistral environment. ")
+            error="Error retrieving environment for plan test-container: "
+                  "test-container"
+        )
         self.assertEqual(expected, action.run(mock_ctx))

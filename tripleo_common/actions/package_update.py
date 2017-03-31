@@ -18,11 +18,13 @@ import time
 from heatclient.common import template_utils
 from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.update import PackageUpdateManager
+from tripleo_common.utils import plan as plan_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -63,24 +65,24 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         parameters['UpdateIdentifier'] = timestamp
         parameters['StackAction'] = 'UPDATE'
 
-        wc = self.get_workflow_client(context)
+        swift = self.get_object_client(context)
+
         try:
-            wf_env = wc.environments.get(self.container)
-        except Exception:
-            msg = "Error retrieving mistral environment: %s" % self.container
-            LOG.exception(msg)
-            return mistral_workflow_utils.Result(error=msg)
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
 
-        if 'parameter_defaults' not in wf_env.variables:
-            wf_env.variables['parameter_defaults'] = {}
-        wf_env.variables['parameter_defaults'].update(parameters)
-        env_kwargs = {
-            'name': wf_env.name,
-            'variables': wf_env.variables,
-        }
-
-        # store params changes back to db before call to process templates
-        wc.environments.update(**env_kwargs)
+        try:
+            plan_utils.update_in_env(swift, env, 'parameter_defaults',
+                                     parameters)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error updating environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
 
         # process all plan files and create or update a stack
         processed_data = super(UpdateStackAction, self).run(context)

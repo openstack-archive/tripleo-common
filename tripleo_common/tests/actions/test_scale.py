@@ -14,6 +14,7 @@
 # under the License.
 import collections
 import mock
+import yaml
 
 from swiftclient import exceptions as swiftexceptions
 
@@ -47,13 +48,10 @@ class ScaleDownActionTest(base.TestCase):
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run(self, mock_get_object_client,
-                 mock_get_workflow_client, mock_get_template_contents,
-                 mock_env_files, mock_get_heat_client,
-                 mock_cache):
+                 mock_get_template_contents, mock_env_files,
+                 mock_get_heat_client, mock_cache):
 
         mock_env_files.return_value = ({}, {})
         heatclient = mock.MagicMock()
@@ -85,8 +83,17 @@ class ScaleDownActionTest(base.TestCase):
 
         mock_ctx = mock.MagicMock()
         swift = mock.MagicMock(url="http://test.com")
-        swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
+        mock_env = yaml.safe_dump({
+            'name': 'overcloud',
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
         mock_get_object_client.return_value = swift
 
         env = {
@@ -94,16 +101,6 @@ class ScaleDownActionTest(base.TestCase):
                 'resources': {'*': {'*': {'UpdateDeployment': {'hooks': []}}}}
             }
         }
-
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.variables = {
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
 
         mock_get_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'

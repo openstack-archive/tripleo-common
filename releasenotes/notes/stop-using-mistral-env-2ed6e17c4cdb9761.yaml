@@ -1,0 +1,6 @@
+upgrade:
+  - |
+    The environment configuration for deployments is now stored in a
+    file called ``plan-environment.yaml`` and stored in Swift with the
+    templates; Mistral is no longer used to store this data. Migration
+    of the existing plans is handled automatically.
