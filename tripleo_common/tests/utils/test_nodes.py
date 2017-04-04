@@ -631,3 +631,160 @@ class TestPopulateNodeMapping(base.TestCase):
         expected = {'mac': {'aaa': 'abcdef'}, 'pm_addr': {},
                     'uuids': {'abcdef'}}
         self.assertEqual(expected, nodes._populate_node_mapping(client))
+
+
+EXAMPLE_SSH_PRIVATE_KEY = """
+-----BEGIN RSA PRIVATE KEY-----
+ABCDEF
+-----END RSA PRIVATE KEY-----
+"""
+
+
+VALID_NODE_JSON = [
+    {'pm_type': 'pxe_ipmitool',
+     'pm_addr': '192.168.0.1',
+     'pm_user': 'root',
+     'pm_password': 'p@$$w0rd'},
+    {'pm_type': 'pxe_ipmitool',
+     'pm_addr': '192.168.0.1',
+     'pm_user': 'root',
+     'pm_password': 'p@$$w0rd',
+     'pm_port': 1234,
+     'ipmi_priv_level': 'USER',
+     'mac': ['aa:bb:cc:dd:ee:ff',
+             '11:22:33:44:55:66'],
+     'name': 'foobar1',
+     'capabilities': {'foo': 'bar'},
+     'kernel_id': 'kernel1',
+     'ramdisk_id': 'ramdisk1'},
+    {'pm_type': 'pxe_ssh',
+     'pm_addr': '1.2.3.4',
+     'pm_user': 'root',
+     'pm_password': EXAMPLE_SSH_PRIVATE_KEY,
+     'mac': ['11:11:11:11:11:11']},
+    {'pm_type': 'pxe_ssh',
+     'pm_addr': '1.2.3.4',
+     'pm_user': 'root',
+     'pm_password': EXAMPLE_SSH_PRIVATE_KEY,
+     'mac': ['22:22:22:22:22:22'],
+     'capabilities': 'foo:bar,foo1:bar1',
+     'cpu': 2,
+     'memory': 1024,
+     'disk': 40,
+     'arch': 'x86_64'},
+]
+
+
+class TestValidateNodes(base.TestCase):
+    def test_valid(self):
+        nodes.validate_nodes(VALID_NODE_JSON)
+
+    def test_unknown_driver(self):
+        nodes_json = [
+            {'pm_type': 'pxe_foobar',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd'},
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'unknown pm_type .* pxe_foobar',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_duplicate_ipmi_address(self):
+        nodes_json = [
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd'},
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'user',
+             'pm_password': 'p@$$w0rd'},
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'Node identified by 1.1.1.1 is already present',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_invalid_mac(self):
+        nodes_json = [
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'mac': ['42']},
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'MAC address 42 is invalid',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_duplicate_mac(self):
+        nodes_json = [
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'mac': ['11:22:33:44:55:66']},
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.2.1.1',
+             'pm_user': 'user',
+             'pm_password': 'p@$$w0rd',
+             'mac': ['11:22:33:44:55:66']},
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'MAC 11:22:33:44:55:66 is not unique',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_duplicate_names(self):
+        nodes_json = [
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'name': 'name'},
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.2.1.2',
+             'pm_user': 'user',
+             'pm_password': 'p@$$w0rd',
+             'name': 'name'},
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'Name "name" is not unique',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_invalid_capability(self):
+        nodes_json = [
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'capabilities': '42'},
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'Invalid capabilities: 42',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_unexpected_fields(self):
+        nodes_json = [
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'pm_foobar': '42'},
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'Unknown field pm_foobar',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_missing_fields(self):
+        for field in ('pm_addr', 'pm_user', 'pm_password'):
+            nodes_json = [
+                {'pm_type': 'pxe_ipmitool',
+                 'pm_addr': '1.1.1.1',
+                 'pm_user': 'root',
+                 'pm_password': 'p@$$w0rd'},
+            ]
+            del nodes_json[0][field]
+
+            self.assertRaisesRegex(exception.InvalidNode,
+                                   'fields are missing: %s' % field,
+                                   nodes.validate_nodes, nodes_json)

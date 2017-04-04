@@ -71,6 +71,27 @@ class RegisterOrUpdateNodes(base.TripleOAction):
             return mistral_workflow_utils.Result(error=six.text_type(err))
 
 
+class ValidateNodes(base.TripleOAction):
+    """Validate Nodes Action
+
+    :param nodes_json: list of nodes & attributes in json format
+    """
+
+    def __init__(self, nodes_json):
+        super(ValidateNodes, self).__init__()
+        self.nodes_json = nodes_json
+
+    def run(self):
+        try:
+            nodes.validate_nodes(self.nodes_json)
+        except exception.InvalidNode as err:
+            LOG.error("Validation of nodes failed: %s", err)
+            return mistral_workflow_utils.Result(error=str(err))
+        except Exception as err:
+            LOG.exception("Unexpected exception during node validation")
+            return mistral_workflow_utils.Result(error=str(err))
+
+
 class ConfigureBootAction(base.TripleOAction):
     """Configure kernel and ramdisk.
 

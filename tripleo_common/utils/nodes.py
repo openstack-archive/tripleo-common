@@ -16,6 +16,7 @@
 import logging
 import re
 
+from oslo_utils import netutils
 import six
 
 from oslo_concurrency import processutils
@@ -29,10 +30,12 @@ class DriverInfo(object):
     """Class encapsulating field conversion logic."""
     DEFAULTS = {}
 
-    def __init__(self, prefix, mapping, deprecated_mapping=None):
+    def __init__(self, prefix, mapping, deprecated_mapping=None,
+                 mandatory_fields=()):
         self._prefix = prefix
         self._mapping = mapping
         self._deprecated_mapping = deprecated_mapping or {}
+        self._mandatory_fields = mandatory_fields
 
     def convert_key(self, key):
         if key in self._mapping:
@@ -66,6 +69,21 @@ class DriverInfo(object):
     def unique_id_from_node(self, node):
         """Return a string uniquely identifying a node in ironic db."""
 
+    def validate(self, node):
+        """Validate node record supplied by a user.
+
+        :param node: node record before convert()
+        :raises: exception.InvalidNode
+        """
+        missing = []
+        for field in self._mandatory_fields:
+            if not node.get(field):
+                missing.append(field)
+
+        if missing:
+            raise exception.InvalidNode(
+                'The following fields are missing: %s' % ', '.join(missing))
+
 
 class PrefixedDriverInfo(DriverInfo):
     def __init__(self, prefix, deprecated_mapping=None,
@@ -75,17 +93,24 @@ class PrefixedDriverInfo(DriverInfo):
             'pm_user': '%s_username' % prefix,
             'pm_password': '%s_password' % prefix,
         }
+        mandatory_fields = list(mapping)
+
         if has_port:
             mapping['pm_port'] = '%s_port' % prefix
         self._has_port = has_port
 
         super(PrefixedDriverInfo, self).__init__(
             prefix, mapping,
-            deprecated_mapping=deprecated_mapping
+            deprecated_mapping=deprecated_mapping,
+            mandatory_fields=mandatory_fields,
         )
 
     def unique_id_from_fields(self, fields):
-        result = fields['pm_addr']
+        try:
+            result = fields['pm_addr']
+        except KeyError:
+            return
+
         if self._has_port and 'pm_port' in fields:
             result = '%s:%s' % (result, fields['pm_port'])
         return result
@@ -124,8 +149,15 @@ class SshDriverInfo(DriverInfo):
             },
             deprecated_mapping={
                 'pm_virt_type': 'ssh_virt_type',
-            }
+            },
+            mandatory_fields=['pm_addr', 'pm_user', 'pm_password'],
         )
+
+    def validate(self, node):
+        super(SshDriverInfo, self).validate(node)
+        if not node.get('mac'):
+            raise exception.InvalidNode(
+                'Nodes with SSH drivers require at least one MAC')
 
 
 class iBootDriverInfo(PrefixedDriverInfo):
@@ -300,6 +332,16 @@ def _get_node_id(node, handler, node_map):
         return list(candidates)[0]
 
 
+_NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
+                      'memory': '/properties/memory_mb',
+                      'disk': '/properties/local_gb',
+                      'arch': '/properties/cpu_arch',
+                      'name': '/name',
+                      'kernel_id': '/driver_info/deploy_kernel',
+                      'ramdisk_id': '/driver_info/deploy_ramdisk',
+                      'capabilities': '/properties/capabilities'}
+
+
 def _update_or_register_ironic_node(node, node_map, client):
     handler = _find_node_handler(node)
     node_uuid = _get_node_id(node, handler, node_map)
@@ -309,14 +351,7 @@ def _update_or_register_ironic_node(node, node_map, client):
                  node_uuid)
 
         patched = {}
-        for field, path in [('cpu', '/properties/cpus'),
-                            ('memory', '/properties/memory_mb'),
-                            ('disk', '/properties/local_gb'),
-                            ('arch', '/properties/cpu_arch'),
-                            ('name', '/name'),
-                            ('kernel_id', '/driver_info/deploy_kernel'),
-                            ('ramdisk_id', '/driver_info/deploy_ramdisk'),
-                            ('capabilities', '/properties/capabilities')]:
+        for field, path in _NON_DRIVER_FIELDS.items():
             if field in node:
                 patched[path] = node.pop(field)
 
@@ -384,6 +419,67 @@ def register_all_nodes(nodes_list, client, remove=False, glance_client=None,
     _clean_up_extra_nodes(seen, client, remove=remove)
 
     return seen
+
+
+def validate_nodes(nodes_list):
+    """Validate all nodes list.
+
+    :param nodes_list: The list of nodes to register.
+    :raises: InvalidNode on one or more invalid nodes
+    """
+    failures = []
+    unique_ids = set()
+    names = set()
+    macs = set()
+    for index, node in enumerate(nodes_list):
+        handler = _find_node_handler(node)
+
+        try:
+            handler.validate(node)
+        except exception.InvalidNode as exc:
+            failures.append((index, exc))
+
+        for mac in node.get('mac', ()):
+            if not netutils.is_valid_mac(mac):
+                failures.append((index, 'MAC address %s is invalid' % mac))
+
+            if mac in macs:
+                failures.append(
+                    (index, 'MAC %s is not unique' % mac))
+            else:
+                macs.add(mac)
+
+        unique_id = handler.unique_id_from_fields(node)
+        if unique_id:
+            if unique_id in unique_ids:
+                failures.append(
+                    (index,
+                     "Node identified by %s is already present" % unique_id))
+            else:
+                unique_ids.add(unique_id)
+
+        if node.get('name'):
+            if node['name'] in names:
+                failures.append(
+                    (index, 'Name "%s" is not unique' % node['name']))
+            else:
+                names.add(node['name'])
+
+        try:
+            capabilities_to_dict(node.get('capabilities'))
+        except (ValueError, TypeError):
+            failures.append(
+                (index, 'Invalid capabilities: %s' % node.get('capabilities')))
+
+        for field in node:
+            converted = handler.convert_key(field)
+            if (converted is None and field not in _NON_DRIVER_FIELDS and
+                    field not in ('mac', 'pm_type')):
+                failures.append((index, 'Unknown field %s' % field))
+
+    if failures:
+        raise exception.InvalidNode(
+            '\n'.join('node #%d: %s' % tpl for tpl in failures))
 
 
 def dict_to_capabilities(caps_dict):
