@@ -20,6 +20,9 @@
 # FIXME (kolla review to add ceilometer to swift proxy image)
 {% set swift_proxy_server_packages_append = ['openstack-ceilometer-common'] %}
 
+# Remove packages not present in repos
+{% set openstack_base_packages_remove = ['Percona-Server-shared-56'] %}
+
 # Use mariadb-server package
 {% set mariadb_packages_remove = ['MariaDB-Galera-server', 'MariaDB-client'] %}
 {% set mariadb_packages_append = ['mariadb-server'] %}
