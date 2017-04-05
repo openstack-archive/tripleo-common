@@ -12,16 +12,13 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import os
-import shutil
-import tempfile
-
 from mistral.workflow import utils as mistral_workflow_utils
 from mistralclient.api import base as mistralclient_api
 from oslo_concurrency.processutils import ProcessExecutionError
 
 from tripleo_common.actions import base
 from tripleo_common import constants
+from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import validations as utils
 
 
@@ -33,25 +30,13 @@ class GetPubkeyAction(base.TripleOAction):
             env = mc.environments.get('ssh_keys')
             public_key = env.variables['public_key']
         except Exception:
-            tmp_dir = tempfile.mkdtemp()
-            private_key_path = os.path.join(tmp_dir, 'id_rsa')
-            public_key_path = private_key_path + '.pub'
-            utils.create_ssh_keypair(private_key_path)
-
-            with open(private_key_path, 'r') as f:
-                private_key = f.read().strip()
-            with open(public_key_path, 'r') as f:
-                public_key = f.read().strip()
-
-            shutil.rmtree(tmp_dir)
+            ssh_key = password_utils.create_ssh_keypair()
+            public_key = ssh_key['public_key']
 
             workflow_env = {
                 'name': 'ssh_keys',
                 'description': 'SSH keys for TripleO validations',
-                'variables': {
-                    'public_key': public_key,
-                    'private_key': private_key,
-                }
+                'variables': ssh_key
             }
             mc.environments.create(**workflow_env)
 

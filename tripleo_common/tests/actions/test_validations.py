@@ -40,26 +40,19 @@ class GetPubkeyActionTest(base.TestCase):
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    @mock.patch('tripleo_common.utils.validations.create_ssh_keypair')
-    @mock.patch('tempfile.mkdtemp')
-    @mock.patch('shutil.rmtree')
-    def test_run_no_pubkey(self, mock_rmtree, mock_mkdtemp,
-                           mock_create_keypair, get_workflow_client_mock):
+    @mock.patch('tripleo_common.utils.passwords.create_ssh_keypair')
+    def test_run_no_pubkey(self, mock_create_keypair,
+                           get_workflow_client_mock):
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
         mistral.environments.get.side_effect = 'nope, sorry'
-        mock_mkdtemp.return_value = '/tmp_path'
+        mock_create_keypair.return_value = {
+            'public_key': 'public_key',
+            'private_key': 'private_key',
+        }
 
-        mock_open_context = mock.mock_open()
-        mock_open_context().read.side_effect = ['private_key', 'public_key']
-
-        with mock.patch('six.moves.builtins.open', mock_open_context):
-            action = validations.GetPubkeyAction()
-            self.assertEqual('public_key', action.run())
-
-        mock_mkdtemp.assert_called_once()
-        mock_create_keypair.assert_called_once_with('/tmp_path/id_rsa')
-        mock_rmtree.asser_called_once_with('/tmp_path')
+        action = validations.GetPubkeyAction()
+        self.assertEqual('public_key', action.run())
 
 
 class Enabled(base.TestCase):
