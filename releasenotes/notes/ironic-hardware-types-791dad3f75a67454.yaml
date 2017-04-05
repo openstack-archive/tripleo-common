@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Add support for enrolling nodes with ``ipmi`` hardware type.
