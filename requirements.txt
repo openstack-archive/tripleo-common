@@ -5,6 +5,8 @@
 pbr>=2.0.0 # Apache-2.0
 Babel>=2.3.4 # BSD
 docker-py>=1.8.1 # Apache-2.0
+gitdb>=0.6.4 # BSD License (3 clause)
+GitPython>=1.0.1 # BSD License (3 clause)
 python-heatclient>=1.6.1 # Apache-2.0
 oslo.config>=3.22.0 # Apache-2.0
 oslo.log>=3.22.0 # Apache-2.0
