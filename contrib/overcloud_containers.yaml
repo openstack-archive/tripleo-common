@@ -36,6 +36,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-nova-scheduler:latest
 - imagename: tripleoupstream/centos-binary-panko-api:latest
 - imagename: tripleoupstream/centos-binary-rabbitmq:latest
+- imagename: tripleoupstream/centos-binary-redis:latest
 - imagename: tripleoupstream/centos-binary-swift-account:latest
 - imagename: tripleoupstream/centos-binary-swift-container:latest
 - imagename: tripleoupstream/centos-binary-swift-proxy-server:latest
