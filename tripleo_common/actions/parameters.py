@@ -45,14 +45,16 @@ LOG = logging.getLogger(__name__)
 class GetParametersAction(templates.ProcessTemplatesAction):
     """Gets list of available heat parameters."""
 
-    def run(self):
+    def run(self, context):
 
-        cached = self.cache_get(self.container, "tripleo.parameters.get")
+        cached = self.cache_get(context,
+                                self.container,
+                                "tripleo.parameters.get")
 
         if cached is not None:
             return cached
 
-        processed_data = super(GetParametersAction, self).run()
+        processed_data = super(GetParametersAction, self).run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
@@ -62,9 +64,9 @@ class GetParametersAction(templates.ProcessTemplatesAction):
         processed_data['show_nested'] = True
 
         # respect previously user set param values
-        wc = self.get_workflow_client()
+        wc = self.get_workflow_client(context)
         wf_env = wc.environments.get(self.container)
-        orc = self.get_orchestration_client()
+        orc = self.get_orchestration_client(context)
 
         params = wf_env.variables.get('parameter_defaults')
 
@@ -78,7 +80,10 @@ class GetParametersAction(templates.ProcessTemplatesAction):
             'heat_resource_tree': orc.stacks.validate(**fields),
             'mistral_environment_parameters': params,
         }
-        self.cache_set(self.container, "tripleo.parameters.get", result)
+        self.cache_set(context,
+                       self.container,
+                       "tripleo.parameters.get",
+                       result)
         return result
 
 
@@ -89,8 +94,8 @@ class ResetParametersAction(base.TripleOAction):
         super(ResetParametersAction, self).__init__()
         self.container = container
 
-    def run(self):
-        wc = self.get_workflow_client()
+    def run(self, context):
+        wc = self.get_workflow_client(context)
         wf_env = wc.environments.get(self.container)
 
         if 'parameter_defaults' in wf_env.variables:
@@ -101,7 +106,9 @@ class ResetParametersAction(base.TripleOAction):
             'variables': wf_env.variables
         }
         wc.environments.update(**env_kwargs)
-        self.cache_delete(self.container, "tripleo.parameters.get")
+        self.cache_delete(context,
+                          self.container,
+                          "tripleo.parameters.get")
         return wf_env
 
 
@@ -114,8 +121,8 @@ class UpdateParametersAction(base.TripleOAction):
         self.container = container
         self.parameters = parameters
 
-    def run(self):
-        wc = self.get_workflow_client()
+    def run(self, context):
+        wc = self.get_workflow_client(context)
         wf_env = wc.environments.get(self.container)
         if 'parameter_defaults' not in wf_env.variables:
             wf_env.variables['parameter_defaults'] = {}
@@ -125,7 +132,9 @@ class UpdateParametersAction(base.TripleOAction):
             'variables': wf_env.variables
         }
         wc.environments.update(**env_kwargs)
-        self.cache_delete(self.container, "tripleo.parameters.get")
+        self.cache_delete(context,
+                          self.container,
+                          "tripleo.parameters.get")
         return wf_env
 
 
@@ -137,12 +146,12 @@ class UpdateRoleParametersAction(UpdateParametersAction):
                                                          container=container)
         self.role = role
 
-    def run(self):
-        baremetal_client = self.get_baremetal_client()
-        compute_client = self.get_compute_client()
+    def run(self, context):
+        baremetal_client = self.get_baremetal_client(context)
+        compute_client = self.get_compute_client(context)
         self.parameters = parameters.set_count_and_flavor_params(
             self.role, baremetal_client, compute_client)
-        return super(UpdateRoleParametersAction, self).run()
+        return super(UpdateRoleParametersAction, self).run(context)
 
 
 class GeneratePasswordsAction(base.TripleOAction):
@@ -157,10 +166,10 @@ class GeneratePasswordsAction(base.TripleOAction):
         super(GeneratePasswordsAction, self).__init__()
         self.container = container
 
-    def run(self):
+    def run(self, context):
 
-        orchestration = self.get_orchestration_client()
-        wc = self.get_workflow_client()
+        orchestration = self.get_orchestration_client(context)
+        wc = self.get_workflow_client(context)
         try:
             wf_env = wc.environments.get(self.container)
         except Exception:
@@ -192,7 +201,9 @@ class GeneratePasswordsAction(base.TripleOAction):
         }
 
         wc.environments.update(**env_kwargs)
-        self.cache_delete(self.container, "tripleo.parameters.get")
+        self.cache_delete(context,
+                          self.container,
+                          "tripleo.parameters.get")
 
         return wf_env.variables['passwords']
 
@@ -209,8 +220,8 @@ class GetPasswordsAction(base.TripleOAction):
         super(GetPasswordsAction, self).__init__()
         self.container = container
 
-    def run(self):
-        wc = self.get_workflow_client()
+    def run(self, context):
+        wc = self.get_workflow_client(context)
         try:
             wf_env = wc.environments.get(self.container)
         except Exception:
@@ -250,10 +261,10 @@ class GenerateFencingParametersAction(base.TripleOAction):
         self.ipmi_cipher = ipmi_cipher
         self.ipmi_lanplus = ipmi_lanplus
 
-    def run(self):
+    def run(self, context):
         """Returns the parameters for fencing controller nodes"""
-        hostmap = nodes.generate_hostmap(self.get_baremetal_client(),
-                                         self.get_compute_client())
+        hostmap = nodes.generate_hostmap(self.get_baremetal_client(context),
+                                         self.get_compute_client(context))
         fence_params = {"EnableFencing": True, "FencingConfig": {}}
         devices = []
 
@@ -369,9 +380,9 @@ class GetFlattenedParametersAction(GetParametersAction):
         flattened['resources'][key] = value
         return {key: value}
 
-    def run(self):
+    def run(self, context):
         # process all plan files and create or update a stack
-        processed_data = super(GetFlattenedParametersAction, self).run()
+        processed_data = super(GetFlattenedParametersAction, self).run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.

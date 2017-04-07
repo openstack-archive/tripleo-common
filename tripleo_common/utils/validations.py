@@ -19,7 +19,6 @@ import re
 import tempfile
 import yaml
 
-from mistral import context
 from oslo_concurrency import processutils
 
 from tripleo_common import constants
@@ -78,14 +77,13 @@ def find_validation(validation):
     return '{}/{}.yaml'.format(constants.DEFAULT_VALIDATIONS_PATH, validation)
 
 
-def run_validation(validation, identity_file, plan):
-    ctx = context.ctx()
+def run_validation(validation, identity_file, plan, context):
     return processutils.execute(
         '/usr/bin/sudo', '-u', 'validations',
-        'OS_AUTH_URL={}'.format(ctx.auth_uri),
-        'OS_USERNAME={}'.format(ctx.user_name),
-        'OS_AUTH_TOKEN={}'.format(ctx.auth_token),
-        'OS_TENANT_NAME={}'.format(ctx.project_name),
+        'OS_AUTH_URL={}'.format(context.auth_uri),
+        'OS_USERNAME={}'.format(context.user_name),
+        'OS_AUTH_TOKEN={}'.format(context.auth_token),
+        'OS_TENANT_NAME={}'.format(context.project_name),
         '/usr/bin/run-validation',
         find_validation(validation),
         identity_file,

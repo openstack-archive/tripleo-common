@@ -34,6 +34,7 @@ class GitCloneActionTest(base.TestCase):
         self.git_url = "https://github.com/openstack/tripleo-common.git"
         self.tag_ref = "some.test.ref"
         self.container = "overcloudtest"
+        self.ctx = mock.MagicMock()
 
     @mock.patch('tempfile.mkdtemp')
     @mock.patch('git.Repo.clone_from')
@@ -41,7 +42,7 @@ class GitCloneActionTest(base.TestCase):
 
         mock_mkdtemp.return_value = self.temp_url
         action = vcs.GitCloneAction(self.container, self.git_url)
-        action.run()
+        action.run(self.ctx)
 
         mock_mkdtemp.assert_called()
         mock_repo_clone.assert_called_with(self.git_url, self.temp_url)
@@ -53,7 +54,7 @@ class GitCloneActionTest(base.TestCase):
         mock_mkdtemp.return_value = self.temp_url
         mock_repo_clone.side_effect = git.exc.GitCommandError
         action = vcs.GitCloneAction(self.container, self.git_url)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             error="Error cloning remote repository: %s " % self.git_url
@@ -76,7 +77,7 @@ class GitCloneActionTest(base.TestCase):
             self.container,
             "{url}@{tag}".format(url=self.git_url, tag=self.tag_ref)
         )
-        result = action.run()
+        result = action.run(self.ctx)
 
         err_msg = ("Error finding %s reference from remote repository" %
                    self.tag_ref)
@@ -101,7 +102,7 @@ class GitCloneActionTest(base.TestCase):
             self.container,
             "{url}@{tag}".format(url=self.git_url, tag=self.tag_ref)
         )
-        result = action.run()
+        result = action.run(self.ctx)
 
         err_msg = ("Error checking out %s reference from remote "
                    "repository %s" % (self.tag_ref, self.git_url))
@@ -121,6 +122,7 @@ class GitCleanupActionTest(base.TestCase):
         self.container = "overcloud"
         self.temp_test_dir = tempfile.mkdtemp(
             suffix="_%s_import" % self.container)
+        self.ctx = mock.MagicMock()
 
     def tearDown(self):
         super(GitCleanupActionTest, self).tearDown()
@@ -129,10 +131,10 @@ class GitCleanupActionTest(base.TestCase):
 
     def test_run(self):
         action = vcs.GitCleanupAction(self.container)
-        action.run()
+        action.run(self.ctx)
         self.assertFalse(os.path.exists(self.temp_test_dir))
 
     def test_run_with_error(self):
         action = vcs.GitCleanupAction(str(uuid.uuid4()))
-        result = action.run()
+        result = action.run(self.ctx)
         self.assertIn("list index", str(result.error))

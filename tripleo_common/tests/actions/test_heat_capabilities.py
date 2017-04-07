@@ -141,6 +141,8 @@ class GetCapabilitiesActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run_yaml_error(self, get_obj_client_mock):
+
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
         swift.get_object.return_value = mock.Mock(side_effect=ValueError)
@@ -150,7 +152,7 @@ class GetCapabilitiesActionTest(base.TestCase):
         expected = mistral_workflow_utils.Result(
             data=None,
             error="Error parsing capabilities-map.yaml.")
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(mock_ctx))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
@@ -158,6 +160,7 @@ class GetCapabilitiesActionTest(base.TestCase):
     def test_run_mistral_error(self, get_workflow_client_mock,
                                get_obj_client_mock):
 
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
@@ -173,13 +176,14 @@ class GetCapabilitiesActionTest(base.TestCase):
         expected = mistral_workflow_utils.Result(
             data=None,
             error="Error retrieving mistral environment. ")
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(mock_ctx))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run(self, get_workflow_client_mock, get_obj_client_mock):
 
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
@@ -227,7 +231,7 @@ class GetCapabilitiesActionTest(base.TestCase):
 
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)
         yaml_mapping = yaml.safe_load(MAPPING_JSON_CONTENTS)
-        self.assertEqual(yaml_mapping, action.run())
+        self.assertEqual(yaml_mapping, action.run(mock_ctx))
 
 
 class UpdateCapabilitiesActionTest(base.TestCase):
@@ -241,6 +245,8 @@ class UpdateCapabilitiesActionTest(base.TestCase):
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run(self, get_workflow_client_mock, mock_cache):
+
+        mock_ctx = mock.MagicMock()
 
         # setup mistral
         mistral = mock.MagicMock()
@@ -267,9 +273,10 @@ class UpdateCapabilitiesActionTest(base.TestCase):
                 {'path': '/path/to/overcloud-default-env.yaml'},
                 {'path': '/path/to/poc-custom-env.yaml'}
             ]},
-            action.run())
+            action.run(mock_ctx))
 
         mock_cache.assert_called_once_with(
+            mock_ctx,
             self.container_name,
             "tripleo.parameters.get"
         )
@@ -279,6 +286,8 @@ class UpdateCapabilitiesActionTest(base.TestCase):
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run_purge_missing(self, get_workflow_client_mock, mock_cache):
+
+        mock_ctx = mock.MagicMock()
 
         # setup mistral
         mistral = mock.MagicMock()
@@ -305,8 +314,9 @@ class UpdateCapabilitiesActionTest(base.TestCase):
                 {'path': '/path/to/overcloud-default-env.yaml'},
                 {'path': '/path/to/poc-custom-env.yaml'}
             ]},
-            action.run())
+            action.run(mock_ctx))
         mock_cache.assert_called_once_with(
+            mock_ctx,
             self.container_name,
             "tripleo.parameters.get"
         )
@@ -318,6 +328,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
     def test_run_mistral_error(self, get_workflow_client_mock,
                                get_obj_client_mock):
 
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, MAPPING_YAML_CONTENTS)
@@ -334,4 +345,4 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         expected = mistral_workflow_utils.Result(
             data=None,
             error="Error retrieving mistral environment. ")
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(mock_ctx))

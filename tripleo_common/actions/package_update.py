@@ -33,9 +33,9 @@ class ClearBreakpointsAction(base.TripleOAction):
         self.stack_id = stack_id
         self.refs = refs
 
-    def run(self):
-        heat = self.get_orchestration_client()
-        nova = self.get_compute_client()
+    def run(self, context):
+        heat = self.get_orchestration_client(context)
+        nova = self.get_compute_client(context)
         update_manager = PackageUpdateManager(
             heat, nova, self.stack_id, stack_fields={})
         update_manager.clear_breakpoints(self.refs)
@@ -47,9 +47,9 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         super(UpdateStackAction, self).__init__(container)
         self.timeout_mins = timeout
 
-    def run(self):
+    def run(self, context):
         # get the stack. Error if doesn't exist
-        heat = self.get_orchestration_client()
+        heat = self.get_orchestration_client(context)
         try:
             stack = heat.stacks.get(self.container)
         except heat_exc.HTTPNotFound:
@@ -63,7 +63,7 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         parameters['UpdateIdentifier'] = timestamp
         parameters['StackAction'] = 'UPDATE'
 
-        wc = self.get_workflow_client()
+        wc = self.get_workflow_client(context)
         try:
             wf_env = wc.environments.get(self.container)
         except Exception:
@@ -83,7 +83,7 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         wc.environments.update(**env_kwargs)
 
         # process all plan files and create or update a stack
-        processed_data = super(UpdateStackAction, self).run()
+        processed_data = super(UpdateStackAction, self).run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.

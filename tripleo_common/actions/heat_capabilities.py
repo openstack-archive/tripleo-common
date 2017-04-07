@@ -38,9 +38,9 @@ class GetCapabilitiesAction(base.TripleOAction):
         super(GetCapabilitiesAction, self).__init__()
         self.container = container
 
-    def run(self):
+    def run(self, context):
         try:
-            swift_client = self.get_object_client()
+            swift_client = self.get_object_client(context)
             map_file = swift_client.get_object(
                 self.container, 'capabilities-map.yaml')
             capabilities = yaml.safe_load(map_file[1])
@@ -58,7 +58,7 @@ class GetCapabilitiesAction(base.TripleOAction):
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(error=err_msg)
         try:
-            mistral_client = self.get_workflow_client()
+            mistral_client = self.get_workflow_client(context)
             mistral_env = mistral_client.environments.get(self.container)
         except Exception as mistral_err:
             err_msg = ("Error retrieving mistral "
@@ -162,8 +162,8 @@ class UpdateCapabilitiesAction(base.TripleOAction):
         self.environments = environments
         self.purge_missing = purge_missing
 
-    def run(self):
-        mistral_client = self.get_workflow_client()
+    def run(self, context):
+        mistral_client = self.get_workflow_client(context)
         mistral_env = None
         try:
             mistral_env = mistral_client.environments.get(self.container)
@@ -192,7 +192,7 @@ class UpdateCapabilitiesAction(base.TripleOAction):
                 if env.get('path') not in self.environments:
                     mistral_env.variables['environments'].remove(env)
 
-        self.cache_delete(self.container, "tripleo.parameters.get")
+        self.cache_delete(context, self.container, "tripleo.parameters.get")
 
         env_kwargs = {
             'name': mistral_env.name,

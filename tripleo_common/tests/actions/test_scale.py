@@ -50,8 +50,7 @@ class ScaleDownActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
-    def test_run(self, mock_ctx, mock_get_object_client,
+    def test_run(self, mock_get_object_client,
                  mock_get_workflow_client, mock_get_template_contents,
                  mock_env_files, mock_get_heat_client,
                  mock_cache):
@@ -84,7 +83,7 @@ class ScaleDownActionTest(base.TestCase):
         heatclient.stacks.get.return_value = mock_stack()
         mock_get_heat_client.return_value = heatclient
 
-        mock_ctx.return_value = mock.MagicMock()
+        mock_ctx = mock.MagicMock()
         swift = mock.MagicMock(url="http://test.com")
         swift.get_object.side_effect = swiftexceptions.ClientException(
             'atest2')
@@ -113,7 +112,7 @@ class ScaleDownActionTest(base.TestCase):
         # Test
         action = scale.ScaleDownAction(
             constants.STACK_TIMEOUT_DEFAULT, ['resource_id'], 'stack')
-        action.run()
+        action.run(mock_ctx)
 
         heatclient.stacks.update.assert_called_once_with(
             'stack',
@@ -125,6 +124,7 @@ class ScaleDownActionTest(base.TestCase):
             timeout_mins=240)
 
         mock_cache.assert_called_once_with(
+            mock_ctx,
             "stack",
             "tripleo.parameters.get"
         )

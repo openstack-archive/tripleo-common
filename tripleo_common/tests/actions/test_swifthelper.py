@@ -22,10 +22,9 @@ class SwiftTempUrlActionTest(base.TestCase):
     @mock.patch('time.time')
     @mock.patch('uuid.uuid4')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
-    def _test_get_tempurl(self, secret, mock_ctx, mock_get_object_client,
+    def _test_get_tempurl(self, secret, mock_get_object_client,
                           mock_uuid, mock_time):
-        mock_ctx.return_value = mock.MagicMock()
+        mock_ctx = mock.MagicMock()
 
         url = "http://swift:8080/v1/AUTH_test"
         swiftclient = mock.MagicMock(url=url)
@@ -39,7 +38,7 @@ class SwiftTempUrlActionTest(base.TestCase):
         mock_time.return_value = 1500000000
 
         action = swifthelper.SwiftTempUrlAction("container", "obj")
-        tempurl = action.run()
+        tempurl = action.run(mock_ctx)
 
         expected = "%s/container/obj?temp_url_sig=%s&temp_url_expires=%d" % (
             url, "ea8fdc57e2b2b1fbb7210bddd40029a7c8d5e2ed", 1500086400)

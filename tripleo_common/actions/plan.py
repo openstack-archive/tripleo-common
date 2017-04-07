@@ -104,8 +104,8 @@ class CreateContainerAction(base.TripleOAction):
         super(CreateContainerAction, self).__init__()
         self.container = container
 
-    def run(self):
-        oc = self.get_object_client()
+    def run(self, context):
+        oc = self.get_object_client(context)
 
         # checks to see if a container has a valid name
         if not pattern_validator(constants.PLAN_NAME_PATTERN, self.container):
@@ -135,9 +135,9 @@ class CreatePlanAction(base.TripleOAction, PlanEnvMixin):
         super(CreatePlanAction, self).__init__()
         self.container = container
 
-    def run(self):
-        swift = self.get_object_client()
-        mistral = self.get_workflow_client()
+    def run(self, context):
+        swift = self.get_object_client(context)
+        mistral = self.get_workflow_client(context)
         env_data = {
             'name': self.container,
         }
@@ -202,9 +202,9 @@ class UpdatePlanAction(base.TripleOAction, PlanEnvMixin):
         super(UpdatePlanAction, self).__init__()
         self.container = container
 
-    def run(self):
-        swift = self.get_object_client()
-        mistral = self.get_workflow_client()
+    def run(self, context):
+        swift = self.get_object_client(context)
+        mistral = self.get_workflow_client(context)
 
         # Get plan environment from Swift
         try:
@@ -215,7 +215,7 @@ class UpdatePlanAction(base.TripleOAction, PlanEnvMixin):
 
         # Update mistral environment with contents from plan environment file
         variables = json.dumps(plan_env_dict, sort_keys=True)
-        self.cache_delete(self.container, "tripleo.parameters.get")
+        self.cache_delete(context, self.container, "tripleo.parameters.get")
         try:
             mistral.environments.update(
                 name=self.container, variables=variables)
@@ -248,13 +248,13 @@ class ListPlansAction(base.TripleOAction):
     name as the container.
     """
 
-    def run(self):
+    def run(self, context):
         # plans consist of a container object and mistral environment
         # with the same name.  The container is marked with metadata
         # to ensure it isn't confused with another container
         plan_list = []
-        oc = self.get_object_client()
-        mc = self.get_workflow_client()
+        oc = self.get_object_client(context)
+        mc = self.get_workflow_client(context)
         for item in oc.get_account()[1]:
             container = oc.get_container(item['name'])[0]
             if constants.TRIPLEO_META_USAGE_KEY in container.keys():
@@ -277,11 +277,13 @@ class DeletePlanAction(base.TripleOAction):
         super(DeletePlanAction, self).__init__()
         self.container = container
 
-    def run(self):
+    def run(self, context):
         error_text = None
         # heat throws HTTPNotFound if the stack is not found
         try:
-            stack = self.get_orchestration_client().stacks.get(self.container)
+            stack = self.get_orchestration_client(context).stacks.get(
+                self.container
+            )
         except heatexceptions.HTTPNotFound:
             pass
         else:
@@ -289,11 +291,11 @@ class DeletePlanAction(base.TripleOAction):
                 raise exception.StackInUseError(name=self.container)
 
         try:
-            swift = self.get_object_client()
+            swift = self.get_object_client(context)
             swiftutils.delete_container(swift, self.container)
 
             # if mistral environment exists, delete it too
-            mistral = self.get_workflow_client()
+            mistral = self.get_workflow_client(context)
             if self.container in [env.name for env in
                                   mistral.environments.list()]:
                 # deletes environment
@@ -323,13 +325,13 @@ class ListRolesAction(base.TripleOAction):
         super(ListRolesAction, self).__init__()
         self.container = container
 
-    def run(self):
+    def run(self, context):
         try:
-            mc = self.get_workflow_client()
+            mc = self.get_workflow_client(context)
             mistral_env = mc.environments.get(self.container)
             template_name = mistral_env.variables['template']
 
-            oc = self.get_object_client()
+            oc = self.get_object_client(context)
             resources = yaml.safe_load(
                 oc.get_object(self.container, template_name)[1])['resources']
         except Exception as mistral_err:
@@ -403,9 +405,9 @@ class ExportPlanAction(base.TripleOAction):
             swift.put_object(self.exports_container, tarball_name, tmp_tarball,
                              headers=headers)
 
-    def run(self):
-        swift = self.get_object_client()
-        mistral = self.get_workflow_client()
+    def run(self, context):
+        swift = self.get_object_client(context)
+        mistral = self.get_workflow_client(context)
         tmp_dir = tempfile.mkdtemp()
 
         try:

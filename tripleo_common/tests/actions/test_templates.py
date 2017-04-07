@@ -108,11 +108,11 @@ class UploadTemplatesActionTest(base.TestCase):
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
     def test_run(self, mock_create_tar, mock_extract_tar, mock_get_swift,
                  tempfile):
-
+        mock_ctx = mock.MagicMock()
         tempfile.return_value.__enter__.return_value.name = "test"
 
         action = templates.UploadTemplatesAction(container='tar-container')
-        action.run()
+        action.run(mock_ctx)
 
         mock_create_tar.assert_called_once_with(
             constants.DEFAULT_TEMPLATES_PATH, 'test')
@@ -191,12 +191,11 @@ class ProcessTemplatesActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
-    def test_run(self, mock_ctx, mock_get_object_client,
+    def test_run(self, mock_get_object_client,
                  mock_get_workflow_client, mock_get_template_contents,
                  mock_process_multiple_environments_and_files):
 
-        mock_ctx.return_value = mock.MagicMock()
+        mock_ctx = mock.MagicMock()
         swift = mock.MagicMock(url="http://test.com")
         swift.get_object.side_effect = swiftexceptions.ClientException(
             'atest2')
@@ -219,7 +218,7 @@ class ProcessTemplatesActionTest(base.TestCase):
 
         # Test
         action = templates.ProcessTemplatesAction()
-        result = action.run()
+        result = action.run(mock_ctx)
 
         # Verify the values we get out
         self.assertEqual(result, {
@@ -232,8 +231,7 @@ class ProcessTemplatesActionTest(base.TestCase):
         })
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
-    def test_process_custom_roles(self, ctx_mock, get_obj_client_mock):
+    def test_process_custom_roles(self, get_obj_client_mock):
 
         def return_multiple_files(*args):
             if args[1] == constants.OVERCLOUD_J2_NAME:
@@ -254,6 +252,7 @@ class ProcessTemplatesActionTest(base.TestCase):
                 {'name': constants.OVERCLOUD_J2_ROLES_NAME},
                 {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}])
 
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
@@ -263,7 +262,7 @@ class ProcessTemplatesActionTest(base.TestCase):
 
         # Test
         action = templates.ProcessTemplatesAction()
-        action._process_custom_roles()
+        action._process_custom_roles(mock_ctx)
 
         get_object_mock_calls = [
             mock.call('overcloud', constants.OVERCLOUD_J2_NAME),
@@ -285,9 +284,8 @@ class ProcessTemplatesActionTest(base.TestCase):
             put_object_mock_calls, any_order=True)
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
     def test_process_custom_roles_disable_constraints(
-            self, ctx_mock, get_obj_client_mock):
+            self, get_obj_client_mock):
 
         def return_multiple_files(*args):
             if args[1] == constants.OVERCLOUD_J2_NAME:
@@ -308,6 +306,7 @@ class ProcessTemplatesActionTest(base.TestCase):
                 {'name': constants.OVERCLOUD_J2_ROLES_NAME},
                 {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}])
 
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
@@ -317,7 +316,7 @@ class ProcessTemplatesActionTest(base.TestCase):
 
         # Test
         action = templates.ProcessTemplatesAction()
-        action._process_custom_roles()
+        action._process_custom_roles(mock_ctx)
 
         put_object_mock_call = mock.call(
             constants.DEFAULT_CONTAINER_NAME,
@@ -327,8 +326,7 @@ class ProcessTemplatesActionTest(base.TestCase):
                          put_object_mock_call)
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
-    def test_j2_render_and_put(self, ctx_mock, get_obj_client_mock):
+    def test_j2_render_and_put(self, get_obj_client_mock):
 
         # setup swift
         swift = mock.MagicMock()
@@ -347,8 +345,7 @@ class ProcessTemplatesActionTest(base.TestCase):
         self.assertTrue("CustomRole" in str(action_result))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
-    def test_j2_render_and_put_include(self, ctx_mock, get_obj_client_mock):
+    def test_j2_render_and_put_include(self, get_obj_client_mock):
 
         def return_multiple_files(*args):
             if args[1] == 'foo.yaml':
@@ -375,10 +372,8 @@ class ProcessTemplatesActionTest(base.TestCase):
         self.assertTrue("CustomRole" in str(action_result))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
     def test_j2_render_and_put_include_relative(
             self,
-            ctx_mock,
             get_obj_client_mock):
 
         def return_multiple_files(*args):
@@ -406,9 +401,9 @@ class ProcessTemplatesActionTest(base.TestCase):
         self.assertTrue("CustomRole" in str(action_result))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('mistral.context.ctx')
-    def test_get_j2_excludes_file(self, ctx_mock, get_obj_client_mock):
+    def test_get_j2_excludes_file(self, get_obj_client_mock):
 
+        mock_ctx = mock.MagicMock()
         swift = mock.MagicMock()
         get_obj_client_mock.return_value = swift
 
@@ -419,7 +414,7 @@ class ProcessTemplatesActionTest(base.TestCase):
         # Test - J2 exclude file with valid templates
         action = templates.ProcessTemplatesAction()
         self.assertTrue({'name': ['puppet/controller-role.yaml']} ==
-                        action._get_j2_excludes_file())
+                        action._get_j2_excludes_file(mock_ctx))
 
         def return_multiple_files(*args):
             if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
@@ -427,7 +422,7 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
         # Test - J2 exclude file with no template to exlude
         action = templates.ProcessTemplatesAction()
-        self.assertTrue({'name': []} == action._get_j2_excludes_file())
+        self.assertTrue({'name': []} == action._get_j2_excludes_file(mock_ctx))
 
         def return_multiple_files(*args):
             if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
@@ -435,4 +430,4 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
         # Test - J2 exclude file empty
         action = templates.ProcessTemplatesAction()
-        self.assertTrue({'name': []} == action._get_j2_excludes_file())
+        self.assertTrue({'name': []} == action._get_j2_excludes_file(mock_ctx))

@@ -59,19 +59,24 @@ class OrchestrationDeployActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_wait_for_data(self, get_obj_client_mock):
+        mock_ctx = mock.MagicMock()
+
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, 'body')
         get_obj_client_mock.return_value = swift
 
         action = deployment.OrchestrationDeployAction(self.server_id,
                                                       self.config, self.name)
-        self.assertEqual('body', action._wait_for_data('container', 'object'))
+        self.assertEqual('body', action._wait_for_data('container',
+                                                       'object',
+                                                       context=mock_ctx))
         get_obj_client_mock.assert_called_once()
         swift.get_object.assert_called_once_with('container', 'object')
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('time.sleep')
     def test_wait_for_data_timeout(self, sleep, get_obj_client_mock):
+        mock_ctx = mock.MagicMock()
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, None)
         get_obj_client_mock.return_value = swift
@@ -79,7 +84,9 @@ class OrchestrationDeployActionTest(base.TestCase):
         action = deployment.OrchestrationDeployAction(self.server_id,
                                                       self.config, self.name,
                                                       timeout=10)
-        self.assertEqual(None, action._wait_for_data('container', 'object'))
+        self.assertEqual(None, action._wait_for_data('container',
+                                                     'object',
+                                                     context=mock_ctx))
         get_obj_client_mock.assert_called_once()
         swift.get_object.assert_called_with('container', 'object')
         # Trying every 3 seconds, so 4 times for a timeout of 10 seconds
@@ -99,6 +106,7 @@ class OrchestrationDeployActionTest(base.TestCase):
                  extract_from_swift_url_mock, create_temp_url_mock,
                  get_heat_mock, get_obj_client_mock):
         extract_from_swift_url_mock.return_value = ('container', 'object')
+        mock_ctx = mock.MagicMock()
         build_sc_params_mock.return_value = {'foo': 'bar'}
         config = mock.MagicMock()
         sd = mock.MagicMock()
@@ -111,7 +119,7 @@ class OrchestrationDeployActionTest(base.TestCase):
         expected = mistral_workflow_utils.Result(
             data={"deploy_status_code": 0},
             error=None)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(context=mock_ctx))
         create_temp_url_mock.assert_called_once()
         extract_from_swift_url_mock.assert_called_once()
         build_sc_params_mock.assert_called_once()
@@ -138,6 +146,7 @@ class OrchestrationDeployActionTest(base.TestCase):
                          extract_from_swift_url_mock, create_temp_url_mock,
                          get_heat_mock, get_obj_client_mock):
         extract_from_swift_url_mock.return_value = ('container', 'object')
+        mock_ctx = mock.MagicMock()
         config = mock.MagicMock()
         sd = mock.MagicMock()
         get_heat_mock().software_configs.create.return_value = config
@@ -149,7 +158,7 @@ class OrchestrationDeployActionTest(base.TestCase):
         expected = mistral_workflow_utils.Result(
             data={},
             error="Timeout for heat deployment 'name'")
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(mock_ctx))
 
         sd.delete.assert_called_once()
         config.delete.assert_called_once()
@@ -171,6 +180,7 @@ class OrchestrationDeployActionTest(base.TestCase):
                         extract_from_swift_url_mock, create_temp_url_mock,
                         get_heat_mock, get_obj_client_mock):
         extract_from_swift_url_mock.return_value = ('container', 'object')
+        mock_ctx = mock.MagicMock()
         config = mock.MagicMock()
         sd = mock.MagicMock()
         get_heat_mock().software_configs.create.return_value = config
@@ -182,7 +192,7 @@ class OrchestrationDeployActionTest(base.TestCase):
         expected = mistral_workflow_utils.Result(
             data={"deploy_status_code": 1},
             error="Heat deployment failed for 'name'")
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(mock_ctx))
 
         sd.delete.assert_called_once()
         config.delete.assert_called_once()
@@ -205,14 +215,13 @@ class DeployStackActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
-    @mock.patch('mistral.context.ctx')
-    def test_run(self, mock_ctx, get_orchestration_client_mock,
+    def test_run(self, get_orchestration_client_mock,
                  mock_get_object_client, mock_get_workflow_client,
                  mock_get_template_contents,
                  mock_process_multiple_environments_and_files,
                  mock_time):
 
-        mock_ctx.return_value = mock.MagicMock()
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock(url="http://test.com")
         swift.get_object.side_effect = swiftexceptions.ClientException(
@@ -243,7 +252,7 @@ class DeployStackActionTest(base.TestCase):
         mock_time.time.return_value = 1473366264
 
         action = deployment.DeployStackAction(1, 'overcloud')
-        action.run()
+        action.run(mock_ctx)
 
         # verify parameters are as expected
         expected_defaults = {'DeployIdentifier': 1473366264,
@@ -275,15 +284,14 @@ class DeployStackActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
-    @mock.patch('mistral.context.ctx')
     def test_run_skip_deploy_identifier(
-            self, mock_ctx, get_orchestration_client_mock,
+            self, get_orchestration_client_mock,
             mock_get_object_client, mock_get_workflow_client,
             mock_get_template_contents,
             mock_process_multiple_environments_and_files,
             mock_time):
 
-        mock_ctx.return_value = mock.MagicMock()
+        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock(url="http://test.com")
         swift.get_object.side_effect = swiftexceptions.ClientException(
@@ -315,7 +323,7 @@ class DeployStackActionTest(base.TestCase):
 
         action = deployment.DeployStackAction(1, 'overcloud',
                                               skip_deploy_identifier=True)
-        action.run()
+        action.run(mock_ctx)
 
         # verify parameters are as expected
         expected_defaults = {'StackAction': 'CREATE',
@@ -344,15 +352,16 @@ class OvercloudRcActionTestCase(base.TestCase):
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('mistral.context.ctx')
-    def test_no_stack(self, mock_context, mock_get_orchestration,
+    def test_no_stack(self, mock_get_orchestration,
                       mock_get_workflow):
+
+        mock_ctx = mock.MagicMock()
 
         not_found = heat_exc.HTTPNotFound()
         mock_get_orchestration.return_value.stacks.get.side_effect = not_found
 
         action = deployment.OvercloudRcAction("overcast")
-        result = action.run()
+        result = action.run(mock_ctx)
 
         self.assertEqual(result.error, (
             "The Heat stack overcast could not be found. Make sure you have "
@@ -363,15 +372,16 @@ class OvercloudRcActionTestCase(base.TestCase):
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('mistral.context.ctx')
-    def test_no_env(self, mock_context, mock_get_orchestration,
+    def test_no_env(self, mock_get_orchestration,
                     mock_get_workflow):
+
+        mock_ctx = mock.MagicMock()
 
         not_found = mistralclient_exc.APIException()
         mock_get_workflow.return_value.environments.get.side_effect = not_found
 
         action = deployment.OvercloudRcAction("overcast")
-        result = action.run()
+        result = action.run(mock_ctx)
 
         self.assertEqual(
             result.error,
@@ -381,15 +391,15 @@ class OvercloudRcActionTestCase(base.TestCase):
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('mistral.context.ctx')
-    def test_no_password(self, mock_context, mock_get_orchestration,
+    def test_no_password(self, mock_get_orchestration,
                          mock_get_workflow):
+        mock_ctx = mock.MagicMock()
 
         mock_env = mock.MagicMock(variables={})
         mock_get_workflow.return_value.environments.get.return_value = mock_env
 
         action = deployment.OvercloudRcAction("overcast")
-        result = action.run()
+        result = action.run(mock_ctx)
 
         self.assertEqual(
             result.error,
@@ -400,9 +410,9 @@ class OvercloudRcActionTestCase(base.TestCase):
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('mistral.context.ctx')
-    def test_no_success(self, mock_context, mock_get_orchestration,
+    def test_no_success(self, mock_get_orchestration,
                         mock_get_workflow, mock_create_overcloudrc):
+        mock_ctx = mock.MagicMock()
 
         mock_create_overcloudrc.return_value = {
             "overcloudrc": "fake overcloudrc"
@@ -414,6 +424,6 @@ class OvercloudRcActionTestCase(base.TestCase):
         mock_get_workflow.return_value.environments.get.return_value = mock_env
 
         action = deployment.OvercloudRcAction("overcast")
-        result = action.run()
+        result = action.run(mock_ctx)
 
         self.assertEqual(result, {"overcloudrc": "fake overcloudrc"})

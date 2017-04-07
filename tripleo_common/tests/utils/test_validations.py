@@ -174,11 +174,10 @@ class RunValidationTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.validations.find_validation')
     @mock.patch('oslo_concurrency.processutils.execute')
-    @mock.patch('mistral.context.ctx')
-    def test_run_validation(self, mock_ctx, mock_execute,
+    def test_run_validation(self, mock_execute,
                             mock_find_validation):
         Ctx = namedtuple('Ctx', 'auth_uri user_name auth_token project_name')
-        mock_ctx.return_value = Ctx(
+        mock_ctx = Ctx(
             auth_uri='auth_uri',
             user_name='user_name',
             auth_token='auth_token',
@@ -188,7 +187,7 @@ class RunValidationTest(base.TestCase):
         mock_find_validation.return_value = 'validation_path'
 
         result = validations.run_validation('validation', 'identity_file',
-                                            'plan')
+                                            'plan', mock_ctx)
         self.assertEqual('output', result)
         mock_execute.assert_called_once_with(
             '/usr/bin/sudo', '-u', 'validations',

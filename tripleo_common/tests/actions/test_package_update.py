@@ -33,9 +33,10 @@ class ClearBreakpointsActionTest(base.TestCase):
     def test_run(self, mock_compute_client,
                  mock_orchestration_client,
                  mock_update_manager):
+        mock_ctx = mock.MagicMock()
         action = package_update.ClearBreakpointsAction(self.stack_id,
                                                        self.refs)
-        result = action.run()
+        result = action.run(mock_ctx)
         self.assertEqual(None, result)
         mock_compute_client.assert_called_once()
         mock_orchestration_client.assert_called_once()
@@ -55,7 +56,6 @@ class UpdateStackActionTest(base.TestCase):
         self.timeout = 1
         self.container = 'container'
 
-    @mock.patch('mistral.context.ctx')
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction.run')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
@@ -70,9 +70,9 @@ class UpdateStackActionTest(base.TestCase):
                  mock_compute_client,
                  mock_orchestration_client,
                  mock_workflow_client,
-                 mock_templates_run,
-                 mock_ctx,):
-        mock_ctx.return_value = mock.MagicMock()
+                 mock_templates_run
+                 ):
+        mock_ctx = mock.MagicMock()
         heat = mock.MagicMock()
         heat.stacks.get.return_value = mock.MagicMock(
             stack_name='stack', id='stack_id')
@@ -103,7 +103,7 @@ class UpdateStackActionTest(base.TestCase):
 
         action = package_update.UpdateStackAction(self.timeout,
                                                   container=self.container)
-        action.run()
+        action.run(mock_ctx)
 
         # verify parameters are as expected
         expected_defaults = {

@@ -48,15 +48,15 @@ class RegisterOrUpdateNodes(base.TripleOAction):
         self.kernel_name = kernel_name
         self.ramdisk_name = ramdisk_name
 
-    def run(self):
+    def run(self, context):
         for node in self.nodes_json:
             caps = node.get('capabilities', {})
             caps = nodes.capabilities_to_dict(caps)
             caps.setdefault('boot_option', self.instance_boot_option)
             node['capabilities'] = nodes.dict_to_capabilities(caps)
 
-        baremetal_client = self.get_baremetal_client()
-        image_client = self.get_image_client()
+        baremetal_client = self.get_baremetal_client(context)
+        image_client = self.get_image_client(context)
 
         try:
             return nodes.register_all_nodes(
@@ -81,7 +81,7 @@ class ValidateNodes(base.TripleOAction):
         super(ValidateNodes, self).__init__()
         self.nodes_json = nodes_json
 
-    def run(self):
+    def run(self, context):
         try:
             nodes.validate_nodes(self.nodes_json)
         except exception.InvalidNode as err:
@@ -110,9 +110,9 @@ class ConfigureBootAction(base.TripleOAction):
         self.ramdisk_name = ramdisk_name
         self.instance_boot_option = instance_boot_option
 
-    def run(self):
-        baremetal_client = self.get_baremetal_client()
-        image_client = self.get_image_client()
+    def run(self, context):
+        baremetal_client = self.get_baremetal_client(context)
+        image_client = self.get_image_client(context)
 
         try:
             image_ids = {'kernel': None, 'ramdisk': None}
@@ -176,17 +176,21 @@ class ConfigureRootDeviceAction(base.TripleOAction):
         self.minimum_size = minimum_size
         self.overwrite = overwrite
 
-    def run(self):
+    def run(self, context):
         if not self.root_device:
             return
 
-        baremetal_client = self.get_baremetal_client()
+        baremetal_client = self.get_baremetal_client(context)
         node = baremetal_client.node.get(self.node_uuid)
         self._apply_root_device_strategy(
-            node, self.root_device, self.minimum_size, self.overwrite)
+            node,
+            self.root_device,
+            self.minimum_size,
+            self.overwrite,
+            context=context)
 
     def _apply_root_device_strategy(self, node, strategy, minimum_size,
-                                    overwrite=False):
+                                    overwrite=False, context=None):
         if node.properties.get('root_device') and not overwrite:
             # This is a correct situation, we still want to allow people to
             # fine-tune the root device setting for a subset of nodes.
@@ -200,7 +204,7 @@ class ConfigureRootDeviceAction(base.TripleOAction):
                         node.uuid)
             return
 
-        inspector_client = self.get_baremetal_introspection_client()
+        inspector_client = self.get_baremetal_introspection_client(context)
         try:
             data = inspector_client.get_data(node.uuid)
         except ironic_inspector_client.ClientError:
@@ -266,7 +270,7 @@ class ConfigureRootDeviceAction(base.TripleOAction):
         # This -1 is what we always do to account for partitioning
         new_size -= 1
 
-        bm_client = self.get_baremetal_client()
+        bm_client = self.get_baremetal_client(context)
         bm_client.node.update(
             node.uuid,
             [{'op': 'add', 'path': '/properties/root_device', 'value': hint},
@@ -294,8 +298,8 @@ class UpdateNodeCapability(base.TripleOAction):
         self.capability = capability
         self.value = value
 
-    def run(self):
-        baremetal_client = self.get_baremetal_client()
+    def run(self, context):
+        baremetal_client = self.get_baremetal_client(context)
 
         try:
             return nodes.update_node_capability(
@@ -318,7 +322,7 @@ class CellV2DiscoverHostsAction(base.TripleOAction):
 
     """
 
-    def run(self):
+    def run(self, context):
         try:
             result = nodes.run_nova_cell_v2_discovery()
             LOG.info(
@@ -340,7 +344,7 @@ class GetProfileAction(base.TripleOAction):
         super(GetProfileAction, self).__init__()
         self.node = node
 
-    def run(self):
+    def run(self, context):
         result = {}
         result['profile'] = nodes.get_node_profile(self.node)
         result['uuid'] = self.node.get('uuid')

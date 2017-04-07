@@ -65,10 +65,10 @@ class OrchestrationDeployAction(base.TripleOAction):
             signal_id=swift_url
         )
 
-    def _wait_for_data(self, container_name, object_name):
+    def _wait_for_data(self, container_name, object_name, context):
         body = None
         count_check = 0
-        swift_client = self.get_object_client()
+        swift_client = self.get_object_client(context)
         while not body:
             headers, body = swift_client.get_object(
                 container_name,
@@ -81,9 +81,9 @@ class OrchestrationDeployAction(base.TripleOAction):
 
         return body
 
-    def run(self):
-        heat = self.get_orchestration_client()
-        swift_client = self.get_object_client()
+    def run(self, context):
+        heat = self.get_orchestration_client(context)
+        swift_client = self.get_object_client(context)
 
         swift_url = deployment_utils.create_temp_url(swift_client,
                                                      self.name,
@@ -102,7 +102,7 @@ class OrchestrationDeployAction(base.TripleOAction):
             status='IN_PROGRESS'
         )
 
-        body = self._wait_for_data(container_name, object_name)
+        body = self._wait_for_data(container_name, object_name, context)
 
         # cleanup
         try:
@@ -134,9 +134,9 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         self.timeout_mins = timeout
         self.skip_deploy_identifier = skip_deploy_identifier
 
-    def run(self):
+    def run(self, context):
         # check to see if the stack exists
-        heat = self.get_orchestration_client()
+        heat = self.get_orchestration_client(context)
         try:
             stack = heat.stacks.get(self.container)
         except heat_exc.HTTPNotFound:
@@ -145,7 +145,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         stack_is_new = stack is None
 
         # update StackAction, DeployIdentifier and UpdateIdentifier
-        wc = self.get_workflow_client()
+        wc = self.get_workflow_client(context)
         wf_env = wc.environments.get(self.container)
 
         parameters = dict()
@@ -165,7 +165,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         wc.environments.update(**env_kwargs)
 
         # process all plan files and create or update a stack
-        processed_data = super(DeployStackAction, self).run()
+        processed_data = super(DeployStackAction, self).run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
@@ -176,7 +176,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         stack_args['timeout_mins'] = self.timeout_mins
 
         if stack_is_new:
-            swift_client = self.get_object_client()
+            swift_client = self.get_object_client(context)
             try:
                 swift_client.copy_object(
                     "%s-swift-rings" % self.container, "swift-rings.tar.gz",
@@ -209,9 +209,9 @@ class OvercloudRcAction(base.TripleOAction):
         self.container = container
         self.no_proxy = no_proxy
 
-    def run(self):
-        orchestration_client = self.get_orchestration_client()
-        workflow_client = self.get_workflow_client()
+    def run(self, context):
+        orchestration_client = self.get_orchestration_client(context)
+        workflow_client = self.get_workflow_client(context)
 
         try:
             stack = orchestration_client.stacks.get(self.container)

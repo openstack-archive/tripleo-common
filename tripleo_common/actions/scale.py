@@ -63,18 +63,19 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         super(ScaleDownAction, self).__init__(container)
 
     def _update_stack(self, parameters={},
-                      timeout_mins=constants.STACK_TIMEOUT_DEFAULT):
+                      timeout_mins=constants.STACK_TIMEOUT_DEFAULT,
+                      context=None):
         # TODO(rbrady): migrate _update_stack to it's own action and update
         # the workflow for scale down
 
         # update the plan parameters with the scaled down parameters
         update_params_action = parameters_actions.UpdateParametersAction(
             parameters, self.container)
-        updated_plan = update_params_action.run()
+        updated_plan = update_params_action.run(context)
         if isinstance(updated_plan, mistral_workflow_utils.Result):
             return updated_plan
 
-        processed_data = super(ScaleDownAction, self).run()
+        processed_data = super(ScaleDownAction, self).run(context)
         if isinstance(processed_data, mistral_workflow_utils.Result):
             return processed_data
 
@@ -85,8 +86,8 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         fields['existing'] = True
 
         LOG.debug('stack update params: %s', fields)
-        self.get_orchestration_client().stacks.update(self.container,
-                                                      **fields)
+        self.get_orchestration_client(context).stacks.update(self.container,
+                                                             **fields)
 
     def _get_removal_params_from_heat(self, resources_by_role, resources):
         stack_params = {}
@@ -110,8 +111,8 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
 
         return stack_params
 
-    def run(self):
-        heatclient = self.get_orchestration_client()
+    def run(self, context):
+        heatclient = self.get_orchestration_client(context)
         resources = heatclient.resources.list(self.container, nested_depth=5)
         resources_by_role = collections.defaultdict(list)
         instance_list = list(self.nodes)
@@ -144,4 +145,4 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         stack_params = self._get_removal_params_from_heat(
             resources_by_role, resources)
 
-        self._update_stack(parameters=stack_params)
+        self._update_stack(parameters=stack_params, context=context)

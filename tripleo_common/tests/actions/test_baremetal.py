@@ -57,11 +57,12 @@ class TestConfigureBootAction(base.TestCase):
             elif name == 'bm-deploy-ramdisk':
                 return mock.MagicMock(id='r_id')
         self.glance.images.find = mock_find
+        self.context = mock.MagicMock()
 
     def test_run_instance_boot_option(self):
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID',
                                                instance_boot_option='netboot')
-        result = action.run()
+        result = action.run(self.context)
         self.assertEqual(result, None)
 
         self.node_update[0].update({'value': 'boot_option:netboot'})
@@ -70,7 +71,7 @@ class TestConfigureBootAction(base.TestCase):
 
     def test_run_instance_boot_option_not_set(self):
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID')
-        result = action.run()
+        result = action.run(self.context)
         self.assertEqual(result, None)
 
         self.node_update[0].update({'value': 'boot_option:local'})
@@ -83,7 +84,7 @@ class TestConfigureBootAction(base.TestCase):
         self.ironic.node.get.return_value = node_mock
 
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID')
-        result = action.run()
+        result = action.run(self.context)
         self.assertEqual(result, None)
 
         self.node_update[0].update({'value': 'boot_option:netboot'})
@@ -97,7 +98,7 @@ class TestConfigureBootAction(base.TestCase):
 
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID',
                                                instance_boot_option='local')
-        result = action.run()
+        result = action.run(self.context)
         self.assertEqual(result, None)
 
         self.node_update[0].update({'value': 'boot_option:local'})
@@ -113,7 +114,7 @@ class TestConfigureBootAction(base.TestCase):
             action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID',
                                                    kernel_name='test_kernel',
                                                    ramdisk_name='test_ramdisk')
-            result = action.run()
+            result = action.run(self.context)
 
         self.assertEqual(result, None)
 
@@ -129,14 +130,14 @@ class TestConfigureBootAction(base.TestCase):
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID',
                                                kernel_name='unknown_kernel',
                                                ramdisk_name='unknown_ramdisk')
-        result = action.run()
+        result = action.run(self.context)
         self.assertIn("not found", str(result.error))
 
     def test_run_exception_on_node_update(self):
         self.ironic.node.update.side_effect = Exception("Update error")
 
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID')
-        result = action.run()
+        result = action.run(self.context)
 
         self.assertIn("Update error", str(result.error))
 
@@ -185,11 +186,12 @@ class TestConfigureRootDeviceAction(base.TestCase):
         self.inspector.get_data.return_value = {
             'inventory': {'disks': self.disks}
         }
+        self.context = mock.MagicMock()
 
     def test_smallest(self):
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest')
-        action.run()
+        action.run(self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 1)
         root_device_args = self.ironic.node.update.call_args_list[0]
@@ -203,7 +205,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
     def test_largest(self):
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='largest')
-        action.run()
+        action.run(self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 1)
         root_device_args = self.ironic.node.update.call_args_list[0]
@@ -219,7 +221,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
 
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest')
-        action.run()
+        action.run(self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -229,7 +231,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest',
                                                      overwrite=True)
-        action.run()
+        action.run(self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 1)
         root_device_args = self.ironic.node.update.call_args_list[0]
@@ -244,7 +246,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest',
                                                      minimum_size=10)
-        action.run()
+        action.run(self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 1)
         root_device_args = self.ironic.node.update.call_args_list[0]
@@ -262,7 +264,8 @@ class TestConfigureRootDeviceAction(base.TestCase):
                                                      root_device='smallest')
         self.assertRaisesRegexp(exception.RootDeviceDetectionError,
                                 "Malformed introspection data",
-                                action.run)
+                                action.run,
+                                self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -277,7 +280,8 @@ class TestConfigureRootDeviceAction(base.TestCase):
                                                      root_device='smallest')
         self.assertRaisesRegexp(exception.RootDeviceDetectionError,
                                 "No suitable disks",
-                                action.run)
+                                action.run,
+                                self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -289,7 +293,8 @@ class TestConfigureRootDeviceAction(base.TestCase):
                                                      root_device='smallest')
         self.assertRaisesRegexp(exception.RootDeviceDetectionError,
                                 "No introspection data",
-                                action.run)
+                                action.run,
+                                self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -304,7 +309,8 @@ class TestConfigureRootDeviceAction(base.TestCase):
                                                      root_device='smallest')
         self.assertRaisesRegexp(exception.RootDeviceDetectionError,
                                 "Neither WWN nor serial number are known",
-                                action.run)
+                                action.run,
+                                self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -312,7 +318,7 @@ class TestConfigureRootDeviceAction(base.TestCase):
         action = baremetal.ConfigureRootDeviceAction(
             node_uuid='MOCK_UUID',
             root_device='hda,sda,sdb,sdc')
-        action.run()
+        action.run(self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 1)
         root_device_args = self.ironic.node.update.call_args_list[0]
@@ -329,7 +335,8 @@ class TestConfigureRootDeviceAction(base.TestCase):
 
         self.assertRaisesRegexp(exception.RootDeviceDetectionError,
                                 "Cannot find a disk",
-                                action.run)
+                                action.run,
+                                self.context)
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
 
@@ -338,7 +345,7 @@ class TestCellV2DiscoverHostsAction(base.TestCase):
     @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
     def test_run(self, mock_command):
         action = baremetal.CellV2DiscoverHostsAction()
-        action.run()
+        action.run(mock.MagicMock())
         mock_command.assert_called_once()
 
     @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
@@ -350,7 +357,7 @@ class TestCellV2DiscoverHostsAction(base.TestCase):
             cmd='command'
         )
         action = baremetal.CellV2DiscoverHostsAction()
-        result = action.run()
+        result = action.run(mock.MagicMock())
         self.assertTrue(result.is_error())
         mock_command.assert_called_once()
 
@@ -358,6 +365,7 @@ class TestCellV2DiscoverHostsAction(base.TestCase):
 class TestGetProfileAction(base.TestCase):
 
     def test_run(self):
+        mock_ctx = mock.MagicMock()
         node = {
             'uuid': 'abcd1',
             'properties': {
@@ -365,7 +373,7 @@ class TestGetProfileAction(base.TestCase):
             }
         }
         action = baremetal.GetProfileAction(node=node)
-        result = action.run()
+        result = action.run(mock_ctx)
         expected_result = {
             'uuid': 'abcd1',
             'profile': 'compute'

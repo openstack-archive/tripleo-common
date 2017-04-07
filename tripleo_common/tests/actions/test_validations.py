@@ -31,6 +31,7 @@ class GetPubkeyActionTest(base.TestCase):
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_run_existing_pubkey(self, get_workflow_client_mock):
+        mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
         environment = collections.namedtuple('environment', ['variables'])
@@ -38,13 +39,14 @@ class GetPubkeyActionTest(base.TestCase):
             'public_key': 'existing_pubkey'
         })
         action = validations.GetPubkeyAction()
-        self.assertEqual('existing_pubkey', action.run())
+        self.assertEqual('existing_pubkey', action.run(mock_ctx))
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     @mock.patch('tripleo_common.utils.passwords.create_ssh_keypair')
     def test_run_no_pubkey(self, mock_create_keypair,
                            get_workflow_client_mock):
+        mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
         mistral.environments.get.side_effect = 'nope, sorry'
@@ -54,7 +56,7 @@ class GetPubkeyActionTest(base.TestCase):
         }
 
         action = validations.GetPubkeyAction()
-        self.assertEqual('public_key', action.run())
+        self.assertEqual('public_key', action.run(mock_ctx))
 
 
 class Enabled(base.TestCase):
@@ -62,21 +64,23 @@ class Enabled(base.TestCase):
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_validations_enabled(self, get_workflow_client_mock):
+        mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
         mistral.environments.get.return_value = {}
         action = validations.Enabled()
-        result = action._validations_enabled()
+        result = action._validations_enabled(mock_ctx)
         self.assertEqual(result, True)
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_validations_disabled(self, get_workflow_client_mock):
+        mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
         mistral.environments.get.side_effect = Exception()
         action = validations.Enabled()
-        result = action._validations_enabled()
+        result = action._validations_enabled(mock_ctx)
         self.assertEqual(result, False)
 
     @mock.patch(
@@ -85,9 +89,10 @@ class Enabled(base.TestCase):
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_success_with_validations_enabled(self, get_workflow_client_mock,
                                               validations_enabled_mock):
+        mock_ctx = mock.MagicMock()
         validations_enabled_mock.return_value = True
         action = validations.Enabled()
-        action_result = action.run()
+        action_result = action.run(mock_ctx)
         self.assertEqual(None, action_result.error)
         self.assertEqual('Validations are enabled',
                          action_result.data['stdout'])
@@ -98,9 +103,10 @@ class Enabled(base.TestCase):
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     def test_success_with_validations_disabled(self, get_workflow_client_mock,
                                                validations_enabled_mock):
+        mock_ctx = mock.MagicMock()
         validations_enabled_mock.return_value = False
         action = validations.Enabled()
-        action_result = action.run()
+        action_result = action.run(mock_ctx)
         self.assertEqual(None, action_result.data)
         self.assertEqual('Validations are disabled',
                          action_result.error['stdout'])
@@ -110,17 +116,19 @@ class ListValidationsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.validations.load_validations')
     def test_run_default(self, mock_load_validations):
+        mock_ctx = mock.MagicMock()
         mock_load_validations.return_value = 'list of validations'
         action = validations.ListValidationsAction()
-        self.assertEqual('list of validations', action.run())
+        self.assertEqual('list of validations', action.run(mock_ctx))
         mock_load_validations.assert_called_once_with(groups=None)
 
     @mock.patch('tripleo_common.utils.validations.load_validations')
     def test_run_groups(self, mock_load_validations):
+        mock_ctx = mock.MagicMock()
         mock_load_validations.return_value = 'list of validations'
         action = validations.ListValidationsAction(groups=['group1',
                                                            'group2'])
-        self.assertEqual('list of validations', action.run())
+        self.assertEqual('list of validations', action.run(mock_ctx))
         mock_load_validations.assert_called_once_with(groups=['group1',
                                                               'group2'])
 
@@ -129,12 +137,13 @@ class ListGroupsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.validations.load_validations')
     def test_run(self, mock_load_validations):
+        mock_ctx = mock.MagicMock()
         mock_load_validations.return_value = [
             test_validations.VALIDATION_GROUPS_1_2_PARSED,
             test_validations.VALIDATION_GROUP_1_PARSED,
             test_validations.VALIDATION_WITH_METADATA_PARSED]
         action = validations.ListGroupsAction()
-        self.assertEqual(set(['group1', 'group2']), action.run())
+        self.assertEqual(set(['group1', 'group2']), action.run(mock_ctx))
         mock_load_validations.assert_called_once_with()
 
 
@@ -147,6 +156,7 @@ class RunValidationActionTest(base.TestCase):
     @mock.patch('tripleo_common.utils.validations.run_validation')
     def test_run(self, mock_run_validation, mock_cleanup_identity_file,
                  mock_write_identity_file, get_workflow_client_mock):
+        mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
         environment = collections.namedtuple('environment', ['variables'])
@@ -162,12 +172,13 @@ class RunValidationActionTest(base.TestCase):
                 'stderr': 'error'
             },
             error=None)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(mock_ctx))
         mock_write_identity_file.assert_called_once_with('shhhh')
         mock_run_validation.assert_called_once_with(
             'validation',
             'identity_file_path',
-            constants.DEFAULT_CONTAINER_NAME)
+            constants.DEFAULT_CONTAINER_NAME,
+            mock_ctx)
         mock_cleanup_identity_file.assert_called_once_with(
             'identity_file_path')
 
@@ -178,6 +189,7 @@ class RunValidationActionTest(base.TestCase):
     @mock.patch('tripleo_common.utils.validations.run_validation')
     def test_run_failing(self, mock_run_validation, mock_cleanup_identity_file,
                          mock_write_identity_file, get_workflow_client_mock):
+        mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
         environment = collections.namedtuple('environment', ['variables'])
@@ -194,12 +206,13 @@ class RunValidationActionTest(base.TestCase):
                 'stdout': 'output',
                 'stderr': 'error'
             })
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(mock_ctx))
         mock_write_identity_file.assert_called_once_with('shhhh')
         mock_run_validation.assert_called_once_with(
             'validation',
             'identity_file_path',
-            constants.DEFAULT_CONTAINER_NAME)
+            constants.DEFAULT_CONTAINER_NAME,
+            mock_ctx)
         mock_cleanup_identity_file.assert_called_once_with(
             'identity_file_path')
 
@@ -211,6 +224,7 @@ class TestCheckBootImagesAction(base.TestCase):
             {'id': '67890', 'name': 'ramdisk'},
             {'id': '12345', 'name': 'kernel'},
         ]
+        self.ctx = mock.MagicMock()
 
     @mock.patch(
         'tripleo_common.actions.validations.CheckBootImagesAction'
@@ -229,7 +243,7 @@ class TestCheckBootImagesAction(base.TestCase):
             'deploy_ramdisk_name': 'ramdisk'
         }
         action = validations.CheckBootImagesAction(**action_args)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(self.ctx))
         mock_check_for_image.assert_has_calls([
             mock.call('kernel', []),
             mock.call('ramdisk', [])
@@ -320,6 +334,7 @@ class TestCheckFlavorsAction(base.TestCase):
         ]
         self.mock_flavors.attach_mock(
             mock.Mock(return_value=self.mock_flavor_list), 'list')
+        self.ctx = mock.MagicMock()
 
     def test_run_success(self):
         roles_info = {
@@ -344,7 +359,7 @@ class TestCheckFlavorsAction(base.TestCase):
             'roles_info': roles_info
         }
         action = validations.CheckFlavorsAction(**action_args)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(self.ctx))
 
     def test_run_boot_option_is_netboot(self):
         roles_info = {
@@ -381,7 +396,7 @@ class TestCheckFlavorsAction(base.TestCase):
             'roles_info': roles_info
         }
         action = validations.CheckFlavorsAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
         self.assertEqual(expected, result)
 
     def test_run_flavor_does_not_exist(self):
@@ -404,7 +419,7 @@ class TestCheckFlavorsAction(base.TestCase):
             'roles_info': roles_info
         }
         action = validations.CheckFlavorsAction(**action_args)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(self.ctx))
 
 
 class TestCheckNodeBootConfigurationAction(base.TestCase):
@@ -422,6 +437,7 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
                 'capabilities': 'boot_option:local',
             }
         }
+        self.ctx = mock.MagicMock()
 
     def test_run_success(self):
         expected = mistral_workflow_utils.Result(
@@ -434,7 +450,7 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
             'ramdisk_id': self.ramdisk_id,
         }
         action = validations.CheckNodeBootConfigurationAction(**action_args)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(self.ctx))
 
     def test_run_invalid_ramdisk(self):
         expected = mistral_workflow_utils.Result(
@@ -454,7 +470,7 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
             'ramdisk_id': self.ramdisk_id,
         }
         action = validations.CheckNodeBootConfigurationAction(**action_args)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(self.ctx))
 
     def test_no_boot_option_local(self):
         expected = mistral_workflow_utils.Result(
@@ -479,7 +495,7 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
         }
 
         action = validations.CheckNodeBootConfigurationAction(**action_args)
-        self.assertEqual(expected, action.run())
+        self.assertEqual(expected, action.run(self.ctx))
 
 
 class TestVerifyProfilesAction(base.TestCase):
@@ -489,6 +505,7 @@ class TestVerifyProfilesAction(base.TestCase):
         self.nodes = []
         self.flavors = {name: (self._get_fake_flavor(name), 1)
                         for name in ('compute', 'control')}
+        self.ctx = mock.MagicMock()
 
     def _get_fake_node(self, profile=None, possible_profiles=[],
                        provision_state='available'):
@@ -516,7 +533,7 @@ class TestVerifyProfilesAction(base.TestCase):
 
     def _test(self, expected_result):
         action = validations.VerifyProfilesAction(self.nodes, self.flavors)
-        result = action.run()
+        result = action.run(self.ctx)
 
         self.assertEqual(expected_result, result)
 
@@ -594,7 +611,7 @@ class TestVerifyProfilesAction(base.TestCase):
                    'warnings': []})
 
         action = validations.VerifyProfilesAction(self.nodes, self.flavors)
-        result = action.run()
+        result = action.run(self.ctx)
         self.assertEqual(expected.error['errors'].sort(),
                          result.error['errors'].sort())
         self.assertEqual(expected.error['warnings'], result.error['warnings'])
@@ -656,7 +673,7 @@ class TestVerifyProfilesAction(base.TestCase):
             })
 
         action = validations.VerifyProfilesAction(self.nodes, self.flavors)
-        result = action.run()
+        result = action.run(self.ctx)
         self.assertEqual(expected.error['errors'].sort(),
                          result.error['errors'].sort())
         self.assertEqual(expected.error['warnings'], result.error['warnings'])
@@ -702,6 +719,7 @@ class TestCheckNodesCountAction(base.TestCase):
             'default_role_counts': self.defaults,
             'statistics': {'count': 3, 'memory_mb': 1, 'vcpus': 1},
         }
+        self.ctx = mock.MagicMock()
 
     def _ironic_node_list(self, associated, maintenance):
         if associated:
@@ -714,7 +732,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action_args = self.action_args.copy()
 
         action = validations.CheckNodesCountAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             data={
@@ -736,7 +754,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action_args.update({'statistics': statistics})
 
         action = validations.CheckNodesCountAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             error={
@@ -759,7 +777,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action_args['parameters'] = {'ControllerCount': 2}
 
         action = validations.CheckNodesCountAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             data={
@@ -779,7 +797,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action_args['parameters'] = {'ControllerCount': 3}
 
         action = validations.CheckNodesCountAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             error={
@@ -801,7 +819,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action_args['stack'] = {'parameters': self.defaults.copy()}
 
         action = validations.CheckNodesCountAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             data={
@@ -822,7 +840,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action_args['stack'] = {'parameters': self.defaults.copy()}
 
         action = validations.CheckNodesCountAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             error={
@@ -846,7 +864,7 @@ class TestCheckNodesCountAction(base.TestCase):
         del action_args['stack']['parameters'][missing_param]
 
         action = validations.CheckNodesCountAction(**action_args)
-        result = action.run()
+        result = action.run(self.ctx)
 
         expected = mistral_workflow_utils.Result(
             error={

@@ -30,8 +30,8 @@ class SwiftTempUrlAction(base.TripleOAction):
         self.method = method
         self.valid = valid
 
-    def run(self):
-        swift_client = self.get_object_client()
+    def run(self, context):
+        swift_client = self.get_object_client(context)
 
         try:
             cont_stat = swift_client.head_container(self.container)

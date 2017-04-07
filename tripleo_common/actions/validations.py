@@ -25,8 +25,8 @@ from tripleo_common.utils import validations as utils
 
 class GetPubkeyAction(base.TripleOAction):
 
-    def run(self):
-        mc = self.get_workflow_client()
+    def run(self, context):
+        mc = self.get_workflow_client(context)
         try:
             env = mc.environments.get('ssh_keys')
             public_key = env.variables['public_key']
@@ -47,9 +47,9 @@ class GetPubkeyAction(base.TripleOAction):
 class Enabled(base.TripleOAction):
     """Indicate whether the validations have been enabled."""
 
-    def _validations_enabled(self):
+    def _validations_enabled(self, context):
         """Detect whether the validations are enabled on the undercloud."""
-        mistral = self.get_workflow_client()
+        mistral = self.get_workflow_client(context)
         try:
             # NOTE: the `ssh_keys` environment is created by
             # instack-undercloud only when the validations are enabled on the
@@ -60,9 +60,9 @@ class Enabled(base.TripleOAction):
         except Exception:
             return False
 
-    def run(self):
+    def run(self, context):
         return_value = {'stderr': ''}
-        if self._validations_enabled():
+        if self._validations_enabled(context):
             return_value['stdout'] = 'Validations are enabled'
             mistral_result = {"data": return_value}
         else:
@@ -77,14 +77,14 @@ class ListValidationsAction(base.TripleOAction):
         super(ListValidationsAction, self).__init__()
         self.groups = groups
 
-    def run(self):
+    def run(self, context):
         return utils.load_validations(groups=self.groups)
 
 
 class ListGroupsAction(base.TripleOAction):
     """Return a set of TripleO validation groups"""
 
-    def run(self):
+    def run(self, context):
         validations = utils.load_validations()
         return {
             group for validation in validations
@@ -99,8 +99,8 @@ class RunValidationAction(base.TripleOAction):
         self.validation = validation
         self.plan = plan
 
-    def run(self):
-        mc = self.get_workflow_client()
+    def run(self, context):
+        mc = self.get_workflow_client(context)
         identity_file = None
         try:
             env = mc.environments.get('ssh_keys')
@@ -109,7 +109,8 @@ class RunValidationAction(base.TripleOAction):
 
             stdout, stderr = utils.run_validation(self.validation,
                                                   identity_file,
-                                                  self.plan)
+                                                  self.plan,
+                                                  context)
             return_value = {'stdout': stdout, 'stderr': stderr}
             mistral_result = {"data": return_value}
         except mistralclient_api.APIException as e:
@@ -138,7 +139,7 @@ class CheckBootImagesAction(base.TripleOAction):
         self.deploy_kernel_name = deploy_kernel_name
         self.deploy_ramdisk_name = deploy_ramdisk_name
 
-    def run(self):
+    def run(self, context):
         messages = []
         kernel_id = self._check_for_image(self.deploy_kernel_name, messages)
         ramdisk_id = self._check_for_image(self.deploy_ramdisk_name, messages)
@@ -189,7 +190,7 @@ class CheckFlavorsAction(base.TripleOAction):
         super(CheckFlavorsAction, self).__init__()
         self.roles_info = roles_info
 
-    def run(self):
+    def run(self, context):
         """Validate and collect nova flavors in use.
 
         Ensure that selected flavors (--ROLE-flavor) are valid in nova.
@@ -197,7 +198,7 @@ class CheckFlavorsAction(base.TripleOAction):
 
         :returns: dictionary flavor name -> (flavor object, scale)
         """
-        compute_client = self.get_compute_client()
+        compute_client = self.get_compute_client(context)
         flavors = {f.name: {'name': f.name, 'keys': f.get_keys()}
                    for f in compute_client.flavors.list()}
 
@@ -261,7 +262,7 @@ class CheckNodeBootConfigurationAction(base.TripleOAction):
         self.kernel_id = kernel_id
         self.ramdisk_id = ramdisk_id
 
-    def run(self):
+    def run(self, context):
         warnings = []
         errors = []
         message = ("Node {uuid} has an incorrectly configured "
@@ -314,7 +315,7 @@ class VerifyProfilesAction(base.TripleOAction):
         self.nodes = nodes
         self.flavors = flavors
 
-    def run(self):
+    def run(self, context):
         errors = []
         warnings = []
 
@@ -410,7 +411,7 @@ class CheckNodesCountAction(base.TripleOAction):
         self.parameters = parameters
         self.default_role_counts = default_role_counts
 
-    def run(self):
+    def run(self, context):
         errors = []
         warnings = []
 

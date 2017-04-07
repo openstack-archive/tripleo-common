@@ -22,7 +22,6 @@ import tempfile as tf
 import yaml
 
 from heatclient.common import template_utils
-from mistral import context
 from mistral.workflow import utils as mistral_workflow_utils
 from swiftclient import exceptions as swiftexceptions
 
@@ -84,11 +83,11 @@ class UploadTemplatesAction(base.TripleOAction):
         self.container = container
         self.templates_path = templates_path
 
-    def run(self):
+    def run(self, context):
         with tf.NamedTemporaryFile() as tmp_tarball:
             tarball.create_tarball(self.templates_path, tmp_tarball.name)
             tarball.tarball_extract_to_swift_container(
-                self.get_object_client(),
+                self.get_object_client(context),
                 tmp_tarball.name,
                 self.container)
 
@@ -104,8 +103,12 @@ class ProcessTemplatesAction(base.TripleOAction):
         super(ProcessTemplatesAction, self).__init__()
         self.container = container
 
-    def _j2_render_and_put(self, j2_template, j2_data, outfile_name=None):
-        swift = self.get_object_client()
+    def _j2_render_and_put(self,
+                           j2_template,
+                           j2_data,
+                           outfile_name=None,
+                           context=None):
+        swift = self.get_object_client(context)
         yaml_f = outfile_name or j2_template.replace('.j2.yaml', '.yaml')
 
         # Search for templates relative to the current template path first
@@ -125,7 +128,9 @@ class ProcessTemplatesAction(base.TripleOAction):
         try:
             # write the template back to the plan container
             LOG.info("Writing rendered template %s" % yaml_f)
-            self.cache_delete(self.container, "tripleo.parameters.get")
+            self.cache_delete(context,
+                              self.container,
+                              "tripleo.parameters.get")
             swift.put_object(
                 self.container, yaml_f, r_template)
         except swiftexceptions.ClientException as ex:
@@ -134,8 +139,8 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.error(error_msg)
             raise Exception(error_msg)
 
-    def _get_j2_excludes_file(self):
-        swift = self.get_object_client()
+    def _get_j2_excludes_file(self, context):
+        swift = self.get_object_client(context)
         try:
             j2_excl_file = swift.get_object(
                 self.container, constants.OVERCLOUD_J2_EXCLUDES)[1]
@@ -151,8 +156,8 @@ class ProcessTemplatesAction(base.TripleOAction):
                      "the J2 excludes list to: %s" % j2_excl_data)
         return j2_excl_data
 
-    def _process_custom_roles(self):
-        swift = self.get_object_client()
+    def _process_custom_roles(self, context):
+        swift = self.get_object_client(context)
 
         try:
             j2_role_file = swift.get_object(
@@ -173,7 +178,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                         % constants.OVERCLOUD_J2_ROLES_NAME)
             network_data = []
 
-        j2_excl_data = self._get_j2_excludes_file()
+        j2_excl_data = self._get_j2_excludes_file(context)
 
         try:
             # Iterate over all files in the plan container
@@ -215,7 +220,8 @@ class ProcessTemplatesAction(base.TripleOAction):
                     if not (out_f_path in excl_templates):
                         self._j2_render_and_put(j2_template,
                                                 j2_data,
-                                                out_f_path)
+                                                out_f_path,
+                                                context=context)
                     else:
                         LOG.info("Skipping rendering of %s, defined in %s" %
                                  (out_f_path, j2_excl_data))
@@ -225,13 +231,16 @@ class ProcessTemplatesAction(base.TripleOAction):
                 j2_template = swift.get_object(self.container, f)[1]
                 j2_data = {'roles': role_data, 'networks': network_data}
                 out_f = f.replace('.j2.yaml', '.yaml')
-                self._j2_render_and_put(j2_template, j2_data, out_f)
+                self._j2_render_and_put(j2_template,
+                                        j2_data,
+                                        out_f,
+                                        context=context)
 
-    def run(self):
+    def run(self, context):
         error_text = None
-        ctx = context.ctx()
-        swift = self.get_object_client()
-        mistral = self.get_workflow_client()
+        self.context = context
+        swift = self.get_object_client(context)
+        mistral = self.get_workflow_client(context)
         try:
             mistral_environment = mistral.environments.get(self.container)
         except Exception as mistral_err:
@@ -247,7 +256,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             # not found in swift, but if they are found and an exception
             # occurs during processing, that exception will cause the
             # ProcessTemplatesAction to return an error result.
-            self._process_custom_roles()
+            self._process_custom_roles(context)
         except Exception as err:
             LOG.exception("Error occurred while processing custom roles.")
             return mistral_workflow_utils.Result(error=six.text_type(err))
@@ -294,7 +303,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                 LOG.debug('_env_path_is_object %s: %s' % (env_path, retval))
                 return retval
 
-            def _object_request(method, url, token=ctx.auth_token):
+            def _object_request(method, url, token=context.auth_token):
                 return requests.request(
                     method, url, headers={'X-Auth-Token': token}).content
 

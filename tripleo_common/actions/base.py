@@ -19,9 +19,8 @@ from glanceclient.v2 import client as glanceclient
 from heatclient.v1 import client as heatclient
 import ironic_inspector_client
 from ironicclient.v1 import client as ironicclient
-from mistral.actions import base
-from mistral import context
 from mistral.utils.openstack import keystone as keystone_utils
+from mistral_lib import actions
 from mistralclient.api import client as mistral_client
 from novaclient.client import Client as nova_client
 from swiftclient import client as swift_client
@@ -29,18 +28,17 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common import constants
 
 
-class TripleOAction(base.Action):
+class TripleOAction(actions.Action):
 
     def __init__(self):
         super(TripleOAction, self).__init__()
 
-    def get_object_client(self):
-        ctx = context.ctx()
+    def get_object_client(self, context):
         obj_ep = keystone_utils.get_endpoint_for_project('swift')
 
         kwargs = {
-            'preauthurl': obj_ep.url % {'tenant_id': ctx.project_id},
-            'preauthtoken': ctx.auth_token,
+            'preauthurl': obj_ep.url % {'tenant_id': context.project_id},
+            'preauthtoken': context.auth_token,
             'retries': 10,
             'starting_backoff': 3,
             'max_backoff': 120
@@ -48,9 +46,7 @@ class TripleOAction(base.Action):
 
         return swift_client.Connection(**kwargs)
 
-    def get_baremetal_client(self):
-        ctx = context.ctx()
-
+    def get_baremetal_client(self, context):
         ironic_endpoint = keystone_utils.get_endpoint_for_project('ironic')
 
         # FIXME(lucasagomes): Use ironicclient.get_client() instead
@@ -59,7 +55,7 @@ class TripleOAction(base.Action):
         # prefered way
         return ironicclient.Client(
             ironic_endpoint.url,
-            token=ctx.auth_token,
+            token=context.auth_token,
             region_name=ironic_endpoint.region,
             os_ironic_api_version='1.15',
             # FIXME(lucasagomes):Paramtetize max_retries and
@@ -71,9 +67,7 @@ class TripleOAction(base.Action):
             retry_interval=5,
         )
 
-    def get_baremetal_introspection_client(self):
-        ctx = context.ctx()
-
+    def get_baremetal_introspection_client(self, context):
         bmi_endpoint = keystone_utils.get_endpoint_for_project(
             'ironic-inspector')
 
@@ -81,46 +75,41 @@ class TripleOAction(base.Action):
             api_version='1.2',
             inspector_url=bmi_endpoint.url,
             region_name=bmi_endpoint.region,
-            auth_token=ctx.auth_token
+            auth_token=context.auth_token
         )
 
-    def get_image_client(self):
-        ctx = context.ctx()
-
+    def get_image_client(self, context):
         glance_endpoint = keystone_utils.get_endpoint_for_project('glance')
         return glanceclient.Client(
             glance_endpoint.url,
-            token=ctx.auth_token,
+            token=context.auth_token,
             region_name=glance_endpoint.region
         )
 
-    def get_orchestration_client(self):
-        ctx = context.ctx()
+    def get_orchestration_client(self, context):
         heat_endpoint = keystone_utils.get_endpoint_for_project('heat')
 
         endpoint_url = keystone_utils.format_url(
             heat_endpoint.url,
-            {'tenant_id': ctx.project_id}
+            {'tenant_id': context.project_id}
         )
 
         return heatclient.Client(
             endpoint_url,
             region_name=heat_endpoint.region,
-            token=ctx.auth_token,
-            username=ctx.user_name
+            token=context.auth_token,
+            username=context.user_name
         )
 
-    def get_workflow_client(self):
-        ctx = context.ctx()
+    def get_workflow_client(self, context):
         mistral_endpoint = keystone_utils.get_endpoint_for_project('mistral')
 
-        mc = mistral_client.client(auth_token=ctx.auth_token,
+        mc = mistral_client.client(auth_token=context.auth_token,
                                    mistral_url=mistral_endpoint.url)
 
         return mc
 
-    def get_compute_client(self):
-        ctx = context.ctx()
+    def get_compute_client(self, context):
         keystone_endpoint = keystone_utils.get_endpoint_for_project('keystone')
         nova_endpoint = keystone_utils.get_endpoint_for_project('nova')
 
@@ -129,16 +118,16 @@ class TripleOAction(base.Action):
             username=None,
             api_key=None,
             service_type='compute',
-            auth_token=ctx.auth_token,
-            tenant_id=ctx.project_id,
+            auth_token=context.auth_token,
+            tenant_id=context.project_id,
             region_name=keystone_endpoint.region,
             auth_url=keystone_endpoint.url,
-            insecure=ctx.insecure
+            insecure=context.insecure
         )
 
         client.client.management_url = keystone_utils.format_url(
             nova_endpoint.url,
-            {'tenant_id': ctx.project_id}
+            {'tenant_id': context.project_id}
         )
 
         return client
@@ -146,14 +135,14 @@ class TripleOAction(base.Action):
     def _cache_key(self, plan_name, key_name):
         return "__cache_{}_{}".format(plan_name, key_name)
 
-    def cache_get(self, plan_name, key):
+    def cache_get(self, context, plan_name, key):
         """Retrieves the stored objects
 
         Returns None if there are any issues or no objects found
 
         """
 
-        swift_client = self.get_object_client()
+        swift_client = self.get_object_client(context)
         try:
             headers, body = swift_client.get_object(
                 constants.TRIPLEO_CACHE_CONTAINER,
@@ -166,10 +155,10 @@ class TripleOAction(base.Action):
             pass
         except ValueError:
             # the stored json is invalid. Deleting
-            self.cache_delete(plan_name, key)
+            self.cache_delete(context, plan_name, key)
         return
 
-    def cache_set(self, plan_name, key, contents):
+    def cache_set(self, context, plan_name, key, contents):
         """Stores an object
 
         Allows the storage of jsonable objects except for None
@@ -177,9 +166,9 @@ class TripleOAction(base.Action):
 
         """
 
-        swift_client = self.get_object_client()
+        swift_client = self.get_object_client(context)
         if contents is None:
-            self.cache_delete(plan_name, key)
+            self.cache_delete(context, plan_name, key)
             return
 
         try:
@@ -192,8 +181,8 @@ class TripleOAction(base.Action):
             self._cache_key(plan_name, key),
             zlib.compress(json.dumps(contents).encode()))
 
-    def cache_delete(self, plan_name, key):
-        swift_client = self.get_object_client()
+    def cache_delete(self, context, plan_name, key):
+        swift_client = self.get_object_client(context)
         try:
             swift_client.delete_object(
                 constants.TRIPLEO_CACHE_CONTAINER,

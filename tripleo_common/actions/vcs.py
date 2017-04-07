@@ -20,13 +20,13 @@ import tempfile
 from git import Repo
 import six
 
-from mistral.actions import base
 from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 
 LOG = logging.getLogger(__name__)
 
 
-class GitCloneAction(base.Action):
+class GitCloneAction(actions.Action):
     """Clones a remote git repository
 
     :param container: name of the container associated with the plan
@@ -42,7 +42,7 @@ class GitCloneAction(base.Action):
     def _checkout_reference(self, repo, ref):
         return repo.git.checkout(repo.refs[ref])
 
-    def run(self):
+    def run(self, context):
         # make a temp directory to contain the repo
         local_dir_path = tempfile.mkdtemp(
             suffix="_%s_import" % self.container)
@@ -75,7 +75,7 @@ class GitCloneAction(base.Action):
         return local_dir_path
 
 
-class GitCleanupAction(base.Action):
+class GitCleanupAction(actions.Action):
     """Removes temporary files associated with GitCloneAction operations
 
     :param container: name of the container associated with the plan
@@ -85,7 +85,7 @@ class GitCleanupAction(base.Action):
     def __init__(self, container):
         self.container = container
 
-    def run(self):
+    def run(self, context):
         try:
             temp_dir = tempfile.gettempdir()
             target_path = '%s/*_%s_import' % (temp_dir, self.container)
