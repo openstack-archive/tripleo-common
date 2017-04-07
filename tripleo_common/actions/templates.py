@@ -22,7 +22,7 @@ import tempfile as tf
 import yaml
 
 from heatclient.common import template_utils
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
@@ -259,7 +259,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=error_text)
 
         try:
             # if the jinja overcloud template exists, process it and write it
@@ -271,7 +271,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             self._process_custom_roles(context)
         except Exception as err:
             LOG.exception("Error occurred while processing custom roles.")
-            return mistral_workflow_utils.Result(error=six.text_type(err))
+            return actions.Result(error=six.text_type(err))
 
         template_name = plan_env.get('template')
         environments = plan_env.get('environments')
@@ -337,7 +337,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                 os.remove(f)
 
         if error_text:
-            return mistral_workflow_utils.Result(error=error_text)
+            return actions.Result(error=error_text)
 
         files = dict(list(template_files.items()) + list(env_files.items()))
 

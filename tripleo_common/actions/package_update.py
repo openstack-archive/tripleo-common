@@ -17,7 +17,7 @@ import time
 
 from heatclient.common import template_utils
 from heatclient import exc as heat_exc
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
@@ -57,7 +57,7 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         except heat_exc.HTTPNotFound:
             msg = "Error retrieving stack: %s" % self.container
             LOG.exception(msg)
-            return mistral_workflow_utils.Result(error=msg)
+            return actions.Result(error=msg)
 
         parameters = dict()
         timestamp = int(time.time())
@@ -73,7 +73,7 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         try:
             plan_utils.update_in_env(swift, env, 'parameter_defaults',
@@ -82,14 +82,14 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             err_msg = ("Error updating environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         # process all plan files and create or update a stack
         processed_data = super(UpdateStackAction, self).run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
-        if isinstance(processed_data, mistral_workflow_utils.Result):
+        if isinstance(processed_data, actions.Result):
             return processed_data
 
         stack_args = processed_data.copy()

@@ -19,7 +19,7 @@ import tempfile
 import uuid
 
 import git
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 
 from tripleo_common.actions import vcs
 from tripleo_common.tests import base
@@ -56,7 +56,7 @@ class GitCloneActionTest(base.TestCase):
         action = vcs.GitCloneAction(self.container, self.git_url)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error="Error cloning remote repository: %s " % self.git_url
         )
 
@@ -82,7 +82,7 @@ class GitCloneActionTest(base.TestCase):
         err_msg = ("Error finding %s reference from remote repository" %
                    self.tag_ref)
 
-        expected = mistral_workflow_utils.Result(error=err_msg)
+        expected = actions.Result(error=err_msg)
 
         self.assertEqual(result, expected, "Error messages don't match.")
 
@@ -107,7 +107,7 @@ class GitCloneActionTest(base.TestCase):
         err_msg = ("Error checking out %s reference from remote "
                    "repository %s" % (self.tag_ref, self.git_url))
 
-        expected = mistral_workflow_utils.Result(error=err_msg)
+        expected = actions.Result(error=err_msg)
 
         self.assertEqual(result, expected, "Error messages don't match.")
 

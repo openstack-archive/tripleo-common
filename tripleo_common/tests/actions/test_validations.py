@@ -16,7 +16,7 @@ import collections
 import mock
 from uuid import uuid4
 
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from oslo_concurrency.processutils import ProcessExecutionError
 
 from tripleo_common.actions import validations
@@ -166,7 +166,7 @@ class RunValidationActionTest(base.TestCase):
         mock_write_identity_file.return_value = 'identity_file_path'
         mock_run_validation.return_value = 'output', 'error'
         action = validations.RunValidationAction('validation')
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'stdout': 'output',
                 'stderr': 'error'
@@ -200,7 +200,7 @@ class RunValidationActionTest(base.TestCase):
         mock_run_validation.side_effect = ProcessExecutionError(
             stdout='output', stderr='error')
         action = validations.RunValidationAction('validation')
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data=None,
             error={
                 'stdout': 'output',
@@ -231,7 +231,7 @@ class TestCheckBootImagesAction(base.TestCase):
         '._check_for_image')
     def test_run(self, mock_check_for_image):
         mock_check_for_image.side_effect = ['12345', '67890']
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'kernel_id': '12345',
                 'ramdisk_id': '67890',
@@ -341,7 +341,7 @@ class TestCheckFlavorsAction(base.TestCase):
             'role1': ('flavor1', 1),
         }
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'flavors': {
                     'flavor1': (
@@ -367,7 +367,7 @@ class TestCheckFlavorsAction(base.TestCase):
             'role3': ('flavor3', 1),
         }
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'flavors': {
                     'flavor2': (
@@ -404,7 +404,7 @@ class TestCheckFlavorsAction(base.TestCase):
             'role4': ('does_not_exist', 1),
         }
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'errors': [
                     "Flavor '%s' provided for the role '%s', does not "
@@ -440,7 +440,7 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
         self.ctx = mock.MagicMock()
 
     def test_run_success(self):
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={'errors': [], 'warnings': []}
         )
 
@@ -453,7 +453,7 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
         self.assertEqual(expected, action.run(self.ctx))
 
     def test_run_invalid_ramdisk(self):
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'errors': [
                     'Node 100f2cf6-06de-480e-a73e-6fdf6c9962b7 has an '
@@ -473,7 +473,7 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
         self.assertEqual(expected, action.run(self.ctx))
 
     def test_no_boot_option_local(self):
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'errors': [],
                 'warnings': [
@@ -543,7 +543,7 @@ class TestVerifyProfilesAction(base.TestCase):
         self.nodes[:] = [self._get_fake_node(profile='fake'),
                          self._get_fake_node(profile='fake')]
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'errors': [],
                 'warnings': [],
@@ -554,7 +554,7 @@ class TestVerifyProfilesAction(base.TestCase):
         self.nodes[:] = [self._get_fake_node(profile='compute'),
                          self._get_fake_node(profile='control')]
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'errors': [],
                 'warnings': [],
@@ -567,7 +567,7 @@ class TestVerifyProfilesAction(base.TestCase):
                          self._get_fake_node(profile='foobar'),
                          self._get_fake_node(profile='control')]
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'warnings': [
                     'There are 1 ironic nodes with no profile that will not '
@@ -583,7 +583,7 @@ class TestVerifyProfilesAction(base.TestCase):
                          self._get_fake_node(profile='compute'),
                          self._get_fake_node(profile='control')]
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'warnings': ["2 nodes with profile compute won't be used for "
                              "deployment now"],
@@ -593,7 +593,7 @@ class TestVerifyProfilesAction(base.TestCase):
 
     def test_no_nodes(self):
         # One error per each flavor
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={'errors': ['Error: only 0 of 1 requested ironic nodes are '
                               'tagged to profile compute (for flavor '
                               'compute)\n'
@@ -619,7 +619,7 @@ class TestVerifyProfilesAction(base.TestCase):
 
     def test_not_enough_nodes(self):
         self.nodes[:] = [self._get_fake_node(profile='compute')]
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={'errors': ['Error: only 0 of 1 requested ironic nodes are '
                               'tagged to profile control (for flavor '
                               'control).\n'
@@ -636,7 +636,7 @@ class TestVerifyProfilesAction(base.TestCase):
                                              provision_state='active'),
                          self._get_fake_node(profile='control')]
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'errors': [],
                 'warnings': [],
@@ -652,7 +652,7 @@ class TestVerifyProfilesAction(base.TestCase):
                                              provision_state='cleaning'),
                          self._get_fake_node(profile='compute',
                                              provision_state='error')]
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'warnings': [
                     'There are 1 ironic nodes with no profile that will not '
@@ -683,7 +683,7 @@ class TestVerifyProfilesAction(base.TestCase):
         self.nodes[:] = [self._get_fake_node(profile=None)]
         self.flavors = {'baremetal': (
             self._get_fake_flavor('baremetal', None), 1)}
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'warnings': [
                     'There are 1 ironic nodes with no profile that will not '
@@ -734,7 +734,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'result': {
                     'requested_count': 2,
@@ -756,7 +756,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'errors': [
                     'Only 0 nodes are exposed to Nova of 3 requests. Check '
@@ -779,7 +779,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'errors': [],
                 'warnings': [],
@@ -799,7 +799,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'errors': [
                     "Not enough baremetal nodes - available: 3, requested: 4"],
@@ -821,7 +821,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={
                 'errors': [],
                 'warnings': [],
@@ -842,7 +842,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'errors': [
                     'Not enough baremetal nodes - available: 3, requested: 4'],
@@ -866,7 +866,7 @@ class TestCheckNodesCountAction(base.TestCase):
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             error={
                 'errors': [
                     'Not enough baremetal nodes - available: 3, requested: 4'],

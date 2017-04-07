@@ -15,7 +15,7 @@
 import logging
 
 import ironic_inspector_client
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from oslo_utils import units
 import six
 
@@ -68,7 +68,7 @@ class RegisterOrUpdateNodes(base.TripleOAction):
                 ramdisk_name=self.ramdisk_name)
         except Exception as err:
             LOG.exception("Error registering nodes with ironic.")
-            return mistral_workflow_utils.Result(error=six.text_type(err))
+            return actions.Result(error=six.text_type(err))
 
 
 class ValidateNodes(base.TripleOAction):
@@ -86,10 +86,10 @@ class ValidateNodes(base.TripleOAction):
             nodes.validate_nodes(self.nodes_json)
         except exception.InvalidNode as err:
             LOG.error("Validation of nodes failed: %s", err)
-            return mistral_workflow_utils.Result(error=str(err))
+            return actions.Result(error=str(err))
         except Exception as err:
             LOG.exception("Unexpected exception during node validation")
-            return mistral_workflow_utils.Result(error=str(err))
+            return actions.Result(error=str(err))
 
 
 class ConfigureBootAction(base.TripleOAction):
@@ -152,7 +152,7 @@ class ConfigureBootAction(base.TripleOAction):
             LOG.debug("Configuring boot option for Node %s", self.node_uuid)
         except Exception as err:
             LOG.exception("Error configuring node boot options with Ironic.")
-            return mistral_workflow_utils.Result(error=six.text_type(err))
+            return actions.Result(error=six.text_type(err))
 
 
 class ConfigureRootDeviceAction(base.TripleOAction):
@@ -310,7 +310,7 @@ class UpdateNodeCapability(base.TripleOAction):
             )
         except Exception as err:
             LOG.exception("Error updating node capability in ironic.")
-            return mistral_workflow_utils.Result(
+            return actions.Result(
                 error="%s: %s" % (type(err).__name__, str(err))
             )
 
@@ -332,7 +332,7 @@ class CellV2DiscoverHostsAction(base.TripleOAction):
             )
         except Exception as err:
             LOG.exception("Error running cell_v2 discover_hosts")
-            return mistral_workflow_utils.Result(
+            return actions.Result(
                 error="%s: %s" % (type(err).__name__, str(err))
             )
 

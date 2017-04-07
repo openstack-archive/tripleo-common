@@ -15,7 +15,7 @@
 
 import uuid
 
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from six.moves import urllib
 from swiftclient import exceptions as swiftexceptions
 from swiftclient.utils import generate_temp_url
@@ -44,7 +44,7 @@ class SwiftInformationAction(base.TripleOAction):
         except Exception as err:
             error = str(err)
 
-        return mistral_workflow_utils.Result(data=data, error=error)
+        return actions.Result(data=data, error=error)
 
 
 class SwiftTempUrlAction(base.TripleOAction):

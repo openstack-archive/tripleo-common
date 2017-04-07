@@ -15,8 +15,7 @@
 import collections
 import logging
 
-from mistral.workflow import utils as mistral_workflow_utils
-
+from mistral_lib import actions
 
 from tripleo_common.actions import parameters as parameters_actions
 from tripleo_common.actions import templates
@@ -72,11 +71,11 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         update_params_action = parameters_actions.UpdateParametersAction(
             parameters, self.container)
         updated_plan = update_params_action.run(context)
-        if isinstance(updated_plan, mistral_workflow_utils.Result):
+        if isinstance(updated_plan, actions.Result):
             return updated_plan
 
         processed_data = super(ScaleDownAction, self).run(context)
-        if isinstance(processed_data, mistral_workflow_utils.Result):
+        if isinstance(processed_data, actions.Result):
             return processed_data
 
         update.add_breakpoints_cleanup_into_env(processed_data['environment'])

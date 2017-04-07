@@ -15,7 +15,7 @@
 import mock
 import yaml
 
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import heat_capabilities
@@ -150,7 +150,7 @@ class GetCapabilitiesActionTest(base.TestCase):
         get_obj_client_mock.return_value = swift
 
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data=None,
             error="Error parsing capabilities-map.yaml.")
         self.assertEqual(expected, action.run(mock_ctx))
@@ -168,7 +168,7 @@ class GetCapabilitiesActionTest(base.TestCase):
         get_obj_client_mock.return_value = swift
 
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data=None,
             error="Error retrieving environment for plan test-container: "
                   "test-container")
@@ -323,7 +323,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
 
         action = heat_capabilities.UpdateCapabilitiesAction(
             {}, self.container_name)
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data=None,
             error="Error retrieving environment for plan test-container: "
                   "test-container"

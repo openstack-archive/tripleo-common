@@ -14,7 +14,7 @@
 # under the License.
 import mock
 
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 
 from tripleo_common.actions import swifthelper
 from tripleo_common.tests import base
@@ -39,8 +39,7 @@ class SwiftInformationActionTest(base.TestCase):
             'container_url': 'test_uri/{}'.format(self.container_name),
             'auth_key': 'test_token'
         }
-        return_obj = mistral_workflow_utils.Result(data=return_data,
-                                                   error=None)
+        return_obj = actions.Result(data=return_data, error=None)
         self.assertEqual(return_obj, self.action.run(mock_ctx))
 
         oc_mock.head_container.assert_called_with(self.container_name)
@@ -53,7 +52,7 @@ class SwiftInformationActionTest(base.TestCase):
         oc_mock.head_container.side_effect = fail
         self.action.get_object_client.return_value = oc_mock
 
-        return_obj = mistral_workflow_utils.Result(data=None, error='failure')
+        return_obj = actions.Result(data=None, error='failure')
 
         self.assertEqual(return_obj, self.action.run(mock_ctx))
 

@@ -30,7 +30,7 @@ import logging
 import uuid
 
 from heatclient import exc as heat_exc
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
@@ -61,7 +61,7 @@ class GetParametersAction(templates.ProcessTemplatesAction):
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
-        if isinstance(processed_data, mistral_workflow_utils.Result):
+        if isinstance(processed_data, actions.Result):
             return processed_data
 
         processed_data['show_nested'] = True
@@ -76,7 +76,7 @@ class GetParametersAction(templates.ProcessTemplatesAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         params = env.get('parameter_defaults')
 
@@ -114,7 +114,7 @@ class ResetParametersAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         try:
             plan_utils.update_in_env(swift, env, 'parameter_defaults',
@@ -123,7 +123,7 @@ class ResetParametersAction(base.TripleOAction):
             err_msg = ("Error updating environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         self.cache_delete(context,
                           self.container,
@@ -149,7 +149,7 @@ class UpdateParametersAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         try:
             plan_utils.update_in_env(swift, env, 'parameter_defaults',
@@ -158,7 +158,7 @@ class UpdateParametersAction(base.TripleOAction):
             err_msg = ("Error updating environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         self.cache_delete(context,
                           self.container,
@@ -205,7 +205,7 @@ class GeneratePasswordsAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         try:
             stack_env = heat.stacks.environment(
@@ -230,7 +230,7 @@ class GeneratePasswordsAction(base.TripleOAction):
         except swiftexceptions.ClientException as err:
             err_msg = "Error uploading to container: %s" % err
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         self.cache_delete(context,
                           self.container,
@@ -259,7 +259,7 @@ class GetPasswordsAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         parameter_defaults = env.get('parameter_defaults', {})
         passwords = env.get('passwords', {})
@@ -423,7 +423,7 @@ class GetFlattenedParametersAction(GetParametersAction):
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
-        if isinstance(processed_data, mistral_workflow_utils.Result):
+        if isinstance(processed_data, actions.Result):
             return processed_data
 
         if processed_data['heat_resource_tree']:
@@ -458,7 +458,7 @@ class GetProfileOfFlavorAction(base.TripleOAction):
                                                     compute_client)
         except exception.DeriveParamsError as err:
             LOG.error('Derive Params Error: %s', err)
-            return mistral_workflow_utils.Result(error=str(err))
+            return actions.Result(error=str(err))
 
 
 class RotateFernetKeysAction(GetPasswordsAction):
@@ -481,7 +481,7 @@ class RotateFernetKeysAction(GetPasswordsAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         parameter_defaults = env.get('parameter_defaults', {})
         passwords = self._get_overriden_passwords(env.get('passwords', {}),
@@ -500,7 +500,7 @@ class RotateFernetKeysAction(GetPasswordsAction):
         except swiftexceptions.ClientException as err:
             err_msg = "Error uploading to container: %s" % err
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         self.cache_delete(context,
                           self.container,
