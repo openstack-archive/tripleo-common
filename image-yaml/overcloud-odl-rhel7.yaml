@@ -11,14 +11,17 @@ disk_images:
            - baremetal
            - dhcp-all-interfaces
            - os-collect-config
-           - heat-config-puppet
-           - heat-config-script
            - puppet-modules
-           - hiera
            - os-net-config
            - stable-interface-names
            - grub2-deprecated
          packages:
            - java-1.8.0-openjdk
            - opendaylight
+           - python-heat-agent-puppet
+           - python-heat-agent-hiera
+           - python-heat-agent-apply-config
+           - python-heat-agent-ansible
+           - python-heat-agent-docker-cmd
+           - python-heat-agent-json-file
          options:
