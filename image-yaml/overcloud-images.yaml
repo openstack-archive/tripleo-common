@@ -12,7 +12,6 @@ disk_images:
       - overcloud-compute
       - overcloud-ceph-storage
       - puppet-modules
-      - hiera
       - os-net-config
       - stable-interface-names
       - grub2
