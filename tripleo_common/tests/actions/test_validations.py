@@ -200,3 +200,86 @@ class RunValidationActionTest(base.TestCase):
             constants.DEFAULT_CONTAINER_NAME)
         mock_cleanup_identity_file.assert_called_once_with(
             'identity_file_path')
+
+
+class TestCheckBootImagesAction(base.TestCase):
+    def setUp(self):
+        super(TestCheckBootImagesAction, self).setUp()
+        self.images = [
+            {'id': '67890', 'name': 'ramdisk'},
+            {'id': '12345', 'name': 'kernel'},
+        ]
+
+    @mock.patch(
+        'tripleo_common.actions.validations.CheckBootImagesAction'
+        '._check_for_image')
+    def test_run(self, mock_check_for_image):
+        mock_check_for_image.side_effect = ['12345', '67890']
+        expected = mistral_workflow_utils.Result(
+            data={
+                'kernel_id': '12345',
+                'ramdisk_id': '67890',
+                'warnings': [],
+                'errors': []})
+        action_args = {
+            'images': self.images,
+            'deploy_kernel_name': 'kernel',
+            'deploy_ramdisk_name': 'ramdisk'
+        }
+        action = validations.CheckBootImagesAction(**action_args)
+        self.assertEqual(expected, action.run())
+        mock_check_for_image.assert_has_calls([
+            mock.call('kernel', []),
+            mock.call('ramdisk', [])
+        ])
+
+    def test_check_for_image_success(self):
+        expected = '12345'
+        action_args = {
+            'images': self.images,
+            'deploy_kernel_name': 'kernel',
+            'deploy_ramdisk_name': 'ramdisk'
+        }
+
+        messages = mock.Mock()
+        action = validations.CheckBootImagesAction(**action_args)
+        self.assertEqual(expected, action._check_for_image('kernel', messages))
+        messages.assert_not_called()
+
+    def test_check_for_image_missing(self):
+        expected = None
+        deploy_kernel_name = 'missing'
+        action_args = {
+            'images': self.images,
+            'deploy_kernel_name': deploy_kernel_name
+        }
+        expected_message = ("No image with the name '%s' found - make sure "
+                            "you have uploaded boot images."
+                            % deploy_kernel_name)
+
+        messages = []
+        action = validations.CheckBootImagesAction(**action_args)
+        self.assertEqual(expected,
+                         action._check_for_image(deploy_kernel_name, messages))
+        self.assertEqual(1, len(messages))
+        self.assertIn(expected_message, messages)
+
+    def test_check_for_image_too_many(self):
+        expected = None
+        deploy_ramdisk_name = 'toomany'
+        images = list(self.images)
+        images.append({'id': 'abcde', 'name': deploy_ramdisk_name})
+        images.append({'id': '45678', 'name': deploy_ramdisk_name})
+        action_args = {
+            'images': images,
+            'deploy_ramdisk_name': deploy_ramdisk_name
+        }
+        expected_message = ("Please make sure there is only one image named "
+                            "'%s' in glance." % deploy_ramdisk_name)
+
+        messages = []
+        action = validations.CheckBootImagesAction(**action_args)
+        self.assertEqual(
+            expected, action._check_for_image(deploy_ramdisk_name, messages))
+        self.assertEqual(1, len(messages))
+        self.assertIn(expected_message, messages)

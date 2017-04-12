@@ -122,3 +122,54 @@ class RunValidationAction(base.TripleOAction):
             if identity_file:
                 utils.cleanup_identity_file(identity_file)
         return mistral_workflow_utils.Result(**mistral_result)
+
+
+class CheckBootImagesAction(base.TripleOAction):
+    """Validate boot images"""
+
+    # TODO(bcrochet): The validation actions are temporary. This logic should
+    #                 move to the tripleo-validations project eventually.
+    def __init__(self, images,
+                 deploy_kernel_name=constants.DEFAULT_DEPLOY_KERNEL_NAME,
+                 deploy_ramdisk_name=constants.DEFAULT_DEPLOY_RAMDISK_NAME):
+        super(CheckBootImagesAction, self).__init__()
+        self.images = images
+        self.deploy_kernel_name = deploy_kernel_name
+        self.deploy_ramdisk_name = deploy_ramdisk_name
+
+    def run(self):
+        messages = []
+        kernel_id = self._check_for_image(self.deploy_kernel_name, messages)
+        ramdisk_id = self._check_for_image(self.deploy_ramdisk_name, messages)
+
+        return_value = {
+            'kernel_id': kernel_id,
+            'ramdisk_id': ramdisk_id,
+            'errors': messages,
+            'warnings': []
+        }
+
+        if messages:
+            mistral_result = mistral_workflow_utils.Result(error=return_value)
+        else:
+            mistral_result = mistral_workflow_utils.Result(data=return_value)
+
+        return mistral_result
+
+    def _check_for_image(self, name, messages):
+        multiple_message = ("Please make sure there is only one image named "
+                            "'{}' in glance.")
+        missing_message = ("No image with the name '{}' found - make sure you "
+                           "have uploaded boot images.")
+
+        image_id = None
+        found_images = [item['id'] for item in self.images
+                        if item['name'] == name]
+        if len(found_images) > 1:
+            messages.append(multiple_message.format(name))
+        elif len(found_images) == 0:
+            messages.append(missing_message.format(name))
+        else:
+            image_id = found_images[0]
+
+        return image_id
