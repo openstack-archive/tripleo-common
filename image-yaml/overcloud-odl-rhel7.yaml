@@ -6,7 +6,6 @@ disk_images:
          type: qcow2
          distro: rhel7
          elements:
-           - ntp
            - sysctl
            - baremetal
            - dhcp-all-interfaces
@@ -17,6 +16,8 @@ disk_images:
            - grub2-deprecated
          packages:
            - java-1.8.0-openjdk
+           - ntp
+           - ntpd
            - opendaylight
            - python-heat-agent-puppet
            - python-heat-agent-hiera
