@@ -1,0 +1,4 @@
+---
+features:
+  - Add a workflow to run all predeployment validations
+    and report back all errors and warnings.
