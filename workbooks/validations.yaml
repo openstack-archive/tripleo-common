@@ -316,3 +316,65 @@ workflows:
                 warnings: <% $.warnings %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  collect_flavors:
+    input:
+      - roles_info: {}
+      - run_validations: true
+      - queue_name: tripleo
+    output:
+      errors: <% $.errors %>
+      warnings: <% $.warnings %>
+      flavors: <% $.flavors %>
+
+    tasks:
+      check_run_validations:
+        on-complete:
+          - get_flavors: <% $.run_validations %>
+          - send_message: <% not $.run_validations %>
+
+      get_flavors:
+        action: nova.flavors_list
+        on-success: check_flavors
+        publish:
+          nova_flavors: <% task(get_flavors).result %>
+
+      check_flavors:
+        action: tripleo.validations.check_flavors
+        input:
+          flavors: <% $.nova_flavors %>
+          roles_info: <% $.roles_info %>
+        on-success: send_message
+        on-error: fail_check_flavors
+        publish:
+          flavors: <% task(check_flavors).result.flavors %>
+          errors: <% task(check_flavors).result.errors %>
+          warnings: <% task(check_flavors).result.warnings %>
+        publish-on-error:
+          flavors: {}
+          errors: <% task(check_flavors).result.errors %>
+          warnings: <% task(check_flavors).result.warnings %>
+
+      fail_check_flavors:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(check_flavors).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.collect_flavors
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                flavors: <% $.flavors %>
+                errors: <% $.errors %>
+                warnings: <% $.warnings %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
