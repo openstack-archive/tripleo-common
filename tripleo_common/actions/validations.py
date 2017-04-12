@@ -384,3 +384,76 @@ class VerifyProfilesAction(base.TripleOAction):
         """Get node capabilities."""
         return nodeutils.capabilities_to_dict(
             node['properties'].get('capabilities'))
+
+
+class CheckNodesCountAction(base.TripleOAction):
+    """Validate hypervisor statistics"""
+
+    # TODO(bcrochet): The validation actions are temporary. This logic should
+    #                 move to the tripleo-validations project eventually.
+    def __init__(self, statistics, stack, associated_nodes, available_nodes,
+                 parameters, default_role_counts):
+        super(CheckNodesCountAction, self).__init__()
+        self.statistics = statistics
+        self.stack = stack
+        self.associated_nodes = associated_nodes
+        self.available_nodes = available_nodes
+        self.parameters = parameters
+        self.default_role_counts = default_role_counts
+
+    def run(self):
+        errors = []
+        warnings = []
+
+        requested_count = 0
+
+        for param, default in self.default_role_counts.items():
+            if self.stack:
+                try:
+                    current = int(self.stack['parameters'][param])
+                except KeyError:
+                    # We could be adding a new role on stack-update, so there's
+                    # no assumption the parameter exists in the stack.
+                    current = self.parameters.get(param, default)
+                requested_count += self.parameters.get(param, current)
+            else:
+                requested_count += self.parameters.get(param, default)
+
+        # We get number of nodes usable for the stack by getting already
+        # used (associated) nodes and number of nodes which can be used
+        # (not in maintenance mode).
+        # Assumption is that associated nodes are part of the stack (only
+        # one overcloud is supported).
+        associated = len(self.associated_nodes)
+        available = len(self.available_nodes)
+
+        available_count = associated + available
+
+        if requested_count > available_count:
+            errors.append('Not enough baremetal nodes - available: %d, '
+                          'requested: %d' %
+                          (available_count, requested_count))
+
+        if self.statistics['count'] < available_count:
+            errors.append('Only %d nodes are exposed to Nova of %d requests. '
+                          'Check that enough nodes are in "available" state '
+                          'with maintenance mode off.' %
+                          (self.statistics['count'], available_count))
+
+        return_value = {
+            'errors': errors,
+            'warnings': warnings,
+            'result': {
+                'statistics': self.statistics,
+                'enough_nodes': True,
+                'requested_count': requested_count,
+                'available_count': available_count,
+            }
+        }
+        if errors:
+            return_value['result']['enough_nodes'] = False
+            mistral_result = {'error': return_value}
+        else:
+            mistral_result = {'data': return_value}
+
+        return mistral_workflow_utils.Result(**mistral_result)

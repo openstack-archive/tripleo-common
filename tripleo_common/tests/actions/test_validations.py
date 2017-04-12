@@ -656,3 +656,183 @@ class TestVerifyProfilesAction(base.TestCase):
                 ]
             })
         self._test(expected)
+
+
+class TestCheckNodesCountAction(base.TestCase):
+    def setUp(self):
+        super(TestCheckNodesCountAction, self).setUp()
+        self.defaults = {
+            'ControllerCount': 1,
+            'ComputeCount': 1,
+            'ObjectStorageCount': 0,
+            'BlockStorageCount': 0,
+            'CephStorageCount': 0,
+        }
+        self.stack = None
+        self.action_args = {
+            'stack': None,
+            'associated_nodes': self._ironic_node_list(True, False),
+            'available_nodes': self._ironic_node_list(False, True),
+            'parameters': {},
+            'default_role_counts': self.defaults,
+            'statistics': {'count': 3, 'memory_mb': 1, 'vcpus': 1},
+        }
+
+    def _ironic_node_list(self, associated, maintenance):
+        if associated:
+            nodes = range(2)
+        elif maintenance:
+            nodes = range(1)
+        return nodes
+
+    def test_run_check_hypervisor_stats(self):
+        action_args = self.action_args.copy()
+
+        action = validations.CheckNodesCountAction(**action_args)
+        result = action.run()
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'result': {
+                    'requested_count': 2,
+                    'available_count': 3,
+                    'statistics': {'count': 3, 'vcpus': 1, 'memory_mb': 1},
+                    'enough_nodes': True
+                },
+                'errors': [],
+                'warnings': [],
+            })
+        self.assertEqual(expected, result)
+
+    def test_run_check_hypervisor_stats_not_met(self):
+        statistics = {'count': 0, 'memory_mb': 0, 'vcpus': 0}
+
+        action_args = self.action_args.copy()
+        action_args.update({'statistics': statistics})
+
+        action = validations.CheckNodesCountAction(**action_args)
+        result = action.run()
+
+        expected = mistral_workflow_utils.Result(
+            error={
+                'errors': [
+                    'Only 0 nodes are exposed to Nova of 3 requests. Check '
+                    'that enough nodes are in "available" state with '
+                    'maintenance mode off.'],
+                'warnings': [],
+                'result': {
+                    'statistics': statistics,
+                    'enough_nodes': False,
+                    'requested_count': 2,
+                    'available_count': 3,
+                }
+            })
+        self.assertEqual(expected, result)
+
+    def test_check_nodes_count_deploy_enough_nodes(self):
+        action_args = self.action_args.copy()
+        action_args['parameters'] = {'ControllerCount': 2}
+
+        action = validations.CheckNodesCountAction(**action_args)
+        result = action.run()
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'errors': [],
+                'warnings': [],
+                'result': {
+                    'enough_nodes': True,
+                    'requested_count': 3,
+                    'available_count': 3,
+                    'statistics': {'count': 3, 'memory_mb': 1, 'vcpus': 1}
+                }
+            })
+        self.assertEqual(expected, result)
+
+    def test_check_nodes_count_deploy_too_much(self):
+        action_args = self.action_args.copy()
+        action_args['parameters'] = {'ControllerCount': 3}
+
+        action = validations.CheckNodesCountAction(**action_args)
+        result = action.run()
+
+        expected = mistral_workflow_utils.Result(
+            error={
+                'errors': [
+                    "Not enough baremetal nodes - available: 3, requested: 4"],
+                'warnings': [],
+                'result': {
+                    'enough_nodes': False,
+                    'requested_count': 4,
+                    'available_count': 3,
+                    'statistics': {'count': 3, 'memory_mb': 1, 'vcpus': 1}
+                }
+            })
+        self.assertEqual(expected, result)
+
+    def test_check_nodes_count_scale_enough_nodes(self):
+        action_args = self.action_args.copy()
+        action_args['parameters'] = {'ControllerCount': 2}
+        action_args['stack'] = {'parameters': self.defaults.copy()}
+
+        action = validations.CheckNodesCountAction(**action_args)
+        result = action.run()
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'errors': [],
+                'warnings': [],
+                'result': {
+                    'enough_nodes': True,
+                    'requested_count': 3,
+                    'available_count': 3,
+                    'statistics': {'count': 3, 'memory_mb': 1, 'vcpus': 1}
+                },
+            })
+        self.assertEqual(expected, result)
+
+    def test_check_nodes_count_scale_too_much(self):
+        action_args = self.action_args.copy()
+        action_args['parameters'] = {'ControllerCount': 3}
+        action_args['stack'] = {'parameters': self.defaults.copy()}
+
+        action = validations.CheckNodesCountAction(**action_args)
+        result = action.run()
+
+        expected = mistral_workflow_utils.Result(
+            error={
+                'errors': [
+                    'Not enough baremetal nodes - available: 3, requested: 4'],
+                'warnings': [],
+                'result': {
+                    'enough_nodes': False,
+                    'requested_count': 4,
+                    'available_count': 3,
+                    'statistics': {'count': 3, 'memory_mb': 1, 'vcpus': 1}
+                }
+            })
+        self.assertEqual(expected, result)
+
+    def test_check_default_param_not_in_stack(self):
+        missing_param = 'CephStorageCount'
+        action_args = self.action_args.copy()
+        action_args['parameters'] = {'ControllerCount': 3}
+        action_args['stack'] = {'parameters': self.defaults.copy()}
+        del action_args['stack']['parameters'][missing_param]
+
+        action = validations.CheckNodesCountAction(**action_args)
+        result = action.run()
+
+        expected = mistral_workflow_utils.Result(
+            error={
+                'errors': [
+                    'Not enough baremetal nodes - available: 3, requested: 4'],
+                'warnings': [],
+                'result': {
+                    'enough_nodes': False,
+                    'requested_count': 4,
+                    'available_count': 3,
+                    'statistics': {'count': 3, 'memory_mb': 1, 'vcpus': 1}
+                }
+            })
+        self.assertEqual(expected, result)

@@ -517,3 +517,124 @@ workflows:
                 warnings: <% $.warnings %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  check_default_nodes_count:
+    input:
+      - stack_id: overcloud
+      - parameters: {}
+      - default_role_counts: {}
+      - run_validations: true
+      - queue_name: tripleo
+    output:
+      statistics: <% $.statistics %>
+      errors: <% $.errors %>
+      warnings: <% $.warnings %>
+
+    tasks:
+      check_run_validations:
+        on-complete:
+          - get_hypervisor_statistics: <% $.run_validations %>
+          - send_message: <% not $.run_validations %>
+
+      get_hypervisor_statistics:
+        action: nova.hypervisors_statistics
+        on-success: get_stack
+        on-error: fail_get_hypervisor_statistics
+        publish:
+          statistics: <% task(get_hypervisor_statistics).result %>
+
+      fail_get_hypervisor_statistics:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_hypervisor_statistics).result %>
+          errors: []
+          warnings: []
+          statistics: null
+
+      get_stack:
+        action: heat.stacks_get
+        input:
+          stack_id: <% $.stack_id %>
+        on-complete: get_associated_nodes
+        publish:
+          stack: <% task(get_stack).result %>
+        publish-on-error:
+          stack: null
+
+      get_associated_nodes:
+        action: ironic.node_list
+        on-success: get_available_nodes
+        on-error: fail_get_associated_nodes
+        input:
+          associated: true
+        publish:
+          associated_nodes: <% task(get_associated_nodes).result %>
+
+      fail_get_associated_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_associated_nodes).result %>
+          errors: []
+          warnings: []
+
+      get_available_nodes:
+        action: ironic.node_list
+        on-success: check_nodes_count
+        on-error: fail_get_available_nodes
+        input:
+          associated: false
+          maintenance: false
+        publish:
+          available_nodes: <% task(get_available_nodes).result %>
+
+      fail_get_available_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_available_nodes).result %>
+          errors: []
+          warnings: []
+
+      check_nodes_count:
+        action: tripleo.validations.check_nodes_count
+        input:
+          statistics: <% $.statistics %>
+          stack: <% $.stack %>
+          associated_nodes: <% $.associated_nodes %>
+          available_nodes: <% $.available_nodes %>
+          parameters: <% $.parameters %>
+          default_role_counts: <% $.default_role_counts %>
+        on-success: send_message
+        on-error: fail_check_nodes_count
+        publish:
+          errors: <% task(check_nodes_count).result.errors %>
+          warnings: <% task(check_nodes_count).result.warnings %>
+
+      fail_check_nodes_count:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(check_nodes_count).result %>
+          statistics: null
+          errors: <% task(check_nodes_count).result.errors %>
+          warnings: <% task(check_nodes_count).result.warnings %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.check_hypervisor_stats
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                statistics: <% $.statistics %>
+                errors: <% $.errors %>
+                warnings: <% $.warnings %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
