@@ -1,0 +1,4 @@
+---
+features:
+  - Adds an action and workflow used to check the ironic boot
+    configuration.

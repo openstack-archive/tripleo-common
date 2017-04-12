@@ -18,6 +18,7 @@ from oslo_concurrency.processutils import ProcessExecutionError
 
 from tripleo_common.actions import base
 from tripleo_common import constants
+from tripleo_common.utils import nodes as nodeutils
 from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import validations as utils
 
@@ -233,6 +234,60 @@ class CheckFlavorsAction(base.TripleOAction):
             'flavors': result,
             'errors': errors,
             'warnings': warnings,
+        }
+        if errors:
+            mistral_result = {'error': return_value}
+        else:
+            mistral_result = {'data': return_value}
+
+        return mistral_workflow_utils.Result(**mistral_result)
+
+
+class CheckNodeBootConfigurationAction(base.TripleOAction):
+    """Check the boot configuration of the baremetal nodes"""
+
+    # TODO(bcrochet): The validation actions are temporary. This logic should
+    #                 move to the tripleo-validations project eventually.
+    def __init__(self, node, kernel_id, ramdisk_id):
+        super(CheckNodeBootConfigurationAction, self).__init__()
+
+        self.node = node
+        self.kernel_id = kernel_id
+        self.ramdisk_id = ramdisk_id
+
+    def run(self):
+        warnings = []
+        errors = []
+        message = ("Node {uuid} has an incorrectly configured "
+                   "{property}. Expected \"{expected}\" but got "
+                   "\"{actual}\".")
+        if self.node['driver_info'].get('deploy_ramdisk') != self.ramdisk_id:
+            errors.append(message.format(
+                uuid=self.node['uuid'],
+                property='driver_info/deploy_ramdisk',
+                expected=self.ramdisk_id,
+                actual=self.node['driver_info'].get('deploy_ramdisk')
+            ))
+        if self.node['driver_info'].get('deploy_kernel') != self.kernel_id:
+            errors.append(message.format(
+                uuid=self.node['uuid'],
+                property='driver_info/deploy_kernel',
+                expected=self.kernel_id,
+                actual=self.node['driver_info'].get('deploy_kernel')
+            ))
+        capabilities = nodeutils.capabilities_to_dict(
+            self.node['properties'].get('capabilities', ''))
+        if capabilities.get('boot_option') != 'local':
+            boot_option_message = ("Node {uuid} is not configured to use "
+                                   "boot_option:local in capabilities. It "
+                                   "will not be used for deployment with "
+                                   "flavors that require boot_option:local.")
+
+            warnings.append(boot_option_message.format(uuid=self.node['uuid']))
+
+        return_value = {
+            'errors': errors,
+            'warnings': warnings
         }
         if errors:
             mistral_result = {'error': return_value}
