@@ -20,7 +20,6 @@ disk_images:
       - iptables
       - enable-packages-install
       - pip-and-virtualenv-override
-      - ntp
       - overcloud-dracut
       - remove-machine-id
     packages:
@@ -28,6 +27,8 @@ disk_images:
       - python-debtcollector
       - plotnetcfg
       - sos
+      - ntp
+      - ntpd
       - device-mapper-multipath
       - python-heat-agent-puppet
       - python-heat-agent-hiera
