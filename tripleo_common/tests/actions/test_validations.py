@@ -14,6 +14,7 @@
 # under the License.
 import collections
 import mock
+from uuid import uuid4
 
 from mistral.workflow import utils as mistral_workflow_utils
 from oslo_concurrency.processutils import ProcessExecutionError
@@ -22,6 +23,7 @@ from tripleo_common.actions import validations
 from tripleo_common import constants
 from tripleo_common.tests import base
 from tripleo_common.tests.utils import test_validations
+from tripleo_common.utils import nodes as nodeutils
 
 
 class GetPubkeyActionTest(base.TestCase):
@@ -455,3 +457,202 @@ class TestCheckNodeBootConfigurationAction(base.TestCase):
 
         action = validations.CheckNodeBootConfigurationAction(**action_args)
         self.assertEqual(expected, action.run())
+
+
+class TestVerifyProfilesAction(base.TestCase):
+    def setUp(self):
+        super(TestVerifyProfilesAction, self).setUp()
+
+        self.nodes = []
+        self.flavors = {name: (self._get_fake_flavor(name), 1)
+                        for name in ('compute', 'control')}
+
+    def _get_fake_node(self, profile=None, possible_profiles=[],
+                       provision_state='available'):
+        caps = {'%s_profile' % p: '1'
+                for p in possible_profiles}
+        if profile is not None:
+            caps['profile'] = profile
+        caps = nodeutils.dict_to_capabilities(caps)
+        return {
+            'uuid': str(uuid4()),
+            'properties': {'capabilities': caps},
+            'provision_state': provision_state,
+        }
+
+    def _get_fake_flavor(self, name, profile=''):
+        the_profile = profile or name
+        return {
+            'name': name,
+            'profile': the_profile,
+            'capabilities:boot_option': 'local',
+            'capabilities:profile': the_profile
+        }
+
+    def _test(self, expected_result):
+        action = validations.VerifyProfilesAction(self.nodes, self.flavors)
+        result = action.run()
+
+        self.assertEqual(expected_result, result)
+
+    def test_no_matching_without_scale(self):
+        self.flavors = {name: (object(), 0)
+                        for name in self.flavors}
+        self.nodes[:] = [self._get_fake_node(profile='fake'),
+                         self._get_fake_node(profile='fake')]
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'errors': [],
+                'warnings': [],
+            })
+        self._test(expected)
+
+    def test_exact_match(self):
+        self.nodes[:] = [self._get_fake_node(profile='compute'),
+                         self._get_fake_node(profile='control')]
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'errors': [],
+                'warnings': [],
+            })
+        self._test(expected)
+
+    def test_nodes_with_no_profiles_present(self):
+        self.nodes[:] = [self._get_fake_node(profile='compute'),
+                         self._get_fake_node(profile=None),
+                         self._get_fake_node(profile='foobar'),
+                         self._get_fake_node(profile='control')]
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'warnings': [
+                    'There are 1 ironic nodes with no profile that will not '
+                    'be used: %s' % self.nodes[1].get('uuid')
+                ],
+                'errors': [],
+            })
+        self._test(expected)
+
+    def test_more_nodes_with_profiles_present(self):
+        self.nodes[:] = [self._get_fake_node(profile='compute'),
+                         self._get_fake_node(profile='compute'),
+                         self._get_fake_node(profile='compute'),
+                         self._get_fake_node(profile='control')]
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'warnings': ["2 nodes with profile compute won't be used for "
+                             "deployment now"],
+                'errors': [],
+            })
+        self._test(expected)
+
+    def test_no_nodes(self):
+        # One error per each flavor
+        expected = mistral_workflow_utils.Result(
+            error={'errors': ['Error: only 0 of 1 requested ironic nodes are '
+                              'tagged to profile compute (for flavor '
+                              'compute)\n'
+                              'Recommendation: tag more nodes using openstack '
+                              'baremetal node set --property  '
+                              '"capabilities=profile:compute,'
+                              'boot_option:local" <NODE ID>',
+                              'Error: only 0 of 1 requested ironic nodes are '
+                              'tagged to profile control (for flavor '
+                              'control).\n'
+                              'Recommendation: tag more nodes using openstack '
+                              'baremetal node set --property '
+                              '"capabilities=profile:control,'
+                              'boot_option:local" <NODE ID>'],
+                   'warnings': []})
+
+        action = validations.VerifyProfilesAction(self.nodes, self.flavors)
+        result = action.run()
+        self.assertEqual(expected.error['errors'].sort(),
+                         result.error['errors'].sort())
+        self.assertEqual(expected.error['warnings'], result.error['warnings'])
+        self.assertEqual(None, result.data)
+
+    def test_not_enough_nodes(self):
+        self.nodes[:] = [self._get_fake_node(profile='compute')]
+        expected = mistral_workflow_utils.Result(
+            error={'errors': ['Error: only 0 of 1 requested ironic nodes are '
+                              'tagged to profile control (for flavor '
+                              'control).\n'
+                              'Recommendation: tag more nodes using openstack '
+                              'baremetal node set --property '
+                              '"capabilities=profile:control,'
+                              'boot_option:local" <NODE ID>'],
+                   'warnings': []})
+        self._test(expected)
+
+    def test_scale(self):
+        # active nodes with assigned profiles are fine
+        self.nodes[:] = [self._get_fake_node(profile='compute',
+                                             provision_state='active'),
+                         self._get_fake_node(profile='control')]
+
+        expected = mistral_workflow_utils.Result(
+            data={
+                'errors': [],
+                'warnings': [],
+            }
+        )
+        self._test(expected)
+
+    def test_assign_profiles_wrong_state(self):
+        # active nodes are not considered for assigning profiles
+        self.nodes[:] = [self._get_fake_node(possible_profiles=['compute'],
+                                             provision_state='active'),
+                         self._get_fake_node(possible_profiles=['control'],
+                                             provision_state='cleaning'),
+                         self._get_fake_node(profile='compute',
+                                             provision_state='error')]
+        expected = mistral_workflow_utils.Result(
+            error={
+                'warnings': [
+                    'There are 1 ironic nodes with no profile that will not '
+                    'be used: %s' % self.nodes[0].get('uuid')
+                ],
+                'errors': [
+                    'Error: only 0 of 1 requested ironic nodes are tagged to '
+                    'profile control (for flavor control).\n'
+                    'Recommendation: tag more nodes using openstack baremetal '
+                    'node set --property "capabilities=profile:control,'
+                    'boot_option:local" <NODE ID>',
+                    'Error: only 0 of 1 requested ironic nodes are tagged to '
+                    'profile compute (for flavor compute).\n'
+                    'Recommendation: tag more nodes using openstack baremetal '
+                    'node set --property "capabilities=profile:compute,'
+                    'boot_option:local" <NODE ID>'
+                ]
+            })
+
+        action = validations.VerifyProfilesAction(self.nodes, self.flavors)
+        result = action.run()
+        self.assertEqual(expected.error['errors'].sort(),
+                         result.error['errors'].sort())
+        self.assertEqual(expected.error['warnings'], result.error['warnings'])
+        self.assertEqual(None, result.data)
+
+    def test_no_spurious_warnings(self):
+        self.nodes[:] = [self._get_fake_node(profile=None)]
+        self.flavors = {'baremetal': (
+            self._get_fake_flavor('baremetal', None), 1)}
+        expected = mistral_workflow_utils.Result(
+            error={
+                'warnings': [
+                    'There are 1 ironic nodes with no profile that will not '
+                    'be used: %s' % self.nodes[0].get('uuid')
+                ],
+                'errors': [
+                    'Error: only 0 of 1 requested ironic nodes are tagged to '
+                    'profile baremetal (for flavor baremetal).\n'
+                    'Recommendation: tag more nodes using openstack baremetal '
+                    'node set --property "capabilities=profile:baremetal,'
+                    'boot_option:local" <NODE ID>'
+                ]
+            })
+        self._test(expected)

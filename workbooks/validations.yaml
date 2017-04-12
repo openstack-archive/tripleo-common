@@ -449,3 +449,71 @@ workflows:
                 warnings: <% $.warnings %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  verify_profiles:
+    input:
+      - flavors: []
+      - run_validations: true
+      - queue_name: tripleo
+    output:
+      errors: <% $.errors %>
+      warnings: <% $.warnings %>
+
+    tasks:
+      check_run_validations:
+        on-complete:
+          - get_ironic_nodes: <% $.run_validations %>
+          - send_message: <% not $.run_validations %>
+
+      get_ironic_nodes:
+        action: ironic.node_list
+        on-success: verify_profiles
+        on-error: failed_get_ironic_nodes
+        input:
+          maintenance: false
+          detail: true
+        publish:
+          nodes: <% task(get_ironic_nodes).result %>
+
+      failed_get_ironic_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_ironic_nodes).result %>
+
+      verify_profiles:
+        action: tripleo.validations.verify_profiles
+        input:
+          nodes: <% $.nodes %>
+          flavors: <% $.flavors %>
+        on-success: send_message
+        on-error: fail_verify_profiles
+        publish:
+          errors: <% task(verify_profiles).result.errors %>
+          warnings: <% task(verify_profiles).result.warnings %>
+        publish-on-error:
+          errors: <% task(verify_profiles).result.errors %>
+          warnings: <% task(verify_profiles).result.warnings %>
+
+      fail_verify_profiles:
+        on-success: send_message
+        publish:
+          status: Failed
+          message: <% task(verify_profiles).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.validations.v1.verify_profiles
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                errors: <% $.errors %>
+                warnings: <% $.warnings %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
