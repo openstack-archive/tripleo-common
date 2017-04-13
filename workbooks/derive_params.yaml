@@ -11,12 +11,13 @@ workflows:
     input:
       - plan: overcloud
       - queue_name: tripleo
+      - user_inputs: {}
 
     tasks:
       get_flattened_parameters:
         action: tripleo.parameters.get_flatten container=<% $.plan %>
         publish:
-          environment_parameters: <% task().result.mistral_environment_parameters %>
+          environment_parameters: <% task().result.environment_parameters %>
           heat_resource_tree: <% task().result.heat_resource_tree %>
         on-success:
           - get_roles: <% $.environment_parameters and $.heat_resource_tree %>
@@ -49,6 +50,7 @@ workflows:
           role_name: <% $.role_name %>
           environment_parameters: <% $.environment_parameters %>
           heat_resource_tree: <% $.heat_resource_tree %>
+          user_inputs: <% $.user_inputs %>
         on-success: send_message
         on-error: set_status_failed_for_each_role
 
@@ -106,8 +108,22 @@ workflows:
       - role_name
       - environment_parameters
       - heat_resource_tree
+      - user_inputs
 
     tasks:
+      get_role_info:
+        workflow: _get_role_info
+        input:
+          role_name: <% $.role_name %>
+          heat_resource_tree: <% $.heat_resource_tree %>
+        publish:
+          role_features: <% task().result.get('role_features', []) %>
+          role_services: <% task().result.get('role_services', []) %>
+        on-success:
+          # Continue only if there are features associated with this role. Otherwise, we're done.
+          - get_flavor_name: <% $.role_features %>
+        on-error: set_status_failed_get_role_info
+
       # Getting introspection data workflow, which will take care of
       # 1) profile and flavor based mapping
       # 2) Nova placement api based mapping
@@ -145,6 +161,13 @@ workflows:
           introspection_data: <% task().result %>
         # TODO-Follow up patches workflows will actually be used here to derive parameters for each role
 
+      set_status_failed_get_role_info:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_role_info).result.get('message', '') %>
+        on-success: fail
+
       set_status_failed_get_flavor_name:
         publish:
           role_name: <% $.role_name %>
@@ -178,4 +201,81 @@ workflows:
           role_name: <% $.role_name %>
           status: FAILED
           message: <% task(get_introspection_data).result %>
+        on-success: fail
+
+  _get_role_info:
+    description: >
+      Workflow that determines the list of derived parameter features (DPDK,
+      HCI, etc.) for a role based on the services assigned to the role.
+
+    input:
+      - role_name
+      - heat_resource_tree
+
+    tasks:
+      get_resource_chains:
+        publish:
+          resource_chains: <% $.heat_resource_tree.resources.values().where($.get('type', '') = 'OS::Heat::ResourceChain') %>
+        on-success:
+          - get_role_chain: <% $.resource_chains %>
+          - set_status_failed_get_resource_chains: <% not $.resource_chains %>
+
+      get_role_chain:
+        publish:
+          role_chain: <% let(chain_name => concat($.role_name, 'ServiceChain'))-> $.heat_resource_tree.resources.values().where($.name = $chain_name).first({}) %>
+        on-success:
+          - get_service_chain: <% $.role_chain %>
+          - set_status_failed_get_role_chain: <% not $.role_chain %>
+
+      get_service_chain:
+        publish:
+          service_chain: <% let(resources => $.role_chain.resources)-> $.resource_chains.where($resources.contains($.id)).first('') %>
+        on-success:
+          - get_role_services: <% $.service_chain %>
+          - set_status_failed_get_service_chain: <% not $.service_chain %>
+
+      get_role_services:
+        publish:
+          role_services: <% let(resources => $.heat_resource_tree.resources)-> $.service_chain.resources.select($resources.get($)) %>
+        on-success:
+          - check_features: <% $.role_services %>
+          - set_status_failed_get_role_services: <% not $.role_services %>
+
+      check_features:
+        on-success: build_feature_dict
+        publish:
+          # The role supports the DPDK feature if the NeutronDpdkCoreList parameter is present.
+          dpdk: <% $.role_services.any($.get('parameters', []).contains('NeutronDpdkCoreList')) %>
+
+          # The role supports the HCI feature if it includes both NovaCompute and CephOSD services.
+          hci: <% $.role_services.any($.get('type', '').endsWith('::NovaCompute')) and $.role_services.any($.get('type', '').endsWith('::CephOSD')) %>
+
+      build_feature_dict:
+        on-success: filter_features
+        publish:
+          feature_dict: <% dict(DPDK => $.dpdk, HCI => $.hci) %>
+
+      filter_features:
+        publish:
+          # The list of features that are enabled (i.e. are true in the feature_dict).
+          role_features: <% let(feature_dict => $.feature_dict)-> $feature_dict.keys().where($feature_dict[$]) %>
+
+      set_status_failed_get_resource_chains:
+        publish:
+          message: <% 'Unable to locate any resource chains in the heat resource tree' %>
+        on-success: fail
+
+      set_status_failed_get_role_chain:
+        publish:
+          message: <% "Unable to determine the service chain resource for role '{0}'".format($.role_name) %>
+        on-success: fail
+
+      set_status_failed_get_service_chain:
+        publish:
+          message: <% "Unable to determine the service chain for role '{0}'".format($.role_name) %>
+        on-success: fail
+
+      set_status_failed_get_role_services:
+        publish:
+          message: <% "Unable to determine list of services for role '{0}'".format($.role_name) %>
         on-success: fail
