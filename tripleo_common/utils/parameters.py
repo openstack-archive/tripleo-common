@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from tripleo_common import exception
 from tripleo_common.utils import nodes
 
 
@@ -91,3 +92,34 @@ def set_count_and_flavor_params(role, baremetal_client, compute_client):
         _get_count_key(role): node_count,
         _get_flavor_key(role): flavor
     }
+
+
+def get_profile_of_flavor(flavor_name, compute_client):
+    """Returns profile name for a given flavor name.
+
+    :param flavor_name: Flavor name
+    :param compute_client: Compute client object
+    :raises: exception.DeriveParamsError: Derive parameters error
+
+    :return: profile name
+    """
+
+    try:
+        flavor = compute_client.flavors.find(name=flavor_name)
+    except Exception as err:
+        raise exception.DeriveParamsError(
+            'Unable to determine flavor for flavor name: '
+            '%(flavor_name)s. Error:%(err)s' % {'flavor_name': flavor_name,
+                                                'err': err})
+    if flavor:
+        profile = flavor.get_keys().get('capabilities:profile', '')
+        if profile:
+            return profile
+        else:
+            raise exception.DeriveParamsError(
+                'Unable to determine profile for flavor (flavor name: '
+                '%s)' % flavor_name)
+    else:
+        raise exception.DeriveParamsError(
+            'Unable to determine flavor for flavor name: '
+            '%s' % flavor_name)

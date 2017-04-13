@@ -1,0 +1,181 @@
+---
+version: '2.0'
+name: tripleo.derive_params.v1
+description: TripleO Workflows to derive deployment parameters from the introspected data
+
+workflows:
+
+  derive_parameters:
+    description: The main workflow for deriving parameters from the introspected data
+
+    input:
+      - plan: overcloud
+      - queue_name: tripleo
+
+    tasks:
+      get_flattened_parameters:
+        action: tripleo.parameters.get_flatten container=<% $.plan %>
+        publish:
+          environment_parameters: <% task().result.mistral_environment_parameters %>
+          heat_resource_tree: <% task().result.heat_resource_tree %>
+        on-success:
+          - get_roles: <% $.environment_parameters and $.heat_resource_tree %>
+          - set_status_failed_get_flattened_parameters: <% (not $.environment_parameters) or (not $.heat_resource_tree) %>
+        on-error: set_status_failed_get_flattened_parameters
+
+      get_roles:
+        action: tripleo.role.list container=<% $.plan %>
+        publish:
+          role_name_list: <% task().result %>
+        on-success:
+          - get_valid_roles: <% $.role_name_list %>
+          - set_status_failed_get_roles: <% not $.role_name_list %>
+        on-error: set_status_failed_on_error_get_roles
+
+      # Obtain only the roles which has count > 0, by checking <RoleName>Count parameter, like ComputeCount
+      get_valid_roles:
+        publish:
+          valid_role_name_list: <% let(hr => $.heat_resource_tree.parameters) -> $.role_name_list.where(int($hr.get(concat($, 'Count'), {}).get('default', 0)) > 0) %>
+        on-success:
+          - for_each_role: <% $.valid_role_name_list %>
+          - set_status_failed_get_valid_roles: <% not $.valid_role_name_list %>
+
+      # Execute the basic preparation workflow for each role to get introspection data
+      for_each_role:
+        with-items: role_name in <% $.valid_role_name_list %>
+        concurrency: 1
+        workflow: _derive_parameters_per_role
+        input:
+          role_name: <% $.role_name %>
+          environment_parameters: <% $.environment_parameters %>
+          heat_resource_tree: <% $.heat_resource_tree %>
+        on-success: send_message
+        on-error: set_status_failed_for_each_role
+
+      set_status_failed_get_flattened_parameters:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_flattened_parameters).result %>
+
+      set_status_failed_get_roles:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: "Unable to determine the list of roles in the deployment plan"
+
+      set_status_failed_on_error_get_roles:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_roles).result %>
+
+      set_status_failed_get_valid_roles:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: 'Unable to determine the list of valid roles in the deployment plan.'
+
+      set_status_failed_for_each_role:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(for_each_role).result.select(dict('role_name' => $.role_name, 'status' => $.get('status', 'SUCCESS'), 'message' => $.get('message', ''))) %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.derive_params.v1.derive_parameters
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = 'FAILED' %>
+
+
+  _derive_parameters_per_role:
+    description: >
+      Workflow which runs per role to get the introspection data on the first matching node assigned to role.
+      Once introspection data is fetched, this worklow will trigger the actual derive parameters workflow
+    input:
+      - role_name
+      - environment_parameters
+      - heat_resource_tree
+
+    tasks:
+      # Getting introspection data workflow, which will take care of
+      # 1) profile and flavor based mapping
+      # 2) Nova placement api based mapping
+      # Currently we have implemented profile and flavor based mapping
+      # TODO-Nova placement api based mapping is pending, we will enchance it later.
+      get_flavor_name:
+        publish:
+          flavor_name: <% let(param_name => concat('Overcloud', $.role_name, 'Flavor').replace('OvercloudControllerFlavor', 'OvercloudControlFlavor')) -> $.heat_resource_tree.parameters.get($param_name, {}).get('default', '') %>
+        on-success:
+          - get_profile_name: <% $.flavor_name %>
+          - set_status_failed_get_flavor_name: <% not $.flavor_name %>
+
+      get_profile_name:
+        action: tripleo.parameters.get_profile_of_flavor flavor_name=<% $.flavor_name %>
+        publish:
+          profile_name: <% task().result %>
+        on-success: get_profile_node
+        on-error: set_status_failed_get_profile_name
+
+      get_profile_node:
+        workflow: tripleo.baremetal.v1.nodes_with_profile
+        input:
+          profile: <% $.profile_name %>
+        publish:
+          profile_node_uuid: <% task().result.matching_nodes.first('') %>
+        on-success:
+          - get_introspection_data: <% $.profile_node_uuid %>
+          - set_status_failed_no_matching_node_get_profile_node: <% not $.profile_node_uuid %>
+        on-error: set_status_failed_on_error_get_profile_node
+
+      get_introspection_data:
+        on-error: set_status_failed_get_introspection_data
+        action: baremetal_introspection.get_data uuid=<% $.profile_node_uuid %>
+        publish:
+          introspection_data: <% task().result %>
+        # TODO-Follow up patches workflows will actually be used here to derive parameters for each role
+
+      set_status_failed_get_flavor_name:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% "Unable to determine flavor for role '{0}'".format($.role_name) %>
+        on-success: fail
+
+      set_status_failed_get_profile_name:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_profile_name).result %>
+        on-success: fail
+
+      set_status_failed_no_matching_node_get_profile_node:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% "Unable to determine matching node for profile '{0}'".format($.profile_name) %>
+        on-success: fail
+
+      set_status_failed_on_error_get_profile_node:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_profile_node).result %>
+        on-success: fail
+
+      set_status_failed_get_introspection_data:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_introspection_data).result %>
+        on-success: fail

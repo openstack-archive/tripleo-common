@@ -18,6 +18,7 @@ from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import parameters
 from tripleo_common import constants
+from tripleo_common import exception
 from tripleo_common.tests import base
 
 _EXISTING_PASSWORDS = {
@@ -823,3 +824,33 @@ class GetFlattenedParametersActionTest(base.TestCase):
         action = parameters.GetFlattenedParametersAction()
         result = action.run(mock_ctx)
         self.assertEqual(result, expected_value)
+
+
+class GetProfileOfFlavorActionTest(base.TestCase):
+
+    @mock.patch('tripleo_common.utils.parameters.get_profile_of_flavor')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_compute_client')
+    @mock.patch('mistral.context.ctx')
+    def test_profile_found(self, mock_ctx, mock_get_compute_client,
+                           mock_get_profile_of_flavor):
+        mock_ctx = mock.MagicMock()
+        mock_get_profile_of_flavor.return_value = 'compute'
+        action = parameters.GetProfileOfFlavorAction('oooq_compute')
+        result = action.run(mock_ctx)
+        expected_result = "compute"
+        self.assertEqual(result, expected_result)
+
+    @mock.patch('tripleo_common.utils.parameters.get_profile_of_flavor')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_compute_client')
+    @mock.patch('mistral.context.ctx')
+    def test_profile_not_found(self, mock_ctx, mock_get_compute_client,
+                               mock_get_profile_of_flavor):
+        mock_ctx = mock.MagicMock()
+        profile = (exception.DeriveParamsError, )
+        mock_get_profile_of_flavor.side_effect = profile
+        action = parameters.GetProfileOfFlavorAction('no_profile')
+        result = action.run(mock_ctx)
+        self.assertTrue(result.is_error())
+        mock_get_profile_of_flavor.assert_called_once()
