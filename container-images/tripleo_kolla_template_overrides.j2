@@ -1,0 +1,33 @@
+{% extends parent_template %}
+
+# Disable external repos
+{% set base_yum_repo_files_override = [] %}
+{% set base_yum_url_packages_override = [] %}
+{% set base_yum_repo_keys_override = [] %}
+
+{% set base_centos_binary_packages_append = ['puppet'] %}
+{% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
+
+# Required for mistral-db-populate to load tripleo custom actions on
+# the undercloud
+{% set mistral_api_packages_append = ['openstack-tripleo-common'] %}
+{% set mistral_engine_packages_append = ['openstack-tripleo-common'] %}
+
+# NOTE: Mistral executor needs to run nova-manage cells_v2 commands on
+# the undercloud baremetal workflows.
+{% set mistral_executor_packages_append = ['openstack-tripleo-common', 'openstack-nova-common'] %}
+
+# FIXME (kolla review to add ceilometer to swift proxy image)
+{% set swift_proxy_server_packages_append = ['openstack-ceilometer-common'] %}
+
+# Remove packages not present in repos
+{% set openstack_base_packages_remove = ['Percona-Server-shared-56'] %}
+
+# Use mariadb-server package
+{% set mariadb_packages_remove = ['MariaDB-Galera-server', 'MariaDB-client'] %}
+{% set mariadb_packages_append = ['mariadb-server'] %}
+
+# We'll configure mariadb with galera.cnf
+{% block mariadb_footer %}
+RUN rm /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
+{% endblock %}
