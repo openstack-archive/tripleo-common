@@ -41,6 +41,8 @@ class ScaleDownActionTest(base.TestCase):
         self.image = collections.namedtuple('image', ['id'])
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -51,7 +53,8 @@ class ScaleDownActionTest(base.TestCase):
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_object_client,
                  mock_get_workflow_client, mock_get_template_contents,
-                 mock_env_files, mock_get_heat_client):
+                 mock_env_files, mock_get_heat_client,
+                 mock_cache):
 
         mock_env_files.return_value = ({}, {})
         heatclient = mock.MagicMock()
@@ -120,3 +123,8 @@ class ScaleDownActionTest(base.TestCase):
             existing=True,
             files={},
             timeout_mins=240)
+
+        mock_cache.assert_called_once_with(
+            "stack",
+            "tripleo.parameters.get"
+        )

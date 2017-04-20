@@ -45,6 +45,12 @@ class GetParametersAction(templates.ProcessTemplatesAction):
     """Gets list of available heat parameters."""
 
     def run(self):
+
+        cached = self.cache_get(self.container, "tripleo.parameters.get")
+
+        if cached is not None:
+            return cached
+
         processed_data = super(GetParametersAction, self).run()
 
         # If we receive a 'Result' instance it is because the parent action
@@ -67,10 +73,12 @@ class GetParametersAction(templates.ProcessTemplatesAction):
             'environment': processed_data['environment'],
             'show_nested': True
         }
-        return {
+        result = {
             'heat_resource_tree': orc.stacks.validate(**fields),
             'mistral_environment_parameters': params,
         }
+        self.cache_set(self.container, "tripleo.parameters.get", result)
+        return result
 
 
 class ResetParametersAction(base.TripleOAction):
@@ -92,6 +100,7 @@ class ResetParametersAction(base.TripleOAction):
             'variables': wf_env.variables
         }
         wc.environments.update(**env_kwargs)
+        self.cache_delete(self.container, "tripleo.parameters.get")
         return wf_env
 
 
@@ -115,6 +124,7 @@ class UpdateParametersAction(base.TripleOAction):
             'variables': wf_env.variables
         }
         wc.environments.update(**env_kwargs)
+        self.cache_delete(self.container, "tripleo.parameters.get")
         return wf_env
 
 
@@ -181,6 +191,7 @@ class GeneratePasswordsAction(base.TripleOAction):
         }
 
         wc.environments.update(**env_kwargs)
+        self.cache_delete(self.container, "tripleo.parameters.get")
 
         return wf_env.variables['passwords']
 

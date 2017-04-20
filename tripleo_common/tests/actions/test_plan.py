@@ -259,7 +259,8 @@ class UpdatePlanActionTest(base.TestCase):
         mistral_patcher.start()
         self.addCleanup(mistral_patcher.stop)
 
-    def test_run_success(self):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.cache_delete')
+    def test_run_success(self, mock_cache):
         action = plan.UpdatePlanAction(self.container_name)
         action.run()
 
@@ -269,13 +270,18 @@ class UpdatePlanActionTest(base.TestCase):
         )
 
         self.swift.delete_object.assert_called_once()
+        mock_cache.assert_called_once_with(
+            "Test-container-3",
+            "tripleo.parameters.get"
+        )
 
         self.mistral.environments.update.assert_called_once_with(
             name='Test-container-3',
             variables=JSON_CONTENTS
         )
 
-    def test_run_mistral_env_missing(self):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.cache_delete')
+    def test_run_mistral_env_missing(self, mock_cache):
         self.mistral.environments.update.side_effect = (
             mistral_base.APIException)
 
@@ -286,6 +292,10 @@ class UpdatePlanActionTest(base.TestCase):
                      self.container_name)
         self.assertEqual(result.error, error_str)
         self.swift.delete_object.assert_not_called()
+        mock_cache.assert_called_once_with(
+            "Test-container-3",
+            "tripleo.parameters.get"
+        )
 
     def test_run_missing_file(self):
         self.swift.get_object.side_effect = swiftexceptions.ClientException(

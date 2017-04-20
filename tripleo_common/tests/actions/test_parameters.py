@@ -137,6 +137,10 @@ _EXISTING_PASSWORDS = {
 
 class GetParametersActionTest(base.TestCase):
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
@@ -149,7 +153,9 @@ class GetParametersActionTest(base.TestCase):
     def test_run(self, mock_ctx, mock_get_object_client,
                  mock_get_workflow_client, mock_get_orchestration_client,
                  mock_get_template_contents,
-                 mock_process_multiple_environments_and_files):
+                 mock_process_multiple_environments_and_files,
+                 mock_cache_get,
+                 mock_cache_set):
 
         mock_ctx.return_value = mock.MagicMock()
         swift = mock.MagicMock(url="http://test.com")
@@ -173,8 +179,10 @@ class GetParametersActionTest(base.TestCase):
         mock_process_multiple_environments_and_files.return_value = ({}, {})
 
         mock_heat = mock.MagicMock()
+        mock_heat.stacks.validate.return_value = {}
         mock_get_orchestration_client.return_value = mock_heat
 
+        mock_cache_get.return_value = None
         # Test
         action = parameters.GetParametersAction()
         action.run()
@@ -184,14 +192,26 @@ class GetParametersActionTest(base.TestCase):
             show_nested=True,
             template={'heat_template_version': '2016-04-30'},
         )
+        mock_cache_get.assert_called_once_with(
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+        mock_cache_set.assert_called_once_with(
+            "overcloud",
+            "tripleo.parameters.get",
+            {'heat_resource_tree': {}, 'mistral_environment_parameters': None}
+        )
 
 
 class ResetParametersActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
     @mock.patch('mistral.context.ctx')
-    def test_run(self, mock_ctx, mock_get_workflow_client):
+    def test_run(self, mock_ctx, mock_get_workflow_client,
+                 mock_cache):
 
         mock_ctx.return_value = mock.MagicMock()
         mock_mistral = mock.MagicMock()
@@ -204,7 +224,6 @@ class ResetParametersActionTest(base.TestCase):
         }
         mock_mistral.environments.get.return_value = mock_env
         mock_get_workflow_client.return_value = mock_mistral
-
         # Test
         action = parameters.ResetParametersAction()
         action.run()
@@ -215,14 +234,20 @@ class ResetParametersActionTest(base.TestCase):
                 'environments': [{u'path': u'environments/test.yaml'}],
             }
         )
+        mock_cache.assert_called_once_with(
+            "overcloud",
+            "tripleo.parameters.get"
+        )
 
 
 class UpdateParametersActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
     @mock.patch('mistral.context.ctx')
-    def test_run(self, mock_ctx, mock_get_workflow_client):
+    def test_run(self, mock_ctx, mock_get_workflow_client, mock_cache):
 
         mock_ctx.return_value = mock.MagicMock()
         mock_mistral = mock.MagicMock()
@@ -249,10 +274,16 @@ class UpdateParametersActionTest(base.TestCase):
                 'environments': [{u'path': u'environments/test.yaml'}],
                 'parameter_defaults': {'SomeTestParameter': 42}}
         )
+        mock_cache.assert_called_once_with(
+            "overcloud",
+            "tripleo.parameters.get"
+        )
 
 
 class UpdateRoleParametersActionTest(base.TestCase):
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
     @mock.patch('tripleo_common.utils.parameters.set_count_and_flavor_params')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_baremetal_client')
@@ -263,7 +294,7 @@ class UpdateRoleParametersActionTest(base.TestCase):
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client,
                  mock_get_compute_client, mock_get_baremetal_client,
-                 mock_set_count_and_flavor):
+                 mock_set_count_and_flavor, mock_cache):
 
         mock_ctx.return_value = mock.MagicMock()
         mock_mistral = mock.MagicMock()
@@ -283,10 +314,16 @@ class UpdateRoleParametersActionTest(base.TestCase):
 
         mock_mistral.environments.update.assert_called_once_with(
             name='overcast', variables={'parameter_defaults': params})
+        mock_cache.assert_called_once_with(
+            "overcast",
+            "tripleo.parameters.get"
+        )
 
 
 class GeneratePasswordsActionTest(base.TestCase):
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -296,7 +333,7 @@ class GeneratePasswordsActionTest(base.TestCase):
     @mock.patch('mistral.context.ctx')
     def test_run(self, mock_ctx, mock_get_workflow_client,
                  mock_get_snmpd_readonly_user_password,
-                 mock_get_orchestration_client):
+                 mock_get_orchestration_client, mock_cache):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
 
@@ -324,7 +361,13 @@ class GeneratePasswordsActionTest(base.TestCase):
         for password_param_name in constants.PASSWORD_PARAMETER_NAMES:
             self.assertTrue(password_param_name in result,
                             "%s is not in %s" % (password_param_name, result))
+        mock_cache.assert_called_once_with(
+            "overcloud",
+            "tripleo.parameters.get"
+        )
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -337,7 +380,8 @@ class GeneratePasswordsActionTest(base.TestCase):
     def test_run_passwords_exist(self, mock_ctx, mock_get_workflow_client,
                                  mock_get_snmpd_readonly_user_password,
                                  mock_create_ssh_keypair,
-                                 mock_get_orchestration_client):
+                                 mock_get_orchestration_client,
+                                 mock_cache):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
@@ -367,7 +411,13 @@ class GeneratePasswordsActionTest(base.TestCase):
 
         # ensure old passwords used and no new generation
         self.assertEqual(_EXISTING_PASSWORDS, result)
+        mock_cache.assert_called_once_with(
+            "overcloud",
+            "tripleo.parameters.get"
+        )
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -380,7 +430,8 @@ class GeneratePasswordsActionTest(base.TestCase):
     def test_passwords_exist_in_heat(self, mock_ctx, mock_get_workflow_client,
                                      mock_get_snmpd_readonly_user_password,
                                      mock_create_ssh_keypair,
-                                     mock_get_orchestration_client):
+                                     mock_get_orchestration_client,
+                                     mock_cache):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
@@ -416,6 +467,10 @@ class GeneratePasswordsActionTest(base.TestCase):
         existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
         # ensure old passwords used and no new generation
         self.assertEqual(existing_passwords, result)
+        mock_cache.assert_called_once_with(
+            "overcloud",
+            "tripleo.parameters.get"
+        )
 
 
 class GetPasswordsActionTest(base.TestCase):

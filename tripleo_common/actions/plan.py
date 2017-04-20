@@ -215,6 +215,7 @@ class UpdatePlanAction(base.TripleOAction, PlanEnvMixin):
 
         # Update mistral environment with contents from plan environment file
         variables = json.dumps(plan_env_dict, sort_keys=True)
+        self.cache_delete(self.container, "tripleo.parameters.get")
         try:
             mistral.environments.update(
                 name=self.container, variables=variables)

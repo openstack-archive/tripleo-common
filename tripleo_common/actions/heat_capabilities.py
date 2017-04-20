@@ -192,6 +192,8 @@ class UpdateCapabilitiesAction(base.TripleOAction):
                 if env.get('path') not in self.environments:
                     mistral_env.variables['environments'].remove(env)
 
+        self.cache_delete(self.container, "tripleo.parameters.get")
+
         env_kwargs = {
             'name': mistral_env.name,
             'variables': mistral_env.variables
