@@ -94,8 +94,12 @@ class DockerImageUploader(ImageUploader):
 
     def upload_image(self, image_name, pull_source, push_destination):
         dockerc = Client(base_url='unix://var/run/docker.sock')
-        image = image_name.rpartition(':')[0]
-        tag = image_name.rpartition(':')[2]
+        if ':' in image_name:
+            image = image_name.rpartition(':')[0]
+            tag = image_name.rpartition(':')[2]
+        else:
+            image = image_name
+            tag = 'latest'
         repo = pull_source + '/' + image
 
         response = [line for line in dockerc.pull(repo,

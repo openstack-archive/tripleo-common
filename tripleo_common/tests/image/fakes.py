@@ -38,6 +38,8 @@ def create_parsed_upload_images():
         {'imagename': 'tripleoupstream/centos-binary-nova-libvirt:liberty',
          'push_destination': 'localhost:8787',
          'pull_source': 'docker.io',
-         'uploader': 'docker'}
+         'uploader': 'docker'},
+        {'imagename': 'tripleoupstream/image-with-missing-tag',
+         'push_destination': 'localhost:8787'},
     ]
     return uploads
