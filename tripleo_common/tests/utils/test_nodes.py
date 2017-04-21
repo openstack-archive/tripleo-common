@@ -641,7 +641,8 @@ ABCDEF
 
 
 VALID_NODE_JSON = [
-    {'pm_type': 'pxe_ipmitool',
+    {'_comment': 'This is a comment',
+     'pm_type': 'pxe_ipmitool',
      'pm_addr': '192.168.0.1',
      'pm_user': 'root',
      'pm_password': 'p@$$w0rd'},
@@ -661,6 +662,7 @@ VALID_NODE_JSON = [
      'pm_addr': '1.2.3.4',
      'pm_user': 'root',
      'pm_password': EXAMPLE_SSH_PRIVATE_KEY,
+     '_comment': 'This is another comment',
      'mac': ['11:11:11:11:11:11']},
     {'pm_type': 'pxe_ssh',
      'pm_addr': '1.2.3.4',
