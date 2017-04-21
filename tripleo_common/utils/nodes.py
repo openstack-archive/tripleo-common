@@ -550,3 +550,15 @@ def run_nova_cell_v2_discovery():
         'discover_hosts',
         '--verbose'
     )
+
+
+def get_node_profile(node):
+    """Return the profile assosicated with the node """
+
+    capabilities = node.get('properties').get('capabilities')
+    capabilities_dict = capabilities_to_dict(capabilities)
+
+    if 'profile' in capabilities_dict:
+        return capabilities_dict['profile']
+
+    return None

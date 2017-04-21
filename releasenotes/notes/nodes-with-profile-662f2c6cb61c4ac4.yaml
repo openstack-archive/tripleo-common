@@ -1,0 +1,5 @@
+---
+features:
+  - Added a new workflow to fetch all the matching nodes with the given
+    profile. To support it, a new action to fetch the node's capabilities
+    has been added too.

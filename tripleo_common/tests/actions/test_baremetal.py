@@ -353,3 +353,21 @@ class TestCellV2DiscoverHostsAction(base.TestCase):
         result = action.run()
         self.assertTrue(result.is_error())
         mock_command.assert_called_once()
+
+
+class TestGetProfileAction(base.TestCase):
+
+    def test_run(self):
+        node = {
+            'uuid': 'abcd1',
+            'properties': {
+                'capabilities': 'profile:compute'
+            }
+        }
+        action = baremetal.GetProfileAction(node=node)
+        result = action.run()
+        expected_result = {
+            'uuid': 'abcd1',
+            'profile': 'compute'
+        }
+        self.assertEqual(result, expected_result)
