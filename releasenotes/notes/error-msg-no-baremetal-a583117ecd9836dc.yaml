@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Add an error message if there are no bare metal nodes available in an
+    available or active state and with maintenance mode off.  Previously,
+    the message was misleading about missing control or compute flavor
+    having no profile associated.
