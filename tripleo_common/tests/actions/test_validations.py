@@ -287,14 +287,39 @@ class TestCheckBootImagesAction(base.TestCase):
         self.assertIn(expected_message, messages)
 
 
+class FakeFlavor(object):
+    name = ''
+    uuid = ''
+
+    def __init__(self, name, keys={'capabilities:boot_option': 'local'}):
+        self.uuid = uuid4()
+        self.name = name
+        self.keys = keys
+
+    def get_keys(self):
+        return self.keys
+
+
 class TestCheckFlavorsAction(base.TestCase):
     def setUp(self):
         super(TestCheckFlavorsAction, self).setUp()
-        self.flavors = [
-            {'name': 'flavor1', 'capabilities:boot_option': 'local'},
-            {'name': 'flavor2', 'capabilities:boot_option': 'netboot'},
-            {'name': 'flavor3'}
+        self.compute = mock.MagicMock()
+        compute_patcher = mock.patch(
+            'tripleo_common.actions.base.TripleOAction.get_compute_client',
+            return_value=self.compute)
+        self.mock_compute = compute_patcher.start()
+        self.addCleanup(compute_patcher.stop)
+
+        self.mock_flavors = mock.Mock()
+        self.compute.attach_mock(self.mock_flavors, 'flavors')
+        self.mock_flavor_list = [
+            FakeFlavor('flavor1'),
+            FakeFlavor('flavor2',
+                       keys={'capabilities:boot_option': 'netboot'}),
+            FakeFlavor('flavor3', None)
         ]
+        self.mock_flavors.attach_mock(
+            mock.Mock(return_value=self.mock_flavor_list), 'list')
 
     def test_run_success(self):
         roles_info = {
@@ -307,7 +332,7 @@ class TestCheckFlavorsAction(base.TestCase):
                     'flavor1': (
                         {
                             'name': 'flavor1',
-                            'capabilities:boot_option': 'local'
+                            'keys': {'capabilities:boot_option': 'local'}
                         }, 1)
                 },
                 'warnings': [],
@@ -316,7 +341,6 @@ class TestCheckFlavorsAction(base.TestCase):
         )
 
         action_args = {
-            'flavors': self.flavors,
             'roles_info': roles_info
         }
         action = validations.CheckFlavorsAction(**action_args)
@@ -334,11 +358,12 @@ class TestCheckFlavorsAction(base.TestCase):
                     'flavor2': (
                         {
                             'name': 'flavor2',
-                            'capabilities:boot_option': 'netboot'
+                            'keys': {'capabilities:boot_option': 'netboot'}
                         }, 1),
                     'flavor3': (
                         {
                             'name': 'flavor3',
+                            'keys': None
                         }, 1),
                 },
                 'warnings': [
@@ -353,7 +378,6 @@ class TestCheckFlavorsAction(base.TestCase):
         )
 
         action_args = {
-            'flavors': self.flavors,
             'roles_info': roles_info
         }
         action = validations.CheckFlavorsAction(**action_args)
@@ -377,7 +401,6 @@ class TestCheckFlavorsAction(base.TestCase):
         )
 
         action_args = {
-            'flavors': self.flavors,
             'roles_info': roles_info
         }
         action = validations.CheckFlavorsAction(**action_args)
@@ -485,8 +508,10 @@ class TestVerifyProfilesAction(base.TestCase):
         return {
             'name': name,
             'profile': the_profile,
-            'capabilities:boot_option': 'local',
-            'capabilities:profile': the_profile
+            'keys': {
+                'capabilities:boot_option': 'local',
+                'capabilities:profile': the_profile
+            }
         }
 
     def _test(self, expected_result):

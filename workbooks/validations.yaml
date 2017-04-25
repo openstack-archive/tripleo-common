@@ -330,19 +330,12 @@ workflows:
     tasks:
       check_run_validations:
         on-complete:
-          - get_flavors: <% $.run_validations %>
+          - check_flavors: <% $.run_validations %>
           - send_message: <% not $.run_validations %>
-
-      get_flavors:
-        action: nova.flavors_list
-        on-success: check_flavors
-        publish:
-          nova_flavors: <% task(get_flavors).result %>
 
       check_flavors:
         action: tripleo.validations.check_flavors
         input:
-          flavors: <% $.nova_flavors %>
           roles_info: <% $.roles_info %>
         on-success: send_message
         on-error: fail_check_flavors
