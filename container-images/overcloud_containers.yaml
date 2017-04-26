@@ -12,6 +12,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-heat-api-cfn:latest
 - imagename: tripleoupstream/centos-binary-heat-api-cloudwatch:latest
 - imagename: tripleoupstream/centos-binary-heat-engine:latest
+- imagename: tripleoupstream/centos-binary-horizon:latest
 - imagename: tripleoupstream/centos-binary-ironic-api:latest
 - imagename: tripleoupstream/centos-binary-ironic-conductor:latest
 - imagename: tripleoupstream/centos-binary-ironic-pxe:latest
