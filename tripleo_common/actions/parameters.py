@@ -286,7 +286,8 @@ class GenerateFencingParametersAction(base.TripleOAction):
                      "bm_name": hostmap[mac_addr]["baremetal_name"]})
                 if self.delay:
                     params["delay"] = self.delay
-            elif node["pm_type"].split('_')[1] in ("ipmitool", "ilo", "drac"):
+            elif (node['pm_type'] == 'ipmi' or node["pm_type"].split('_')[1] in
+                  ("ipmitool", "ilo", "drac")):
                 # IPMI fencing driver
                 node_data["agent"] = "fence_ipmilan"
                 if self.fence_action:

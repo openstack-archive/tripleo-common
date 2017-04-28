@@ -167,6 +167,7 @@ class FindNodeHandlerTest(base.TestCase):
                 ('fake_pxe', 'fake'),
                 ('pxe_ssh', 'ssh'),
                 ('pxe_ipmitool', 'ipmi'),
+                ('ipmi', 'ipmi'),
                 ('pxe_ilo', 'ilo'),
                 ('agent_irmc', 'irmc')]
         for driver, prefix in test:
@@ -390,6 +391,9 @@ class NodesTest(base.TestCase):
         ironic.node.update.assert_called_once_with(
             ironic.node.get.return_value.uuid, mock.ANY)
 
+    def test_update_node_ironic_ipmi(self):
+        self._update_by_type('ipmi')
+
     def test_update_node_ironic_pxe_ipmitool(self):
         self._update_by_type('pxe_ipmitool')
 
@@ -509,6 +513,22 @@ class NodesTest(base.TestCase):
             driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
                          'ucs_username': 'test'})
 
+    def test_register_ironic_node_ipmi(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'ipmi'
+        node['pm_port'] = '6230'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='ipmi', name='node1', properties=node_properties,
+            driver_info={'ipmi_password': 'random', 'ipmi_address': 'foo.bar',
+                         'ipmi_username': 'test', 'ipmi_port': '6230'})
+
     def test_register_ironic_node_pxe_ipmitool(self):
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
@@ -612,12 +632,12 @@ class TestPopulateNodeMapping(base.TestCase):
         node1 = ironic_node('abcdef', 'pxe_ssh', None)
         node2 = ironic_node('fedcba', 'pxe_ipmitool',
                             {'ipmi_address': '10.0.1.2'})
-        client.node.list_ports.side_effect = ([ironic_port('aaa')],
-                                              [])
-        client.node.list.return_value = [node1, node2]
+        node3 = ironic_node('xyz', 'ipmi', {'ipmi_address': '10.0.1.3'})
+        client.node.list_ports.side_effect = ([ironic_port('aaa')], [], [])
+        client.node.list.return_value = [node1, node2, node3]
         expected = {'mac': {'aaa': 'abcdef'},
-                    'pm_addr': {'10.0.1.2': 'fedcba'},
-                    'uuids': {'abcdef', 'fedcba'}}
+                    'pm_addr': {'10.0.1.2': 'fedcba', '10.0.1.3': 'xyz'},
+                    'uuids': {'abcdef', 'fedcba', 'xyz'}}
         self.assertEqual(expected, nodes._populate_node_mapping(client))
 
     def test_populate_node_mapping_ironic_fake_pxe(self):
@@ -645,6 +665,10 @@ VALID_NODE_JSON = [
      'pm_addr': '192.168.0.1',
      'pm_user': 'root',
      'pm_password': 'p@$$w0rd'},
+    {'pm_type': 'ipmi',
+     'pm_addr': '192.168.1.1',
+     'pm_user': 'root',
+     'pm_password': 'p@$$w0rd'},
     {'pm_type': 'pxe_ipmitool',
      'pm_addr': '192.168.0.1',
      'pm_user': 'root',
@@ -654,6 +678,18 @@ VALID_NODE_JSON = [
      'mac': ['aa:bb:cc:dd:ee:ff',
              '11:22:33:44:55:66'],
      'name': 'foobar1',
+     'capabilities': {'foo': 'bar'},
+     'kernel_id': 'kernel1',
+     'ramdisk_id': 'ramdisk1'},
+    {'pm_type': 'ipmi',
+     'pm_addr': '192.168.1.1',
+     'pm_user': 'root',
+     'pm_password': 'p@$$w0rd',
+     'pm_port': 1234,
+     'ipmi_priv_level': 'USER',
+     'mac': ['dd:ee:ff:aa:bb:cc',
+             '44:55:66:11:22:33'],
+     'name': 'foobar2',
      'capabilities': {'foo': 'bar'},
      'kernel_id': 'kernel1',
      'ramdisk_id': 'ramdisk1'},
@@ -696,7 +732,7 @@ class TestValidateNodes(base.TestCase):
              'pm_addr': '1.1.1.1',
              'pm_user': 'root',
              'pm_password': 'p@$$w0rd'},
-            {'pm_type': 'pxe_ipmitool',
+            {'pm_type': 'ipmi',
              'pm_addr': '1.1.1.1',
              'pm_user': 'user',
              'pm_password': 'p@$$w0rd'},
@@ -724,7 +760,7 @@ class TestValidateNodes(base.TestCase):
              'pm_user': 'root',
              'pm_password': 'p@$$w0rd',
              'mac': ['11:22:33:44:55:66']},
-            {'pm_type': 'pxe_ipmitool',
+            {'pm_type': 'ipmi',
              'pm_addr': '1.2.1.1',
              'pm_user': 'user',
              'pm_password': 'p@$$w0rd',
