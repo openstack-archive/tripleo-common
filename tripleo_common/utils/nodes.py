@@ -135,6 +135,40 @@ class PrefixedDriverInfo(DriverInfo):
         return result
 
 
+class RedfishDriverInfo(DriverInfo):
+    def __init__(self):
+        mapping = {
+            'pm_addr': 'redfish_address',
+            'pm_user': 'redfish_username',
+            'pm_password': 'redfish_password',
+            'pm_system_id': 'redfish_system_id'
+        }
+        mandatory_fields = list(mapping)
+
+        super(RedfishDriverInfo, self).__init__(
+            'redfish', mapping,
+            deprecated_mapping=None,
+            mandatory_fields=mandatory_fields,
+        )
+
+    def _build_id(self, address, system):
+        address = re.sub(r'https?://', '', address, count=1, flags=re.I)
+        return '%s/%s' % (address.rstrip('/'), system.lstrip('/'))
+
+    def unique_id_from_fields(self, fields):
+        try:
+            return self._build_id(fields['pm_addr'], fields['pm_system_id'])
+        except KeyError:
+            return
+
+    def unique_id_from_node(self, node):
+        try:
+            return self._build_id(node.driver_info['redfish_address'],
+                                  node.driver_info['redfish_system_id'])
+        except KeyError:
+            return
+
+
 class SshDriverInfo(DriverInfo):
     DEFAULTS = {'ssh_virt_type': 'virsh'}
 
@@ -206,6 +240,7 @@ DRIVER_INFO = {
             'pm_sensor_method': 'irmc_sensor_method',
             'pm_deploy_iso': 'irmc_deploy_iso',
         }),
+    'redfish': RedfishDriverInfo(),
     # test drivers
     '.*_ssh': SshDriverInfo(),
     '.*_iboot': iBootDriverInfo(),

@@ -125,6 +125,42 @@ class PrefixedDriverInfoTestWithPort(base.TestCase):
                          self.driver_info.unique_id_from_node(node))
 
 
+class RedfishDriverInfoTest(base.TestCase):
+    driver_info = nodes.RedfishDriverInfo()
+
+    def test_convert_key(self):
+        keys = {'pm_addr': 'redfish_address',
+                'pm_user': 'redfish_username',
+                'pm_password': 'redfish_password',
+                'pm_system_id': 'redfish_system_id',
+                'redfish_verify_ca': 'redfish_verify_ca'}
+        for key, expected in keys.items():
+            self.assertEqual(expected, self.driver_info.convert_key(key))
+
+        self.assertIsNone(self.driver_info.convert_key('unknown'))
+
+    def test_unique_id_from_fields(self):
+        for address in ['example.com',
+                        'http://example.com/',
+                        'https://example.com/']:
+            fields = {'pm_addr': address,
+                      'pm_user': 'user',
+                      'pm_password': '123456',
+                      'pm_system_id': '/redfish/v1/Systems/1'}
+            self.assertEqual('example.com/redfish/v1/Systems/1',
+                             self.driver_info.unique_id_from_fields(fields))
+
+    def test_unique_id_from_node(self):
+        for address in ['example.com',
+                        'http://example.com/',
+                        'https://example.com/']:
+            node = mock.Mock(driver_info={
+                'redfish_address': address,
+                'redfish_system_id': '/redfish/v1/Systems/1'})
+            self.assertEqual('example.com/redfish/v1/Systems/1',
+                             self.driver_info.unique_id_from_node(node))
+
+
 class iBootDriverInfoTest(base.TestCase):
     def setUp(self):
         super(iBootDriverInfoTest, self).setUp()
@@ -406,6 +442,17 @@ class NodesTest(base.TestCase):
     def test_update_node_ironic_pxe_irmc(self):
         self._update_by_type('pxe_irmc')
 
+    def test_update_node_ironic_redfish(self):
+        ironic = mock.MagicMock()
+        node_map = {'mac': {}, 'pm_addr': {}}
+        node = self._get_node()
+        node.update({'pm_type': 'redfish',
+                     'pm_system_id': '/path'})
+        node_map['pm_addr']['foo.bar/path'] = ironic.node.get.return_value.uuid
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
+        ironic.node.update.assert_called_once_with(
+            ironic.node.get.return_value.uuid, mock.ANY)
+
     def test_register_node_update(self):
         node = self._get_node()
         node['mac'][0] = node['mac'][0].upper()
@@ -561,6 +608,24 @@ class NodesTest(base.TestCase):
             driver_info={'drac_password': 'random', 'drac_host': 'foo.bar',
                          'drac_username': 'test', 'drac_port': '6230'})
 
+    def test_register_ironic_node_redfish(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'redfish'
+        node['pm_system_id'] = '/redfish/v1/Systems/1'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='redfish', name='node1', properties=node_properties,
+            driver_info={'redfish_password': 'random',
+                         'redfish_address': 'foo.bar',
+                         'redfish_username': 'test',
+                         'redfish_system_id': '/redfish/v1/Systems/1'})
+
     def test_register_ironic_node_update_int_values(self):
         node = self._get_node()
         ironic = mock.MagicMock()
@@ -708,6 +773,11 @@ VALID_NODE_JSON = [
      'memory': 1024,
      'disk': 40,
      'arch': 'x86_64'},
+    {'pm_type': 'redfish',
+     'pm_addr': '1.2.3.4',
+     'pm_user': 'root',
+     'pm_password': 'foobar',
+     'pm_system_id': '/redfish/v1/Systems/1'},
 ]
 
 
@@ -824,3 +894,34 @@ class TestValidateNodes(base.TestCase):
             self.assertRaisesRegex(exception.InvalidNode,
                                    'fields are missing: %s' % field,
                                    nodes.validate_nodes, nodes_json)
+
+    def test_duplicate_redfish_node(self):
+        nodes_json = [
+            {'pm_type': 'redfish',
+             'pm_addr': 'example.com',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'pm_system_id': '/redfish/v1/Systems/1'},
+            {'pm_type': 'redfish',
+             'pm_addr': 'https://example.com',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'pm_system_id': '/redfish/v1/Systems/1'},
+        ]
+        self.assertRaisesRegex(
+            exception.InvalidNode,
+            'Node identified by example.com/redfish/v1/Systems/1 '
+            'is already present',
+            nodes.validate_nodes, nodes_json)
+
+    def test_redfish_missing_system_id(self):
+        nodes_json = [
+            {'pm_type': 'redfish',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd'},
+        ]
+
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'fields are missing: pm_system_id',
+                               nodes.validate_nodes, nodes_json)
