@@ -185,9 +185,8 @@ class CheckFlavorsAction(base.TripleOAction):
 
     # TODO(bcrochet): The validation actions are temporary. This logic should
     #                 move to the tripleo-validations project eventually.
-    def __init__(self, flavors, roles_info):
+    def __init__(self, roles_info):
         super(CheckFlavorsAction, self).__init__()
-        self.flavors = flavors
         self.roles_info = roles_info
 
     def run(self):
@@ -198,12 +197,21 @@ class CheckFlavorsAction(base.TripleOAction):
 
         :returns: dictionary flavor name -> (flavor object, scale)
         """
-        flavors = {f['name']: f for f in self.flavors}
+        compute_client = self.get_compute_client()
+        flavors = {f.name: {'name': f.name, 'keys': f.get_keys()}
+                   for f in compute_client.flavors.list()}
+
         result = {}
         warnings = []
         errors = []
 
         message = "Flavor '{1}' provided for the role '{0}', does not exist"
+        warning_message = (
+            'Flavor {0} "capabilities:boot_option" is set to '
+            '"netboot". Nodes will PXE boot from the ironic '
+            'conductor instead of using a local bootloader. '
+            'Make sure that enough nodes are marked with the '
+            '"boot_option" capability set to "netboot".')
 
         for target, (flavor_name, scale) in self.roles_info.items():
             if flavor_name is None or not scale:
@@ -217,14 +225,12 @@ class CheckFlavorsAction(base.TripleOAction):
                 flavor = flavors.get(flavor_name)
 
                 if flavor:
-                    if flavor.get('capabilities:boot_option', '') == 'netboot':
-                        warnings.append(
-                            'Flavor %s "capabilities:boot_option" is set to '
-                            '"netboot". Nodes will PXE boot from the ironic '
-                            'conductor instead of using a local bootloader. '
-                            'Make sure that enough nodes are marked with the '
-                            '"boot_option" capability set to "netboot".'
-                            % flavor_name)
+                    keys = flavor.get('keys', None)
+                    if keys:
+                        if keys.get('capabilities:boot_option', '') \
+                                == 'netboot':
+                            warnings.append(
+                                warning_message.format(flavor_name))
 
                     result[flavor_name] = (flavor, scale)
                 else:
@@ -322,7 +328,10 @@ class VerifyProfilesAction(base.TripleOAction):
             if not scale:
                 continue
 
-            profile = flavor.get('capabilities:profile')
+            profile = None
+            keys = flavor.get('keys')
+            if keys:
+                profile = keys.get('capabilities:profile')
 
             if not profile and len(self.flavors) > 1:
                 message = ('Error: The {flavor} flavor has no profile '
