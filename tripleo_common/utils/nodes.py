@@ -432,6 +432,9 @@ def validate_nodes(nodes_list):
     names = set()
     macs = set()
     for index, node in enumerate(nodes_list):
+        # Remove any comment
+        node.pop("_comment", None)
+
         handler = _find_node_handler(node)
 
         try:
