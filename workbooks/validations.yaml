@@ -556,7 +556,8 @@ workflows:
         action: heat.stacks_get
         input:
           stack_id: <% $.stack_id %>
-        on-complete: get_associated_nodes
+        on-success: get_associated_nodes
+        on-error: get_associated_nodes
         publish:
           stack: <% task(get_stack).result %>
         publish-on-error:
@@ -682,7 +683,8 @@ workflows:
           kernel_id: <% task(check_boot_images).result.kernel_id %>
           ramdisk_id: <% task(check_boot_images).result.ramdisk_id %>
           status: FAILED
-        on-complete: collect_flavors
+        on-success: collect_flavors
+        on-error: collect_flavors
 
       collect_flavors:
         workflow: collect_flavors
@@ -699,7 +701,8 @@ workflows:
           warnings: <% $.warnings + task(collect_flavors).result.warnings %>
           flavors: <% task(collect_flavors).result.flavors %>
           status: FAILED
-        on-complete: check_ironic_boot_configuration
+        on-success: check_ironic_boot_configuration
+        on-error: check_ironic_boot_configuration
 
       check_ironic_boot_configuration:
         workflow: check_ironic_boot_configuration
@@ -715,7 +718,8 @@ workflows:
           errors: <% $.errors + task(check_ironic_boot_configuration).result.errors %>
           warnings: <% $.warnings + task(check_ironic_boot_configuration).result.warnings %>
           status: FAILED
-        on-complete: verify_profiles
+        on-success: verify_profiles
+        on-error: verify_profiles
 
       verify_profiles:
         workflow: verify_profiles
@@ -730,7 +734,8 @@ workflows:
           errors: <% $.errors + task(verify_profiles).result.errors %>
           warnings: <% $.warnings + task(verify_profiles).result.warnings %>
           status: FAILED
-        on-complete: check_default_nodes_count
+        on-success: check_default_nodes_count
+        on-error: check_default_nodes_count
 
       check_default_nodes_count:
         workflow: check_default_nodes_count
@@ -749,7 +754,8 @@ workflows:
           warnings: <% $.warnings + task(check_default_nodes_count).result.warnings %>
           statistics: <% task(check_default_nodes_count).result.statistics %>
           status: FAILED
-        on-complete: send_message
+        on-success: send_message
+        on-error: send_message
 
       send_message:
         action: zaqar.queue_post
