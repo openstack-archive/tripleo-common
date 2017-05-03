@@ -1,0 +1,5 @@
+features:
+  - |
+    The introspection workflow now accepts an additional parameter
+    ``concurrency`` which defines how many nodes should be introspected in
+    parallel. The default is 20, but can be changed to any positive integer.
