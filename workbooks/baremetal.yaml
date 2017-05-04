@@ -948,3 +948,153 @@ workflows:
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+
+  discover_nodes:
+    description: Run nodes discovery over the given IP range
+
+    input:
+      - ip_addresses
+      - credentials
+      - ports: [623]
+      - queue_name: tripleo
+
+    tasks:
+
+      get_all_nodes:
+        action: ironic.node_list
+        input:
+          fields: ["uuid", "driver", "driver_info"]
+          limit: 0
+        on-success: get_candidate_nodes
+        on-error: get_all_nodes_failed
+        publish:
+          existing_nodes: <% task(get_all_nodes).result %>
+
+      get_all_nodes_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_all_nodes).result %>
+
+      get_candidate_nodes:
+        action: tripleo.baremetal.get_candidate_nodes
+        input:
+          ip_addresses: <% $.ip_addresses %>
+          credentials: <% $.credentials %>
+          ports: <% $.ports %>
+          existing_nodes: <% $.existing_nodes %>
+        on-success: probe_nodes
+        on-error: get_candidate_nodes_failed
+        publish:
+          candidates: <% task(get_candidate_nodes).result %>
+
+      get_candidate_nodes_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_candidate_nodes).result %>
+
+      probe_nodes:
+        action: tripleo.baremetal.probe_node
+        on-success: send_message
+        on-error: probe_nodes_failed
+        input:
+          ip: <% $.node.ip %>
+          port: <% $.node.port %>
+          username: <% $.node.username %>
+          password: <% $.node.password %>
+        with-items:
+          - node in <% $.candidates %>
+        publish:
+          nodes_json: <% task(probe_nodes).result.where($ != null) %>
+
+      probe_nodes_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(probe_nodes).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.discover_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                nodes_json: <% $.get('nodes_json', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  discover_and_enroll_nodes:
+    description: Run nodes discovery over the given IP range and enroll nodes
+
+    input:
+      - ip_addresses
+      - credentials
+      - ports: [623]
+      - kernel_name: null
+      - ramdisk_name: null
+      - instance_boot_option: local
+      - initial_state: manageable
+      - queue_name: tripleo
+
+    tasks:
+
+      discover_nodes:
+        workflow: tripleo.baremetal.v1.discover_nodes
+        input:
+          ip_addresses: <% $.ip_addresses %>
+          ports: <% $.ports %>
+          credentials: <% $.credentials %>
+          queue_name: <% $.queue_name %>
+        on-success: enroll_nodes
+        on-error: discover_nodes_failed
+        publish:
+          nodes_json: <% task(discover_nodes).result.nodes_json %>
+
+      discover_nodes_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(discover_nodes).result %>
+
+      enroll_nodes:
+        workflow: tripleo.baremetal.v1.register_or_update
+        input:
+          nodes_json: <% $.nodes_json %>
+          kernel_name: <% $.kernel_name %>
+          ramdisk_name: <% $.ramdisk_name %>
+          instance_boot_option: <% $.instance_boot_option %>
+          initial_state: <% $.initial_state %>
+        on-success: send_message
+        on-error: enroll_nodes_failed
+        publish:
+          registered_nodes: <% task(enroll_nodes).result.registered_nodes %>
+
+      enroll_nodes_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(enroll_nodes).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.discover_and_enroll_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                registered_nodes: <% $.get('registered_nodes', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>

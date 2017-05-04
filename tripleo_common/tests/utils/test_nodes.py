@@ -667,13 +667,13 @@ class NodesTest(base.TestCase):
     def test__get_node_id_fake_pxe(self):
         node = self._get_node()
         node['pm_type'] = 'fake_pxe'
-        handler = nodes._find_driver_handler('fake_pxe')
+        handler = nodes.find_driver_handler('fake_pxe')
         node_map = {'mac': {'aaa': 'abcdef'}, 'pm_addr': {}}
         self.assertEqual('abcdef', nodes._get_node_id(node, handler, node_map))
 
     def test__get_node_id_conflict(self):
         node = self._get_node()
-        handler = nodes._find_driver_handler('pxe_ipmitool')
+        handler = nodes.find_driver_handler('pxe_ipmitool')
         node_map = {'mac': {'aaa': 'abcdef'},
                     'pm_addr': {'foo.bar': 'defabc'}}
         self.assertRaises(exception.InvalidNode,
@@ -682,7 +682,7 @@ class NodesTest(base.TestCase):
 
     def test_get_node_id_valid_duplicate(self):
         node = self._get_node()
-        handler = nodes._find_driver_handler('pxe_ipmitool')
+        handler = nodes.find_driver_handler('pxe_ipmitool')
         node_map = {'mac': {'aaa': 'id'},
                     'pm_addr': {'foo.bar': 'id'}}
         self.assertEqual('id', nodes._get_node_id(node, handler, node_map))

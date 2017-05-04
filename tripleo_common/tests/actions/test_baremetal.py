@@ -379,3 +379,108 @@ class TestGetProfileAction(base.TestCase):
             'profile': 'compute'
         }
         self.assertEqual(result, expected_result)
+
+
+@mock.patch.object(baremetal.socket, 'gethostbyname', lambda x: x)
+class TestGetCandidateNodes(base.TestCase):
+    def setUp(self):
+        super(TestGetCandidateNodes, self).setUp()
+        self.existing_nodes = [
+            {'uuid': '1', 'driver': 'ipmi',
+             'driver_info': {'ipmi_address': '10.0.0.1'}},
+            {'uuid': '2', 'driver': 'pxe_ipmitool',
+             'driver_info': {'ipmi_address': '10.0.0.1', 'ipmi_port': 6235}},
+            {'uuid': '3', 'driver': 'foobar', 'driver_info': {}},
+            {'uuid': '4', 'driver': 'fake',
+             'driver_info': {'fake_address': 42}},
+            {'uuid': '5', 'driver': 'ipmi', 'driver_info': {}},
+            {'uuid': '6', 'driver': 'pxe_drac',
+             'driver_info': {'drac_address': '10.0.0.2'}},
+            {'uuid': '7', 'driver': 'pxe_drac',
+             'driver_info': {'drac_address': '10.0.0.3', 'drac_port': 6230}},
+        ]
+
+    def test_existing_ips(self):
+        action = baremetal.GetCandidateNodes([], [], [], self.existing_nodes)
+        result = action._existing_ips()
+
+        self.assertEqual({('10.0.0.1', 623), ('10.0.0.1', 6235),
+                          ('10.0.0.2', None), ('10.0.0.3', 6230)},
+                         set(result))
+
+    def test_with_list(self):
+        action = baremetal.GetCandidateNodes(
+            ['10.0.0.1', '10.0.0.2', '10.0.0.3'],
+            [623, 6230, 6235],
+            [['admin', 'password'], ['admin', 'admin']],
+            self.existing_nodes)
+        result = action.run(mock.Mock())
+
+        self.assertEqual([
+            {'ip': '10.0.0.3', 'port': 623,
+             'username': 'admin', 'password': 'password'},
+            {'ip': '10.0.0.1', 'port': 6230,
+             'username': 'admin', 'password': 'password'},
+            {'ip': '10.0.0.3', 'port': 6235,
+             'username': 'admin', 'password': 'password'},
+            {'ip': '10.0.0.3', 'port': 623,
+             'username': 'admin', 'password': 'admin'},
+            {'ip': '10.0.0.1', 'port': 6230,
+             'username': 'admin', 'password': 'admin'},
+            {'ip': '10.0.0.3', 'port': 6235,
+             'username': 'admin', 'password': 'admin'},
+        ], result)
+
+    def test_with_subnet(self):
+        action = baremetal.GetCandidateNodes(
+            '10.0.0.0/30',
+            [623, 6230, 6235],
+            [['admin', 'password'], ['admin', 'admin']],
+            self.existing_nodes)
+        result = action.run(mock.Mock())
+
+        self.assertEqual([
+            {'ip': '10.0.0.1', 'port': 6230,
+             'username': 'admin', 'password': 'password'},
+            {'ip': '10.0.0.1', 'port': 6230,
+             'username': 'admin', 'password': 'admin'},
+        ], result)
+
+    def test_invalid_subnet(self):
+        action = baremetal.GetCandidateNodes(
+            'meow',
+            [623, 6230, 6235],
+            [['admin', 'password'], ['admin', 'admin']],
+            self.existing_nodes)
+        result = action.run(mock.Mock())
+        self.assertTrue(result.is_error())
+
+
+@mock.patch.object(processutils, 'execute', autospec=True)
+class TestProbeNode(base.TestCase):
+    action = baremetal.ProbeNode('10.0.0.42', 623, 'admin', 'password')
+
+    def test_success(self, mock_execute):
+        result = self.action.run(mock.Mock())
+        self.assertEqual({'pm_type': 'ipmi',
+                          'pm_addr': '10.0.0.42',
+                          'pm_user': 'admin',
+                          'pm_password': 'password',
+                          'pm_port': 623},
+                         result)
+        mock_execute.assert_called_once_with('ipmitool', '-I', 'lanplus',
+                                             '-H', '10.0.0.42',
+                                             '-L', 'ADMINISTRATOR',
+                                             '-p', '623', '-U', 'admin',
+                                             '-f', mock.ANY, 'power', 'status',
+                                             attempts=2)
+
+    def test_failure(self, mock_execute):
+        mock_execute.side_effect = processutils.ProcessExecutionError()
+        self.assertIsNone(self.action.run(mock.Mock()))
+        mock_execute.assert_called_once_with('ipmitool', '-I', 'lanplus',
+                                             '-H', '10.0.0.42',
+                                             '-L', 'ADMINISTRATOR',
+                                             '-p', '623', '-U', 'admin',
+                                             '-f', mock.ANY, 'power', 'status',
+                                             attempts=2)
