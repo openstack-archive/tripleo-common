@@ -400,6 +400,7 @@ workflows:
 
     input:
       - node_uuid
+      - timeout
       - queue_name
 
     output:
@@ -422,6 +423,10 @@ workflows:
         action: baremetal_introspection.wait_for_finish
         input:
           uuids: <% [$.node_uuid] %>
+          # The interval is 10 seconds, so divide to make the overall timeout
+          # in seconds correct.
+          max_retries: <% $.timeout / 10 %>
+          retry_interval: 10
         publish:
           introspected_node: <% task().result.values().first() %>
           status: <% bool(task().result.values().first().error) and "FAILED" or "SUCCESS" %>
@@ -429,11 +434,16 @@ workflows:
           status: FAILED
           message: <% task().result %>
         on-success: wait_for_introspection_to_finish_success
-        on-error: send_message
+        on-error: wait_for_introspection_to_finish_error
 
       wait_for_introspection_to_finish_success:
         publish:
           message: <% "Introspection of node {0} completed. Status:{1}. Errors:{2}".format($.introspected_node.uuid, $.status, $.introspected_node.error) %>
+        on-success: send_message
+
+      wait_for_introspection_to_finish_error:
+        publish:
+          message: <% "Introspection of node {0} timed out.".format($.node_uuid) %>
         on-success: send_message
 
       send_message:
@@ -453,16 +463,29 @@ workflows:
           - fail: <% $.get('status') = "FAILED" %>
 
   introspect:
-    description: Take a list of nodes and move them through introspection.
+    description: >
+        Take a list of nodes and move them through introspection.
+
+        By default each node will attempt introspection up to 3 times (two
+        retries plus the initial attemp) if it fails. This behaviour can be
+        modified by changing the max_retry_attempts input.
+
+        The workflow will assume the node has timed out after 20 minutes (1200
+        seconds). This can be changed by passing the node_timeout input in
+        seconds.
 
     input:
       - node_uuids
       - run_validations: False
       - queue_name: tripleo
       - concurrency: 20
+      - max_retry_attempts: 2
+      - node_timeout: 1200
 
     tasks:
-      pre_run_validations:
+      initialize:
+        publish:
+          introspection_attempt: 1
         on-complete:
           - run_validations: <% $.run_validations %>
           - introspect_nodes: <% not $.run_validations %>
@@ -489,25 +512,60 @@ workflows:
         input:
           node_uuid: <% $.uuid %>
           queue_name: <% $.queue_name %>
-        on-success: wait_for_introspection_to_finish
-        on-error: set_status_failed_introspect_nodes
+          timeout: <% $.node_timeout %>
+        # on-error is triggered if one or more nodes failed introspection. We
+        # still go to get_introspection_status as it will collect the result
+        # for each node. Unless we hit the retry limit.
+        on-error:
+         - get_introspection_status: <% $.introspection_attempt <= $.max_retry_attempts %>
+         - max_retry_attempts_reached: <% $.introspection_attempt > $.max_retry_attempts %>
+        on-success: get_introspection_status
 
-      set_status_failed_introspect_nodes:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(introspect_nodes).result %>
-          introspected_nodes: []
-
-      wait_for_introspection_to_finish:
-        on-success: send_message
-        action: baremetal_introspection.wait_for_finish
+      get_introspection_status:
+        with-items: uuid in <% $.node_uuids %>
+        action: baremetal_introspection.get_status
         input:
-          uuids: <% $.node_uuids %>
+          uuid: <% $.uuid%>
         publish:
-          introspected_nodes: <% task(wait_for_introspection_to_finish).result %>
+          introspected_nodes: <% task().result.toDict($.uuid, $) %>
+          # Currently there is no way for us to ignore user introspection
+          # aborts. This means we will retry aborted nodes until the Ironic API
+          # gives us more details (error code or a boolean to show aborts etc.)
+          # If a node hasn't finished, we consider it to be failed.
+          # TODO(d0ugal): When possible, don't retry introspection of nodes
+          #               that a user manually aborted.
+          failed_introspection: <% task().result.where($.finished = true and $.error != null) + task().result.where($.finished = false) %>
+        on-error: increase_attempt_counter
+        on-success:
+          - successful_introspection: <% $.failed_introspection.len() = 0 %>
+          - increase_attempt_counter: <% $.failed_introspection.len() > 0 %>
+
+      increase_attempt_counter:
+        publish:
+          introspection_attempt: <% $.introspection_attempt + 1 %>
+        on-complete:
+          retry_failed_nodes
+
+      retry_failed_nodes:
+        publish:
+          status: RUNNING
+          message: <% 'Retrying {0} nodes that failed introspection. Attempt {1} of {2} '.format($.failed_introspection.len(), $.introspection_attempt, $.max_retry_attempts + 1) %>
+          # We are about to retry, update the tracking stats.
+          node_uuids: <% $.failed_introspection.select($.uuid) %>
+        on-success:
+          - send_message
+          - introspect_nodes
+
+      max_retry_attempts_reached:
+        publish:
+          status: ERROR
+          message: 'Retry limit reached with {} nodes still failing introspection'
+
+      successful_introspection:
+        publish:
           status: SUCCESS
           message: 'Successfully introspected nodes.'
+        on-complete: send_message
 
       send_message:
         action: zaqar.queue_post
