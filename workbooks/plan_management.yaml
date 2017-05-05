@@ -45,7 +45,7 @@ workflows:
               type: tripleo.plan_management.v1.create_default_deployment_plan
               payload:
                 status: <% $.status %>
-                message: <% $.message or '' %>
+                message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
@@ -193,7 +193,7 @@ workflows:
               type: tripleo.plan_management.v1.create_deployment_plan
               payload:
                 status: <% $.status %>
-                message: <% $.message or '' %>
+                message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
@@ -287,7 +287,7 @@ workflows:
               type: tripleo.plan_management.v1.update_deployment_plan
               payload:
                 status: <% $.status %>
-                message: <% $.message or '' %>
+                message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
@@ -348,7 +348,7 @@ workflows:
               type: tripleo.plan_management.v1.get_passwords
               payload:
                 status: <% $.status %>
-                message: <% $.message or '' %>
+                message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
@@ -406,7 +406,7 @@ workflows:
               type: tripleo.plan_management.v1.export_deployment_plan
               payload:
                 status: <% $.status %>
-                message: <% $.message or '' %>
+                message: <% $.get('message', '') %>
                 execution: <% execution() %>
                 tempurl: <% task(create_tempurl).result %>
         on-success:
