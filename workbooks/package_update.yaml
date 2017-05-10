@@ -139,3 +139,44 @@ workflows:
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  converge_upgrade_plan:
+    description: Take a container and perform the converge step of a major upgrade
+
+    input:
+      - container
+      - timeout: 240
+      - queue_name: tripleo
+      - skip_deploy_identifier: False
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      upgrade_converge:
+        action: tripleo.deployment.deploy
+        input:
+          timeout: <% $.timeout %>
+          container: <% $.container %>
+          skip_deploy_identifier: <% $.skip_deploy_identifier %>
+        on-error: set_update_failed
+
+      set_update_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(upgrade_converge).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.major_upgrade.v1.converge_upgrade_plan
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
