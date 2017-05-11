@@ -398,6 +398,8 @@ class GetFlattenedParametersAction(GetParametersAction):
         if 'Parameters' in data:
             value['parameters'] = self._processParams(flattened,
                                                       data['Parameters'])
+        if 'ParameterGroups' in data:
+            value['parameter_groups'] = data['ParameterGroups']
         if 'NestedParameters' in data:
             nested = data['NestedParameters']
             nested_ids = []

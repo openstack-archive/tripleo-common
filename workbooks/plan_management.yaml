@@ -415,3 +415,49 @@ workflows:
                 tempurl: <% task(create_tempurl).result %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  get_deprecated_parameters:
+    description: Gets the list of deprecated parameters in the whole of the plan including nested stack
+    input:
+      - container: overcloud
+      - queue_name: tripleo
+
+    tasks:
+      get_flatten_data:
+        action: tripleo.parameters.get_flatten container=<% $.container %>
+        on-success: get_deprecated_params
+        on-error: set_status_failed_get_flatten_data
+        publish:
+          user_params: <% task().result.environment_parameters %>
+          parameter_groups: <% task().result.heat_resource_tree.resources.values().where( $.get('parameter_groups') ).select($.parameter_groups).flatten() %>
+
+      get_deprecated_params:
+        on-success: check_if_user_param_has_deprecated
+        publish:
+          deprecated_params: <% $.parameter_groups.where($.get('label') = 'deprecated').select($.parameters).flatten().distinct() %>
+
+      check_if_user_param_has_deprecated:
+        on-success: send_message
+        publish:
+          formatted: <% let(up => $.user_params) -> $.deprecated_params.select( dict('parameter' => $, 'deprecated' => true, 'user_defined' => $up.keys().contains($)) ) %>
+
+      set_status_failed_get_flatten_data:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_flatten_data).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.get_deprecated_parameters
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                deprecated: <% $.get('formatted', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
