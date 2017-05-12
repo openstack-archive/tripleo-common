@@ -18,6 +18,9 @@
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
 {% set swift_proxy_server_packages_append = ['openstack-ceilometer-common', 'httpd', 'mod_ssl'] %}
 
+# NOTE (jaosorior): glance-api with TLS everywhere needs these packages.
+{% set glance_api_packages_append = ['httpd', 'mod_ssl'] %}
+
 # Remove packages not present in repos
 {% set openstack_base_packages_remove = ['Percona-Server-shared-56'] %}
 
