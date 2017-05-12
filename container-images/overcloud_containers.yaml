@@ -4,6 +4,9 @@ container_images:
 - imagename: tripleoupstream/centos-binary-aodh-notifier:latest
 - imagename: tripleoupstream/centos-binary-aodh-listener:latest
 - imagename: tripleoupstream/centos-binary-etcd:latest
+- imagename: tripleoupstream/centos-binary-ceilometer-central:latest
+- imagename: tripleoupstream/centos-binary-ceilometer-compute:latest
+- imagename: tripleoupstream/centos-binary-ceilometer-notification:latest
 - imagename: tripleoupstream/centos-binary-glance-api:latest
 - imagename: tripleoupstream/centos-binary-gnocchi-api:latest
 - imagename: tripleoupstream/centos-binary-gnocchi-metricd:latest
