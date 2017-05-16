@@ -128,9 +128,11 @@ class OrchestrationDeployAction(base.TripleOAction):
 class DeployStackAction(templates.ProcessTemplatesAction):
     """Deploys a heat stack."""
 
-    def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME,
+                 skip_deploy_identifier=False):
         super(DeployStackAction, self).__init__(container)
         self.timeout_mins = timeout
+        self.skip_deploy_identifier = skip_deploy_identifier
 
     def run(self):
         # check to see if the stack exists
@@ -147,7 +149,8 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         wf_env = wc.environments.get(self.container)
 
         parameters = dict()
-        parameters['DeployIdentifier'] = int(time.time())
+        if not self.skip_deploy_identifier:
+            parameters['DeployIdentifier'] = int(time.time())
         parameters['UpdateIdentifier'] = ''
         parameters['StackAction'] = 'CREATE' if stack_is_new else 'UPDATE'
 
