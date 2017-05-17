@@ -675,3 +675,154 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                              "pcmk_host_map": "compute_name_1:baremetal_name_1"
                              }
                          })
+
+
+class GetFlattenedParametersActionTest(base.TestCase):
+
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_empty_resource_tree(self, mock_ctx, mock_get_object_client,
+                                 mock_get_workflow_client,
+                                 mock_get_orchestration_client,
+                                 mock_get_template_contents,
+                                 mock_process_multiple_environments_and_files):
+
+        mock_ctx.return_value = mock.MagicMock()
+        swift = mock.MagicMock(url="http://test.com")
+        swift.get_object.side_effect = swiftexceptions.ClientException(
+            'atest2')
+        mock_get_object_client.return_value = swift
+
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        mock_heat = mock.MagicMock()
+        mock_get_orchestration_client.return_value = mock_heat
+
+        mock_heat.stacks.validate.return_value = {}
+
+        expected_value = {
+            'heat_resource_tree': {},
+            'mistral_environment_parameters': None,
+        }
+
+        # Test
+        action = parameters.GetFlattenedParametersAction()
+        result = action.run()
+        mock_heat.stacks.validate.assert_called_once_with(
+            environment={},
+            files={},
+            show_nested=True,
+            template={'heat_template_version': '2016-04-30'},
+        )
+        self.assertEqual(result, expected_value)
+
+    @mock.patch('uuid.uuid4', side_effect=['1', '2'])
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('mistral.context.ctx')
+    def test_valid_resource_tree(self, mock_ctx, mock_get_object_client,
+                                 mock_get_workflow_client,
+                                 mock_get_orchestration_client,
+                                 mock_get_template_contents,
+                                 mock_process_multiple_environments_and_files,
+                                 mock_uuid):
+
+        mock_ctx.return_value = mock.MagicMock()
+        swift = mock.MagicMock(url="http://test.com")
+        swift.get_object.side_effect = swiftexceptions.ClientException(
+            'atest2')
+        mock_get_object_client.return_value = swift
+
+        mock_mistral = mock.MagicMock()
+        mock_env = mock.MagicMock()
+        mock_env.variables = {
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+        }
+        mock_mistral.environments.get.return_value = mock_env
+        mock_get_workflow_client.return_value = mock_mistral
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        mock_heat = mock.MagicMock()
+        mock_get_orchestration_client.return_value = mock_heat
+
+        mock_heat.stacks.validate.return_value = {
+            'NestedParameters': {
+                'CephStorageHostsDeployment': {
+                    'Type': 'OS::Heat::StructuredDeployments',
+                },
+            },
+            'description': 'sample',
+            'Parameters': {
+                'ControllerCount': {
+                    'Default': 1,
+                    'Type': 'Number',
+                },
+            }
+        }
+
+        expected_value = {
+            'heat_resource_tree': {
+                'resources': {
+                    '1': {
+                        'id': '1',
+                        'name': 'Root',
+                        'resources': [
+                            '2'
+                        ],
+                        'parameters': [
+                            'ControllerCount'
+                        ]
+                    },
+                    '2': {
+                        'id': '2',
+                        'name': 'CephStorageHostsDeployment',
+                        'type': 'OS::Heat::StructuredDeployments'
+                    }
+                },
+                'parameters': {
+                    'ControllerCount': {
+                        'default': 1,
+                        'type': 'Number',
+                        'name': 'ControllerCount'
+                    }
+                },
+            },
+            'mistral_environment_parameters': None,
+        }
+
+        # Test
+        action = parameters.GetFlattenedParametersAction()
+        result = action.run()
+        self.assertEqual(result, expected_value)

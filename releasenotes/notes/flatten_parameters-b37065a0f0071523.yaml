@@ -1,0 +1,3 @@
+---
+features:
+  - Added an action to flatten the nested heat resource tree and parameters.
