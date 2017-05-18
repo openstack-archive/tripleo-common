@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Add support for enrolling nodes using Redfish protocol for management.
+    Requires additional field ``pm_system_id``, see `documentation
+    <https://docs.openstack.org/developer/ironic/drivers/redfish.html>`_.
