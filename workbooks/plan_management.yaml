@@ -103,7 +103,7 @@ workflows:
           - clone_git_repo: <% $.source_url != null %>
 
       clone_git_repo:
-        action: tripleo.git.clone url=<% $.source_url %>
+        action: tripleo.git.clone container=<% $.container %> url=<% $.source_url %>
         on-success: upload_templates_directory
         on-error: clone_git_repo_set_status_failed
 
@@ -211,7 +211,7 @@ workflows:
           - clone_git_repo: <% $.source_url != null %>
 
       clone_git_repo:
-        action: tripleo.git.clone url=<% $.source_url %>
+        action: tripleo.git.clone container=%< $.container %> url=<% $.source_url %>
         on-success: upload_templates_directory
         on-error: clone_git_repo_set_status_failed
 

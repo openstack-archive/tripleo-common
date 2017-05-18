@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fixes `bug 1691740 <https://bugs.launchpad.net/tripleo/+bug/1691740>`__ by
+    adding container argument to calls to tripleo.git.clone action in the
+    create_deployment_plan and update_deployment_plan workflows.
