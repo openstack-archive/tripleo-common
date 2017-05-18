@@ -29,7 +29,7 @@
 
 # Use mariadb-server package
 {% set mariadb_packages_remove = ['MariaDB-Galera-server', 'MariaDB-client'] %}
-{% set mariadb_packages_append = ['mariadb-server'] %}
+{% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera'] %}
 
 # We'll configure mariadb with galera.cnf
 {% block mariadb_footer %}
