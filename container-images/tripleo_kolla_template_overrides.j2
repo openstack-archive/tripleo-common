@@ -5,14 +5,19 @@
 {% set base_yum_url_packages_override = [] %}
 {% set base_yum_repo_keys_override = [] %}
 
-# add tripleo-common to base packages for the bootstrap_host_exec command
-# tripleo-common is also required by Nova scheduler (for tripleo filters)
-# and Mistral for the Undercloud
-{% set base_centos_binary_packages_append = ['puppet', 'openstack-tripleo-common'] %}
+# This installs the puppet dependency in the base container and includes helper scripts
+{% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base'] %}
+{% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
+
+# Required for mistral-db-populate to load tripleo custom actions on
+# the undercloud
+{% set mistral_api_packages_append = ['openstack-tripleo-common'] %}
+{% set mistral_engine_packages_append = ['openstack-tripleo-common'] %}
+
 
 # NOTE: Mistral executor needs to run nova-manage cells_v2 commands on
 # the undercloud baremetal workflows.
-{% set mistral_executor_packages_append = ['openstack-nova-common'] %}
+{% set mistral_executor_packages_append = ['openstack-tripleo-common', 'openstack-nova-common'] %}
 
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
