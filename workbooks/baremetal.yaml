@@ -393,6 +393,65 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  _introspect:
+    description: >
+        An internal workflow. The tripleo.baremetal.v1.introspect workflow
+        should be used for introspection.
+
+    input:
+      - node_uuid
+      - queue_name
+
+    output:
+      result: <% task(start_introspection).result %>
+
+    tasks:
+      start_introspection:
+        action: baremetal_introspection.introspect uuid=<% $.node_uuid %>
+        on-success: wait_for_introspection_to_finish
+        on-error: set_status_failed_start_introspection
+
+      set_status_failed_start_introspection:
+        publish:
+          status: FAILED
+          message: <% task(start_introspection).result %>
+          introspected_nodes: []
+        on-success: send_message
+
+      wait_for_introspection_to_finish:
+        action: baremetal_introspection.wait_for_finish
+        input:
+          uuids: <% [$.node_uuid] %>
+        publish:
+          introspected_node: <% task().result.values().first() %>
+          status: <% bool(task().result.values().first().error) and "FAILED" or "SUCCESS" %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-success: wait_for_introspection_to_finish_success
+        on-error: send_message
+
+      wait_for_introspection_to_finish_success:
+        publish:
+          message: <% "Introspection of node {0} completed. Status:{1}. Errors:{2}".format($.introspected_node.uuid, $.status, $.introspected_node.error) %>
+        on-success: send_message
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1._introspect
+              payload:
+                status: <% $.status %>
+                message: <% $.message %>
+                introspected_node: <% $.get('introspected_node') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   introspect:
     description: Take a list of nodes and move them through introspection.
 
@@ -400,12 +459,13 @@ workflows:
       - node_uuids
       - run_validations: False
       - queue_name: tripleo
+      - concurrency: 20
 
     tasks:
       pre_run_validations:
         on-complete:
           - run_validations: <% $.run_validations %>
-          - start_introspection: <% not $.run_validations %>
+          - introspect_nodes: <% not $.run_validations %>
 
       run_validations:
         workflow: tripleo.validations.v1.run_groups
@@ -413,7 +473,7 @@ workflows:
           group_names:
             - 'pre-introspection'
           queue_name: <% $.queue_name %>
-        on-success: start_introspection
+        on-success: introspect_nodes
         on-error: set_validations_failed
 
       set_validations_failed:
@@ -422,17 +482,21 @@ workflows:
           status: FAILED
           message: <% task(run_validations).result %>
 
-      start_introspection:
-        on-success: wait_for_introspection_to_finish
-        on-error: set_status_failed_start_introspection
+      introspect_nodes:
         with-items: uuid in <% $.node_uuids %>
-        action: baremetal_introspection.introspect uuid=<% $.uuid %>
+        concurrency: <% $.concurrency %>
+        workflow: _introspect
+        input:
+          node_uuid: <% $.uuid %>
+          queue_name: <% $.queue_name %>
+        on-success: wait_for_introspection_to_finish
+        on-error: set_status_failed_introspect_nodes
 
-      set_status_failed_start_introspection:
+      set_status_failed_introspect_nodes:
         on-success: send_message
         publish:
           status: FAILED
-          message: <% task(start_introspection).result %>
+          message: <% task(introspect_nodes).result %>
           introspected_nodes: []
 
       wait_for_introspection_to_finish:
