@@ -40,6 +40,11 @@ container_images:
 - imagename: tripleoupstream/centos-binary-nova-libvirt:latest
 - imagename: tripleoupstream/centos-binary-nova-placement-api:latest
 - imagename: tripleoupstream/centos-binary-nova-scheduler:latest
+- imagename: tripleoupstream/centos-binary-octavia-base:latest
+- imagename: tripleoupstream/centos-binary-octavia-api:latest
+- imagename: tripleoupstream/centos-binary-octavia-health-manager:latest
+- imagename: tripleoupstream/centos-binary-octavia-housekeeping:latest
+- imagename: tripleoupstream/centos-binary-octavia-worker:latest
 - imagename: tripleoupstream/centos-binary-panko-api:latest
 - imagename: tripleoupstream/centos-binary-rabbitmq:latest
 - imagename: tripleoupstream/centos-binary-redis:latest
