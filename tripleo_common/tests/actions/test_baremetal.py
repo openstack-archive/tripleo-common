@@ -262,10 +262,10 @@ class TestConfigureRootDeviceAction(base.TestCase):
 
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest')
-        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
-                                "Malformed introspection data",
-                                action.run,
-                                self.context)
+        self.assertRaisesRegex(exception.RootDeviceDetectionError,
+                               "Malformed introspection data",
+                               action.run,
+                               self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -278,10 +278,10 @@ class TestConfigureRootDeviceAction(base.TestCase):
 
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest')
-        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
-                                "No suitable disks",
-                                action.run,
-                                self.context)
+        self.assertRaisesRegex(exception.RootDeviceDetectionError,
+                               "No suitable disks",
+                               action.run,
+                               self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -291,10 +291,10 @@ class TestConfigureRootDeviceAction(base.TestCase):
 
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest')
-        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
-                                "No introspection data",
-                                action.run,
-                                self.context)
+        self.assertRaisesRegex(exception.RootDeviceDetectionError,
+                               "No introspection data",
+                               action.run,
+                               self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -307,10 +307,10 @@ class TestConfigureRootDeviceAction(base.TestCase):
 
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='smallest')
-        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
-                                "Neither WWN nor serial number are known",
-                                action.run,
-                                self.context)
+        self.assertRaisesRegex(exception.RootDeviceDetectionError,
+                               "Neither WWN nor serial number are known",
+                               action.run,
+                               self.context)
 
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
@@ -333,10 +333,10 @@ class TestConfigureRootDeviceAction(base.TestCase):
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='hda')
 
-        self.assertRaisesRegexp(exception.RootDeviceDetectionError,
-                                "Cannot find a disk",
-                                action.run,
-                                self.context)
+        self.assertRaisesRegex(exception.RootDeviceDetectionError,
+                               "Cannot find a disk",
+                               action.run,
+                               self.context)
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
 
