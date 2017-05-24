@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    GUI logging - we added actions and workflows to support processing and
+    storage of logging data from tripleo-ui

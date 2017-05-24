@@ -127,3 +127,6 @@ DEFAULT_DEPLOY_RAMDISK_NAME = 'bm-deploy-ramdisk'
 
 # The name for the swift container to host the cache for tripleo
 TRIPLEO_CACHE_CONTAINER = "__cache__"
+
+TRIPLEO_UI_LOG_FILE_SIZE = 1e7  # 10MB
+TRIPLEO_UI_LOG_FILENAME = 'tripleo-ui.logs'

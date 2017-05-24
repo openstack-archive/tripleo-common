@@ -13,7 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
-import os
 import shutil
 import tempfile
 import yaml
@@ -31,7 +30,6 @@ from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import swift as swiftutils
-from tripleo_common.utils import tarball
 from tripleo_common.utils.validations import pattern_validator
 
 
@@ -221,46 +219,16 @@ class ExportPlanAction(base.TripleOAction):
         self.delete_after = delete_after
         self.exports_container = exports_container
 
-    def _download_templates(self, swift, tmp_dir):
-        """Download templates to a temp folder."""
-        template_files = swift.get_container(self.plan)[1]
-
-        for tf in template_files:
-            filename = tf['name']
-            contents = swift.get_object(self.plan, filename)[1]
-            path = os.path.join(tmp_dir, filename)
-            dirname = os.path.dirname(path)
-
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-
-            with open(path, 'w') as f:
-                f.write(contents)
-
-    def _create_and_upload_tarball(self, swift, tmp_dir):
-        """Create a tarball containing the tmp_dir and upload it to Swift."""
-        tarball_name = '%s.tar.gz' % self.plan
-        headers = {'X-Delete-After': self.delete_after}
-
-        # make sure the root container which holds all plan exports exists
-        try:
-            swift.get_container(self.exports_container)
-        except swiftexceptions.ClientException:
-            swift.put_container(self.exports_container)
-
-        with tempfile.NamedTemporaryFile() as tmp_tarball:
-            tarball.create_tarball(tmp_dir, tmp_tarball.name)
-
-            swift.put_object(self.exports_container, tarball_name, tmp_tarball,
-                             headers=headers)
-
     def run(self, context):
         swift = self.get_object_client(context)
         tmp_dir = tempfile.mkdtemp()
+        tarball_name = '%s.tar.gz' % self.plan
 
         try:
-            self._download_templates(swift, tmp_dir)
-            self._create_and_upload_tarball(swift, tmp_dir)
+            swiftutils.download_container(swift, self.plan, tmp_dir)
+            swiftutils.create_and_upload_tarball(
+                swift, tmp_dir, self.exports_container, tarball_name,
+                self.delete_after)
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
             return actions.Result(error=msg)

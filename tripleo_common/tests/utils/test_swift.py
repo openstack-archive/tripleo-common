@@ -15,6 +15,8 @@
 
 import mock
 
+from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common.tests import base
 from tripleo_common.utils import swift as swift_utils
 
@@ -75,3 +77,13 @@ class SwiftTest(base.TestCase):
         self.swiftclient.get_account.assert_called()
         self.swiftclient.get_container.assert_called()
         self.swiftclient.delete_object.assert_not_called()
+
+    def test_get_or_create_container_create(self):
+        self.swiftclient.get_container.side_effect = \
+            swiftexceptions.ClientException('error')
+        swift_utils.get_or_create_container(self.swiftclient, 'abc')
+        self.swiftclient.put_container.assert_called()
+
+    def test_get_or_create_container_get(self):
+        swift_utils.get_or_create_container(self.swiftclient, 'abc')
+        self.swiftclient.put_container.assert_not_called()
