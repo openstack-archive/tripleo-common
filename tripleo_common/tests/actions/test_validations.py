@@ -93,7 +93,7 @@ class Enabled(base.TestCase):
         validations_enabled_mock.return_value = True
         action = validations.Enabled()
         action_result = action.run(mock_ctx)
-        self.assertEqual(None, action_result.error)
+        self.assertIsNone(action_result.error)
         self.assertEqual('Validations are enabled',
                          action_result.data['stdout'])
 
@@ -107,7 +107,7 @@ class Enabled(base.TestCase):
         validations_enabled_mock.return_value = False
         action = validations.Enabled()
         action_result = action.run(mock_ctx)
-        self.assertEqual(None, action_result.data)
+        self.assertIsNone(action_result.data)
         self.assertEqual('Validations are disabled',
                          action_result.error['stdout'])
 
