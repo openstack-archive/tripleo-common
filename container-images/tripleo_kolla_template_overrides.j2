@@ -30,11 +30,37 @@
 # Remove packages not present in repos
 {% set openstack_base_packages_remove = ['Percona-Server-shared-56'] %}
 
-# Use mariadb-server package
+# Use mariadb-server-galera and xinetd for galera and clustercheck
 {% set mariadb_packages_remove = ['MariaDB-Galera-server', 'MariaDB-client'] %}
-{% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera'] %}
+{% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
 
-# We'll configure mariadb with galera.cnf
+# redis resource-agent requires pidof
+{% set redis_packages_append = ['sysvinit-tools'] %}
+
 {% block mariadb_footer %}
+# We'll configure mariadb with galera.cnf
 RUN rm /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
+
+# temporary pacemaker packages with support for bundles
+RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+{% endblock %}
+
+{% block rabbitmq_footer %}
+# temporary pacemaker packages with support for bundles
+RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+{% endblock %}
+
+{% block redis_footer %}
+# temporary pacemaker packages with support for bundles
+RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+{% endblock %}
+
+{% block haproxy_footer %}
+# temporary pacemaker packages with support for bundles
+RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+{% endblock %}
+
+{% block cinder_volume_footer %}
+# temporary pacemaker packages with support for bundles
+RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
