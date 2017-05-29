@@ -217,12 +217,21 @@ workflows:
 
       upload_templates_directory:
         action: tripleo.templates.upload container=<% $.container %> templates_path=<% task(clone_git_repo).result %>
-        on-success: update_plan
+        on-success: create_swift_rings_backup_plan
         on-complete: cleanup_temporary_files
         on-error: upload_templates_directory_set_status_failed
 
       cleanup_temporary_files:
         action: tripleo.git.clean container=<% $.container %>
+
+      create_swift_rings_backup_plan:
+        workflow: tripleo.swift_rings_backup.v1.create_swift_rings_backup_container_plan
+        on-success: update_plan
+        on-error: create_swift_rings_backup_plan_set_status_failed
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+          use_default_templates: true
 
       update_plan:
         action: tripleo.plan.update container=<% $.container %>
@@ -246,6 +255,12 @@ workflows:
         publish:
           status: SUCCESS
           message: <% task(update_plan).result %>
+
+      create_swift_rings_backup_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_swift_rings_backup_plan).result %>
 
       clone_git_repo_set_status_failed:
         on-success: notify_zaqar

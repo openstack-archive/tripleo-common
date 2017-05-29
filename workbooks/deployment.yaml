@@ -122,7 +122,7 @@ workflows:
           queue_name: <% $.queue_name %>
         on-complete:
           - run_validations: <% $.run_validations %>
-          - check_container: <% not $.run_validations %>
+          - create_swift_rings_backup_plan: <% not $.run_validations %>
 
       run_validations:
         workflow: tripleo.validations.v1.run_groups
@@ -131,7 +131,7 @@ workflows:
             - 'pre-deployment'
           plan: <% $.container %>
           queue_name: <% $.queue_name %>
-        on-success: check_container
+        on-success: create_swift_rings_backup_plan
         on-error: set_validations_failed
 
       set_validations_failed:
@@ -140,45 +140,14 @@ workflows:
           status: FAILED
           message: <% task(run_validations).result %>
 
-      check_container:
-        action: swift.head_container container=<% $.container %>
-        on-success: get_tempurl
-        on-error: create_container
-
-      create_container:
-        action: tripleo.plan.create_container container="<% $.container %>-swift-rings"
-        on-success: get_tempurl
-
-      get_tempurl:
-        action: tripleo.swift.tempurl
-        on-success: set_get_tempurl
-        input:
-          container: "<% $.container %>-swift-rings"
-          obj: "swift-rings.tar.gz"
-
-      set_get_tempurl:
-        action: tripleo.parameters.update
-        input:
-          parameters:
-            SwiftRingGetTempurl: <% task(get_tempurl).result %>
-          container: <% $.container %>
-        on-success: put_tempurl
-
-      put_tempurl:
-        action: tripleo.swift.tempurl
-        on-success: set_put_tempurl
-        input:
-          container: "<% $.container %>-swift-rings"
-          obj: "swift-rings.tar.gz"
-          method: "PUT"
-
-      set_put_tempurl:
-        action: tripleo.parameters.update
-        input:
-          parameters:
-            SwiftRingPutTempurl: <% task(put_tempurl).result %>
-          container: <% $.container %>
+      create_swift_rings_backup_plan:
+        workflow: tripleo.swift_rings_backup.v1.create_swift_rings_backup_container_plan
         on-success: get_heat_stack
+        on-error: create_swift_rings_backup_plan_set_status_failed
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+          use_default_templates: true
 
       get_heat_stack:
         action: heat.stacks_get stack_id=<% $.container %>
@@ -201,6 +170,12 @@ workflows:
           skip_deploy_identifier: <% $.skip_deploy_identifier %>
         on-success: send_message
         on-error: set_deployment_failed
+
+      create_swift_rings_backup_plan_set_status_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(create_swift_rings_backup_plan).result %>
 
       set_deployment_failed:
         on-success: send_message
