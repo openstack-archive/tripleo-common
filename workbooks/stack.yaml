@@ -47,7 +47,7 @@ workflows:
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% $.stack in task(wait_for_stack_does_not_exist).result.select($.stack_name) %>
+          continue-on: <% $.stack in task(wait_for_stack_does_not_exist).result.select([$.stack_name, $.id]).flatten() %>
 
   delete_stack:
     input:
