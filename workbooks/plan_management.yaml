@@ -21,7 +21,7 @@ workflows:
         input:
           container: <% $.container %>
           queue_name: <% $.queue_name %>
-          generate_passwords: <% $.queue_name %>
+          generate_passwords: <% $.generate_passwords %>
           use_default_templates: true
 
       set_status_success:
