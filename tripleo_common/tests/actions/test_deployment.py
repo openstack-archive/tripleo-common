@@ -84,9 +84,9 @@ class OrchestrationDeployActionTest(base.TestCase):
         action = deployment.OrchestrationDeployAction(self.server_id,
                                                       self.config, self.name,
                                                       timeout=10)
-        self.assertEqual(None, action._wait_for_data('container',
-                                                     'object',
-                                                     context=mock_ctx))
+        self.assertIsNone(action._wait_for_data('container',
+                                                'object',
+                                                context=mock_ctx))
         get_obj_client_mock.assert_called_once()
         swift.get_object.assert_called_with('container', 'object')
         # Trying every 3 seconds, so 4 times for a timeout of 10 seconds
