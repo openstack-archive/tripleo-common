@@ -47,12 +47,34 @@ workflows:
         concurrency: 1
         workflow: _derive_parameters_per_role
         input:
+          plan: <% $.plan %>
           role_name: <% $.role_name %>
           environment_parameters: <% $.environment_parameters %>
           heat_resource_tree: <% $.heat_resource_tree %>
           user_inputs: <% $.user_inputs %>
-        on-success: send_message
+        publish:
+          # Gets all the roles derived parameters as dictionary
+          result: <% task().result.select($.get('derived_parameters', {})).sum() %>
+        on-success: reset_derive_parameters_in_plan
         on-error: set_status_failed_for_each_role
+
+      reset_derive_parameters_in_plan:
+        action: tripleo.parameters.reset
+        input:
+          container: <% $.plan %>
+          key: 'derived_parameters'
+        on-success:
+          - update_derive_parameters_in_plan: <% $.result %>
+        on-error: set_status_failed_reset_derive_parameters_in_plan
+
+      update_derive_parameters_in_plan:
+        action: tripleo.parameters.update
+        input:
+          container: <% $.plan %>
+          key: 'derived_parameters'
+          parameters: <% $.get('result', {}) %>
+        on-success: send_message
+        on-error: set_status_failed_update_derive_parameters_in_plan
 
       set_status_failed_get_flattened_parameters:
         on-success: send_message
@@ -84,6 +106,18 @@ workflows:
           status: FAILED
           message: <% task(for_each_role).result.select(dict('role_name' => $.role_name, 'status' => $.get('status', 'SUCCESS'), 'message' => $.get('message', ''))) %>
 
+      set_status_failed_reset_derive_parameters_in_plan:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(reset_derive_parameters_in_plan).result %>
+
+      set_status_failed_update_derive_parameters_in_plan:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(update_derive_parameters_in_plan).result %>
+
       send_message:
         action: zaqar.queue_post
         retry: count=5 delay=1
@@ -95,6 +129,7 @@ workflows:
               payload:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
+                result: <% $.get('result', '') %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = 'FAILED' %>
@@ -105,10 +140,16 @@ workflows:
       Workflow which runs per role to get the introspection data on the first matching node assigned to role.
       Once introspection data is fetched, this worklow will trigger the actual derive parameters workflow
     input:
+      - plan
       - role_name
       - environment_parameters
       - heat_resource_tree
       - user_inputs
+
+    output:
+      derived_parameters: <% $.get('derived_parameters', {}) %>
+      # Need role_name in output parameter to display the status for all roles in main workflow when any role fails here.
+      role_name: <% $.role_name %>
 
     tasks:
       get_role_info:
@@ -155,11 +196,37 @@ workflows:
         on-error: set_status_failed_on_error_get_profile_node
 
       get_introspection_data:
-        on-error: set_status_failed_get_introspection_data
         action: baremetal_introspection.get_data uuid=<% $.profile_node_uuid %>
         publish:
-          introspection_data: <% task().result %>
-        # TODO-Follow up patches workflows will actually be used here to derive parameters for each role
+          hw_data: <% task().result %>
+        on-success:
+          - get_dpdk_derive_params: <% $.role_features.contains("DPDK") %>
+          # TODO: Needs to include condition to call other service derive params if DPDK is not available.
+        on-error: set_status_failed_get_introspection_data
+
+      get_dpdk_derive_params:
+        workflow: tripleo.derive_params_formulas.v1.dpdk_derive_params
+        input:
+          plan: <% $.plan %>
+          role_name: <% $.role_name %>
+          hw_data: <% $.hw_data %>
+          user_inputs: <% $.user_inputs %>
+        publish:
+          derived_parameters: <% task().result.get('derived_parameters', {}) %>
+        on-success: get_host_derive_params
+        on-error: set_status_failed_get_dpdk_derive_params
+
+      get_host_derive_params:
+        workflow: tripleo.derive_params_formulas.v1.host_derive_params
+        input:
+          role_name: <% $.role_name %>
+          hw_data: <% $.hw_data %>
+          user_inputs: <% $.user_inputs %>
+          derived_parameters: <% $.derived_parameters %>
+        publish:
+          derived_parameters: <% task().result.get('derived_parameters', {}) %>
+        on-error: set_status_failed_get_host_derive_params
+        # Workflow ends here because there are no more algorithms.
 
       set_status_failed_get_role_info:
         publish:
@@ -203,6 +270,21 @@ workflows:
           message: <% task(get_introspection_data).result %>
         on-success: fail
 
+      set_status_failed_get_dpdk_derive_params:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_dpdk_derive_params).result %>
+        on-success: fail
+
+      set_status_failed_get_host_derive_params:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_host_derive_params).result %>
+        on-success: fail
+
+
   _get_role_info:
     description: >
       Workflow that determines the list of derived parameter features (DPDK,
@@ -244,8 +326,9 @@ workflows:
       check_features:
         on-success: build_feature_dict
         publish:
-          # The role supports the DPDK feature if the NeutronDpdkCoreList parameter is present.
-          dpdk: <% $.role_services.any($.get('parameters', []).contains('NeutronDpdkCoreList')) %>
+          # TODO: Need to update this logic for ODL integration.
+          # The role supports the DPDK feature if the NeutronDatapathType parameter is present.
+          dpdk: <% $.role_services.any($.get('parameters', []).contains('NeutronDatapathType')) %>
 
           # The role supports the HCI feature if it includes both NovaCompute and CephOSD services.
           hci: <% $.role_services.any($.get('type', '').endsWith('::NovaCompute')) and $.role_services.any($.get('type', '').endsWith('::CephOSD')) %>

@@ -293,6 +293,48 @@ class UpdateParametersActionTest(base.TestCase):
             "tripleo.parameters.get"
         )
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_new_key(self, mock_get_object_client, mock_cache):
+
+        mock_ctx = mock.MagicMock()
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
+
+        # Test
+        test_parameters = {'SomeTestParameter': 42}
+        action = parameters.UpdateParametersAction(test_parameters,
+                                                   key='test_key')
+        action.run(mock_ctx)
+
+        mock_env_updated = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'test_key': {'SomeTestParameter': 42},
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+
+        swift.put_object.assert_called_once_with(
+            constants.DEFAULT_CONTAINER_NAME,
+            constants.PLAN_ENVIRONMENT,
+            mock_env_updated
+        )
+        mock_cache.assert_called_once_with(
+            mock_ctx,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+
 
 class UpdateRoleParametersActionTest(base.TestCase):
 
@@ -966,3 +1008,127 @@ class RotateFernetKeysActionTest(base.TestCase):
         max_keys = 3
         keys_map = action.purge_excess_keys(max_keys, keys_map)
         self.assertEqual(2, len(keys_map))
+
+
+class GetNetworkConfigActionTest(base.TestCase):
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_get')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_valid_network_config(
+            self, mock_get_object_client, mock_get_workflow_client,
+            mock_get_orchestration_client, mock_get_template_contents,
+            mock_process_multiple_environments_and_files,
+            mock_cache_get,
+            mock_cache_set):
+
+        mock_ctx = mock.MagicMock()
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2'),
+            ({}, mock_env)
+        )
+        mock_get_object_client.return_value = swift
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        mock_heat = mock.MagicMock()
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": "echo \'{\"network_config\": {}}\'"}
+            }])
+
+        mock_get_orchestration_client.return_value = mock_heat
+
+        mock_cache_get.return_value = None
+        expected = {"network_config": {}}
+        # Test
+        action = parameters.GetNetworkConfigAction(container='overcloud',
+                                                   role_name='Compute')
+        result = action.run(mock_ctx)
+        self.assertEqual(expected, result)
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment={},
+            files={},
+            template={'heat_template_version': '2016-04-30'},
+            stack_name='overcloud',
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_get')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_invalid_network_config(
+            self, mock_get_object_client,
+            mock_get_workflow_client, mock_get_orchestration_client,
+            mock_get_template_contents,
+            mock_process_multiple_environments_and_files,
+            mock_cache_get, mock_cache_set):
+
+        mock_ctx = mock.MagicMock()
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2'),
+            ({}, mock_env)
+        )
+        mock_get_object_client.return_value = swift
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        mock_heat = mock.MagicMock()
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": ""}
+            }])
+
+        mock_get_orchestration_client.return_value = mock_heat
+
+        mock_cache_get.return_value = None
+        # Test
+        action = parameters.GetNetworkConfigAction(container='overcloud',
+                                                   role_name='Compute')
+        result = action.run(mock_ctx)
+        self.assertIsNone(result)
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment={},
+            files={},
+            template={'heat_template_version': '2016-04-30'},
+            stack_name='overcloud',
+        )

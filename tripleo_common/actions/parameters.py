@@ -26,6 +26,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import json
 import logging
 import uuid
 
@@ -101,9 +102,11 @@ class GetParametersAction(templates.ProcessTemplatesAction):
 class ResetParametersAction(base.TripleOAction):
     """Provides method to delete user set parameters."""
 
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
+                 key=constants.DEFAULT_PLAN_ENV_KEY):
         super(ResetParametersAction, self).__init__()
         self.container = container
+        self.key = key
 
     def run(self, context):
         swift = self.get_object_client(context)
@@ -117,7 +120,7 @@ class ResetParametersAction(base.TripleOAction):
             return actions.Result(error=err_msg)
 
         try:
-            plan_utils.update_in_env(swift, env, 'parameter_defaults',
+            plan_utils.update_in_env(swift, env, self.key,
                                      delete_key=True)
         except swiftexceptions.ClientException as err:
             err_msg = ("Error updating environment for plan %s: %s" % (
@@ -135,10 +138,12 @@ class UpdateParametersAction(base.TripleOAction):
     """Updates plan environment with parameters."""
 
     def __init__(self, parameters,
-                 container=constants.DEFAULT_CONTAINER_NAME):
+                 container=constants.DEFAULT_CONTAINER_NAME,
+                 key=constants.DEFAULT_PLAN_ENV_KEY):
         super(UpdateParametersAction, self).__init__()
         self.container = container
         self.parameters = parameters
+        self.key = key
 
     def run(self, context):
         swift = self.get_object_client(context)
@@ -152,7 +157,7 @@ class UpdateParametersAction(base.TripleOAction):
             return actions.Result(error=err_msg)
 
         try:
-            plan_utils.update_in_env(swift, env, 'parameter_defaults',
+            plan_utils.update_in_env(swift, env, self.key,
                                      self.parameters)
         except swiftexceptions.ClientException as err:
             err_msg = ("Error updating environment for plan %s: %s" % (
@@ -546,3 +551,65 @@ class RotateFernetKeysAction(GetPasswordsAction):
         for key_path in key_paths[1:keys_to_be_purged + 1]:
             del keys_map[key_path]
         return keys_map
+
+
+class GetNetworkConfigAction(templates.ProcessTemplatesAction):
+    """Gets network configuration details from available heat parameters."""
+
+    def __init__(self, role_name, container=constants.DEFAULT_CONTAINER_NAME):
+        super(GetNetworkConfigAction, self).__init__(container=container)
+        self.role_name = role_name
+
+    def run(self, context):
+
+        processed_data = super(GetNetworkConfigAction, self).run(context)
+
+        # If we receive a 'Result' instance it is because the parent action
+        # had an error.
+        if isinstance(processed_data, actions.Result):
+            return processed_data
+
+        fields = {
+            'template': processed_data['template'],
+            'files': processed_data['files'],
+            'environment': processed_data['environment'],
+            'stack_name': self.container,
+        }
+        orc = self.get_orchestration_client(context)
+        preview_data = orc.stacks.preview(**fields)
+        result = self.get_network_config(preview_data, self.container,
+                                         self.role_name)
+        return result
+
+    def get_network_config(self, preview_data, stack_name, role_name):
+        result = None
+        if preview_data:
+            for res in preview_data.resources:
+                net_script = self.process_preview_list(res,
+                                                       stack_name,
+                                                       role_name)
+                if net_script:
+                    ns_len = len(net_script)
+                    start_index = (net_script.find(
+                        "echo '{\"network_config\"", 0, ns_len) + 6)
+                    end_index = net_script.find("'", start_index, ns_len)
+                    if (end_index > start_index):
+                        net_config = net_script[start_index:end_index]
+                        if net_config:
+                            result = json.loads(net_config)
+                    break
+        return result
+
+    def process_preview_list(self, res, stack_name, role_name):
+        if type(res) == list:
+            for item in res:
+                out = self.process_preview_list(item, stack_name, role_name)
+                if out:
+                    return out
+        elif type(res) == dict:
+            res_stack_name = stack_name + '-' + role_name
+            if res['resource_name'] == "OsNetConfigImpl" and \
+                res['resource_identity'] and \
+                res_stack_name in res['resource_identity']['stack_name']:
+                return res['properties']['config']
+        return None

@@ -41,6 +41,9 @@ STACK_TIMEOUT_DEFAULT = 240
 #: The default name to use for a plan container
 DEFAULT_CONTAINER_NAME = 'overcloud'
 
+#: The default key to use for updating parameters in plan environment.
+DEFAULT_PLAN_ENV_KEY = 'parameter_defaults'
+
 #: The path to the tripleo heat templates installed on the undercloud
 DEFAULT_TEMPLATES_PATH = '/usr/share/openstack-tripleo-heat-templates/'
 
