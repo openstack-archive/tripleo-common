@@ -9,6 +9,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-cinder-api:latest
 - imagename: tripleoupstream/centos-binary-cinder-backup:latest
 - imagename: tripleoupstream/centos-binary-cinder-scheduler:latest
+- imagename: tripleoupstream/centos-binary-cinder-volume:latest
 - imagename: tripleoupstream/centos-binary-congress-api:latest
 - imagename: tripleoupstream/centos-binary-etcd:latest
 - imagename: tripleoupstream/centos-binary-glance-api:latest
@@ -22,6 +23,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-ironic-api:latest
 - imagename: tripleoupstream/centos-binary-ironic-conductor:latest
 - imagename: tripleoupstream/centos-binary-ironic-pxe:latest
+- imagename: tripleoupstream/centos-binary-iscsid:latest
 - imagename: tripleoupstream/centos-binary-keystone:latest
 - imagename: tripleoupstream/centos-binary-mariadb:latest
 - imagename: tripleoupstream/centos-binary-memcached:latest
@@ -29,6 +31,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-mistral-engine:latest
 - imagename: tripleoupstream/centos-binary-mistral-executor:latest
 - imagename: tripleoupstream/centos-binary-mongodb:latest
+- imagename: tripleoupstream/centos-binary-multipathd:latest
 - imagename: tripleoupstream/centos-binary-neutron-dhcp-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-l3-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-metadata-agent:latest
