@@ -39,7 +39,9 @@ container_images:
 - imagename: tripleoupstream/centos-binary-nova-compute-ironic:latest
 - imagename: tripleoupstream/centos-binary-nova-compute:latest
 - imagename: tripleoupstream/centos-binary-nova-conductor:latest
+- imagename: tripleoupstream/centos-binary-nova-consoleauth:latest
 - imagename: tripleoupstream/centos-binary-nova-libvirt:latest
+- imagename: tripleoupstream/centos-binary-nova-novncproxy:latest
 - imagename: tripleoupstream/centos-binary-nova-placement-api:latest
 - imagename: tripleoupstream/centos-binary-nova-scheduler:latest
 - imagename: tripleoupstream/centos-binary-panko-api:latest
