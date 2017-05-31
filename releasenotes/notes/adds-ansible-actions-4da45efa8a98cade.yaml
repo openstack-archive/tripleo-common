@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Adds actions for calling ansible and ansible playbook executables from a
+    workflow.
+deprecations:
+  - |
+    The actions for calling ansible and ansible playbook executables from a
+    workflow will be removed in the Queens release as they are intended to
+    be migrated to the mistral-extra project.
