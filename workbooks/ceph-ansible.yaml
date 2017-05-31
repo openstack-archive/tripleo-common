@@ -1,0 +1,66 @@
+---
+version: '2.0'
+name: tripleo.storage.v1
+description: TripleO manages Ceph with ceph-ansible
+
+workflows:
+  ceph-install:
+    input:
+      - ceph_ansible
+    tasks:
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task(get_private_key).result %>
+        on-success: set_ip_lists
+      set_ip_lists:
+        publish:
+          mon_ips: <% env().get('service_ips', {}).get('ceph_mon_ctlplane_node_ips', []) %>
+          osd_ips: <% env().get('service_ips', {}).get('ceph_osd_ctlplane_node_ips', []) %>
+          mds_ips: <% env().get('service_ips', {}).get('ceph_mds_ctlplane_node_ips', []) %>
+          rgw_ips: <% env().get('service_ips', {}).get('ceph_rgw_ctlplane_node_ips', []) %>
+        on-success: set_fork_count
+      set_fork_count:
+        publish: # unique list of all IPs: make each list a set, take unions and count
+          fork_count: <% min($.mon_ips.toSet().union($.osd_ips.toSet()).union($.mds_ips.toSet()).union($.rgw_ips.toSet()).count(), 100) %> # don't use >100 forks
+        on-success: make_fetch_directory
+      make_fetch_directory:
+        action: tripleo.files.make_temp_dir
+        publish:
+          fetch_directory: <% task(make_fetch_directory).result.path %>
+        on-success: build_extra_vars
+      build_extra_vars:
+        publish:
+          extra_vars: <% $.ceph_ansible.mergeWith({'fetch_directory'=> $.fetch_directory})%>
+        on-success: ceph_install
+      ceph_install:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            mons:
+              hosts: <% $.mon_ips.toDict($, {}) %>
+            osds:
+              hosts: <% $.osd_ips.toDict($, {}) %>
+            mdss:
+              hosts: <% $.mds_ips.toDict($, {}) %>
+            rgws:
+              hosts: <% $.rgw_ips.toDict($, {}) %>
+          playbook: /usr/share/ceph-ansible/site-docker.yml.sample
+          remote_user: heat-admin
+          become: true
+          become_user: root
+          verbosity: 0
+          forks: <%  $.fork_count %>
+          ssh_private_key: <% $.private_key %>
+          ssh_extra_args: '-o StrictHostKeyChecking=no'
+          skip_tags: 'package-install,with_pkg'
+          extra_env_variables:
+            ANSIBLE_CONFIG: /usr/share/ceph-ansible/ansible.cfg
+            ANSIBLE_ACTION_PLUGINS: /usr/share/ceph-ansible/plugins/actions/
+            ANSIBLE_LIBRARY: /usr/share/ceph-ansible/library
+          extra_vars: <% $.extra_vars %>
+        publish:
+          output: <% task(ceph_install).result %>
+        on-complete: purge_fetch_directory
+      purge_fetch_directory:
+        action: tripleo.files.remove_temp_dir path=<% $.fetch_directory %>
