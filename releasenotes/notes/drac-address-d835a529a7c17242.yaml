@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Stop relying on deprecated alias ``drac_host`` for the ``drac_address``
+    field when enrolling Dell nodes.
