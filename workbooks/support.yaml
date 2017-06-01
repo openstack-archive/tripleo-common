@@ -1,0 +1,350 @@
+---
+version: '2.0'
+name: tripleo.support.v1
+description: TripleO support workflows
+
+workflows:
+
+  collect_logs:
+    description: >
+      This workflow runs sosreport on the servers where their names match the
+      provided server_name input. The logs are stored in the provided sos_dir.
+    input:
+      - server_name
+      - sos_dir: /var/tmp/tripleo-sos
+      - sos_options: boot,cluster,hardware,kernel,memory,nfs,openstack,packagemanager,performance,services,storage,system,webserver,virt
+      - queue_name: tripleo
+
+    tasks:
+      collect_logs_on_servers:
+        workflow: tripleo.deployment.v1.deploy_on_servers
+        on-success: send_message
+        on-error: set_collect_logs_on_servers_failed
+        input:
+          server_name: <% $.server_name %>
+          config_name: 'run_sosreport'
+          config: |
+            #!/bin/bash
+            mkdir -p <% $.sos_dir %>
+            sosreport --batch \
+            -p <% $.sos_options %> \
+            --tmp-dir <% $.sos_dir %>
+
+      set_collect_logs_on_servers_failed:
+          on-complete:
+           - send_message
+          publish:
+            type: tripleo.deployment.v1.fetch_logs
+            status: FAILED
+            message: <% task().result %>
+
+      # status messaging
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: <% $.get('type', 'tripleo.support.v1.collect_logs') %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = 'FAILED' %>
+
+  upload_logs:
+    description: >
+      This workflow uploads the sosreport files stored in the provide sos_dir
+      on the provided host (server_uuid) to a swift container on the undercloud
+    input:
+      - server_uuid
+      - server_name
+      - container
+      - sos_dir: /var/tmp/tripleo-sos
+      - queue_name: tripleo
+
+    tasks:
+      # actions
+      get_swift_information:
+        action: tripleo.swift.swift_information
+        on-success: do_log_upload
+        on-error: set_get_swift_information_failed
+        input:
+          container: <% $.container %>
+        publish:
+          container_url: <% task().result.container_url %>
+          auth_key: <% task().result.auth_key %>
+
+      set_get_swift_information_failed:
+        on-complete:
+          - send_message
+        publish:
+          status: FAILED
+          message: <% task(get_swift_information).result %>
+
+      do_log_upload:
+        action: tripleo.deployment.config
+        on-success: send_message
+        on-error: set_do_log_upload_failed
+        input:
+          server_id: <% $.server_uuid %>
+          name: "upload_logs"
+          config: |
+            #!/bin/bash
+            CONTAINER_URL="<% $.container_url %>"
+            TOKEN="<% $.auth_key %>"
+            SOS_DIR="<% $.sos_dir %>"
+            for FILE in $(find $SOS_DIR -type f); do
+              FILENAME=$(basename $FILE)
+              curl -X PUT -i -H "X-Auth-Token: $TOKEN" -T $FILE $CONTAINER_URL/$FILENAME
+              if [ $? -eq 0 ]; then
+                rm -f $FILE
+              fi
+            done
+          group: "script"
+        publish:
+          message: "Uploaded logs from <% $.server_name %>"
+
+      set_do_log_upload_failed:
+        on-complete:
+          - send_message
+        publish:
+          status: FAILED
+          message: <% tag(do_log_upload).result %>
+
+      # status messaging
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: <% $.get('type', 'tripleo.support.v1.upload_logs') %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = 'FAILED' %>
+
+  create_container:
+    description: >
+      This work flow is used to check if the container exists and creates it
+      if it does not exist.
+    input:
+      - container
+      - queue_name: tripleo
+
+    tasks:
+      check_container:
+        action: swift.head_container container=<% $.container %>
+        on-success: send_message
+        on-error: create_container
+
+      create_container:
+        action: swift.put_container
+        input:
+          container: <% $.container %>
+          headers:
+            x-container-meta-usage-tripleo: support
+        on-success: send_message
+        on-error: set_create_container_failed
+
+      set_create_container_failed:
+        on-complete:
+          - send_message
+        publish:
+          type: tripleo.support.v1.create_container.create_container
+          status: FAILED
+          message: <% task(create_container).result %>
+
+      # status messaging
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: <% $.get('type', 'tripleo.support.v1.create_container') %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = 'FAILED' %>
+
+  delete_container:
+    description: >
+      This workflow deletes all the objects in a provided swift container and
+      then removes the container itself from the undercloud.
+    input:
+      - container
+      - concurrency: 5
+      - timeout: 900
+      - queue_name: tripleo
+
+    tasks:
+      # actions
+      check_container:
+        action: swift.head_container container=<% $.container %>
+        on-success: list_objects
+        on-error: set_check_container_failure
+
+      set_check_container_failure:
+        on-complete: send_message
+        publish:
+          status: FAILED
+          type: tripleo.support.v1.delete_container.check_container
+          message: <% task(check_container).result %>
+
+      list_objects:
+        action: swift.get_container container=<% $.container %>
+        on-success: delete_objects
+        on-error: set_list_objects_failure
+        publish:
+          log_objects: <% task().result[1] %>
+
+      set_list_objects_failure:
+        on-complete: send_message
+        publish:
+          status: FAILED
+          type: tripleo.support.v1.delete_container.list_objects
+          message: <% task(list_objects).result %>
+
+      delete_objects:
+        action: swift.delete_object
+        concurrency: <% $.concurrency %>
+        timeout: <% $.timeout %>
+        with-items: object in <% $.log_objects %>
+        input:
+          container: <% $.container %>
+          obj: <% $.object.name %>
+        on-success: remove_container
+        on-error: set_delete_objects_failure
+
+      set_delete_objects_failure:
+        on-complete: send_message
+        publish:
+          status: FAILED
+          type: tripleo.support.v1.delete_container.delete_objects
+          message: <% task(delete_objects).result %>
+
+      remove_container:
+        action: swift.delete_container container=<% $.container %>
+        on-success: send_message
+        on-error: set_remove_container_failure
+
+      set_remove_container_failure:
+        on-complete: send_message
+        publish:
+          status: FAILED
+          type: tripleo.support.v1.delete_container.remove_container
+          message: <% task(remove_container).result %>
+
+      # status messaging
+      send_message:
+        action: zaqar.queue_post
+        wait-before: 5
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: <% $.get('type', 'tripleo.support.v1.delete_container') %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = 'FAILED' %>
+
+  fetch_logs:
+    description: >
+      This workflow creates a container on the undercloud, executes the log
+      collection on the servers whose names match the provided server_name, and
+      executes the log upload process on all the servers to the container on
+      the undercloud.
+    input:
+      - server_name
+      - container
+      - concurrency: 5
+      - timeout: 1800
+      - queue_name: tripleo
+
+    tasks:
+      # actions
+      create_container:
+        workflow: tripleo.support.v1.create_container
+        on-success: get_servers_matching
+        on-error: set_create_container_failed
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+
+      set_create_container_failed:
+          on-complete: send_message
+          publish:
+            type: tripleo.support.v1.fetch_logs.create_container
+            status: FAILED
+            message: <% task(create_container).result %>
+
+      get_servers_matching:
+        action: nova.servers_list
+        on-success: collect_logs_on_servers
+        publish:
+          servers_with_name: <% task().result._info.where($.name.indexOf(execution().input.server_name) > -1) %>
+
+      collect_logs_on_servers:
+        workflow: tripleo.support.v1.collect_logs
+        timeout: <% $.timeout %>
+        on-success: upload_logs_on_servers
+        on-error: set_collect_logs_on_servers_failed
+        input:
+          server_name: <% $.server_name %>
+          queue_name: <% $.queue_name %>
+
+      set_collect_logs_on_servers_failed:
+          on-complete: send_message
+          publish:
+            type: tripleo.support.v1.fetch_logs.collect_logs_on_servers
+            status: FAILED
+            message: <% task(collect_logs_on_servers).result %>
+
+      upload_logs_on_servers:
+        on-success: send_message
+        on-error: set_upload_logs_on_servers_failed
+        with-items: server in <% $.servers_with_name %>
+        concurrency: <% $.concurrency %>
+        workflow: tripleo.support.v1.upload_logs
+        input:
+          server_name: <% $.server.name %>
+          server_uuid: <% $.server.id %>
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+
+      set_upload_logs_on_servers_failed:
+          on-complete: send_message
+          publish:
+            type: tripleo.support.v1.fetch_logs.upload_logs
+            status: FAILED
+            message: <% task(upload_logs_on_servers).result %>
+
+      # status messaging
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: <% $.get('type', 'tripleo.support.v1.fetch_logs') %>
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = 'FAILED' %>
