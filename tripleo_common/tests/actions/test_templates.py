@@ -82,6 +82,12 @@ ROLE_DATA_DISABLE_CONSTRAINTS_YAML = r"""
   disable_constraints: True
 """
 
+ROLE_DATA_ENABLE_NETWORKS = r"""
+- name: RoleWithNetworks
+  networks:
+    - anetwork
+"""
+
 JINJA_SNIPPET_DISABLE_CONSTRAINTS_OLD = r"""
   {{role}}Image:
     type: string
@@ -106,6 +112,20 @@ EXPECTED_JINJA_RESULT_DISABLE_CONSTRAINTS = r"""
   RoleWithDisableConstraintsImage:
     type: string
     default: overcloud-full
+"""
+
+JINJA_SNIPPET_ROLE_NETWORKS = r"""
+{%- for network in networks %}
+    {%- if network.name in role.networks%}
+  {{network.name}}Port:
+    type: {{role.name}}::{{network.name}}::Port
+    {%- endif %}
+{% endfor %}
+"""
+
+EXPECTED_JINJA_RESULT_ROLE_NETWORKS = r"""
+  anetworkPort:
+    type: RoleWithNetworks::anetwork::Port
 """
 
 
@@ -240,38 +260,44 @@ class ProcessTemplatesActionTest(base.TestCase):
             }
         })
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_process_custom_roles(self, get_obj_client_mock):
+    def _custom_roles_mock_objclient(self, snippet_name, snippet_content,
+                                     role_data=None):
 
         def return_multiple_files(*args):
             if args[1] == constants.OVERCLOUD_J2_NAME:
                 return ['', JINJA_SNIPPET]
-            if args[1] == 'foo.j2.yaml':
-                return ['', JINJA_SNIPPET]
+            if args[1] == snippet_name:
+                return ['', snippet_content]
             if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
                 return ['', J2_EXCLUDES]
             elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
-                return ['', ROLE_DATA_YAML]
+                return ['', role_data or ROLE_DATA_YAML]
             elif args[1] == constants.OVERCLOUD_J2_NETWORKS_NAME:
                 return ['', NETWORK_DATA_YAML]
 
         def return_container_files(*args):
             return ('headers', [
                 {'name': constants.OVERCLOUD_J2_NAME},
-                {'name': 'foo.j2.yaml'},
+                {'name': snippet_name},
                 {'name': constants.OVERCLOUD_J2_ROLES_NAME},
                 {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}])
 
-        mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
         swift.get_container = mock.MagicMock(
             side_effect=return_container_files)
+        return swift
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_process_custom_roles(self, get_obj_client_mock):
+        swift = self._custom_roles_mock_objclient(
+            'foo.j2.yaml', JINJA_SNIPPET)
         get_obj_client_mock.return_value = swift
 
         # Test
         action = templates.ProcessTemplatesAction()
+        mock_ctx = mock.MagicMock()
         action._process_custom_roles(mock_ctx)
 
         get_object_mock_calls = [
@@ -296,36 +322,14 @@ class ProcessTemplatesActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def _process_custom_roles_disable_constraints(
             self, snippet, get_obj_client_mock):
-
-        def return_multiple_files(*args):
-            if args[1] == constants.OVERCLOUD_J2_NAME:
-                return ['', JINJA_SNIPPET]
-            if args[1] == 'disable-constraints.role.j2.yaml':
-                return ['', snippet]
-            if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
-                return ['', J2_EXCLUDES]
-            elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
-                return ['', ROLE_DATA_DISABLE_CONSTRAINTS_YAML]
-            elif args[1] == constants.OVERCLOUD_J2_NETWORKS_NAME:
-                return ['', NETWORK_DATA_YAML]
-
-        def return_container_files(*args):
-            return ('headers', [
-                {'name': constants.OVERCLOUD_J2_NAME},
-                {'name': 'disable-constraints.role.j2.yaml'},
-                {'name': constants.OVERCLOUD_J2_ROLES_NAME},
-                {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}])
-
-        mock_ctx = mock.MagicMock()
-        # setup swift
-        swift = mock.MagicMock()
-        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
-        swift.get_container = mock.MagicMock(
-            side_effect=return_container_files)
+        swift = self._custom_roles_mock_objclient(
+            'disable-constraints.role.j2.yaml', snippet,
+            ROLE_DATA_DISABLE_CONSTRAINTS_YAML)
         get_obj_client_mock.return_value = swift
 
         # Test
         action = templates.ProcessTemplatesAction()
+        mock_ctx = mock.MagicMock()
         action._process_custom_roles(mock_ctx)
 
         expected = EXPECTED_JINJA_RESULT.replace(
@@ -351,6 +355,34 @@ class ProcessTemplatesActionTest(base.TestCase):
     def test_process_custom_roles_disable_constraints(self):
         self._process_custom_roles_disable_constraints(
             JINJA_SNIPPET_DISABLE_CONSTRAINTS)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_custom_roles_networks(self, get_obj_client_mock):
+        swift = self._custom_roles_mock_objclient(
+            'role-networks.role.j2.yaml', JINJA_SNIPPET_ROLE_NETWORKS,
+            ROLE_DATA_ENABLE_NETWORKS)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        mock_ctx = mock.MagicMock()
+        action._process_custom_roles(mock_ctx)
+
+        expected = EXPECTED_JINJA_RESULT.replace(
+            'CustomRole', 'RoleWithNetworks')
+        put_object_mock_call = mock.call(
+            constants.DEFAULT_CONTAINER_NAME,
+            'overcloud.yaml',
+            expected)
+        self.assertEqual(swift.put_object.call_args_list[0],
+                         put_object_mock_call)
+
+        put_object_mock_call = mock.call(
+            constants.DEFAULT_CONTAINER_NAME,
+            "rolewithnetworks-role-networks.yaml",
+            EXPECTED_JINJA_RESULT_ROLE_NETWORKS)
+        self.assertEqual(put_object_mock_call,
+                         swift.put_object.call_args_list[1])
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_j2_render_and_put(self, get_obj_client_mock):
