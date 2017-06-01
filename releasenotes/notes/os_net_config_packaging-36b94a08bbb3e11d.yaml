@@ -1,0 +1,17 @@
+---
+features:
+  - |
+    Install os-net-config as an RPM package directly via DIB rather than
+    rely on the os-net-config element. This change will allow us to
+    deprecated further use of tripleo-image-elements for this feature.
+upgrade:
+  - |
+    In the Ocata release we started using a tripleo-heat-templates script
+    to drive os-net-config. This approach gave us better signal handling
+    capabilities, reduces our dependencies on os-apply-config, and makes
+    it easier to integrate and fine tune network configuration with
+    for example custom mapping files. Users who have network scripts
+    using the older 'os-apply-config' format will need to update
+    to the new t-h-t script format as part of this change. All
+    in tree templates were updated in t-h-t as part of
+    git commit 2c11e9e179178d074af91d8c5c798078ac3e0966.

@@ -10,7 +10,6 @@ disk_images:
            - dhcp-all-interfaces
            - os-collect-config
            - puppet-modules
-           - os-net-config
            - stable-interface-names
            - grub2-deprecated
          packages:
@@ -23,4 +22,5 @@ disk_images:
            - python-heat-agent-ansible
            - python-heat-agent-docker-cmd
            - python-heat-agent-json-file
+           - os-net-config
          options:

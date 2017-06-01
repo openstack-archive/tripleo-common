@@ -10,7 +10,6 @@ disk_images:
       - overcloud-compute
       - overcloud-ceph-storage
       - puppet-modules
-      - os-net-config
       - stable-interface-names
       - bootloader
       - element-manifest
@@ -36,6 +35,7 @@ disk_images:
       - python-heat-agent-docker-cmd
       - python-heat-agent-json-file
       - screen
+      - os-net-config
     options:
       - "--min-tmpfs 5"
     environment:
