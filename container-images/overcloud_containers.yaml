@@ -46,6 +46,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-redis:latest
 - imagename: tripleoupstream/centos-binary-sahara-api:latest
 - imagename: tripleoupstream/centos-binary-sahara-engine:latest
+- imagename: tripleoupstream/centos-binary-sensu-client:latest
 - imagename: tripleoupstream/centos-binary-swift-account:latest
 - imagename: tripleoupstream/centos-binary-swift-container:latest
 - imagename: tripleoupstream/centos-binary-swift-object:latest
