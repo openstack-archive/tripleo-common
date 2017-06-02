@@ -87,6 +87,7 @@ PASSWORD_PARAMETER_NAMES = (
     'NeutronMetadataProxySharedSecret',
     'NeutronPassword',
     'NovaPassword',
+    'NovajoinPassword',
     'MigrationSshKey',
     'OctaviaHeartbeatKey',
     'OctaviaPassword',

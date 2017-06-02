@@ -27,6 +27,7 @@ _EXISTING_PASSWORDS = {
     'CeilometerMeteringSecret': 'CbHTGK4md4Cc8P8ZyzTns6wry',
     'ZaqarPassword': 'bbFgCTFbAH8vf9n3xvZCP8aMR',
     'NovaPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
+    'NovajoinPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
     'IronicPassword': '4hFDgn9ANeVfuqk84pHpD4ksa',
     'RedisPassword': 'xjj3QZDcUQmU6Q7NzWBHRUhGd',
     'SaharaPassword': 'spFvYGezdFwnTk7NPxgYTbUPh',
