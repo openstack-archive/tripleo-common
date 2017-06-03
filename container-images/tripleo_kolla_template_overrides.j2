@@ -64,3 +64,13 @@ RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/contain
 # temporary pacemaker packages with support for bundles
 RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
+
+{% block cinder_backup_footer %}
+# temporary pacemaker packages with support for bundles
+RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+{% endblock %}
+
+{% block manila_share_footer %}
+# temporary pacemaker packages with support for bundles
+RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+{% endblock %}
