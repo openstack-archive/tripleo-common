@@ -37,7 +37,7 @@ class ClearBreakpointsActionTest(base.TestCase):
         action = package_update.ClearBreakpointsAction(self.stack_id,
                                                        self.refs)
         result = action.run(mock_ctx)
-        self.assertEqual(None, result)
+        self.assertIsNone(result)
         mock_compute_client.assert_called_once()
         mock_orchestration_client.assert_called_once()
         mock_update_manager.assert_called_once_with(

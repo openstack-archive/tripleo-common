@@ -615,7 +615,7 @@ class TestVerifyProfilesAction(base.TestCase):
         self.assertEqual(expected.error['errors'].sort(),
                          result.error['errors'].sort())
         self.assertEqual(expected.error['warnings'], result.error['warnings'])
-        self.assertEqual(None, result.data)
+        self.assertIsNone(result.data)
 
     def test_not_enough_nodes(self):
         self.nodes[:] = [self._get_fake_node(profile='compute')]
@@ -677,7 +677,7 @@ class TestVerifyProfilesAction(base.TestCase):
         self.assertEqual(expected.error['errors'].sort(),
                          result.error['errors'].sort())
         self.assertEqual(expected.error['warnings'], result.error['warnings'])
-        self.assertEqual(None, result.data)
+        self.assertIsNone(result.data)
 
     def test_no_spurious_warnings(self):
         self.nodes[:] = [self._get_fake_node(profile=None)]
