@@ -20,7 +20,7 @@ disk_images:
       - iptables
       - enable-packages-install
       - pip-and-virtualenv-override
-      - overcloud-dracut
+      - dracut-regenerate
       - remove-machine-id
     packages:
       - python-psutil
