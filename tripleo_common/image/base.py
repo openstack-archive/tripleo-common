@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import collections
 import json
 import os
 import yaml
@@ -25,9 +26,11 @@ class BaseImageManager(object):
     logger = log.getLogger(__name__ + '.BaseImageManager')
     APPEND_ATTRIBUTES = ['elements', 'options', 'packages']
     CONFIG_SECTIONS = (
-        DISK_IMAGES, UPLOADS, CONTAINER_IMAGES
+        DISK_IMAGES, UPLOADS, CONTAINER_IMAGES,
+        CONTAINER_IMAGES_TEMPLATE
     ) = (
-        'disk_images', 'uploads', 'container_images'
+        'disk_images', 'uploads', 'container_images',
+        'container_images_template'
     )
 
     def __init__(self, config_files, images=None):
@@ -45,7 +48,7 @@ class BaseImageManager(object):
                 existing_image[attribute_name] = attribute
 
     def load_config_files(self, section):
-        config_data = {}
+        config_data = collections.OrderedDict()
         for config_file in self.config_files:
             if os.path.isfile(config_file):
                 with open(config_file) as cf:

@@ -14,18 +14,15 @@
 #
 
 
+import jinja2
 import logging
 import os
 import re
 import subprocess
 import sys
+import yaml
 
 from tripleo_common.image import base
-
-if sys.version_info[0] < 3:
-    import codecs
-    _open = open
-    open = codecs.open
 
 
 class KollaImageBuilder(base.BaseImageManager):
@@ -52,6 +49,44 @@ class KollaImageBuilder(base.BaseImageManager):
 
         # what results should be acceptable as a regex to build one image
         return imagename
+
+    def container_images_from_template(self, filter=None, **kwargs):
+        '''Build container_images data from container_images_template.
+
+        Any supplied keyword arguments are used for the substitution mapping to
+        transform the data in the config file container_images_template
+        section.
+
+        The resulting data resembles a config file which contains a valid
+        populated container_images section.
+
+        If a function is passed to the filter argument, this will be used to
+        modify the entry after substitution. If the filter function returns
+        None then the entry will not be added to the resulting list.
+
+        Defaults are applied so that when no arguments are provided the
+        resulting entries have the form:
+        - imagename: tripleoupstream/centos-binary-<name>:latest
+        '''
+        mapping = dict(kwargs)
+
+        result = []
+
+        if len(self.config_files) != 1:
+            raise ValueError('A single config file must be specified')
+        config_file = self.config_files[0]
+        with open(config_file) as cf:
+            template = jinja2.Template(cf.read())
+
+        rendered = template.render(mapping)
+        rendered_dict = yaml.safe_load(rendered)
+        for i in rendered_dict[self.CONTAINER_IMAGES_TEMPLATE]:
+            entry = dict(i)
+            if filter:
+                entry = filter(entry)
+            if entry is not None:
+                result.append(entry)
+        return result
 
     def build_images(self, kolla_config_files=None):
 
