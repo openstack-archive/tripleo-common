@@ -9,6 +9,9 @@
 {% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base'] %}
 {% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
 
+# Required for docker-puppet.py to move the generated config to /var/lib/config-data
+{% set base_centos_binary_packages_append = ['rsync'] %}
+
 # Required for mistral-db-populate to load tripleo custom actions on
 # the undercloud
 {% set mistral_base_packages_append = ['openstack-tripleo-common'] %}
