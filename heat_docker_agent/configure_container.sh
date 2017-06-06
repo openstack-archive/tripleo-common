@@ -54,11 +54,7 @@ yum install -y \
         os-net-config \
         dhclient \
         ethtool \
-        python-heat-agent-apply-config \
-        python-heat-agent-docker-cmd \
-        python-heat-agent-hiera \
-        python-heat-agent-puppet \
-        python-heat-agent-json-file \
+        python-heat-agent-* \
         python-ipaddr \
         python-memcached \
         python2-oslo-log \
@@ -95,16 +91,9 @@ mkdir -p /etc/puppet/modules
 ln -sf /usr/share/openstack-puppet/modules/* /etc/puppet/modules/
 
 # And puppet hiera
-mkdir -p /usr/libexec/os-apply-config/templates/etc/puppet
-ln -sf /usr/share/tripleo-puppet-elements/hiera/os-apply-config/etc/puppet/hiera.yaml \
-    /usr/libexec/os-apply-config/templates/etc/puppet/
 ln -sf /etc/puppet/hiera.yaml /etc/hiera.yaml
 
 # Configure os-*
-ln -sf /usr/share/tripleo-puppet-elements/hiera/40-hiera-datafiles \
-    /usr/libexec/os-refresh-config/configure.d/
-ln -sf /usr/share/tripleo-puppet-elements/hiera/10-hiera-disable \
-    /usr/libexec/os-refresh-config/configure.d/
 mkdir -p /usr/libexec/os-refresh-config/post-configure.d
 ln -sf /usr/share/tripleo-image-elements/os-refresh-config/os-refresh-config/post-configure.d/99-refresh-completed \
     /usr/libexec/os-refresh-config/post-configure.d/
