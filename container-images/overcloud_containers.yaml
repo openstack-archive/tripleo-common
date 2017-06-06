@@ -51,4 +51,5 @@ container_images:
 - imagename: tripleoupstream/centos-binary-swift-container:latest
 - imagename: tripleoupstream/centos-binary-swift-object:latest
 - imagename: tripleoupstream/centos-binary-swift-proxy-server:latest
+- imagename: tripleoupstream/centos-binary-tacker:latest
 - imagename: tripleoupstream/centos-binary-zaqar:latest
