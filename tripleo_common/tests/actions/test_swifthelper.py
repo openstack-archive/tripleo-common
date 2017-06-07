@@ -28,13 +28,12 @@ class SwiftInformationActionTest(base.TestCase):
         self.action = swifthelper.SwiftInformationAction(self.container_name)
         self.action.get_object_client = mock.Mock()
 
-    @mock.patch('mistral.context.ctx')
-    def test_run_get_information(self, ctx_mock):
+    def test_run_get_information(self):
         oc_mock = mock.MagicMock()
         oc_mock.head_container = mock.Mock()
         oc_mock.url = 'test_uri'
+        mock_ctx = mock.Mock(auth_token='test_token')
         self.action.get_object_client.return_value = oc_mock
-        ctx_mock.return_value = mock.Mock(auth_token='test_token')
 
         return_data = {
             'container_url': 'test_uri/{}'.format(self.container_name),
@@ -42,20 +41,21 @@ class SwiftInformationActionTest(base.TestCase):
         }
         return_obj = mistral_workflow_utils.Result(data=return_data,
                                                    error=None)
-        self.assertEqual(return_obj, self.action.run())
+        self.assertEqual(return_obj, self.action.run(mock_ctx))
+
         oc_mock.head_container.assert_called_with(self.container_name)
 
-    @mock.patch('mistral.context.ctx')
-    def test_run_get_information_fails(self, ctx_mock):
+    def test_run_get_information_fails(self):
         oc_mock = mock.MagicMock()
         oc_mock.head_container = mock.Mock()
+        mock_ctx = mock.MagicMock()
         fail = Exception('failure')
         oc_mock.head_container.side_effect = fail
         self.action.get_object_client.return_value = oc_mock
 
         return_obj = mistral_workflow_utils.Result(data=None, error='failure')
 
-        self.assertEqual(return_obj, self.action.run())
+        self.assertEqual(return_obj, self.action.run(mock_ctx))
 
 
 class SwiftTempUrlActionTest(base.TestCase):

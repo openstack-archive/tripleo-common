@@ -15,7 +15,6 @@
 
 import uuid
 
-from mistral import context
 from mistral.workflow import utils as mistral_workflow_utils
 from six.moves import urllib
 from swiftclient import exceptions as swiftexceptions
@@ -33,14 +32,14 @@ class SwiftInformationAction(base.TripleOAction):
         super(SwiftInformationAction, self).__init__()
         self.container = container
 
-    def run(self):
+    def run(self, context):
         data = None
         error = None
         try:
             oc = self.get_object_client()
             oc.head_container(self.container)
             container_url = "{}/{}".format(oc.url, self.container)
-            auth_key = context.ctx().auth_token
+            auth_key = context.auth_token
             data = {'container_url': container_url, 'auth_key': auth_key}
         except Exception as err:
             error = str(err)
