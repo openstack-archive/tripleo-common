@@ -81,6 +81,24 @@ notresources:
 """
 
 
+ROLES_DATA_YAML_CONTENTS = """
+- name: MyController
+  CountDefault: 1
+  ServicesDefault:
+    - OS::TripleO::Services::CACerts
+
+- name: Compute
+  HostnameFormatDefault: '%stackname%-novacompute-%index%'
+  ServicesDefault:
+    - OS::TripleO::Services::NovaCompute
+    - OS::TripleO::Services::DummyService
+
+- name: CustomRole
+  ServicesDefault:
+    - OS::TripleO::Services::Kernel
+"""
+
+
 class CreateContainerActionTest(base.TestCase):
 
     def setUp(self):
@@ -467,47 +485,33 @@ class RoleListActionTest(base.TestCase):
         self.ctx = mock.MagicMock()
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run(self, workflow_client_mock, get_obj_client_mock):
-
-        # setup mistral
-        mistral = mock.MagicMock()
-        env_item = mock.Mock()
-        mistral.environments.get.return_value = env_item
-        workflow_client_mock.return_value = mistral
-
-        env_item.variables = {
-            'template': 'overcloud.yaml',
-            'environments': [
-                {'path': 'overcloud-resource-registry-puppet.yaml'}
-            ]
-        }
-        env_item.name = self.container
-        env_item.description = None
-        env_item.created_at = '2016-06-30 15:51:09'
-        env_item.updated_at = None
-        env_item.scope = 'private'
-        env_item.id = '4b5e97d0-2f7a-4cdd-ab7c-71331cce477d'
+    def test_run(self, get_obj_client_mock):
 
         # setup swift
         swift = mock.MagicMock()
-        swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
+        swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
         get_obj_client_mock.return_value = swift
-
-        template_name = workflow_client_mock().environments.get(
-            self.container).variables['template']
 
         # Test
         action = plan.ListRolesAction()
         result = action.run(self.ctx)
 
         # verify
-        expected = ['Compute', 'Controller']
-        result.sort()
+        expected = ['MyController', 'Compute', 'CustomRole']
         self.assertEqual(expected, result)
-        self.assertEqual('overcloud.yaml', template_name)
-        swift.get_object.assert_called_with(self.container, template_name)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_no_roles_data_file(self, get_obj_client_mock):
+
+        swift = mock.MagicMock()
+        swift.get_object.side_effect = swiftexceptions.ClientException("404")
+        get_obj_client_mock.return_value = swift
+
+        action = plan.ListRolesAction()
+        result = action.run(self.ctx)
+
+        error_str = ('Error retrieving roles data from deployment plan: 404')
+        self.assertEqual(result.error, error_str)
 
 
 class ExportPlanActionTest(base.TestCase):

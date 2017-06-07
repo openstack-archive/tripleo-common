@@ -1,0 +1,6 @@
+---
+fixes:
+  - The tripleo.role.list action now returns the list of roles based
+    directly on the data from roles_data.yaml in the deployment
+    plan. (See blueprint `get-roles-actions
+    <https://blueprints.launchpad.net/tripleo/+spec/get-roles-action>`__)
