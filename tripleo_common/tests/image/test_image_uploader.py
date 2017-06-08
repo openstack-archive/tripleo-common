@@ -141,14 +141,14 @@ class TestDockerImageUploader(base.TestCase):
 
         self.dockermock.return_value.pull.assert_called_once_with(
             pull_source + '/' + image,
-            tag=tag, stream=True, insecure_registry=True)
+            tag=tag, stream=True)
         self.dockermock.return_value.tag.assert_called_once_with(
             image=pull_source + '/' + image + ':' + tag,
             repository=push_destination + '/' + image,
             tag=tag, force=True)
         self.dockermock.return_value.push(
             push_destination + '/' + image,
-            tag=tag, stream=True, insecure_registry=True)
+            tag=tag, stream=True)
 
     def test_upload_image_missing_tag(self):
         image = 'tripleoupstream/heat-docker-agents-centos'
@@ -165,11 +165,11 @@ class TestDockerImageUploader(base.TestCase):
 
         self.dockermock.return_value.pull.assert_called_once_with(
             pull_source + '/' + image,
-            tag=expected_tag, stream=True, insecure_registry=True)
+            tag=expected_tag, stream=True)
         self.dockermock.return_value.tag.assert_called_once_with(
             image=pull_source + '/' + image + ':' + expected_tag,
             repository=push_destination + '/' + image,
             tag=expected_tag, force=True)
         self.dockermock.return_value.push(
             push_destination + '/' + image,
-            tag=expected_tag, stream=True, insecure_registry=True)
+            tag=expected_tag, stream=True)
