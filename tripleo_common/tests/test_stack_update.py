@@ -53,14 +53,9 @@ class StackUpdateManagerTest(base.TestCase):
                     mock.MagicMock(
                         event_time='2015-03-25T09:15:04Z',
                         resource_name='Controller-0',
-                        resource_status='CREATE_IN_PROGRESS',
+                        resource_status='UPDATE_IN_PROGRESS',
                         resource_status_reason='UPDATE paused until Hook '
-                                               'pre-update is cleared'),
-                    mock.MagicMock(
-                        event_time='2015-03-25T09:15:02Z',
-                        resource_name='Controller-1',
-                        resource_status='CREATE_COMPLETE',
-                        resource_status_reason=''),
+                                               'pre-update is cleared')
                 ]
             else:
                 return [
