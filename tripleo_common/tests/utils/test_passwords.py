@@ -43,6 +43,8 @@ class TestPasswords(base.TestCase):
         keys = [uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False),
+                uuidutils.generate_uuid(dashed=False),
+                uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False)]
 
         snmpd_password = uuidutils.generate_uuid(dashed=False)

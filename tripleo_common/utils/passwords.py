@@ -68,12 +68,23 @@ def generate_passwords(mistralclient=None, stack_env=None):
         elif name in ('KeystoneCredential0', 'KeystoneCredential1',
                       'KeystoneFernetKey0', 'KeystoneFernetKey1'):
             passwords[name] = create_keystone_credential()
+        elif name == 'KeystoneFernetKeys':
+            passwords[name] = create_fernet_keys_repo_structure_and_keys()
         elif name == 'MigrationSshKey':
             passwords[name] = create_ssh_keypair()
         else:
             passwords[name] = passutils.generate_password(
                 size=_MIN_PASSWORD_SIZE)
     return passwords
+
+
+def create_fernet_keys_repo_structure_and_keys():
+    return {
+        '/etc/keystone/fernet-keys/0': {
+            'content': create_keystone_credential()},
+        '/etc/keystone/fernet-keys/1': {
+            'content': create_keystone_credential()}
+    }
 
 
 def create_cephx_key():

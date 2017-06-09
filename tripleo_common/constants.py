@@ -81,6 +81,7 @@ PASSWORD_PARAMETER_NAMES = (
     'KeystoneCredential1',
     'KeystoneFernetKey0',
     'KeystoneFernetKey1',
+    'KeystoneFernetKeys',
     'ManilaPassword',
     'MistralPassword',
     'MysqlClustercheckPassword',

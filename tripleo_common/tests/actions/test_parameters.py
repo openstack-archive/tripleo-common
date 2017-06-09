@@ -66,6 +66,10 @@ _EXISTING_PASSWORDS = {
     'KeystoneCredential1': 'c4MFq82TQLFLKpiiUjrKkp15dafE2ALcD3jbaIu3rfE=',
     'KeystoneFernetKey0': 'O8NSPxr4zXBBAoGIj-5aUmtE7-Jk5a4ptVsEhzJ8Vd8=',
     'KeystoneFernetKey1': 'AueoL37kd6eLjV29AG-Ruxu5szW47osgXx6aPOqtI6I=',
+    'KeystoneFernetKeys': {
+        '/etc/keystone/fernet-keys/0': {'content': 'IAMAVERYSAFEKEY'},
+        '/etc/keystone/fernet-keys/1': {'content': 'IALSOAMAVERYSAFEKEY'}
+    },
     'CephClusterFSID': u'97c16f44-b62c-11e6-aed3-185e0f73fdc5',
     'Ec2ApiPassword': 'FPvz2WiWxrHVWrmSSvv44bqmr',
     'EtcdInitialClusterToken': 'fcVZXehsSc2KdmFFMKDudxTLKa',
@@ -390,6 +394,8 @@ class GeneratePasswordsActionTest(base.TestCase):
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
     @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
@@ -397,6 +403,7 @@ class GeneratePasswordsActionTest(base.TestCase):
     def test_run_passwords_exist(self, mock_get_object_client,
                                  mock_get_workflow_client,
                                  mock_get_snmpd_readonly_user_password,
+                                 mock_fernet_keys_setup,
                                  mock_create_ssh_keypair,
                                  mock_get_orchestration_client,
                                  mock_cache):
@@ -404,6 +411,8 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
                                                 'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
 
         mock_ctx = mock.MagicMock()
 
@@ -442,6 +451,8 @@ class GeneratePasswordsActionTest(base.TestCase):
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
     @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
@@ -449,6 +460,7 @@ class GeneratePasswordsActionTest(base.TestCase):
     def test_passwords_exist_in_heat(self, mock_get_object_client,
                                      mock_get_workflow_client,
                                      mock_get_snmpd_readonly_user_password,
+                                     mock_fernet_keys_setup,
                                      mock_create_ssh_keypair,
                                      mock_get_orchestration_client,
                                      mock_cache):
@@ -456,6 +468,8 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
                                                 'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
 
         existing_passwords = _EXISTING_PASSWORDS.copy()
         existing_passwords.pop("AdminPassword")
