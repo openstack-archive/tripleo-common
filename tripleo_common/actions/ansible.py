@@ -14,6 +14,7 @@
 # under the License.
 import json
 import os
+import shutil
 import six
 import tempfile
 
@@ -21,13 +22,6 @@ import yaml
 
 from mistral_lib import actions
 from oslo_concurrency import processutils
-
-
-def _write_data(data, suffix=''):
-    temp_data = tempfile.NamedTemporaryFile(suffix=suffix)
-    temp_data.write(data)
-    temp_data.flush()
-    return temp_data
 
 
 class AnsibleAction(actions.Action):
@@ -61,6 +55,15 @@ class AnsibleAction(actions.Action):
         if self.ssh_common_args:
             self.ssh_common_args = json.dumps(self.ssh_common_args)
 
+        self._work_dir = None
+
+    @property
+    def work_dir(self):
+        if self._work_dir:
+            return self._work_dir
+        self._work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action')
+        return self._work_dir
+
     @property
     def inventory(self):
         if not self._inventory:
@@ -69,16 +72,22 @@ class AnsibleAction(actions.Action):
         # NOTE(flaper87): if it's a path, use it
         if (isinstance(self._inventory, six.string_types) and
                 os.path.exists(self._inventory)):
-            return open(self._inventory)
+            return self._inventory
         else:
             self._inventory = yaml.safe_dump(self._inventory)
+
+        path = os.path.join(self.work_dir, 'inventory.yaml')
 
         # NOTE(flaper87):
         # We could probably catch parse errors here
         # but if we do, they won't be propagated and
         # we should not move forward with the action
         # if the inventory generation failed
-        return _write_data(self._inventory, suffix='.yaml')
+        with open(path, 'w') as inventory:
+            inventory.write(self._inventory)
+
+        self._inventory = path
+        return path
 
     @property
     def ssh_private_key(self):
@@ -88,14 +97,20 @@ class AnsibleAction(actions.Action):
         # NOTE(flaper87): if it's a path, use it
         if (isinstance(self._ssh_private_key, six.string_types) and
                 os.path.exists(self._ssh_private_key)):
-            return open(self._ssh_private_key)
+            return self._ssh_private_key
+
+        path = os.path.join(self.work_dir, 'ssh_private_key')
 
         # NOTE(flaper87):
         # We could probably catch parse errors here
         # but if we do, they won't be propagated and
         # we should not move forward with the action
-        # if the playbook generation failed
-        return _write_data(self._ssh_private_key)
+        # if the inventory generation failed
+        with open(path, 'w') as ssh_key:
+            ssh_key.write(self._ssh_private_key)
+
+        self._ssh_private_key = path
+        return path
 
     def run(self, context):
 
@@ -138,27 +153,20 @@ class AnsibleAction(actions.Action):
         if self.timeout:
             command.extend(['--timeout', self.timeout])
 
-        inventory_file = self.inventory
-        if inventory_file:
-            command.extend(['--inventory-file', inventory_file.name])
+        if self.inventory:
+            command.extend(['--inventory-file', self.inventory])
 
-        ssh_priv_key_file = self.ssh_private_key
-        if ssh_priv_key_file:
-            command.extend(['--private-key', ssh_priv_key_file.name])
+        if self.ssh_private_key:
+            command.extend(['--private-key', self.ssh_private_key])
 
         try:
             stderr, stdout = processutils.execute(
                 *command, log_errors=processutils.LogErrors.ALL)
             return {"stderr": stderr, "stdout": stdout}
         finally:
-            # NOTE(flaper87): Close the file
-            # this is important as it'll also cleanup
-            # temporary files
-            if inventory_file:
-                inventory_file.close()
-
-            if ssh_priv_key_file:
-                ssh_priv_key_file.close()
+            # NOTE(flaper87): clean the mess if debug is disabled.
+            if not self.verbosity:
+                shutil.rmtree(self.work_dir)
 
 
 class AnsiblePlaybookAction(actions.Action):
@@ -189,6 +197,15 @@ class AnsiblePlaybookAction(actions.Action):
         if self.ssh_common_args:
             self.ssh_common_args = json.dumps(self.ssh_common_args)
 
+        self._work_dir = None
+
+    @property
+    def work_dir(self):
+        if self._work_dir:
+            return self._work_dir
+        self._work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action')
+        return self._work_dir
+
     @property
     def inventory(self):
         if not self._inventory:
@@ -197,16 +214,22 @@ class AnsiblePlaybookAction(actions.Action):
         # NOTE(flaper87): if it's a path, use it
         if (isinstance(self._inventory, six.string_types) and
                 os.path.exists(self._inventory)):
-            return open(self._inventory)
+            return self._inventory
         else:
             self._inventory = yaml.safe_dump(self._inventory)
+
+        path = os.path.join(self.work_dir, 'inventory.yaml')
 
         # NOTE(flaper87):
         # We could probably catch parse errors here
         # but if we do, they won't be propagated and
         # we should not move forward with the action
         # if the inventory generation failed
-        return _write_data(self._inventory, suffix='.yaml')
+        with open(path, 'w') as inventory:
+            inventory.write(self._inventory)
+
+        self._inventory = path
+        return path
 
     @property
     def playbook(self):
@@ -216,16 +239,22 @@ class AnsiblePlaybookAction(actions.Action):
         # NOTE(flaper87): if it's a path, use it
         if (isinstance(self._playbook, six.string_types) and
                 os.path.exists(self._playbook)):
-            return open(self._playbook)
+            return self._playbook
         else:
             self._playbook = yaml.safe_dump(self._playbook)
+
+        path = os.path.join(self.work_dir, 'playbook.yaml')
 
         # NOTE(flaper87):
         # We could probably catch parse errors here
         # but if we do, they won't be propagated and
         # we should not move forward with the action
-        # if the playbook generation failed
-        return _write_data(self._playbook, suffix='.yaml')
+        # if the inventory generation failed
+        with open(path, 'w') as playbook:
+            playbook.write(self._playbook)
+
+        self._playbook = path
+        return path
 
     @property
     def ssh_private_key(self):
@@ -235,23 +264,28 @@ class AnsiblePlaybookAction(actions.Action):
         # NOTE(flaper87): if it's a path, use it
         if (isinstance(self._ssh_private_key, six.string_types) and
                 os.path.exists(self._ssh_private_key)):
-            return open(self._ssh_private_key)
+            return self._ssh_private_key
+
+        path = os.path.join(self.work_dir, 'ssh_private_key')
 
         # NOTE(flaper87):
         # We could probably catch parse errors here
         # but if we do, they won't be propagated and
         # we should not move forward with the action
-        # if the playbook generation failed
-        return _write_data(self._ssh_private_key)
+        # if the inventory generation failed
+        with open(path, 'w') as ssh_key:
+            ssh_key.write(self._ssh_private_key)
+
+        self._ssh_private_key = path
+        return path
 
     def run(self, context):
-        playbook_file = self.playbook
         if 0 < self.verbosity < 6:
             verbosity_option = '-' + ('v' * self.verbosity)
             command = ['ansible-playbook', verbosity_option,
-                       playbook_file.name]
+                       self.playbook]
         else:
-            command = ['ansible-playbook', playbook_file.name]
+            command = ['ansible-playbook', self.playbook]
 
         if self.limit_hosts:
             command.extend(['--limit', self.limit_hosts])
@@ -283,26 +317,17 @@ class AnsiblePlaybookAction(actions.Action):
         if self.timeout:
             command.extend(['--timeout', self.timeout])
 
-        inventory_file = self.inventory
-        if inventory_file:
-            command.extend(['--inventory-file', inventory_file.name])
+        if self.inventory:
+            command.extend(['--inventory-file', self.inventory])
 
-        ssh_priv_key_file = self.ssh_private_key
-        if ssh_priv_key_file:
-            command.extend(['--private-key', ssh_priv_key_file.name])
+        if self.ssh_private_key:
+            command.extend(['--private-key', self.ssh_private_key])
 
         try:
             stderr, stdout = processutils.execute(
                 *command, log_errors=processutils.LogErrors.ALL)
             return {"stderr": stderr, "stdout": stdout}
         finally:
-            # NOTE(flaper87): Close the file
-            # this is important as it'll also cleanup
-            # temporary files
-            if inventory_file:
-                inventory_file.close()
-
-            if ssh_priv_key_file:
-                ssh_priv_key_file.close()
-
-            playbook_file.close()
+            # NOTE(flaper87): clean the mess if debug is disabled.
+            if not self.verbosity:
+                shutil.rmtree(self.work_dir)

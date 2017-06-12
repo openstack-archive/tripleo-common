@@ -12,8 +12,10 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
 import json
 import mock
+import os
 
 from oslo_concurrency import processutils
 
@@ -65,14 +67,10 @@ class AnsiblePlaybookActionTest(base.TestCase):
         self.verbosity = 1
         self.ctx = mock.MagicMock()
 
-    @mock.patch("tripleo_common.actions.ansible._write_data")
     @mock.patch("oslo_concurrency.processutils.execute")
-    def test_run(self, mock_execute, mock_temp):
+    def test_run(self, mock_execute):
 
         mock_execute.return_value = ('', '')
-        mock_file = mock.MagicMock()
-        mock_file.name = self.playbook
-        mock_temp.return_value = mock_file
 
         action = ansible.AnsiblePlaybookAction(
             playbook=self.playbook, limit_hosts=self.limit_hosts,
@@ -81,8 +79,10 @@ class AnsiblePlaybookActionTest(base.TestCase):
             verbosity=self.verbosity)
         action.run(self.ctx)
 
+        pb = os.path.join(action.work_dir, 'playbook.yaml')
+
         mock_execute.assert_called_once_with(
-            'ansible-playbook', '-v', self.playbook, '--user',
+            'ansible-playbook', '-v', pb, '--user',
             self.remote_user, '--become', '--become-user', self.become_user,
             '--extra-vars', json.dumps(self.extra_vars),
             log_errors=processutils.LogErrors.ALL)
