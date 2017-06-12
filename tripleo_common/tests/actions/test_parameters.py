@@ -21,6 +21,7 @@ from tripleo_common.actions import parameters
 from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.tests import base
+from tripleo_common.utils import passwords as password_utils
 
 _EXISTING_PASSWORDS = {
     'MistralPassword': 'VFJeqBKbatYhQm9jja67hufft',
@@ -879,3 +880,40 @@ class GetProfileOfFlavorActionTest(base.TestCase):
         result = action.run(mock_ctx)
         self.assertTrue(result.is_error())
         mock_get_profile_of_flavor.assert_called_once()
+
+
+class RotateFernetKeysActionTest(base.TestCase):
+
+    def test_get_next_index(self):
+        action = parameters.RotateFernetKeysAction()
+        keys_map = {
+            password_utils.KEYSTONE_FERNET_REPO + '0': {
+                'content': 'Some key'},
+            password_utils.KEYSTONE_FERNET_REPO + '1': {
+                'content': 'Some other key'},
+        }
+        next_index = action.get_next_index(keys_map)
+        self.assertEqual(next_index, 2)
+
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_keystone_credential')
+    def test_rotate_keys(self, mock_keystone_creds):
+        action = parameters.RotateFernetKeysAction()
+        mock_keystone_creds.return_value = 'Some new key'
+
+        staged_key_index = password_utils.KEYSTONE_FERNET_REPO + '0'
+        new_primary_key_index = password_utils.KEYSTONE_FERNET_REPO + '2'
+        keys_map = {
+            password_utils.KEYSTONE_FERNET_REPO + '0': {
+                'content': 'Some key'},
+            password_utils.KEYSTONE_FERNET_REPO + '1': {
+                'content': 'Some other key'},
+        }
+        new_keys_map = action.rotate_keys(keys_map, 2)
+
+        # Staged key should be the new key
+        self.assertEqual('Some new key',
+                         new_keys_map[staged_key_index]['content'])
+        # primary key should be the previous staged key
+        self.assertEqual('Some key',
+                         new_keys_map[new_primary_key_index]['content'])
