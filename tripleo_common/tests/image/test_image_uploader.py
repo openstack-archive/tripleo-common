@@ -37,6 +37,8 @@ filedata = six.u(
     - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
       uploader: docker
       pull_source: docker.io
+    - imagename: tripleoupstream/image-with-missing-tag
+      push_destination: localhost:8787
 """)
 
 legacy_filedata = six.u(
@@ -50,6 +52,8 @@ legacy_filedata = six.u(
     - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
       uploader: docker
       pull_source: docker.io
+    - imagename: tripleoupstream/image-with-missing-tag
+      push_destination: localhost:8787
 """)
 
 
@@ -145,3 +149,27 @@ class TestDockerImageUploader(base.TestCase):
         self.dockermock.return_value.push(
             push_destination + '/' + image,
             tag=tag, stream=True, insecure_registry=True)
+
+    def test_upload_image_missing_tag(self):
+        image = 'tripleoupstream/heat-docker-agents-centos'
+        expected_tag = 'latest'
+        pull_source = 'docker.io'
+        push_destination = 'localhost:8787'
+
+        self.uploader.upload_image(image,
+                                   pull_source,
+                                   push_destination)
+
+        self.dockermock.assert_called_once_with(
+            base_url='unix://var/run/docker.sock')
+
+        self.dockermock.return_value.pull.assert_called_once_with(
+            pull_source + '/' + image,
+            tag=expected_tag, stream=True, insecure_registry=True)
+        self.dockermock.return_value.tag.assert_called_once_with(
+            image=pull_source + '/' + image + ':' + expected_tag,
+            repository=push_destination + '/' + image,
+            tag=expected_tag, force=True)
+        self.dockermock.return_value.push(
+            push_destination + '/' + image,
+            tag=expected_tag, stream=True, insecure_registry=True)

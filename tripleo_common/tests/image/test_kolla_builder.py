@@ -34,6 +34,8 @@ filedata = six.u(
     - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
       uploader: docker
       pull_source: docker.io
+    - imagename: tripleoupstream/image-with-missing-tag
+      push_destination: localhost:8787
 """)
 
 
@@ -76,6 +78,7 @@ class TestKollaImageBuilder(base.TestCase):
             'nova-compute',
             'nova-libvirt',
             'heat-docker-agents-centos',
+            'image-with-missing-tag',
         ], env=env)
 
     @mock.patch('subprocess.Popen')
