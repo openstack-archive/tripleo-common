@@ -10,6 +10,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-cinder-backup:latest
 - imagename: tripleoupstream/centos-binary-cinder-scheduler:latest
 - imagename: tripleoupstream/centos-binary-cinder-volume:latest
+- imagename: tripleoupstream/centos-binary-collectd:latest
 - imagename: tripleoupstream/centos-binary-congress-api:latest
 - imagename: tripleoupstream/centos-binary-etcd:latest
 - imagename: tripleoupstream/centos-binary-glance-api:latest
