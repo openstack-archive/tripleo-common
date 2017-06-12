@@ -160,8 +160,13 @@ class AnsibleAction(actions.Action):
             command.extend(['--private-key', self.ssh_private_key])
 
         try:
+            env_variables = {
+                'HOME': self.work_dir
+            }
             stderr, stdout = processutils.execute(
-                *command, log_errors=processutils.LogErrors.ALL)
+                *command, cwd=self.work_dir,
+                env_variables=env_variables,
+                log_errors=processutils.LogErrors.ALL)
             return {"stderr": stderr, "stdout": stdout}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.
@@ -324,8 +329,13 @@ class AnsiblePlaybookAction(actions.Action):
             command.extend(['--private-key', self.ssh_private_key])
 
         try:
+            env_variables = {
+                'HOME': self.work_dir
+            }
             stderr, stdout = processutils.execute(
-                *command, log_errors=processutils.LogErrors.ALL)
+                *command, cwd=self.work_dir,
+                env_variables=env_variables,
+                log_errors=processutils.LogErrors.ALL)
             return {"stderr": stderr, "stdout": stdout}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.

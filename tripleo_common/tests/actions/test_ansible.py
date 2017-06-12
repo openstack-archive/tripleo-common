@@ -45,10 +45,15 @@ class AnsibleActionTest(base.TestCase):
             become=self.become, become_user=self.become_user)
         action.run(self.ctx)
 
+        env = {
+            'HOME': action.work_dir
+        }
+
         mock_execute.assert_called_once_with(
             'ansible', self.hosts, '-vvvvv', '--module-name',
             self.module, '--user', self.remote_user, '--become',
             '--become-user', self.become_user,
+            env_variables=env, cwd=action.work_dir,
             log_errors=processutils.LogErrors.ALL
         )
 
@@ -81,8 +86,13 @@ class AnsiblePlaybookActionTest(base.TestCase):
 
         pb = os.path.join(action.work_dir, 'playbook.yaml')
 
+        env = {
+            'HOME': action.work_dir
+        }
+
         mock_execute.assert_called_once_with(
             'ansible-playbook', '-v', pb, '--user',
             self.remote_user, '--become', '--become-user', self.become_user,
             '--extra-vars', json.dumps(self.extra_vars),
+            env_variables=env, cwd=action.work_dir,
             log_errors=processutils.LogErrors.ALL)
