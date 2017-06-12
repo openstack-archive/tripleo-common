@@ -17,7 +17,6 @@ disk_images:
          packages:
            - java-1.8.0-openjdk
            - ntp
-           - ntpd
            - opendaylight
            - python-heat-agent-puppet
            - python-heat-agent-hiera
