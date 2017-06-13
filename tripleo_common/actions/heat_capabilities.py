@@ -17,9 +17,11 @@ import logging
 import yaml
 
 from mistral.workflow import utils as mistral_workflow_utils
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
+from tripleo_common.utils import plan as plan_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -40,8 +42,8 @@ class GetCapabilitiesAction(base.TripleOAction):
 
     def run(self, context):
         try:
-            swift_client = self.get_object_client(context)
-            map_file = swift_client.get_object(
+            swift = self.get_object_client(context)
+            map_file = swift.get_object(
                 self.container, 'capabilities-map.yaml')
             capabilities = yaml.safe_load(map_file[1])
         except Exception:
@@ -50,24 +52,23 @@ class GetCapabilitiesAction(base.TripleOAction):
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(error=err_msg)
         try:
-            container_files = swift_client.get_container(self.container)
+            container_files = swift.get_container(self.container)
             container_file_list = [entry['name'] for entry
                                    in container_files[1]]
         except Exception as swift_err:
             err_msg = ("Error retrieving plan files: %s" % swift_err)
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(error=err_msg)
+
         try:
-            mistral_client = self.get_workflow_client(context)
-            mistral_env = mistral_client.environments.get(self.container)
-        except Exception as mistral_err:
-            err_msg = ("Error retrieving mistral "
-                       "environment. %s" % mistral_err)
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(error=err_msg)
 
-        selected_envs = [item['path'] for item in
-                         mistral_env.variables['environments']
+        selected_envs = [item['path'] for item in env['environments']
                          if 'path' in item]
 
         # extract environment files
@@ -138,20 +139,20 @@ class GetCapabilitiesAction(base.TripleOAction):
 
 
 class UpdateCapabilitiesAction(base.TripleOAction):
-    """Updates Mistral Environment with selected environments
+    """Updates plan environment with selected environments
 
     Takes a list of environment files and depending on the value of the
-    enabled flag, adds or removes them from the Mistral Environment.
+    enabled flag, adds or removes them from the plan environment.
 
     :param environments: map of environments {'environment_path': True}
                          the value passed can be false for disabled
                          environments, these will be removed from the
-                         mistral environment.
+                         plan environment.
     :param container: name of the swift container / plan name
-    :param purge_missing: remove any environments from the mistral environment
+    :param purge_missing: remove any environments from the plan environment
                           that aren't included in the environments map
                           defaults to False
-    :return: the updated mistral environment
+    :return: the updated plan environment
     """
 
     def __init__(self, environments,
@@ -163,46 +164,39 @@ class UpdateCapabilitiesAction(base.TripleOAction):
         self.purge_missing = purge_missing
 
     def run(self, context):
-        mistral_client = self.get_workflow_client(context)
-        mistral_env = None
+        swift = self.get_object_client(context)
+
         try:
-            mistral_env = mistral_client.environments.get(self.container)
-        except Exception as mistral_err:
-            err_msg = (
-                "Error retrieving mistral "
-                "environment. %s" % mistral_err)
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(error=err_msg)
 
         for k, v in self.environments.items():
             found = False
-            if {'path': k} in mistral_env.variables['environments']:
+            if {'path': k} in env['environments']:
                 found = True
             if v:
                 if not found:
-                    mistral_env.variables['environments'].append(
-                        {'path': k}
-                    )
+                    env['environments'].append({'path': k})
             else:
                 if found:
-                    mistral_env.variables['environments'].remove({'path': k})
+                    env['environments'].remove({'path': k})
 
         if self.purge_missing:
-            for env in mistral_env.variables['environments']:
-                if env.get('path') not in self.environments:
-                    mistral_env.variables['environments'].remove(env)
+            for e in env['environments']:
+                if e.get('path') not in self.environments:
+                    env['environments'].remove(e)
 
         self.cache_delete(context, self.container, "tripleo.parameters.get")
 
-        env_kwargs = {
-            'name': mistral_env.name,
-            'variables': mistral_env.variables
-        }
         try:
-            mistral_client.environments.update(**env_kwargs)
-        except Exception as mistral_err:
-            err_msg = (
-                "Error retrieving mistral environment. %s" % mistral_err)
+            plan_utils.put_env(swift, env)
+        except swiftexceptions.ClientException as err:
+            err_msg = "Error uploading to container: %s" % err
             LOG.exception(err_msg)
             return mistral_workflow_utils.Result(error=err_msg)
-        return mistral_env.variables
+
+        return env

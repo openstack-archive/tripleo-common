@@ -31,6 +31,7 @@ import uuid
 
 from heatclient import exc as heat_exc
 from mistral.workflow import utils as mistral_workflow_utils
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
@@ -39,6 +40,7 @@ from tripleo_common import exception
 from tripleo_common.utils import nodes
 from tripleo_common.utils import parameters
 from tripleo_common.utils import passwords as password_utils
+from tripleo_common.utils import plan as plan_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -65,11 +67,18 @@ class GetParametersAction(templates.ProcessTemplatesAction):
         processed_data['show_nested'] = True
 
         # respect previously user set param values
-        wc = self.get_workflow_client(context)
-        wf_env = wc.environments.get(self.container)
-        orc = self.get_orchestration_client(context)
+        swift = self.get_object_client(context)
+        heat = self.get_orchestration_client(context)
 
-        params = wf_env.variables.get('parameter_defaults')
+        try:
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
+        params = env.get('parameter_defaults')
 
         fields = {
             'template': processed_data['template'],
@@ -77,9 +86,10 @@ class GetParametersAction(templates.ProcessTemplatesAction):
             'environment': processed_data['environment'],
             'show_nested': True
         }
+
         result = {
-            'heat_resource_tree': orc.stacks.validate(**fields),
-            'mistral_environment_parameters': params,
+            'heat_resource_tree': heat.stacks.validate(**fields),
+            'environment_parameters': params,
         }
         self.cache_set(context,
                        self.container,
@@ -96,25 +106,33 @@ class ResetParametersAction(base.TripleOAction):
         self.container = container
 
     def run(self, context):
-        wc = self.get_workflow_client(context)
-        wf_env = wc.environments.get(self.container)
+        swift = self.get_object_client(context)
 
-        if 'parameter_defaults' in wf_env.variables:
-            wf_env.variables.pop('parameter_defaults')
+        try:
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
 
-        env_kwargs = {
-            'name': wf_env.name,
-            'variables': wf_env.variables
-        }
-        wc.environments.update(**env_kwargs)
+        try:
+            plan_utils.update_in_env(swift, env, 'parameter_defaults',
+                                     delete_key=True)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error updating environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
         self.cache_delete(context,
                           self.container,
                           "tripleo.parameters.get")
-        return wf_env
+        return env
 
 
 class UpdateParametersAction(base.TripleOAction):
-    """Updates Mistral Environment with parameters."""
+    """Updates plan environment with parameters."""
 
     def __init__(self, parameters,
                  container=constants.DEFAULT_CONTAINER_NAME):
@@ -123,24 +141,33 @@ class UpdateParametersAction(base.TripleOAction):
         self.parameters = parameters
 
     def run(self, context):
-        wc = self.get_workflow_client(context)
-        wf_env = wc.environments.get(self.container)
-        if 'parameter_defaults' not in wf_env.variables:
-            wf_env.variables['parameter_defaults'] = {}
-        wf_env.variables['parameter_defaults'].update(self.parameters)
-        env_kwargs = {
-            'name': wf_env.name,
-            'variables': wf_env.variables
-        }
-        wc.environments.update(**env_kwargs)
+        swift = self.get_object_client(context)
+
+        try:
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
+        try:
+            plan_utils.update_in_env(swift, env, 'parameter_defaults',
+                                     self.parameters)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error updating environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
         self.cache_delete(context,
                           self.container,
                           "tripleo.parameters.get")
-        return wf_env
+        return env
 
 
 class UpdateRoleParametersAction(UpdateParametersAction):
-    """Updates role related parameters in Mistral Environment ."""
+    """Updates role related parameters in plan environment ."""
 
     def __init__(self, role, container=constants.DEFAULT_CONTAINER_NAME):
         super(UpdateRoleParametersAction, self).__init__(parameters=None,
@@ -159,8 +186,8 @@ class GeneratePasswordsAction(base.TripleOAction):
     """Generates passwords needed for Overcloud deployment
 
     This method generates passwords and ensures they are stored in the
-    mistral environment associated with a plan.  This method respects
-    previously generated passwords and adds new passwords as necessary.
+    plan environment. This method respects previously generated passwords and
+    adds new passwords as necessary.
     """
 
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
@@ -168,45 +195,47 @@ class GeneratePasswordsAction(base.TripleOAction):
         self.container = container
 
     def run(self, context):
-
-        orchestration = self.get_orchestration_client(context)
-        wc = self.get_workflow_client(context)
-        try:
-            wf_env = wc.environments.get(self.container)
-        except Exception:
-            msg = "Error retrieving mistral environment: %s" % self.container
-            LOG.exception(msg)
-            return mistral_workflow_utils.Result(error=msg)
+        heat = self.get_orchestration_client(context)
+        swift = self.get_object_client(context)
+        mistral = self.get_workflow_client(context)
 
         try:
-            stack_env = orchestration.stacks.environment(
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
+        try:
+            stack_env = heat.stacks.environment(
                 stack_id=self.container)
         except heat_exc.HTTPNotFound:
             stack_env = None
 
-        passwords = password_utils.generate_passwords(wc, stack_env)
+        passwords = password_utils.generate_passwords(mistral, stack_env)
 
-        # if passwords don't yet exist in mistral environment
-        if 'passwords' not in wf_env.variables:
-            wf_env.variables['passwords'] = {}
+        # if passwords don't yet exist in plan environment
+        if 'passwords' not in env:
+            env['passwords'] = {}
 
-        # ensure all generated passwords are present in mistral env,
+        # ensure all generated passwords are present in plan env,
         # but respect any values previously generated and stored
         for name, password in passwords.items():
-            if name not in wf_env.variables['passwords']:
-                wf_env.variables['passwords'][name] = password
+            if name not in env['passwords']:
+                env['passwords'][name] = password
 
-        env_kwargs = {
-            'name': wf_env.name,
-            'variables': wf_env.variables,
-        }
+        try:
+            plan_utils.put_env(swift, env)
+        except swiftexceptions.ClientException as err:
+            err_msg = "Error uploading to container: %s" % err
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
 
-        wc.environments.update(**env_kwargs)
         self.cache_delete(context,
                           self.container,
                           "tripleo.parameters.get")
-
-        return wf_env.variables['passwords']
+        return env['passwords']
 
 
 class GetPasswordsAction(base.TripleOAction):
@@ -222,16 +251,18 @@ class GetPasswordsAction(base.TripleOAction):
         self.container = container
 
     def run(self, context):
-        wc = self.get_workflow_client(context)
-        try:
-            wf_env = wc.environments.get(self.container)
-        except Exception:
-            msg = "Error retrieving mistral environment: %s" % self.container
-            LOG.exception(msg)
-            return mistral_workflow_utils.Result(error=msg)
+        swift = self.get_object_client(context)
 
-        parameter_defaults = wf_env.variables.get('parameter_defaults', {})
-        passwords = wf_env.variables.get('passwords', {})
+        try:
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
+        parameter_defaults = env.get('parameter_defaults', {})
+        passwords = env.get('passwords', {})
         for name in constants.PASSWORD_PARAMETER_NAMES:
             if name in parameter_defaults:
                 passwords[name] = parameter_defaults[name]

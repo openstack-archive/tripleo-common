@@ -12,40 +12,19 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import json
 import mock
 
 from heatclient import exc as heatexceptions
 from mistral.workflow import utils as mistral_workflow_utils
-from mistralclient.api import base as mistral_base
 from oslo_concurrency import processutils
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import plan
-from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.tests import base
 
-JSON_CONTENTS = json.dumps({
-    "environments": [{
-        "path": "overcloud-resource-registry-puppet.yaml"
-    }, {
-        "path": "environments/services/sahara.yaml"
-    }],
-    "parameter_defaults": {
-        "BlockStorageCount": 42,
-        "OvercloudControlFlavor": "yummy"
-    },
-    "passwords": {
-        "AdminPassword": "aaaa",
-        "ZaqarPassword": "zzzz"
-    },
-    "template": "overcloud.yaml",
-    "version": 1.0
-}, sort_keys=True)
 
-
-YAML_CONTENTS = """
+ENV_YAML_CONTENTS = """
 version: 1.0
 
 template: overcloud.yaml
@@ -58,13 +37,6 @@ parameter_defaults:
 passwords:
   AdminPassword: aaaa
   ZaqarPassword: zzzz
-"""
-
-YAML_CONTENTS_INVALID = "{bad_yaml"
-
-# `environments` is missing
-YAML_CONTENTS_MISSING_KEY = """
-template: overcloud.yaml
 """
 
 RESOURCES_YAML_CONTENTS = """heat_template_version: 2016-04-08
@@ -160,197 +132,6 @@ class CreateContainerActionTest(base.TestCase):
             None, error_str))
 
 
-class CreatePlanActionTest(base.TestCase):
-
-    def setUp(self):
-        super(CreatePlanActionTest, self).setUp()
-        # A container that name enforces all validation rules
-        self.container_name = 'Test-container-3'
-        self.plan_environment_name = constants.PLAN_ENVIRONMENT
-
-        # setup swift
-        self.swift = mock.MagicMock()
-        self.swift.get_object.return_value = ({}, YAML_CONTENTS)
-        swift_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction.get_object_client',
-            return_value=self.swift)
-        swift_patcher.start()
-        self.addCleanup(swift_patcher.stop)
-
-        # setup mistral
-        self.mistral = mock.MagicMock()
-        self.mistral.environments.get.side_effect = mistral_base.APIException
-        mistral_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction.get_workflow_client',
-            return_value=self.mistral)
-        mistral_patcher.start()
-        self.addCleanup(mistral_patcher.stop)
-        self.ctx = mock.MagicMock()
-
-    def test_run_success(self):
-        action = plan.CreatePlanAction(self.container_name)
-        action.run(self.ctx)
-
-        self.swift.get_object.assert_called_once_with(
-            self.container_name,
-            self.plan_environment_name
-        )
-
-        self.swift.delete_object.assert_called_once()
-
-        self.mistral.environments.create.assert_called_once_with(
-            name='Test-container-3',
-            variables=JSON_CONTENTS
-        )
-
-    def test_run_invalid_plan_name(self):
-        action = plan.CreatePlanAction("invalid_underscore")
-        result = action.run(self.ctx)
-
-        error_str = ("Unable to create plan. The plan name must only contain "
-                     "letters, numbers or dashes")
-        # don't bother checking the exact error (python versions different)
-        self.assertEqual(result.error.split(':')[0], error_str)
-
-    def test_run_mistral_env_already_exists(self):
-        self.mistral.environments.get.side_effect = None
-        self.mistral.environments.get.return_value = 'test-env'
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = ("Unable to create plan. The Mistral environment already "
-                     "exists")
-        self.assertEqual(result.error, error_str)
-        self.mistral.environments.create.assert_not_called()
-
-    def test_run_missing_file(self):
-        self.swift.get_object.side_effect = swiftexceptions.ClientException(
-            self.plan_environment_name)
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = ('File missing from container: %s' %
-                     self.plan_environment_name)
-        self.assertEqual(result.error, error_str)
-
-    def test_run_invalid_yaml(self):
-        self.swift.get_object.return_value = ({}, YAML_CONTENTS_INVALID)
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = 'Error parsing the yaml file'
-        self.assertEqual(result.error.split(':')[0], error_str)
-
-    def test_run_missing_key(self):
-        self.swift.get_object.return_value = ({}, YAML_CONTENTS_MISSING_KEY)
-
-        action = plan.CreatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = ("%s missing key: environments" %
-                     self.plan_environment_name)
-        self.assertEqual(result.error, error_str)
-
-
-class UpdatePlanActionTest(base.TestCase):
-
-    def setUp(self):
-        super(UpdatePlanActionTest, self).setUp()
-        self.container_name = 'Test-container-3'
-        self.plan_environment_name = constants.PLAN_ENVIRONMENT
-
-        # setup swift
-        self.swift = mock.MagicMock()
-        self.swift.get_object.return_value = ({}, YAML_CONTENTS)
-        swift_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction.get_object_client',
-            return_value=self.swift)
-        swift_patcher.start()
-        self.addCleanup(swift_patcher.stop)
-
-        # setup mistral
-        self.mistral = mock.MagicMock()
-        mistral_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction.get_workflow_client',
-            return_value=self.mistral)
-        mistral_patcher.start()
-        self.addCleanup(mistral_patcher.stop)
-        self.ctx = mock.MagicMock()
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.cache_delete')
-    def test_run_success(self, mock_cache):
-        action = plan.UpdatePlanAction(self.container_name)
-        action.run(self.ctx)
-
-        self.swift.get_object.assert_called_once_with(
-            self.container_name,
-            self.plan_environment_name
-        )
-
-        self.swift.delete_object.assert_called_once()
-        mock_cache.assert_called_once_with(
-            self.ctx,
-            "Test-container-3",
-            "tripleo.parameters.get"
-        )
-
-        self.mistral.environments.update.assert_called_once_with(
-            name='Test-container-3',
-            variables=JSON_CONTENTS
-        )
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.cache_delete')
-    def test_run_mistral_env_missing(self, mock_cache):
-        self.mistral.environments.update.side_effect = (
-            mistral_base.APIException)
-
-        action = plan.UpdatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = ("Error updating mistral environment: %s" %
-                     self.container_name)
-        self.assertEqual(result.error, error_str)
-        self.swift.delete_object.assert_not_called()
-        mock_cache.assert_called_once_with(
-            self.ctx,
-            "Test-container-3",
-            "tripleo.parameters.get"
-        )
-
-    def test_run_missing_file(self):
-        self.swift.get_object.side_effect = swiftexceptions.ClientException(
-            self.plan_environment_name)
-
-        action = plan.UpdatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = ('File missing from container: %s' %
-                     self.plan_environment_name)
-        self.assertEqual(result.error, error_str)
-
-    def test_run_invalid_yaml(self):
-        self.swift.get_object.return_value = ({}, YAML_CONTENTS_INVALID)
-
-        action = plan.UpdatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = 'Error parsing the yaml file'
-        self.assertEqual(result.error.split(':')[0], error_str)
-
-    def test_run_missing_key(self):
-        self.swift.get_object.return_value = ({}, YAML_CONTENTS_MISSING_KEY)
-
-        action = plan.UpdatePlanAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = ("%s missing key: environments" %
-                     self.plan_environment_name)
-        self.assertEqual(result.error, error_str)
-
-
 class ListPlansActionTest(base.TestCase):
 
     def setUp(self):
@@ -359,9 +140,7 @@ class ListPlansActionTest(base.TestCase):
         self.ctx = mock.MagicMock()
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run(self, get_workflow_client_mock, get_obj_client_mock):
+    def test_run(self, get_obj_client_mock):
 
         # setup swift
         swift = mock.MagicMock()
@@ -376,13 +155,6 @@ class ListPlansActionTest(base.TestCase):
             'x-container-meta-usage-tripleo': 'plan',
         }, [])
         get_obj_client_mock.return_value = swift
-
-        # setup mistral
-        mistral = mock.MagicMock()
-        env_item = mock.Mock()
-        env_item.name = self.container
-        mistral.environments.list.return_value = [env_item]
-        get_workflow_client_mock.return_value = mistral
 
         # Test
         action = plan.ListPlansAction()
@@ -423,10 +195,7 @@ class DeletePlanActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_workflow_client')
-    def test_run(self, get_workflow_client_mock, get_orchestration_client,
-                 get_obj_client_mock):
+    def test_run(self, get_orchestration_client, get_obj_client_mock):
 
         # setup swift
         swift = mock.MagicMock()
@@ -444,15 +213,6 @@ class DeletePlanActionTest(base.TestCase):
         )
 
         get_obj_client_mock.return_value = swift
-
-        # setup mistral
-        mistral = mock.MagicMock()
-        mistral_environment = mock.Mock()
-        mistral_environment.name = self.container_name
-        mistral.environments.list.return_value = [
-            mistral_environment,
-        ]
-        get_workflow_client_mock.return_value = mistral
 
         # setup heat
         heat = mock.MagicMock()
@@ -474,8 +234,6 @@ class DeletePlanActionTest(base.TestCase):
 
         swift.delete_container.assert_called_with(self.container_name)
 
-        mistral.environments.delete.assert_called_with(self.container_name)
-
 
 class RoleListActionTest(base.TestCase):
 
@@ -486,7 +244,6 @@ class RoleListActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run(self, get_obj_client_mock):
-
         # setup swift
         swift = mock.MagicMock()
         swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
@@ -542,21 +299,6 @@ class ExportPlanActionTest(base.TestCase):
         swift_patcher.start()
         self.addCleanup(swift_patcher.stop)
 
-        # setup mistral
-        self.mistral = mock.MagicMock()
-        env_item = mock.Mock()
-        env_item.variables = {
-            'template': 'overcloud.yaml',
-            'environments': [
-                {'path': 'overcloud-resource-registry-puppet.yaml'}
-            ]
-        }
-        self.mistral.environments.get.return_value = env_item
-        mistral_patcher = mock.patch(
-            'tripleo_common.actions.base.TripleOAction.get_workflow_client',
-            return_value=self.mistral)
-        mistral_patcher.start()
-        self.addCleanup(mistral_patcher.stop)
         self.ctx = mock.MagicMock()
 
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
@@ -578,7 +320,6 @@ class ExportPlanActionTest(base.TestCase):
         self.swift.get_container.assert_has_calls(get_container_mock_calls)
         self.swift.get_object.assert_has_calls(
             get_object_mock_calls, any_order=True)
-        self.mistral.environments.get.assert_called_once_with(self.plan)
         self.swift.put_object.assert_called_once()
         mock_create_tarball.assert_called_once()
 
@@ -592,16 +333,6 @@ class ExportPlanActionTest(base.TestCase):
 
         error = "Error attempting an operation on container: %s" % self.plan
         self.assertIn(error, result.error)
-
-    def test_run_environment_does_not_exist(self):
-        self.mistral.environments.get.side_effect = mistral_base.APIException
-
-        action = plan.ExportPlanAction(self.plan, self.delete_after,
-                                       self.exports_container)
-        result = action.run(self.ctx)
-
-        error = "The Mistral environment %s could not be found." % self.plan
-        self.assertEqual(error, result.error)
 
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
     def test_run_error_creating_tarball(self, mock_create_tarball):

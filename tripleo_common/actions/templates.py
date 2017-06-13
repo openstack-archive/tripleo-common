@@ -27,6 +27,7 @@ from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
+from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import tarball
 
 LOG = logging.getLogger(__name__)
@@ -240,14 +241,14 @@ class ProcessTemplatesAction(base.TripleOAction):
         error_text = None
         self.context = context
         swift = self.get_object_client(context)
-        mistral = self.get_workflow_client(context)
+
         try:
-            mistral_environment = mistral.environments.get(self.container)
-        except Exception as mistral_err:
-            error_text = six.text_type(mistral_err)
-            LOG.exception(
-                "Error retrieving Mistral Environment: %s" % self.container)
-            return mistral_workflow_utils.Result(error=error_text)
+            plan_env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
 
         try:
             # if the jinja overcloud template exists, process it and write it
@@ -261,8 +262,8 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.exception("Error occurred while processing custom roles.")
             return mistral_workflow_utils.Result(error=six.text_type(err))
 
-        template_name = mistral_environment.variables.get('template')
-        environments = mistral_environment.variables.get('environments')
+        template_name = plan_env.get('template')
+        environments = plan_env.get('environments')
         env_paths = []
         temp_files = []
 
@@ -285,12 +286,11 @@ class ProcessTemplatesAction(base.TripleOAction):
             # them in the appropriate order
             merged_params = {}
             # merge generated passwords into params first
-            passwords = mistral_environment.variables.get('passwords', {})
+            passwords = plan_env.get('passwords', {})
             merged_params.update(passwords)
             # handle user set parameter values next in case a user has set
             # a new value for a password parameter
-            params = mistral_environment.variables.get(
-                'parameter_defaults', {})
+            params = plan_env.get('parameter_defaults', {})
             merged_params.update(params)
             if merged_params:
                 env_temp_file = _create_temp_file(

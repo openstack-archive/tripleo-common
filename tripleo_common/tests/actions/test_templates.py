@@ -14,6 +14,7 @@
 # under the License.
 import jinja2
 import mock
+import yaml
 
 from swiftclient import exceptions as swiftexceptions
 
@@ -188,28 +189,23 @@ class ProcessTemplatesActionTest(base.TestCase):
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run(self, mock_get_object_client,
-                 mock_get_workflow_client, mock_get_template_contents,
+                 mock_get_template_contents,
                  mock_process_multiple_environments_and_files):
 
         mock_ctx = mock.MagicMock()
         swift = mock.MagicMock(url="http://test.com")
-        swift.get_object.side_effect = swiftexceptions.ClientException(
-            'atest2')
-        mock_get_object_client.return_value = swift
-
-        mock_mistral = mock.MagicMock()
-        mock_env = mock.MagicMock()
-        mock_env.variables = {
+        mock_env = yaml.safe_dump({
             'temp_environment': 'temp_environment',
             'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-        }
-        mock_mistral.environments.get.return_value = mock_env
-        mock_get_workflow_client.return_value = mock_mistral
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
+        mock_get_object_client.return_value = swift
 
         mock_get_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
