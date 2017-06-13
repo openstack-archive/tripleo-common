@@ -89,10 +89,9 @@ parameter_defaults:
 EOF_CAT
 }
 
-# create the container (doing it more than once won't hurt...)
-swift post "$CONTAINER_NAME"
-
-SWIFT_ACCOUNT=$(swift stat "$CONTAINER_NAME" 2>/dev/null | grep Account: | sed -e "s|.*Account..||")
+# create the container (doing it more than once won't hurt...) and grab the
+# account
+SWIFT_ACCOUNT=$(openstack container create $CONTAINER_NAME -f value -c account)
 
 # This works with newer openstackclient which displays the endpoints in list
 SWIFT_INTERNAL_URL=$(openstack endpoint list | grep swift | grep internal | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|" || true)
@@ -104,12 +103,13 @@ fi
 
 # Does the Temp-URL-Key exist on this container?
 # If not set it...
-if ! swift stat $CONTAINER_NAME | grep "Meta Temp-Url-Key" &>/dev/null; then
+KEY_SET=$(openstack container show $CONTAINER_NAME -c properties -f value 2>/dev/null | tr ',' '\n' | grep Temp-Url-Key || true)
+if [ -z $KEY_SET ]; then
   echo "Creating new Swift Temp-URL-Key for container: $CONTAINER_NAME"
   SWIFT_TEMP_URL_KEY=$(uuidgen | sha1sum | awk '{print $1}')
-  swift post "$CONTAINER_NAME" -m "Temp-URL-Key:$SWIFT_TEMP_URL_KEY"
+  openstack container set --property "Temp-URL-Key=$SWIFT_TEMP_URL_KEY" "${CONTAINER_NAME}"
 else
-  SWIFT_TEMP_URL_KEY=$(swift stat $CONTAINER_NAME 2>/dev/null | grep "Meta Temp-Url-Key" | sed -e "s|.*Meta Temp-Url-Key..||")
+  SWIFT_TEMP_URL_KEY=$(echo -n $KEY_SET | sed -rn "s/[[:space:]]*Temp-Url-Key='([[:alnum:]]+)'.*/\1/p")
 fi
 
 if [ -n "${ENVIRONMENT_FILE:-}" ]; then
@@ -119,16 +119,26 @@ else
   echo "No environment file specified... skipping creation of Heat environment."
 fi
 
+function get_tempurl {
+  # https://docs.openstack.org/developer/swift/api/temporary_url_middleware.html#hmac-sha1-signature-for-temporary-urls
+  local FILE="$1"
+  local SWIFT_METHOD='GET'
+  local SWIFT_PATH="/v1/${SWIFT_ACCOUNT}/${CONTAINER_NAME}/$(basename $FILE)"
+  local SWIFT_EXPIRES=$(( $(date '+%s') + $SECONDS ))
+  local SWIFT_SIG=$(printf '%s\n%s\n%s' $SWIFT_METHOD $SWIFT_EXPIRES $SWIFT_PATH | openssl sha1 -hmac $SWIFT_TEMP_URL_KEY | sed 's/^.* //')
+  echo -n "${SWIFT_PATH}?temp_url_sig=${SWIFT_SIG}&temp_url_expires=${SWIFT_EXPIRES}"
+}
+
 function upload_file {
 
   local FILE="$1"
   echo "Uploading file to swift: $1"
   pushd $(dirname $FILE) &>/dev/null
-  swift upload "$CONTAINER_NAME" $(basename $FILE)
+  openstack object create "$CONTAINER_NAME" $(basename $FILE)
   popd &>/dev/null
   echo "Upload complete."
 
-  local URL=$(swift tempurl GET "$SECONDS" "/v1/${SWIFT_ACCOUNT}/${CONTAINER_NAME}/$(basename $FILE)" "$SWIFT_TEMP_URL_KEY")
+  local URL=$(get_tempurl "$FILE")
   echo "    - '${SWIFT_INTERNAL_URL}$URL'" >> $ENVIRONMENT_FILE
 
 }
