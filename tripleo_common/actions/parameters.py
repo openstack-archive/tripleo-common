@@ -35,6 +35,7 @@ from mistral.workflow import utils as mistral_workflow_utils
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
+from tripleo_common import exception
 from tripleo_common.utils import nodes
 from tripleo_common.utils import parameters
 from tripleo_common.utils import passwords as password_utils
@@ -396,3 +397,29 @@ class GetFlattenedParametersAction(GetParametersAction):
             processed_data['heat_resource_tree'] = flattened
 
         return processed_data
+
+
+class GetProfileOfFlavorAction(base.TripleOAction):
+    """Gets the profile name for a given flavor name.
+
+    Need flavor object to get profile name since get_keys method is
+    not available for external access. so we have created an action
+    to get profile name from flavor name.
+
+    :param flavor_name: Flavor name
+
+    :return: profile name
+    """
+
+    def __init__(self, flavor_name):
+        super(GetProfileOfFlavorAction, self).__init__()
+        self.flavor_name = flavor_name
+
+    def run(self, context):
+        compute_client = self.get_compute_client(context)
+        try:
+            return parameters.get_profile_of_flavor(self.flavor_name,
+                                                    compute_client)
+        except exception.DeriveParamsError as err:
+            LOG.error('Derive Params Error: %s', err)
+            return mistral_workflow_utils.Result(error=str(err))

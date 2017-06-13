@@ -13,6 +13,7 @@
 
 import mock
 
+from tripleo_common import exception
 from tripleo_common.tests import base
 from tripleo_common.utils import parameters
 
@@ -121,3 +122,68 @@ class ParametersTest(base.TestCase):
         # the 'compute' flavor.
         self.assertEqual(parameters.get_flavor('compute', compute_client),
                          'compute')
+
+    def test_profile_flavor_found(self):
+        compute_client = mock.MagicMock()
+
+        # Mock for a compute_client.flavors.find result item
+        flavor = mock.MagicMock()
+        flavor.id = 1
+        flavor.name = 'oooq_compute'
+
+        # Mock result of <flavor instance>.get_keys()
+        flavor_keys = mock.MagicMock()
+        flavor_keys.get.side_effect = ('compute', )
+
+        # Connecting the mock instances...
+        flavor.get_keys.side_effect = (flavor_keys, )
+        compute_client.flavors.find.side_effect = (flavor, )
+
+        # Calling `get_profile_of_flavor` with a 'oooq_compute' flavor
+        # should return profile 'compute'.
+        profile = parameters.get_profile_of_flavor('oooq_compute',
+                                                   compute_client)
+        self.assertEqual(profile, 'compute')
+
+    def test_profile_flavor_not_found_exception(self):
+        compute_client = mock.MagicMock()
+        flavor = (Exception, )
+        compute_client.flavors.find.side_effect = flavor
+
+        # Calling `get_profile_of_flavor` with a 'oooq_compute' flavor
+        # should raises DeriveParamsError exception
+        self.assertRaises(exception.DeriveParamsError,
+                          parameters.get_profile_of_flavor,
+                          'oooq_compute', compute_client)
+
+    def test_profile_flavor_not_found(self):
+        compute_client = mock.MagicMock()
+        compute_client.flavors.find.return_value = None
+
+        # Calling `get_profile_of_flavor` with a 'oooq_compute' flavor
+        # should raises DeriveParamsError exception
+        self.assertRaises(exception.DeriveParamsError,
+                          parameters.get_profile_of_flavor,
+                          'oooq_compute', compute_client)
+
+    def test_profile_not_found_flavor_found(self):
+        compute_client = mock.MagicMock()
+
+        # Mock for a compute_client.flavors.find result item
+        flavor = mock.MagicMock()
+        flavor.id = 1
+        flavor.name = 'oooq_compute'
+
+        # Mock result of <flavor instance>.get_keys()
+        flavor_keys = mock.MagicMock()
+        flavor_keys.get.side_effect = (exception.DeriveParamsError, )
+
+        # Connecting the mock instances...
+        flavor.get_keys.side_effect = (flavor_keys, )
+        compute_client.flavors.find.side_effect = (flavor, )
+
+        # Calling `get_profile_of_flavor` with a 'no_profile' flavor
+        # should raises DeriveParamsError exception
+        self.assertRaises(exception.DeriveParamsError,
+                          parameters.get_profile_of_flavor,
+                          'no_profile', compute_client)
