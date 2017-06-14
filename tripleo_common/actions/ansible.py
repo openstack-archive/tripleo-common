@@ -103,7 +103,7 @@ class AnsibleAction(actions.Action):
             verbosity_option = '-' + ('v' * self.verbosity)
             command = ['ansible', self.hosts, verbosity_option, ]
         else:
-            command = ['ansible-playbook', self.hosts, ]
+            command = ['ansible', self.hosts, ]
 
         if self.module:
             command.extend(['--module-name', self.module])
