@@ -38,6 +38,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-neutron-l3-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-metadata-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:latest
+- imagename: tripleoupstream/centos-binary-neutron-sriov-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-server:latest
 - imagename: tripleoupstream/centos-binary-nova-api:latest
 - imagename: tripleoupstream/centos-binary-nova-base:latest
