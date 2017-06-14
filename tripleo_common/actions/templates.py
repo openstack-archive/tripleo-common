@@ -209,20 +209,30 @@ class ProcessTemplatesAction(base.TripleOAction):
                 LOG.info("jinja2 rendering roles %s" % ","
                          .join(role_names))
                 for role in role_names:
-                    j2_data = {'role': role}
                     LOG.info("jinja2 rendering role %s" % role)
-                    if r_map[role].get('disable_constraints', False):
-                        j2_data['disable_constraints'] = True
                     out_f = "-".join(
                         [role.lower(),
                          os.path.basename(f).replace('.role.j2.yaml',
                                                      '.yaml')])
                     out_f_path = os.path.join(os.path.dirname(f), out_f)
                     if not (out_f_path in excl_templates):
-                        self._j2_render_and_put(j2_template,
-                                                j2_data,
-                                                out_f_path,
-                                                context=context)
+                        if '{{role.name}}' in j2_template:
+                            j2_data = {'role': r_map[role]}
+                            self._j2_render_and_put(j2_template,
+                                                    j2_data,
+                                                    out_f_path,
+                                                    context=context)
+                        else:
+                            # Backwards compatibility with templates
+                            # that specify {{role}} vs {{role.name}}
+                            j2_data = {'role': role}
+                            LOG.debug("role legacy path for role %s" % role)
+                            if r_map[role].get('disable_constraints', False):
+                                j2_data['disable_constraints'] = True
+                            self._j2_render_and_put(j2_template,
+                                                    j2_data,
+                                                    out_f_path,
+                                                    context=context)
                     else:
                         LOG.info("Skipping rendering of %s, defined in %s" %
                                  (out_f_path, j2_excl_data))
