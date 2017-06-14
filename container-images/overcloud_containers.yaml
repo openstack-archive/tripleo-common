@@ -6,6 +6,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-ceilometer-central:latest
 - imagename: tripleoupstream/centos-binary-ceilometer-compute:latest
 - imagename: tripleoupstream/centos-binary-ceilometer-notification:latest
+- imagename: tripleoupstream/centos-binary-ceilometer-ipmi:latest
 - imagename: tripleoupstream/centos-binary-cinder-api:latest
 - imagename: tripleoupstream/centos-binary-cinder-backup:latest
 - imagename: tripleoupstream/centos-binary-cinder-scheduler:latest
