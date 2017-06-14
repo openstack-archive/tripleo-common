@@ -217,7 +217,8 @@ class ProcessTemplatesAction(base.TripleOAction):
                     out_f_path = os.path.join(os.path.dirname(f), out_f)
                     if not (out_f_path in excl_templates):
                         if '{{role.name}}' in j2_template:
-                            j2_data = {'role': r_map[role]}
+                            j2_data = {'role': r_map[role],
+                                       'networks': network_data}
                             self._j2_render_and_put(j2_template,
                                                     j2_data,
                                                     out_f_path,
@@ -225,7 +226,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                         else:
                             # Backwards compatibility with templates
                             # that specify {{role}} vs {{role.name}}
-                            j2_data = {'role': role}
+                            j2_data = {'role': role, 'networks': network_data}
                             LOG.debug("role legacy path for role %s" % role)
                             if r_map[role].get('disable_constraints', False):
                                 j2_data['disable_constraints'] = True
