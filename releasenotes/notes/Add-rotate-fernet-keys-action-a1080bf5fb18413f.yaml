@@ -1,0 +1,8 @@
+---
+features:
+  - In the parameters section of actions, the rotate_fernet_keys action was
+    added. It does a rotation based on the values of the generated passwords
+    or the parameter_defaults given by the user. Note that this merely does
+    the rotation, deletes the excess keys and persists the new value in the plan
+    environment. However, the action doesn't go to the nodes and adds the
+    keys to the actual repository; that's part of a separate workflow.
