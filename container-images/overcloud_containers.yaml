@@ -34,6 +34,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-mistral-api:latest
 - imagename: tripleoupstream/centos-binary-mistral-engine:latest
 - imagename: tripleoupstream/centos-binary-mistral-executor:latest
+- imagename: tripleoupstream/centos-binary-mistral-event-engine:latest
 - imagename: tripleoupstream/centos-binary-mongodb:latest
 - imagename: tripleoupstream/centos-binary-multipathd:latest
 - imagename: tripleoupstream/centos-binary-neutron-dhcp-agent:latest
