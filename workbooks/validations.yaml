@@ -393,6 +393,7 @@ workflows:
         on-success: check_node_boot_configuration
         on-error: failed_get_ironic_nodes
         input:
+          provision_state: available
           maintenance: false
           detail: true
         publish:
@@ -578,6 +579,7 @@ workflows:
         on-success: check_nodes_count
         on-error: fail_get_available_nodes
         input:
+          provision_state: available
           associated: false
           maintenance: false
         publish:
