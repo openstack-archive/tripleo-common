@@ -454,3 +454,67 @@ class GetProfileOfFlavorAction(base.TripleOAction):
         except exception.DeriveParamsError as err:
             LOG.error('Derive Params Error: %s', err)
             return mistral_workflow_utils.Result(error=str(err))
+
+
+class RotateFernetKeysAction(GetPasswordsAction):
+    """Rotate fernet keys from the environment
+
+    This method rotates the fernet keys that are saved in the environment, in
+    the passwords parameter.
+    """
+
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        super(RotateFernetKeysAction, self).__init__()
+        self.container = container
+
+    def run(self, context):
+        swift = self.get_object_client(context)
+
+        try:
+            env = plan_utils.get_env(swift, self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
+        parameter_defaults = env.get('parameter_defaults', {})
+        passwords = env.get('passwords', {})
+        for name in constants.PASSWORD_PARAMETER_NAMES:
+            if name in parameter_defaults:
+                passwords[name] = parameter_defaults[name]
+
+        next_index = self.get_next_index(passwords['KeystoneFernetKeys'])
+        keys_map = self.rotate_keys(passwords['KeystoneFernetKeys'],
+                                    next_index)
+
+        env['passwords']['KeystoneFernetKeys'] = keys_map
+
+        try:
+            plan_utils.put_env(swift, env)
+        except swiftexceptions.ClientException as err:
+            err_msg = "Error uploading to container: %s" % err
+            LOG.exception(err_msg)
+            return mistral_workflow_utils.Result(error=err_msg)
+
+        self.cache_delete(context,
+                          self.container,
+                          "tripleo.parameters.get")
+
+        return keys_map
+
+    def get_next_index(self, keys_map):
+        def get_index(path):
+            return int(path[path.rfind('/') + 1:])
+        return get_index(max(keys_map, key=get_index)) + 1
+
+    def rotate_keys(self, keys_map, next_index):
+        next_index_path = password_utils.KEYSTONE_FERNET_REPO + str(next_index)
+        zero_index_path = password_utils.KEYSTONE_FERNET_REPO + '0'
+
+        # promote staged key to be new primary
+        keys_map[next_index_path] = keys_map[zero_index_path]
+        # Set new staged key
+        keys_map[zero_index_path] = {
+            'content': password_utils.create_keystone_credential()}
+        return keys_map

@@ -27,6 +27,7 @@ from tripleo_common import constants
 
 
 _MIN_PASSWORD_SIZE = 25
+KEYSTONE_FERNET_REPO = '/etc/keystone/fernet-keys/'
 LOG = logging.getLogger(__name__)
 
 
@@ -80,9 +81,9 @@ def generate_passwords(mistralclient=None, stack_env=None):
 
 def create_fernet_keys_repo_structure_and_keys():
     return {
-        '/etc/keystone/fernet-keys/0': {
+        KEYSTONE_FERNET_REPO + '0': {
             'content': create_keystone_credential()},
-        '/etc/keystone/fernet-keys/1': {
+        KEYSTONE_FERNET_REPO + '1': {
             'content': create_keystone_credential()}
     }
 
