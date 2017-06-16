@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Set ``OS_VOLUME_API_VERSION`` and  ``OS_IMAGE_API_VERSION`` in
+    ``overcloudrc`` in order to establish the default API versions for
+    the Volume and Image services. The values match the default major API
+    versions for Cinder (3) and Glance (2).

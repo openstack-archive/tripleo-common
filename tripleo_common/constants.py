@@ -111,6 +111,12 @@ PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
 # 1.29 is the latest API version in Ironic Ocata supported by ironicclient.
 DEFAULT_BAREMETAL_API_VERSION = '1.29'
 
+# The default version of the Image API to set in overcloudrc.
+DEFAULT_IMAGE_API_VERSION = '2'
+
+# The default version of the Volume API to set in overcloudrc.
+DEFAULT_VOLUME_API_VERSION = '3'
+
 # The name of the file which holds the Mistral environment contents for plan
 # import/export
 PLAN_ENVIRONMENT = 'plan-environment.yaml'
