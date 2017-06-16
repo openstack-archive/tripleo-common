@@ -108,6 +108,7 @@ class AnsibleAction(actions.Action):
         # if the inventory generation failed
         with open(path, 'w') as ssh_key:
             ssh_key.write(self._ssh_private_key)
+        os.chmod(path, 0o600)
 
         self._ssh_private_key = path
         return path
@@ -280,6 +281,7 @@ class AnsiblePlaybookAction(actions.Action):
         # if the inventory generation failed
         with open(path, 'w') as ssh_key:
             ssh_key.write(self._ssh_private_key)
+        os.chmod(path, 0o600)
 
         self._ssh_private_key = path
         return path
