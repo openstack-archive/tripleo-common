@@ -45,38 +45,31 @@
 # We'll configure mariadb with galera.cnf
 RUN rm /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
 
-# temporary pacemaker packages with support for bundles
-RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
 {% block rabbitmq_footer %}
-# temporary pacemaker packages with support for bundles
-RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
 {% block redis_footer %}
-# temporary pacemaker packages with support for bundles
-RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
 {% block haproxy_footer %}
-# temporary pacemaker packages with support for bundles
-RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
 {% block cinder_volume_footer %}
-# temporary pacemaker packages with support for bundles
-RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
 {% block cinder_backup_footer %}
-# temporary pacemaker packages with support for bundles
-RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
 {% block manila_share_footer %}
-# temporary pacemaker packages with support for bundles
-RUN yum-config-manager --add-repo http://people.redhat.com/mbaldess/rpms/container-repo/pacemaker-bundle.repo && yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
 # Required for nova migration
