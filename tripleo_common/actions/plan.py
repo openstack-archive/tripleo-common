@@ -255,7 +255,7 @@ class ExportPlanAction(base.TripleOAction):
                              headers=headers)
 
     def run(self, context):
-        swift = self.get_object_client()
+        swift = self.get_object_client(context)
         tmp_dir = tempfile.mkdtemp()
 
         try:

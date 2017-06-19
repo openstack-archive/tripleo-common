@@ -36,7 +36,7 @@ class SwiftInformationAction(base.TripleOAction):
         data = None
         error = None
         try:
-            oc = self.get_object_client()
+            oc = self.get_object_client(context)
             oc.head_container(self.container)
             container_url = "{}/{}".format(oc.url, self.container)
             auth_key = context.auth_token
