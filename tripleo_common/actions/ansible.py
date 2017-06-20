@@ -20,6 +20,7 @@ import tempfile
 
 import yaml
 
+from mistral.workflow import utils as mistral_workflow_utils
 from mistral_lib import actions
 from oslo_concurrency import processutils
 
@@ -56,6 +57,8 @@ class AnsibleAction(actions.Action):
             self.ssh_common_args = json.dumps(self.ssh_common_args)
         self.use_openstack_credentials = self._kwargs_for_run.pop(
             'use_openstack_credentials', False)
+        self.extra_env_variables = self._kwargs_for_run.pop(
+            'extra_env_variables', None)
 
         self._work_dir = None
 
@@ -162,16 +165,26 @@ class AnsibleAction(actions.Action):
         if self.ssh_private_key:
             command.extend(['--private-key', self.ssh_private_key])
 
+        if self.extra_env_variables:
+            if not isinstance(self.extra_env_variables, dict):
+                msg = "extra_env_variables must be a dict"
+                return mistral_workflow_utils.Result(error=msg)
+
         try:
             env_variables = {
                 'HOME': self.work_dir
             }
+
+            if self.extra_env_variables:
+                env_variables.update(self.extra_env_variables)
+
             if self.use_openstack_credentials:
                 env_variables.update({
                     'OS_AUTH_URL': context.auth_uri,
                     'OS_USERNAME': context.user_name,
                     'OS_AUTH_TOKEN': context.auth_token,
                     'OS_PROJECT_NAME': context.project_name})
+
             stderr, stdout = processutils.execute(
                 *command, cwd=self.work_dir,
                 env_variables=env_variables,
@@ -214,6 +227,9 @@ class AnsiblePlaybookAction(actions.Action):
             'use_openstack_credentials', False)
         self.tags = self._kwargs_for_run.pop('tags', None)
         self.skip_tags = self._kwargs_for_run.pop('skip_tags', None)
+        self.extra_env_variables = self._kwargs_for_run.pop(
+            'extra_env_variables', None)
+
         self._work_dir = None
 
     @property
@@ -347,16 +363,26 @@ class AnsiblePlaybookAction(actions.Action):
         if self.skip_tags:
             command.extend(['--skip-tags', self.skip_tags])
 
+        if self.extra_env_variables:
+            if not isinstance(self.extra_env_variables, dict):
+                msg = "extra_env_variables must be a dict"
+                return mistral_workflow_utils.Result(error=msg)
+
         try:
             env_variables = {
                 'HOME': self.work_dir
             }
+
+            if self.extra_env_variables:
+                env_variables.update(self.extra_env_variables)
+
             if self.use_openstack_credentials:
                 env_variables.update({
                     'OS_AUTH_URL': context.auth_uri,
                     'OS_USERNAME': context.user_name,
                     'OS_AUTH_TOKEN': context.auth_token,
                     'OS_PROJECT_NAME': context.project_name})
+
             stderr, stdout = processutils.execute(
                 *command, cwd=self.work_dir,
                 env_variables=env_variables,
