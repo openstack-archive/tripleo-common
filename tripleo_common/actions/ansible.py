@@ -54,6 +54,8 @@ class AnsibleAction(actions.Action):
             'ssh_common_args', None)
         if self.ssh_common_args:
             self.ssh_common_args = json.dumps(self.ssh_common_args)
+        self.use_openstack_credentials = self._kwargs_for_run.pop(
+            'use_openstack_credentials', False)
 
         self._work_dir = None
 
@@ -164,6 +166,12 @@ class AnsibleAction(actions.Action):
             env_variables = {
                 'HOME': self.work_dir
             }
+            if self.use_openstack_credentials:
+                env_variables.update({
+                    'OS_AUTH_URL': context.auth_uri,
+                    'OS_USERNAME': context.user_name,
+                    'OS_AUTH_TOKEN': context.auth_token,
+                    'OS_PROJECT_NAME': context.project_name})
             stderr, stdout = processutils.execute(
                 *command, cwd=self.work_dir,
                 env_variables=env_variables,
@@ -202,6 +210,8 @@ class AnsiblePlaybookAction(actions.Action):
             'ssh_common_args', None)
         if self.ssh_common_args:
             self.ssh_common_args = json.dumps(self.ssh_common_args)
+        self.use_openstack_credentials = self._kwargs_for_run.pop(
+            'use_openstack_credentials', False)
 
         self._work_dir = None
 
@@ -334,6 +344,12 @@ class AnsiblePlaybookAction(actions.Action):
             env_variables = {
                 'HOME': self.work_dir
             }
+            if self.use_openstack_credentials:
+                env_variables.update({
+                    'OS_AUTH_URL': context.auth_uri,
+                    'OS_USERNAME': context.user_name,
+                    'OS_AUTH_TOKEN': context.auth_token,
+                    'OS_PROJECT_NAME': context.project_name})
             stderr, stdout = processutils.execute(
                 *command, cwd=self.work_dir,
                 env_variables=env_variables,
