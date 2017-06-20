@@ -23,16 +23,16 @@ from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import validations as utils
 
 
-class GetPubkeyAction(base.TripleOAction):
+class GetSshKeyAction(base.TripleOAction):
 
     def run(self, context):
         mc = self.get_workflow_client(context)
         try:
             env = mc.environments.get('ssh_keys')
-            public_key = env.variables['public_key']
+            p_key = env.variables[self.key_type]
         except Exception:
             ssh_key = password_utils.create_ssh_keypair()
-            public_key = ssh_key['public_key']
+            p_key = ssh_key[self.key_type]
 
             workflow_env = {
                 'name': 'ssh_keys',
@@ -41,7 +41,17 @@ class GetPubkeyAction(base.TripleOAction):
             }
             mc.environments.create(**workflow_env)
 
-        return public_key
+        return p_key
+
+
+class GetPubkeyAction(GetSshKeyAction):
+
+    key_type = 'public_key'
+
+
+class GetPrivkeyAction(GetSshKeyAction):
+
+    key_type = 'private_key'
 
 
 class Enabled(base.TripleOAction):
