@@ -212,7 +212,8 @@ class AnsiblePlaybookAction(actions.Action):
             self.ssh_common_args = json.dumps(self.ssh_common_args)
         self.use_openstack_credentials = self._kwargs_for_run.pop(
             'use_openstack_credentials', False)
-
+        self.tags = self._kwargs_for_run.pop('tags', None)
+        self.skip_tags = self._kwargs_for_run.pop('skip_tags', None)
         self._work_dir = None
 
     @property
@@ -339,6 +340,12 @@ class AnsiblePlaybookAction(actions.Action):
 
         if self.ssh_private_key:
             command.extend(['--private-key', self.ssh_private_key])
+
+        if self.tags:
+            command.extend(['--tags', self.tags])
+
+        if self.skip_tags:
+            command.extend(['--skip-tags', self.skip_tags])
 
         try:
             env_variables = {
