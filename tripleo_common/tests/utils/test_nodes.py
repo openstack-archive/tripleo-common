@@ -605,7 +605,7 @@ class NodesTest(base.TestCase):
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
             driver='pxe_drac', name='node1', properties=node_properties,
-            driver_info={'drac_password': 'random', 'drac_host': 'foo.bar',
+            driver_info={'drac_password': 'random', 'drac_address': 'foo.bar',
                          'drac_username': 'test', 'drac_port': '6230'})
 
     def test_register_ironic_node_redfish(self):
