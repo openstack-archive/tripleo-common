@@ -105,7 +105,8 @@ class KollaImageBuilder(base.BaseImageManager):
 
         self.logger.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env)
-        process.wait()
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+        out, err = process.communicate()
         if process.returncode != 0:
-            raise subprocess.CalledProcessError(process.returncode, cmd)
+            raise subprocess.CalledProcessError(process.returncode, cmd, err)
+        return out
