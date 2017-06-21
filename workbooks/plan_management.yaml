@@ -388,6 +388,7 @@ workflows:
         publish:
           status: SUCCESS
           message: <% task(create_tempurl).result %>
+          tempurl: <% task(create_tempurl).result %>
 
       export_plan_set_status_failed:
         on-success: notify_zaqar
@@ -412,6 +413,6 @@ workflows:
                 status: <% $.status %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
-                tempurl: <% task(create_tempurl).result %>
+                tempurl: <% $.get('tempurl', '') %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
