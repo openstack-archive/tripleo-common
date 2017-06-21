@@ -110,3 +110,11 @@ class PlanOperationError(Exception):
 
 class DeriveParamsError(Exception):
     """Error while performing a derive parameters operation"""
+
+
+class NotFound(Exception):
+    """Resource not found"""
+
+
+class RoleMetadataError(Exception):
+    """Role metadata is invalid"""
