@@ -103,7 +103,7 @@ class DockerImageUploader(ImageUploader):
         repo = pull_source + '/' + image
 
         response = [line for line in dockerc.pull(repo,
-                    tag=tag, stream=True, insecure_registry=True)]
+                    tag=tag, stream=True)]
         self.logger.debug(response)
 
         full_image = repo + ':' + tag
@@ -113,7 +113,7 @@ class DockerImageUploader(ImageUploader):
         self.logger.debug(response)
 
         response = [line for line in dockerc.push(new_repo,
-                    tag=tag, stream=True, insecure_registry=True)]
+                    tag=tag, stream=True)]
         self.logger.debug(response)
 
         self.logger.info('Completed upload for docker image %s' % image_name)
