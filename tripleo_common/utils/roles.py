@@ -17,7 +17,9 @@ import os
 import shutil
 import yaml
 
+import six
 from six.moves import cStringIO as StringIO
+
 from tripleo_common.exception import NotFound
 from tripleo_common.exception import RoleMetadataError
 
@@ -99,15 +101,15 @@ def validate_role_yaml(role_data=None, role_path=None):
         raise RoleMetadataError('Unable to parse role yaml')
 
     schema = {
-        'name': {'type': str},
+        'name': {'type': six.string_types},
         'CountDefault': {'type': int},
-        'HostnameFormatDefault': {'type': str},
+        'HostnameFormatDefault': {'type': six.string_types},
         'disable_constraints': {'type': bool},
         'disable_upgrade_deployment': {'type': bool},
         'upgrade_batch_size': {'type': int},
         'ServicesDefault': {'type': list},
         'tags': {'type': list},
-        'description': {'type': str},
+        'description': {'type': six.string_types},
         'networks': {'type': list},
     }
 
