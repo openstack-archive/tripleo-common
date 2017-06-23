@@ -857,8 +857,7 @@ class GetProfileOfFlavorActionTest(base.TestCase):
     @mock.patch('tripleo_common.utils.parameters.get_profile_of_flavor')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_compute_client')
-    @mock.patch('mistral.context.ctx')
-    def test_profile_found(self, mock_ctx, mock_get_compute_client,
+    def test_profile_found(self, mock_get_compute_client,
                            mock_get_profile_of_flavor):
         mock_ctx = mock.MagicMock()
         mock_get_profile_of_flavor.return_value = 'compute'
@@ -870,8 +869,7 @@ class GetProfileOfFlavorActionTest(base.TestCase):
     @mock.patch('tripleo_common.utils.parameters.get_profile_of_flavor')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_compute_client')
-    @mock.patch('mistral.context.ctx')
-    def test_profile_not_found(self, mock_ctx, mock_get_compute_client,
+    def test_profile_not_found(self, mock_get_compute_client,
                                mock_get_profile_of_flavor):
         mock_ctx = mock.MagicMock()
         profile = (exception.DeriveParamsError, )

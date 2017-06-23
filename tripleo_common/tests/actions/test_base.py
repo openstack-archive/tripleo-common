@@ -17,10 +17,10 @@ import zlib
 import mock
 
 from ironicclient.v1 import client as ironicclient
-from mistral.utils.openstack import keystone as keystone_utils
 
 from tripleo_common.actions import base
 from tripleo_common.tests import base as tests_base
+from tripleo_common.utils import keystone as keystone_utils
 
 from swiftclient.exceptions import ClientException
 
@@ -41,7 +41,7 @@ class TestActionsBase(tests_base.TestCase):
         mock_client.assert_called_once_with(
             'http://ironic/v1', max_retries=12, os_ironic_api_version='1.15',
             region_name='ironic-region', retry_interval=5, token=mock.ANY)
-        mock_endpoint.assert_called_once_with('ironic')
+        mock_endpoint.assert_called_once_with(mock_cxt, 'ironic')
         mock_cxt.assert_not_called()
 
     def test_cache_key(self, mock_endpoint):
