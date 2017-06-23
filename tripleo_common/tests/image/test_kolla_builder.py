@@ -18,24 +18,45 @@ import mock
 import os
 import six
 import subprocess
+import sys
+import tempfile
+import yaml
 
 from tripleo_common.image import kolla_builder as kb
 from tripleo_common.tests import base
 
 
-filedata = six.u(
-    """container_images:
-    - imagename: tripleoupstream/heat-docker-agents-centos:latest
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-compute:liberty
-      uploader: docker
-      pull_source: docker.io
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
-      uploader: docker
-      pull_source: docker.io
-    - imagename: tripleoupstream/image-with-missing-tag
-      push_destination: localhost:8787
+filedata = six.u("""container_images:
+- imagename: tripleoupstream/heat-docker-agents-centos:latest
+  push_destination: localhost:8787
+- imagename: tripleoupstream/centos-binary-nova-compute:liberty
+  uploader: docker
+  pull_source: docker.io
+  push_destination: localhost:8787
+- imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
+  uploader: docker
+  pull_source: docker.io
+- imagename: tripleoupstream/image-with-missing-tag
+  push_destination: localhost:8787
+""")
+
+template_filedata = six.u("""
+{% set namespace=namespace or "tripleoupstream" %}
+{% set name_prefix=name_prefix or "centos-binary-" %}
+{% set name_suffix=name_suffix or "" %}
+{% set tag=tag or "latest" %}
+container_images_template:
+- imagename: "{{namespace}}/heat-docker-agents-centos:latest"
+  push_destination: "{{push_destination}}"
+- imagename: "{{namespace}}/{{name_prefix}}nova-compute{{name_suffix}}:{{tag}}"
+  uploader: "docker"
+  pull_source: "{{pull_source}}"
+  push_destination: "{{push_destination}}"
+- imagename: "{{namespace}}/{{name_prefix}}nova-libvirt{{name_suffix}}:{{tag}}"
+  uploader: "docker"
+  pull_source: "{{pull_source}}"
+- imagename: "{{namespace}}/image-with-missing-tag"
+  push_destination: "{{push_destination}}"
 """)
 
 
@@ -108,3 +129,80 @@ class TestKollaImageBuilder(base.TestCase):
         mock_popen.assert_called_once_with([
             'kolla-build',
         ], env=env)
+
+
+class TestKollaImageBuilderTemplate(base.TestCase):
+
+    def setUp(self):
+        super(TestKollaImageBuilderTemplate, self).setUp()
+        with tempfile.NamedTemporaryFile(delete=False) as imagefile:
+            self.addCleanup(os.remove, imagefile.name)
+            self.filelist = [imagefile.name]
+            with open(imagefile.name, 'w') as f:
+                f.write(template_filedata)
+
+    def test_container_images_from_template(self):
+        builder = kb.KollaImageBuilder(self.filelist)
+        result = builder.container_images_from_template(
+            pull_source='docker.io',
+            push_destination='localhost:8787',
+            tag='liberty'
+        )
+        # template substitution on the container_images_template section should
+        # be identical to the container_images section
+        container_images = yaml.safe_load(filedata)['container_images']
+        self.assertEqual(container_images, result)
+
+    def test_container_images_from_template_filter(self):
+        builder = kb.KollaImageBuilder(self.filelist)
+
+        def filter(entry):
+
+            # do not want heat-agents image
+            if 'heat-docker-agents' in entry.get('imagename'):
+                return
+
+            # set source and destination on all entries
+            entry['pull_source'] = 'docker.io'
+            entry['push_destination'] = 'localhost:8787'
+            return entry
+
+        result = builder.container_images_from_template(
+            filter=filter,
+            tag='liberty'
+        )
+        container_images = [{
+            'imagename': 'tripleoupstream/centos-binary-nova-compute:liberty',
+            'pull_source': 'docker.io',
+            'push_destination': 'localhost:8787',
+            'uploader': 'docker'
+        }, {
+            'imagename': 'tripleoupstream/centos-binary-nova-libvirt:liberty',
+            'pull_source': 'docker.io',
+            'push_destination': 'localhost:8787',
+            'uploader': 'docker'
+        }, {
+            'imagename': 'tripleoupstream/image-with-missing-tag',
+            'pull_source': 'docker.io',
+            'push_destination': 'localhost:8787'
+        }]
+        self.assertEqual(container_images, result)
+
+    def test_container_images_yaml_in_sync(self):
+        '''Confirm overcloud_containers.tpl.yaml equals overcloud_containers.yaml
+
+        TODO(sbaker) remove when overcloud_containers.yaml is deleted
+        '''
+        mod_dir = os.path.dirname(sys.modules[__name__].__file__)
+        project_dir = os.path.abspath(os.path.join(mod_dir, '../../../'))
+        files_dir = os.path.join(project_dir, 'container-images')
+
+        oc_tmpl_file = os.path.join(files_dir, 'overcloud_containers.yaml.j2')
+        tmpl_builder = kb.KollaImageBuilder([oc_tmpl_file])
+        result = tmpl_builder.container_images_from_template()
+
+        oc_yaml_file = os.path.join(files_dir, 'overcloud_containers.yaml')
+        yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
+        container_images = yaml_builder.load_config_files(
+            yaml_builder.CONTAINER_IMAGES)
+        self.assertSequenceEqual(container_images, result)
