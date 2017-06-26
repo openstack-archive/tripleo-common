@@ -16,7 +16,7 @@ import mock
 import yaml
 
 from heatclient import exc as heat_exc
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import deployment
@@ -117,7 +117,7 @@ class OrchestrationDeployActionTest(base.TestCase):
 
         action = deployment.OrchestrationDeployAction(self.server_id,
                                                       self.config, self.name)
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={"deploy_status_code": 0},
             error=None)
         self.assertEqual(expected, action.run(context=mock_ctx))
@@ -156,7 +156,7 @@ class OrchestrationDeployActionTest(base.TestCase):
 
         action = deployment.OrchestrationDeployAction(self.server_id,
                                                       self.config, self.name)
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={},
             error="Timeout for heat deployment 'name'")
         self.assertEqual(expected, action.run(mock_ctx))
@@ -190,7 +190,7 @@ class OrchestrationDeployActionTest(base.TestCase):
 
         action = deployment.OrchestrationDeployAction(self.server_id,
                                                       self.config, self.name)
-        expected = mistral_workflow_utils.Result(
+        expected = actions.Result(
             data={"deploy_status_code": 1},
             error="Heat deployment failed for 'name'")
         self.assertEqual(expected, action.run(mock_ctx))

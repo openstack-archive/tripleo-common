@@ -18,7 +18,7 @@ import time
 
 from heatclient.common import deployment_utils
 from heatclient import exc as heat_exc
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
@@ -122,7 +122,7 @@ class OrchestrationDeployAction(base.TripleOAction):
             if body_json['deploy_status_code'] != 0:
                 error = "Heat deployment failed for '%s'" % self.name
 
-        return mistral_workflow_utils.Result(data=body_json, error=error)
+        return actions.Result(data=body_json, error=error)
 
 
 class DeployStackAction(templates.ProcessTemplatesAction):
@@ -159,7 +159,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         try:
             plan_utils.update_in_env(swift, env, 'parameter_defaults',
@@ -168,14 +168,14 @@ class DeployStackAction(templates.ProcessTemplatesAction):
             err_msg = ("Error updating environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         # process all plan files and create or update a stack
         processed_data = super(DeployStackAction, self).run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
-        if isinstance(processed_data, mistral_workflow_utils.Result):
+        if isinstance(processed_data, actions.Result):
             return processed_data
 
         stack_args = processed_data.copy()
@@ -224,7 +224,7 @@ class OvercloudRcAction(base.TripleOAction):
             error = (
                 "The Heat stack {} could not be found. Make sure you have "
                 "deployed before calling this action.").format(self.container)
-            return mistral_workflow_utils.Result(error=error)
+            return actions.Result(error=error)
 
         # We need to check parameter_defaults first for a user provided
         # password. If that doesn't exist, we then should look in the
@@ -237,7 +237,7 @@ class OvercloudRcAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.error(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         try:
             parameter_defaults = env['parameter_defaults']
@@ -248,6 +248,6 @@ class OvercloudRcAction(base.TripleOAction):
         except KeyError:
             error = ("Unable to find the AdminPassword in the plan "
                      "environment.")
-            return mistral_workflow_utils.Result(error=error)
+            return actions.Result(error=error)
 
         return overcloudrc.create_overcloudrc(stack, self.no_proxy, admin_pass)

@@ -20,7 +20,6 @@ import tempfile
 from git import Repo
 import six
 
-from mistral.workflow import utils as mistral_workflow_utils
 from mistral_lib import actions
 
 LOG = logging.getLogger(__name__)
@@ -54,7 +53,7 @@ class GitCloneAction(actions.Action):
         except Exception:
             err_msg = ("Error cloning remote repository: %s " % url_bits[0])
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         # if a tag value was given, checkout that tag
         if len(url_bits) > 1:
@@ -70,7 +69,7 @@ class GitCloneAction(actions.Action):
                 LOG.exception(err_msg)
 
         if err_msg:
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         return local_dir_path
 
@@ -93,7 +92,7 @@ class GitCleanupAction(actions.Action):
             shutil.rmtree(path)
         except IndexError as idx_err:
             LOG.exception("Directory not found: %s" % target_path)
-            return mistral_workflow_utils.Result(error=six.text_type(idx_err))
+            return actions.Result(error=six.text_type(idx_err))
         except OSError as os_err:
             LOG.exception("Error removing directory: %s" % target_path)
-            return mistral_workflow_utils.Result(error=six.text_type(os_err))
+            return actions.Result(error=six.text_type(os_err))

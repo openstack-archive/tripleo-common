@@ -12,7 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from mistralclient.api import base as mistralclient_api
 from oslo_concurrency.processutils import ProcessExecutionError
 
@@ -78,7 +78,7 @@ class Enabled(base.TripleOAction):
         else:
             return_value['stdout'] = 'Validations are disabled'
             mistral_result = {"error": return_value}
-        return mistral_workflow_utils.Result(**mistral_result)
+        return actions.Result(**mistral_result)
 
 
 class ListValidationsAction(base.TripleOAction):
@@ -133,7 +133,7 @@ class RunValidationAction(base.TripleOAction):
         finally:
             if identity_file:
                 utils.cleanup_identity_file(identity_file)
-        return mistral_workflow_utils.Result(**mistral_result)
+        return actions.Result(**mistral_result)
 
 
 class CheckBootImagesAction(base.TripleOAction):
@@ -162,9 +162,9 @@ class CheckBootImagesAction(base.TripleOAction):
         }
 
         if messages:
-            mistral_result = mistral_workflow_utils.Result(error=return_value)
+            mistral_result = actions.Result(error=return_value)
         else:
-            mistral_result = mistral_workflow_utils.Result(data=return_value)
+            mistral_result = actions.Result(data=return_value)
 
         return mistral_result
 
@@ -257,7 +257,7 @@ class CheckFlavorsAction(base.TripleOAction):
         else:
             mistral_result = {'data': return_value}
 
-        return mistral_workflow_utils.Result(**mistral_result)
+        return actions.Result(**mistral_result)
 
 
 class CheckNodeBootConfigurationAction(base.TripleOAction):
@@ -311,7 +311,7 @@ class CheckNodeBootConfigurationAction(base.TripleOAction):
         else:
             mistral_result = {'data': return_value}
 
-        return mistral_workflow_utils.Result(**mistral_result)
+        return actions.Result(**mistral_result)
 
 
 class VerifyProfilesAction(base.TripleOAction):
@@ -398,7 +398,7 @@ class VerifyProfilesAction(base.TripleOAction):
         else:
             mistral_result = {'data': return_value}
 
-        return mistral_workflow_utils.Result(**mistral_result)
+        return actions.Result(**mistral_result)
 
     def _node_get_capabilities(self, node):
         """Get node capabilities."""
@@ -476,4 +476,4 @@ class CheckNodesCountAction(base.TripleOAction):
         else:
             mistral_result = {'data': return_value}
 
-        return mistral_workflow_utils.Result(**mistral_result)
+        return actions.Result(**mistral_result)

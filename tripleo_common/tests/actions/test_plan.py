@@ -15,7 +15,7 @@
 import mock
 
 from heatclient import exc as heatexceptions
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from oslo_concurrency import processutils
 from swiftclient import exceptions as swiftexceptions
 
@@ -113,7 +113,7 @@ class CreateContainerActionTest(base.TestCase):
 
         error_str = ('A container with the name %s already'
                      ' exists.') % self.container_name
-        self.assertEqual(result, mistral_workflow_utils.Result(
+        self.assertEqual(result, actions.Result(
             None, error_str))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
@@ -128,7 +128,7 @@ class CreateContainerActionTest(base.TestCase):
 
         error_str = ("Unable to create plan. The plan name must only contain "
                      "letters, numbers or dashes")
-        self.assertEqual(result, mistral_workflow_utils.Result(
+        self.assertEqual(result, actions.Result(
             None, error_str))
 
 

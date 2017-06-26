@@ -16,7 +16,7 @@ import fnmatch
 import logging
 import yaml
 
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
@@ -50,7 +50,7 @@ class GetCapabilitiesAction(base.TripleOAction):
             err_msg = (
                 "Error parsing capabilities-map.yaml.")
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
         try:
             container_files = swift.get_container(self.container)
             container_file_list = [entry['name'] for entry
@@ -58,7 +58,7 @@ class GetCapabilitiesAction(base.TripleOAction):
         except Exception as swift_err:
             err_msg = ("Error retrieving plan files: %s" % swift_err)
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         try:
             env = plan_utils.get_env(swift, self.container)
@@ -66,7 +66,7 @@ class GetCapabilitiesAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         selected_envs = [item['path'] for item in env['environments']
                          if 'path' in item]
@@ -172,7 +172,7 @@ class UpdateCapabilitiesAction(base.TripleOAction):
             err_msg = ("Error retrieving environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         for k, v in self.environments.items():
             found = False
@@ -197,6 +197,6 @@ class UpdateCapabilitiesAction(base.TripleOAction):
         except swiftexceptions.ClientException as err:
             err_msg = "Error uploading to container: %s" % err
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         return env

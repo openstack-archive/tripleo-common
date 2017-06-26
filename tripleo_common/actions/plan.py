@@ -20,7 +20,7 @@ import yaml
 
 from heatclient import exc as heatexceptions
 from keystoneauth1 import exceptions as keystoneauth_exc
-from mistral.workflow import utils as mistral_workflow_utils
+from mistral_lib import actions
 from mistralclient.api import base as mistralclient_base
 from oslo_concurrency import processutils
 import six
@@ -60,14 +60,14 @@ class CreateContainerAction(base.TripleOAction):
         if not pattern_validator(constants.PLAN_NAME_PATTERN, self.container):
             message = ("Unable to create plan. The plan name must "
                        "only contain letters, numbers or dashes")
-            return mistral_workflow_utils.Result(error=message)
+            return actions.Result(error=message)
 
         # checks to see if a container with that name exists
         if self.container in [container["name"] for container in
                               oc.get_account()[1]]:
             result_string = ("A container with the name %s already"
                              " exists.") % self.container
-            return mistral_workflow_utils.Result(error=result_string)
+            return actions.Result(error=result_string)
         oc.put_container(self.container, headers=default_container_headers)
 
 
@@ -177,7 +177,7 @@ class DeletePlanAction(base.TripleOAction):
             error_text = six.text_type(err)
 
         if error_text:
-            return mistral_workflow_utils.Result(error=error_text)
+            return actions.Result(error=error_text)
 
 
 class ListRolesAction(base.TripleOAction):
@@ -202,7 +202,7 @@ class ListRolesAction(base.TripleOAction):
             err_msg = ("Error retrieving roles data from deployment plan: %s"
                        % err)
             LOG.exception(err_msg)
-            return mistral_workflow_utils.Result(error=err_msg)
+            return actions.Result(error=err_msg)
 
         return [role['name'] for role in roles_data]
 
@@ -263,15 +263,15 @@ class ExportPlanAction(base.TripleOAction):
             self._create_and_upload_tarball(swift, tmp_dir)
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
-            return mistral_workflow_utils.Result(error=msg)
+            return actions.Result(error=msg)
         except (OSError, IOError) as err:
             msg = "Error while writing file: %s" % err
-            return mistral_workflow_utils.Result(error=msg)
+            return actions.Result(error=msg)
         except processutils.ProcessExecutionError as err:
             msg = "Error while creating a tarball: %s" % err
-            return mistral_workflow_utils.Result(error=msg)
+            return actions.Result(error=msg)
         except Exception as err:
             msg = "Error exporting plan: %s" % err
-            return mistral_workflow_utils.Result(error=msg)
+            return actions.Result(error=msg)
         finally:
             shutil.rmtree(tmp_dir)
