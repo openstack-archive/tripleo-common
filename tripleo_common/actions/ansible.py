@@ -16,6 +16,7 @@ import json
 import os
 import shutil
 import six
+from six.moves import configparser
 import tempfile
 
 import yaml
@@ -23,6 +24,22 @@ import yaml
 from mistral.workflow import utils as mistral_workflow_utils
 from mistral_lib import actions
 from oslo_concurrency import processutils
+
+
+def write_default_ansible_cfg(work_dir,
+                              base_ansible_cfg='/etc/ansible/ansible.cfg'):
+    ansible_config_path = os.path.join(work_dir, 'ansible.cfg')
+    shutil.copy(base_ansible_cfg, ansible_config_path)
+
+    config = configparser.ConfigParser()
+    config.read(ansible_config_path)
+
+    config.set('defaults', 'retry_files_enabled', 'False')
+
+    with open(ansible_config_path, 'w') as configfile:
+        config.write(configfile)
+
+    return ansible_config_path
 
 
 class AnsibleAction(actions.Action):
@@ -171,8 +188,10 @@ class AnsibleAction(actions.Action):
                 return mistral_workflow_utils.Result(error=msg)
 
         try:
+            ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
-                'HOME': self.work_dir
+                'HOME': self.work_dir,
+                'ANSIBLE_CONFIG': ansible_config_path
             }
 
             if self.extra_env_variables:
@@ -369,8 +388,10 @@ class AnsiblePlaybookAction(actions.Action):
                 return mistral_workflow_utils.Result(error=msg)
 
         try:
+            ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
-                'HOME': self.work_dir
+                'HOME': self.work_dir,
+                'ANSIBLE_CONFIG': ansible_config_path
             }
 
             if self.extra_env_variables:
