@@ -21,7 +21,6 @@ import tempfile
 
 import yaml
 
-from mistral.workflow import utils as mistral_workflow_utils
 from mistral_lib import actions
 from oslo_concurrency import processutils
 
@@ -185,7 +184,7 @@ class AnsibleAction(actions.Action):
         if self.extra_env_variables:
             if not isinstance(self.extra_env_variables, dict):
                 msg = "extra_env_variables must be a dict"
-                return mistral_workflow_utils.Result(error=msg)
+                return actions.Result(error=msg)
 
         try:
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
@@ -385,7 +384,7 @@ class AnsiblePlaybookAction(actions.Action):
         if self.extra_env_variables:
             if not isinstance(self.extra_env_variables, dict):
                 msg = "extra_env_variables must be a dict"
-                return mistral_workflow_utils.Result(error=msg)
+                return actions.Result(error=msg)
 
         try:
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
