@@ -19,13 +19,14 @@ from glanceclient.v2 import client as glanceclient
 from heatclient.v1 import client as heatclient
 import ironic_inspector_client
 from ironicclient.v1 import client as ironicclient
-from mistral.utils.openstack import keystone as keystone_utils
 from mistral_lib import actions
 from mistralclient.api import client as mistral_client
 from novaclient.client import Client as nova_client
 from swiftclient import client as swift_client
 from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common import constants
+from tripleo_common.utils import keystone as keystone_utils
 
 
 class TripleOAction(actions.Action):
@@ -34,7 +35,7 @@ class TripleOAction(actions.Action):
         super(TripleOAction, self).__init__()
 
     def get_object_client(self, context):
-        obj_ep = keystone_utils.get_endpoint_for_project('swift')
+        obj_ep = keystone_utils.get_endpoint_for_project(context, 'swift')
 
         kwargs = {
             'preauthurl': obj_ep.url % {'tenant_id': context.project_id},
@@ -47,7 +48,8 @@ class TripleOAction(actions.Action):
         return swift_client.Connection(**kwargs)
 
     def get_baremetal_client(self, context):
-        ironic_endpoint = keystone_utils.get_endpoint_for_project('ironic')
+        ironic_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'ironic')
 
         # FIXME(lucasagomes): Use ironicclient.get_client() instead
         # of ironicclient.Client(). Client() might cause errors since
@@ -69,7 +71,7 @@ class TripleOAction(actions.Action):
 
     def get_baremetal_introspection_client(self, context):
         bmi_endpoint = keystone_utils.get_endpoint_for_project(
-            'ironic-inspector')
+            context, 'ironic-inspector')
 
         return ironic_inspector_client.ClientV1(
             api_version='1.2',
@@ -79,7 +81,8 @@ class TripleOAction(actions.Action):
         )
 
     def get_image_client(self, context):
-        glance_endpoint = keystone_utils.get_endpoint_for_project('glance')
+        glance_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'glance')
         return glanceclient.Client(
             glance_endpoint.url,
             token=context.auth_token,
@@ -87,7 +90,8 @@ class TripleOAction(actions.Action):
         )
 
     def get_orchestration_client(self, context):
-        heat_endpoint = keystone_utils.get_endpoint_for_project('heat')
+        heat_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'heat')
 
         endpoint_url = keystone_utils.format_url(
             heat_endpoint.url,
@@ -102,7 +106,8 @@ class TripleOAction(actions.Action):
         )
 
     def get_workflow_client(self, context):
-        mistral_endpoint = keystone_utils.get_endpoint_for_project('mistral')
+        mistral_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'mistral')
 
         mc = mistral_client.client(auth_token=context.auth_token,
                                    mistral_url=mistral_endpoint.url)
@@ -110,8 +115,10 @@ class TripleOAction(actions.Action):
         return mc
 
     def get_compute_client(self, context):
-        keystone_endpoint = keystone_utils.get_endpoint_for_project('keystone')
-        nova_endpoint = keystone_utils.get_endpoint_for_project('nova')
+        keystone_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'keystone')
+        nova_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'nova')
 
         client = nova_client(
             2,

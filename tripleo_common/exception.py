@@ -118,3 +118,7 @@ class NotFound(Exception):
 
 class RoleMetadataError(Exception):
     """Role metadata is invalid"""
+
+
+class UnauthorizedException(Exception):
+    """Authorization failed"""
