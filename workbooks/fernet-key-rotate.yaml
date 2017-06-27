@@ -1,0 +1,82 @@
+---
+version: '2.0'
+name: tripleo.fernet_keys.v1
+description: TripleO fernet key rotation workflows
+
+workflows:
+
+  rotate_fernet_keys:
+
+    input:
+      - container
+      - queue_name: tripleo
+
+    tasks:
+
+      rotate_keys:
+        action: tripleo.parameters.rotate_fernet_keys container=<% $.container %>
+        on-success: deploy_ssh_key
+        on-error: rotate_keys_set_status_failed
+
+      rotate_keys_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(rotate_keys).result %>
+
+      deploy_ssh_key:
+        workflow: tripleo.validations.v1.copy_ssh_key
+        on-success: get_privkey
+        on-error: deploy_ssh_key_failed
+
+      deploy_ssh_key_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(deploy_ssh_key).result %>
+
+      get_privkey:
+        action: tripleo.validations.get_privkey
+        on-success: deploy_keys
+        on-error: get_privkey_failed
+
+      get_privkey_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(get_privkey).result %>
+
+      deploy_keys:
+        action: tripleo.ansible-playbook
+        input:
+          hosts: keystone
+          inventory: /usr/bin/tripleo-ansible-inventory
+          ssh_private_key: <% task(get_privkey).result %>
+          ssh_extra_args: '-o StrictHostKeyChecking=no'
+          remote_user: heat-admin
+          become: true
+          extra_vars:
+            fernet_keys: <% task(rotate_keys).result %>
+          use_openstack_credentials: true
+          playbook: /usr/share/tripleo-common/playbooks/rotate-keys.yaml
+        on-success: rotate_keys_set_status_passed
+
+      rotate_keys_set_status_passed:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(deploy_keys).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.get_passwords
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>

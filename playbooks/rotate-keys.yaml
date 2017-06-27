@@ -1,0 +1,19 @@
+---
+- hosts: keystone
+  tasks:
+  - name: Remove previous fernet keys
+    shell: rm -rf /etc/keystone/fernet-keys/*
+
+  - name: Persist fernet keys to repository
+    copy:
+      dest: "{{ item.key }}"
+      content: "{{ item.value.content }}"
+      mode: 0600
+      owner: keystone
+      group: keystone
+    with_dict: "{{ fernet_keys }}"
+
+  - name: Reload apache
+    service:
+      name: httpd
+      state: reloaded
