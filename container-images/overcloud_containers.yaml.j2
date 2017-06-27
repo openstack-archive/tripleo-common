@@ -4,83 +4,353 @@
 {% set tag=tag or "latest" %}
 container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}aodh-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerAodhApiImage
+  - DockerAodhConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}aodh-evaluator{{name_suffix}}:{{tag}}"
+  params:
+  - DockerAodhEvaluatorImage
+
 - imagename: "{{namespace}}/{{name_prefix}}aodh-listener{{name_suffix}}:{{tag}}"
+  params:
+  - DockerAodhListenerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}aodh-notifier{{name_suffix}}:{{tag}}"
+  params:
+  - DockerAodhNotifierImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-central{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCeilometerCentralImage
+  - DockerCeilometerConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-compute{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCeilometerComputeImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-notification{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCeilometerNotificationImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-ipmi{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCeilometerIpmiImage
+
 - imagename: "{{namespace}}/{{name_prefix}}cinder-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCinderApiImage
+  - DockerCinderConfigImage
+
+
 - imagename: "{{namespace}}/{{name_prefix}}cinder-backup{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCinderBackupImage
+
 - imagename: "{{namespace}}/{{name_prefix}}cinder-scheduler{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCinderSchedulerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}cinder-volume{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCinderVolumeImage
+
 - imagename: "{{namespace}}/{{name_prefix}}collectd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCollectdConfigImage
+  - DockerCollectdImage
+
 - imagename: "{{namespace}}/{{name_prefix}}congress-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCongressApiImage
+  - DockerCongressConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ec2-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerEc2ApiConfigImage
+  - DockerEc2ApiImage
+
 - imagename: "{{namespace}}/{{name_prefix}}etcd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerEtcdConfigImage
+  - DockerEtcdImage
+
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerGlanceApiConfigImage
+  - DockerGlanceApiImage
+
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerGnocchiApiImage
+  - DockerGnocchiConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-metricd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerGnocchiMetricdImage
+
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-statsd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerGnocchiStatsdImage
+
 - imagename: "{{namespace}}/{{name_prefix}}haproxy{{name_suffix}}:{{tag}}"
+  params:
+  - DockerHAProxyConfigImage
+  - DockerHAProxyImage
+
 - imagename: "{{namespace}}/{{name_prefix}}heat-api-cfn{{name_suffix}}:{{tag}}"
+  params:
+  - DockerHeatApiCfnConfigImage
+  - DockerHeatApiCfnImage
+
 - imagename: "{{namespace}}/{{name_prefix}}heat-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerHeatApiConfigImage
+  - DockerHeatApiImage
+  - DockerHeatConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}heat-engine{{name_suffix}}:{{tag}}"
+  params:
+  - DockerHeatEngineImage
+
 - imagename: "{{namespace}}/{{name_prefix}}horizon{{name_suffix}}:{{tag}}"
+  params:
+  - DockerHorizonConfigImage
+  - DockerHorizonImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ironic-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerIronicApiImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ironic-conductor{{name_suffix}}:{{tag}}"
+  params:
+  - DockerIronicConductorImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ironic-inspector{{name_suffix}}:{{tag}}"
+  params:
+  - DockerIronicInspectorImage
+  - DockerIronicInspectorConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ironic-pxe{{name_suffix}}:{{tag}}"
+  params:
+  - DockerIronicConfigImage
+  - DockerIronicPxeImage
+
 - imagename: "{{namespace}}/{{name_prefix}}iscsid{{name_suffix}}:{{tag}}"
+  params:
+  - DockerIscsidConfigImage
+  - DockerIscsidImage
+
 - imagename: "{{namespace}}/{{name_prefix}}keystone{{name_suffix}}:{{tag}}"
+  params:
+  - DockerKeystoneConfigImage
+  - DockerKeystoneImage
+
 - imagename: "{{namespace}}/{{name_prefix}}manila-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerManilaApiImage
+  - DockerManilaConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}manila-base{{name_suffix}}:{{tag}}"
+
 - imagename: "{{namespace}}/{{name_prefix}}manila-scheduler{{name_suffix}}:{{tag}}"
+  params:
+  - DockerManilaSchedulerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}mariadb{{name_suffix}}:{{tag}}"
+  params:
+  - DockerClustercheckConfigImage
+  - DockerClustercheckImage
+  - DockerMysqlConfigImage
+  - DockerMysqlImage
+
 - imagename: "{{namespace}}/{{name_prefix}}memcached{{name_suffix}}:{{tag}}"
+  params:
+  - DockerMemcachedConfigImage
+  - DockerMemcachedImage
+
 - imagename: "{{namespace}}/{{name_prefix}}mistral-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerMistralApiImage
+  - DockerMistralConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}mistral-engine{{name_suffix}}:{{tag}}"
+  params:
+  - DockerMistralEngineImage
+
 - imagename: "{{namespace}}/{{name_prefix}}mistral-executor{{name_suffix}}:{{tag}}"
+  params:
+  - DockerMistralExecutorImage
+
 - imagename: "{{namespace}}/{{name_prefix}}mistral-event-engine{{name_suffix}}:{{tag}}"
+
 - imagename: "{{namespace}}/{{name_prefix}}mongodb{{name_suffix}}:{{tag}}"
+  params:
+  - DockerMongodbConfigImage
+  - DockerMongodbImage
+
 - imagename: "{{namespace}}/{{name_prefix}}multipathd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerMultipathdConfigImage
+  - DockerMultipathdImage
+
 - imagename: "{{namespace}}/{{name_prefix}}neutron-dhcp-agent{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronDHCPImage
+
 - imagename: "{{namespace}}/{{name_prefix}}neutron-l3-agent{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronL3AgentImage
+
 - imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronMetadataImage
+
 - imagename: "{{namespace}}/{{name_prefix}}neutron-openvswitch-agent{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOpenvswitchImage
+
 - imagename: "{{namespace}}/{{name_prefix}}neutron-sriov-agent{{name_suffix}}:{{tag}}"
+
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronApiImage
+  - DockerNeutronConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaApiImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-base{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute-ironic{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaComputeIronicImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaComputeImage
+  - DockerNovaLibvirtConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-conductor{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaConductorImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-consoleauth{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaConsoleauthImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-libvirt{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaLibvirtImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-novncproxy{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaVncProxyImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-placement-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaPlacementConfigImage
+  - DockerNovaPlacementImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-scheduler{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNovaSchedulerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}octavia-base{{name_suffix}}:{{tag}}"
+
 - imagename: "{{namespace}}/{{name_prefix}}octavia-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOctaviaApiImage
+  - DockerOctaviaConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}octavia-health-manager{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOctaviaHealthManagerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}octavia-housekeeping{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOctaviaHousekeepingImage
+
 - imagename: "{{namespace}}/{{name_prefix}}octavia-worker{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOctaviaWorkerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ovn-base{{name_suffix}}:{{tag}}"
+
 - imagename: "{{namespace}}/{{name_prefix}}ovn-controller{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOVNControllerConfigImage
+  - DockerOVNControllerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ovn-nb-db-server{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOVNNbDbImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ovn-northd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOVNNorthdImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ovn-sb-db-server{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOVNSbDbImage
+
 - imagename: "{{namespace}}/{{name_prefix}}panko-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerPankoApiImage
+  - DockerPankoConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}rabbitmq{{name_suffix}}:{{tag}}"
+  params:
+  - DockerRabbitmqConfigImage
+  - DockerRabbitmqImage
+
 - imagename: "{{namespace}}/{{name_prefix}}redis{{name_suffix}}:{{tag}}"
+  params:
+  - DockerRedisConfigImage
+  - DockerRedisImage
+
 - imagename: "{{namespace}}/{{name_prefix}}sahara-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSaharaApiImage
+  - DockerSaharaConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}sahara-engine{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSaharaEngineImage
+
 - imagename: "{{namespace}}/{{name_prefix}}sensu-client{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSensuClientImage
+  - DockerSensuConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}swift-account{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSwiftAccountImage
+
 - imagename: "{{namespace}}/{{name_prefix}}swift-container{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSwiftContainerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}swift-object{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSwiftObjectImage
+
 - imagename: "{{namespace}}/{{name_prefix}}swift-proxy-server{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSwiftConfigImage
+  - DockerSwiftProxyImage
+
 - imagename: "{{namespace}}/{{name_prefix}}tacker{{name_suffix}}:{{tag}}"
+  params:
+  - DockerTackerConfigImage
+  - DockerTackerImage
+
 - imagename: "{{namespace}}/{{name_prefix}}zaqar{{name_suffix}}:{{tag}}"
+  params:
+  - DockerZaqarConfigImage
+  - DockerZaqarImage
+
 - imagename: "ceph/daemon:tag-build-master-jewel-centos-7"
