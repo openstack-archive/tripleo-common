@@ -28,7 +28,7 @@ class FileExistsTest(base.TestCase):
     def test_file_exists(self, mock_exists):
         mock_exists.return_value = True
         action = files.FileExists(self.path)
-        action_result = action.run()
+        action_result = action.run(context={})
         self.assertFalse(action_result.cancel)
         self.assertIsNone(action_result.error)
         self.assertEqual('Found file /etc/issue',
@@ -44,7 +44,7 @@ class MakeTempDirTest(base.TestCase):
     def test_make_temp_dir(self, mock_mkdtemp):
         mock_mkdtemp.return_value = "/tmp/file-mistral-actionxFLfYz"
         action = files.MakeTempDir()
-        action_result = action.run()
+        action_result = action.run(context={})
         self.assertFalse(action_result.cancel)
         self.assertIsNone(action_result.error)
         self.assertEqual('/tmp/file-mistral-actionxFLfYz',
@@ -61,7 +61,7 @@ class RemoveTempDirTest(base.TestCase):
     def test_sucess_remove_temp_dir(self, mock_rmtree):
         mock_rmtree.return_value = None  # rmtree has no return value
         action = files.RemoveTempDir(self.path)
-        action_result = action.run()
+        action_result = action.run(context={})
         self.assertFalse(action_result.cancel)
         self.assertIsNone(action_result.error)
         self.assertEqual('Deleted directory /tmp/file-mistral-actionxFLfYz',

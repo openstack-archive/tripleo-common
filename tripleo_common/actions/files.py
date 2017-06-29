@@ -28,7 +28,7 @@ class FileExists(base.Action):
     def __init__(self, path):
         self.path = path
 
-    def run(self):
+    def run(self, context):
         if (isinstance(self.path, six.string_types) and
                 os.path.exists(self.path)):
             msg = "Found file %s" % self.path
@@ -48,7 +48,7 @@ class MakeTempDir(base.Action):
     def __init__(self):
         pass
 
-    def run(self):
+    def run(self, context):
         try:
             _path = tempfile.mkdtemp(dir='/tmp/',
                                      prefix='file-mistral-action')
@@ -67,7 +67,7 @@ class RemoveTempDir(base.Action):
     def __init__(self, path):
         self.path = path
 
-    def run(self):
+    def run(self, context):
         # regex from tempfile's _RandomNameSequence characters
         _regex = '^/tmp/file-mistral-action[A-Za-z0-9_]{6}$'
         if (not isinstance(self.path, six.string_types) or
