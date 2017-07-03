@@ -19,10 +19,11 @@ workflows:
           osd_ips: <% env().get('service_ips', {}).get('ceph_osd_ctlplane_node_ips', []) %>
           mds_ips: <% env().get('service_ips', {}).get('ceph_mds_ctlplane_node_ips', []) %>
           rgw_ips: <% env().get('service_ips', {}).get('ceph_rgw_ctlplane_node_ips', []) %>
+          client_ips: <% env().get('service_ips', {}).get('ceph_client_ctlplane_node_ips', []) %>
         on-success: set_fork_count
       set_fork_count:
         publish: # unique list of all IPs: make each list a set, take unions and count
-          fork_count: <% min($.mon_ips.toSet().union($.osd_ips.toSet()).union($.mds_ips.toSet()).union($.rgw_ips.toSet()).count(), 100) %> # don't use >100 forks
+          fork_count: <% min($.mon_ips.toSet().union($.osd_ips.toSet()).union($.mds_ips.toSet()).union($.rgw_ips.toSet()).union($.client_ips.toSet()).count(), 100) %> # don't use >100 forks
         on-success: make_fetch_directory
       make_fetch_directory:
         action: tripleo.files.make_temp_dir
@@ -45,6 +46,8 @@ workflows:
               hosts: <% $.mds_ips.toDict($, {}) %>
             rgws:
               hosts: <% $.rgw_ips.toDict($, {}) %>
+            clients:
+              hosts: <% $.client_ips.toDict($, {}) %>
           playbook: /usr/share/ceph-ansible/site-docker.yml.sample
           remote_user: heat-admin
           become: true
