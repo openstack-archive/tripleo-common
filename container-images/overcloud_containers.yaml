@@ -26,6 +26,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-horizon:latest
 - imagename: tripleoupstream/centos-binary-ironic-api:latest
 - imagename: tripleoupstream/centos-binary-ironic-conductor:latest
+- imagename: tripleoupstream/centos-binary-ironic-inspector:latest
 - imagename: tripleoupstream/centos-binary-ironic-pxe:latest
 - imagename: tripleoupstream/centos-binary-iscsid:latest
 - imagename: tripleoupstream/centos-binary-keystone:latest
