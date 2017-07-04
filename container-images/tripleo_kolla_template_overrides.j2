@@ -73,6 +73,11 @@ RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
+{% block base_footer %}
+# workaround LP1696283
+RUN mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_hosts
+{% endblock %}
+
 # Required for nova migration
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
 {% set nova_libvirt_packages_append = ['openstack-nova-migration'] %}
