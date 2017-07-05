@@ -39,7 +39,7 @@ workflows:
           dpdk_nics_numa_info: <% task().result %>
         on-success:
           # TODO: Need to remove condtions here
-          # adding condition and trhow error in action for empty check
+          # adding condition and throw error in action for empty check
           - get_dpdk_nics_numa_nodes: <% $.dpdk_nics_numa_info %>
           - set_status_failed_get_dpdk_nics_numa_info: <% not $.dpdk_nics_numa_info %>
         on-error: set_status_failed_on_error_get_dpdk_nics_numa_info
@@ -339,4 +339,216 @@ workflows:
         publish:
           status: FAILED
           message: 'Unable to determine huge pages'
+        on-success: fail
+
+
+  hci_derive_params:
+    description: Derive the deployment parameters for HCI
+    input:
+      - role_name
+      - environment_parameters
+      - heat_resource_tree
+      - introspection_data
+      - user_inputs
+      - derived_parameters: {}
+
+    output:
+      derived_parameters: <% $.derived_parameters.mergeWith($.get('hci_parameters', {})) %>
+
+    tasks:
+      get_hci_inputs:
+        publish:
+          hci_profile: <% $.user_inputs.get('hci_profile', '') %>
+          hci_profile_config: <% $.user_inputs.get('hci_profile_config', {}) %>
+          MB_PER_GB: 1024
+        on-success:
+          - get_average_guest_memory_size_in_mb: <% $.hci_profile and $.hci_profile_config.get($.hci_profile, {}) %>
+          - set_failed_invalid_hci_profile: <% $.hci_profile and not $.hci_profile_config.get($.hci_profile, {}) %>
+          # When no hci_profile is specified, the workflow terminates without deriving any HCI parameters.
+
+      get_average_guest_memory_size_in_mb:
+        publish:
+          average_guest_memory_size_in_mb: <% $.hci_profile_config.get($.hci_profile, {}).get('average_guest_memory_size_in_mb', 0) %>
+        on-success:
+          - get_average_guest_cpu_utilization_percentage: <% isInteger($.average_guest_memory_size_in_mb) %>
+          - set_failed_invalid_average_guest_memory_size_in_mb: <% not isInteger($.average_guest_memory_size_in_mb) %>
+
+      get_average_guest_cpu_utilization_percentage:
+        publish:
+          average_guest_cpu_utilization_percentage: <% $.hci_profile_config.get($.hci_profile, {}).get('average_guest_cpu_utilization_percentage', 0) %>
+        on-success:
+          - get_gb_overhead_per_guest: <% isInteger($.average_guest_cpu_utilization_percentage) %>
+          - set_failed_invalid_average_guest_cpu_utilization_percentage: <% not isInteger($.average_guest_cpu_utilization_percentage) %>
+
+      get_gb_overhead_per_guest:
+        publish:
+          gb_overhead_per_guest: <% $.user_inputs.get('gb_overhead_per_guest', 0.5) %>
+        on-success:
+          - get_gb_per_osd: <% isNumber($.gb_overhead_per_guest) %>
+          - set_failed_invalid_gb_overhead_per_guest: <% not isNumber($.gb_overhead_per_guest) %>
+
+      get_gb_per_osd:
+        publish:
+          gb_per_osd: <% $.user_inputs.get('gb_per_osd', 3) %>
+        on-success:
+          - get_cores_per_osd: <% isNumber($.gb_per_osd) %>
+          - set_failed_invalid_gb_per_osd: <% not isNumber($.gb_per_osd) %>
+
+      get_cores_per_osd:
+        publish:
+          cores_per_osd: <% $.user_inputs.get('cores_per_osd', 1.0) %>
+        on-success:
+          - get_extra_configs: <% isNumber($.cores_per_osd) %>
+          - set_failed_invalid_cores_per_osd: <% not isNumber($.cores_per_osd) %>
+
+      get_extra_configs:
+        publish:
+          extra_config: <% $.environment_parameters.get('ExtraConfig', {}) %>
+          role_extra_config: <% $.environment_parameters.get(concat($.role_name, 'ExtraConfig'), {}) %>
+        on-success: get_num_osds
+
+      get_num_osds:
+        publish:
+          num_osds: <% $.role_extra_config.get('ceph::profile::params::osds', $.extra_config.get('ceph::profile::params::osds', {})).keys().count() %>
+        on-success:
+          - get_memory_mb: <% $.num_osds %>
+          - set_failed_no_osds: <% not $.num_osds %>
+
+      get_memory_mb:
+        publish:
+          memory_mb: <% $.introspection_data.get('memory_mb', 0) %>
+        on-success:
+          - get_num_cores: <% $.memory_mb %>
+          - set_failed_get_memory_mb: <% not $.memory_mb %>
+
+      get_num_cores:
+        publish:
+          # TODO(abishop): If NovaVcpuPinSet is defined then use it to determine num_cores
+          num_cores: <% $.introspection_data.get('cpus', 0) %>
+        on-success:
+          - calculate_nova_parameters: <% $.num_cores %>
+          - set_failed_get_num_cores: <% not $.num_cores %>
+
+      # HCI calculations are broken into multiple steps. This is necessary
+      # because variables published by a Mistral task are not available
+      # for use by that same task. Variables computed and published in a task
+      # are only available in subsequent tasks.
+      #
+      # The HCI calculations compute two Nova parameters:
+      # - reserved_host_memory
+      # - cpu_allocation_ratio
+      #
+      # The reserved_host_memory calculation computes the amount of memory
+      # that needs to be reserved for Ceph and the total amount of "guest
+      # overhead" memory that is based on the anticipated number of guests.
+      # Psuedo-code for the calculation (disregarding MB and GB units) is
+      # as follows:
+      #
+      #   ceph_memory = mem_per_osd * num_osds
+      #   nova_memory = total_memory - ceph_memory
+      #   num_guests = nova_memory /
+      #                (average_guest_memory_size + overhead_per_guest)
+      #   reserved_memory = ceph_memory + (num_guests * overhead_per_guest)
+      #
+      # The cpu_allocation_ratio calculation is similar in that it takes into
+      # account the number of cores that must be reserved for Ceph.
+      #
+      #   ceph_cores = cores_per_osd * num_osds
+      #   guest_cores = num_cores - ceph_cores
+      #   guest_vcpus = guest_cores / average_guest_utilization
+      #   cpu_allocation_ratio = guest_vcpus / num_cores
+
+      calculate_nova_parameters:
+        publish:
+          avg_guest_util: <% $.average_guest_cpu_utilization_percentage / 100.0 %>
+          avg_guest_size_gb: <% $.average_guest_memory_size_in_mb / float($.MB_PER_GB) %>
+          memory_gb: <% $.memory_mb / float($.MB_PER_GB) %>
+          ceph_mem_gb: <% $.gb_per_osd * $.num_osds %>
+          nonceph_cores: <% $.num_cores - int($.cores_per_osd * $.num_osds) %>
+        on-success: calc_step_2
+
+      calc_step_2:
+        publish:
+          num_guests: <% int(($.memory_gb - $.ceph_mem_gb) / ($.avg_guest_size_gb + $.gb_overhead_per_guest)) %>
+          guest_vcpus: <% $.nonceph_cores / $.avg_guest_util %>
+        on-success: calc_step_3
+
+      calc_step_3:
+        publish:
+          reserved_host_memory: <% $.MB_PER_GB * int($.ceph_mem_gb + ($.num_guests * $.gb_overhead_per_guest)) %>
+          cpu_allocation_ratio: <% $.guest_vcpus / $.num_cores %>
+        on-success: validate_results
+
+      validate_results:
+        publish:
+          # Verify whether HCI is viable:
+          # - At least 80% of the memory is reserved for Ceph and guest overhead
+          # - At least half of the CPU cores must be available to Nova
+          mem_ok: <% $.reserved_host_memory <= ($.memory_mb * 0.8) %>
+          cpu_ok: <% $.cpu_allocation_ratio >= 0.5 %>
+        on-success:
+          - set_failed_insufficient_mem: <% not $.mem_ok %>
+          - set_failed_insufficient_cpu: <% not $.cpu_ok %>
+          - publish_hci_parameters: <% $.mem_ok and $.cpu_ok %>
+
+      publish_hci_parameters:
+        publish:
+          # TODO(abishop): Update this when the cpu_allocation_ratio can be set
+          # via a THT parameter (no such parameter currently exists). Until a
+          # THT parameter exists, use hiera data to set the cpu_allocation_ratio.
+          hci_parameters: <% dict(concat($.role_name, 'Parameters') => dict('NovaReservedHostMemory' => $.reserved_host_memory)) + dict(concat($.role_name, 'ExtraConfig') => dict('nova::cpu_allocation_ratio' => $.cpu_allocation_ratio)) %>
+
+      set_failed_invalid_hci_profile:
+        publish:
+          message: "'<% $.hci_profile %>' is not a valid HCI profile."
+        on-success: fail
+
+      set_failed_invalid_average_guest_memory_size_in_mb:
+        publish:
+          message: "'<% $.average_guest_memory_size_in_mb %>' is not a valid average_guest_memory_size_in_mb value."
+        on-success: fail
+
+      set_failed_invalid_gb_overhead_per_guest:
+        publish:
+          message: "'<% $.gb_overhead_per_guest %>' is not a valid gb_overhead_per_guest value."
+        on-success: fail
+
+      set_failed_invalid_gb_per_osd:
+        publish:
+          message: "'<% $.gb_per_osd %>' is not a valid gb_per_osd value."
+        on-success: fail
+
+      set_failed_invalid_cores_per_osd:
+        publish:
+          message: "'<% $.cores_per_osd %>' is not a valid cores_per_osd value."
+        on-success: fail
+
+      set_failed_invalid_average_guest_cpu_utilization_percentage:
+        publish:
+          message: "'<% $.average_guest_cpu_utilization_percentage %>' is not a valid average_guest_cpu_utilization_percentage value."
+        on-success: fail
+
+      set_failed_no_osds:
+        publish:
+          message: "No Ceph OSDs found in the overcloud definition ('ceph::profile::params::osds')."
+        on-success: fail
+
+      set_failed_get_memory_mb:
+        publish:
+          message: "Unable to determine the amount of physical memory (no 'memory_mb' found in introspection_data)."
+        on-success: fail
+
+      set_failed_get_num_cores:
+        publish:
+          message: "Unable to determine the number of CPU cores (no 'cpus' found in introspection_data)."
+        on-success: fail
+
+      set_failed_insufficient_mem:
+        publish:
+          message: "<% $.memory_mb %> MB is not enough memory to run hyperconverged."
+        on-success: fail
+
+      set_failed_insufficient_cpu:
+        publish:
+          message: "<% $.num_cores %> CPU cores are not enough to run hyperconverged."
         on-success: fail

@@ -199,9 +199,12 @@ workflows:
         action: baremetal_introspection.get_data uuid=<% $.profile_node_uuid %>
         publish:
           hw_data: <% task().result %>
+          # Establish an empty dictionary of derived_parameters prior to
+          # invoking the individual "feature" algorithms
+          derived_parameters: <% dict() %>
         on-success:
-          - get_dpdk_derive_params: <% $.role_features.contains("DPDK") %>
-          # TODO: Needs to include condition to call other service derive params if DPDK is not available.
+          - get_dpdk_derive_params: <% $.role_features.contains('DPDK') %>
+          - get_hci_derive_params: <% not $.role_features.contains('DPDK') and $.role_features.contains('HCI') %>
         on-error: set_status_failed_get_introspection_data
 
       get_dpdk_derive_params:
@@ -225,8 +228,23 @@ workflows:
           derived_parameters: <% $.derived_parameters %>
         publish:
           derived_parameters: <% task().result.get('derived_parameters', {}) %>
+        on-success:
+          - get_hci_derive_params: <% $.role_features.contains('HCI') %>
         on-error: set_status_failed_get_host_derive_params
-        # Workflow ends here because there are no more algorithms.
+
+      get_hci_derive_params:
+        workflow: tripleo.derive_params_formulas.v1.hci_derive_params
+        input:
+          role_name: <% $.role_name %>
+          environment_parameters: <% $.environment_parameters %>
+          heat_resource_tree: <% $.heat_resource_tree %>
+          introspection_data: <% $.hw_data %>
+          user_inputs: <% $.user_inputs %>
+          derived_parameters: <% $.derived_parameters %>
+        publish:
+          derived_parameters: <% task().result.get('derived_parameters', {}) %>
+        on-error: set_status_failed_get_hci_derive_params
+        # Done (no more derived parameter features)
 
       set_status_failed_get_role_info:
         publish:
@@ -282,6 +300,13 @@ workflows:
           role_name: <% $.role_name %>
           status: FAILED
           message: <% task(get_host_derive_params).result %>
+        on-success: fail
+
+      set_status_failed_get_hci_derive_params:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_hci_derive_params).result %>
         on-success: fail
 
 
