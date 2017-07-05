@@ -12,11 +12,16 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+import logging
 import re
 
 from mistral_lib import actions
 
 from tripleo_common.actions import base
+from tripleo_common import exception
+
+LOG = logging.getLogger(__name__)
 
 
 class GetDpdkNicsNumaInfoAction(base.TripleOAction):
@@ -327,3 +332,119 @@ class GetDpdkSocketMemoryAction(base.TripleOAction):
             dpdk_socket_memory_list.append(socket_mem)
 
         return ','.join([str(sm) for sm in dpdk_socket_memory_list])
+
+
+class ConvertNumberToRangeListAction(base.TripleOAction):
+    """Converts number list into range list
+
+    :param num_list: comma delimited number list as string
+
+    :return: comma delimited range list as string
+    """
+
+    def __init__(self, num_list):
+        super(ConvertNumberToRangeListAction, self).__init__()
+        self.num_list = num_list
+
+    # converts number list into range list.
+    # here input parameter and return value as list
+    # example: [12, 13, 14, 17] into ["12-14", "17"]
+    def convert_number_to_range_list(self, num_list):
+        num_list.sort()
+        range_list = []
+        range_min = num_list[0]
+        for num in num_list:
+            next_val = num + 1
+            if next_val not in num_list:
+                if range_min != num:
+                    range_list.append(str(range_min) + '-' + str(num))
+                else:
+                    range_list.append(str(range_min))
+                next_index = num_list.index(num) + 1
+                if next_index < len(num_list):
+                    range_min = num_list[next_index]
+
+        # here, range_list is a list of strings
+        return range_list
+
+    def run(self, context):
+        try:
+            if not self.num_list:
+                err_msg = ("Input param 'num_list' is blank.")
+                raise exception.DeriveParamsError(err_msg)
+
+            try:
+                # splitting a string (comma delimited list) into
+                # list of numbers
+                # example: "12,13,14,17" string into [12,13,14,17]
+                num_list = [int(num.strip(' '))
+                            for num in self.num_list.split(",")]
+            except ValueError as exc:
+                err_msg = ("Invalid number in input param "
+                           "'num_list': %s" % exc)
+                raise exception.DeriveParamsError(err_msg)
+
+            range_list = self.convert_number_to_range_list(num_list)
+        except exception.DeriveParamsError as err:
+            LOG.error('Derive Params Error: %s', err)
+            return actions.Result(error=str(err))
+
+        # converts into comma delimited range list as string
+        return ','.join(range_list)
+
+
+class ConvertRangeToNumberListAction(base.TripleOAction):
+    """Converts range list to integer list
+
+    :param range_list: comma delimited range list as string / list
+
+    :return: comma delimited number list as string
+    """
+
+    def __init__(self, range_list):
+        super(ConvertRangeToNumberListAction, self).__init__()
+        self.range_list = range_list
+
+    # converts range list into number list
+    # here input parameter and return value as list
+    # example: ["12-14", "^13", "17"] into [12, 14, 17]
+    def convert_range_to_number_list(self, range_list):
+        num_list = []
+        exclude_num_list = []
+        try:
+            for val in range_list:
+                val = val.strip(' ')
+                if '^' in val:
+                    exclude_num_list.append(int(val[1:]))
+                elif '-' in val:
+                    split_list = val.split("-")
+                    range_min = int(split_list[0])
+                    range_max = int(split_list[1])
+                    num_list.extend(range(range_min, (range_max + 1)))
+                else:
+                    num_list.append(int(val))
+        except ValueError as exc:
+            err_msg = ("Invalid number in input param "
+                       "'range_list': %s" % exc)
+            raise exception.DeriveParamsError(err_msg)
+
+        # here, num_list is a list of integers
+        return [num for num in num_list if num not in exclude_num_list]
+
+    def run(self, context):
+        try:
+            if not self.range_list:
+                err_msg = ("Input param 'range_list' is blank.")
+                raise exception.DeriveParamsError(err_msg)
+            range_list = self.range_list
+            # converts into python list if range_list is not list type
+            if not isinstance(range_list, list):
+                range_list = self.range_list.split(",")
+
+            num_list = self.convert_range_to_number_list(range_list)
+        except exception.DeriveParamsError as err:
+            LOG.error('Derive Params Error: %s', err)
+            return actions.Result(error=str(err))
+
+        # converts into comma delimited number list as string
+        return ','.join([str(num) for num in num_list])
