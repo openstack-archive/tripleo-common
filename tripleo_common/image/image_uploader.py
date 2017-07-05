@@ -19,7 +19,10 @@ import logging
 import netifaces
 import six
 
-from docker import Client
+try:
+    from docker import APIClient as Client
+except ImportError:
+    from docker import Client
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageUploaderException
 
