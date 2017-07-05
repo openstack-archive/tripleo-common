@@ -422,3 +422,117 @@ class GetDpdkSocketMemoryActionTest(base.TestCase):
             dpdk_nics_numa_info, numa_nodes, overhead, packet_size_in_buffer)
         result = action.run(mock_ctx)
         self.assertEqual(result, expected_result)
+
+
+class ConvertNumberToRangeListActionTest(base.TestCase):
+
+    def test_run_with_ranges(self):
+        num_list = "0,22,23,24,25,60,65,66,67"
+        expected_result = "0,22-25,60,65-67"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertNumberToRangeListAction(num_list)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
+
+    @mock.patch.object(actions, 'Result', autospec=True)
+    def test_run_with_no_range(self, mock_actions):
+        num_list = "0,22,24,60,65,67"
+        expected_result = "0,22,24,60,65,67"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertNumberToRangeListAction(num_list)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
+
+    @mock.patch.object(actions, 'Result', autospec=True)
+    def test_run_with_empty_input(self, mock_actions):
+        num_list = ""
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertNumberToRangeListAction(num_list)
+        action.run(mock_ctx)
+        msg = "Input param 'num_list' is blank."
+        mock_actions.assert_called_once_with(error=msg)
+
+    @mock.patch.object(actions, 'Result', autospec=True)
+    def test_run_with_invalid_input(self, mock_actions):
+        num_list = ",d"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertNumberToRangeListAction(num_list)
+        action.run(mock_ctx)
+        msg = ("Invalid number in input param 'num_list': invalid "
+               "literal for int() with base 10: ''")
+        mock_actions.assert_called_once_with(error=msg)
+
+
+class ConvertRangeToNumberListActionTest(base.TestCase):
+
+    def test_run_with_ranges_in_comma_delimited_str(self):
+        range_list = "24-27,60,65-67"
+        expected_result = "24,25,26,27,60,65,66,67"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertRangeToNumberListAction(range_list)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
+
+    def test_run_with_ranges_in_comma_delimited_list(self):
+        range_list = ['24-27', '60', '65-67']
+        expected_result = "24,25,26,27,60,65,66,67"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertRangeToNumberListAction(range_list)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
+
+    @mock.patch.object(actions, 'Result', autospec=True)
+    def test_run_with_ranges_exclude_num(self, mock_actions):
+        range_list = "24-27,^25,60,65-67"
+        expected_result = "24,26,27,60,65,66,67"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertRangeToNumberListAction(range_list)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
+
+    def test_run_with_no_ranges(self):
+        range_list = "24,25,26,27,60,65,66,67"
+        expected_result = "24,25,26,27,60,65,66,67"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertRangeToNumberListAction(range_list)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
+
+    @mock.patch.object(actions, 'Result', autospec=True)
+    def test_run_with_empty_input(self, mock_actions):
+        range_list = ""
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertRangeToNumberListAction(range_list)
+        action.run(mock_ctx)
+        msg = "Input param 'range_list' is blank."
+        mock_actions.assert_called_once_with(error=msg)
+
+    @mock.patch.object(actions, 'Result', autospec=True)
+    def test_run_with_invalid_input(self, mock_actions):
+        range_list = ",d"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertRangeToNumberListAction(range_list)
+        action.run(mock_ctx)
+        msg = ("Invalid number in input param 'range_list': invalid "
+               "literal for int() with base 10: ''")
+        mock_actions.assert_called_once_with(error=msg)
+
+    @mock.patch.object(actions, 'Result', autospec=True)
+    def test_run_with_invalid_exclude_number(self, mock_actions):
+        range_list = "12-15,^17"
+        expected_result = "12,13,14,15"
+
+        mock_ctx = mock.MagicMock()
+        action = derive_params.ConvertRangeToNumberListAction(range_list)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
