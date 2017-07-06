@@ -202,7 +202,13 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
         oc_tmpl_file = os.path.join(files_dir, 'overcloud_containers.yaml.j2')
         tmpl_builder = kb.KollaImageBuilder([oc_tmpl_file])
-        result = tmpl_builder.container_images_from_template()
+
+        def ffunc(entry):
+            if 'params' in entry:
+                del(entry['params'])
+            return entry
+
+        result = tmpl_builder.container_images_from_template(filter=ffunc)
 
         oc_yaml_file = os.path.join(files_dir, 'overcloud_containers.yaml')
         yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
