@@ -23,9 +23,6 @@
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
 {% set swift_proxy_server_packages_append = ['openstack-ceilometer-common', 'httpd', 'mod_ssl'] %}
 
-# Required for the Swift object replication
-{% set swift_object_packages_append = ['xinetd'] %}
-
 # NOTE (jaosorior): glance-api with TLS everywhere needs these packages.
 {% set glance_api_packages_append = ['httpd', 'mod_ssl'] %}
 
