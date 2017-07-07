@@ -137,7 +137,7 @@ class TestDockerImageUploader(base.TestCase):
                                    push_destination)
 
         self.dockermock.assert_called_once_with(
-            base_url='unix://var/run/docker.sock')
+            base_url='unix://var/run/docker.sock', version='auto')
 
         self.dockermock.return_value.pull.assert_called_once_with(
             pull_source + '/' + image,
@@ -161,7 +161,7 @@ class TestDockerImageUploader(base.TestCase):
                                    push_destination)
 
         self.dockermock.assert_called_once_with(
-            base_url='unix://var/run/docker.sock')
+            base_url='unix://var/run/docker.sock', version='auto')
 
         self.dockermock.return_value.pull.assert_called_once_with(
             pull_source + '/' + image,

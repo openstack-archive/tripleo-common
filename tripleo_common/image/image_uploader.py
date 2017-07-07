@@ -96,7 +96,7 @@ class DockerImageUploader(ImageUploader):
     logger = logging.getLogger(__name__ + '.DockerImageUploader')
 
     def upload_image(self, image_name, pull_source, push_destination):
-        dockerc = Client(base_url='unix://var/run/docker.sock')
+        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
         if ':' in image_name:
             image = image_name.rpartition(':')[0]
             tag = image_name.rpartition(':')[2]
