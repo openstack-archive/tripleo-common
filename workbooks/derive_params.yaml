@@ -104,10 +104,17 @@ workflows:
           message: 'Unable to determine the list of valid roles in the deployment plan.'
 
       set_status_failed_for_each_role:
-        on-success: send_message
+        on-success: update_message_format
         publish:
           status: FAILED
+          # gets the status and message for all roles from task result.
           message: <% task(for_each_role).result.select(dict('role_name' => $.role_name, 'status' => $.get('status', 'SUCCESS'), 'message' => $.get('message', ''))) %>
+
+      update_message_format:
+        on-success: send_message
+        publish:
+          # updates the message format(Role 'role name': message) for each roles which are failed and joins the message list as string with ', ' separator.
+          message: <% $.message.where($.get('status', 'SUCCESS') != 'SUCCESS').select(concat("Role '{}':".format($.role_name), " ", $.get('message', '(error unknown)'))).join(', ') %>
 
       set_status_failed_reset_derive_parameters_in_plan:
         on-success: send_message
