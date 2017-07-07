@@ -376,7 +376,7 @@ class GetFlattenedParametersAction(GetParametersAction):
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
         super(GetFlattenedParametersAction, self).__init__(container)
 
-    def _processParams(self, flattened, params):
+    def _process_params(self, flattened, params):
         for item in params:
             if item not in flattened['parameters']:
                 param_obj = {}
@@ -399,8 +399,8 @@ class GetFlattenedParametersAction(GetParametersAction):
         if 'Description' in data:
             value['description'] = data['Description']
         if 'Parameters' in data:
-            value['parameters'] = self._processParams(flattened,
-                                                      data['Parameters'])
+            value['parameters'] = self._process_params(flattened,
+                                                       data['Parameters'])
         if 'ParameterGroups' in data:
             value['parameter_groups'] = data['ParameterGroups']
         if 'NestedParameters' in data:
