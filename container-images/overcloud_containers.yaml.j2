@@ -20,6 +20,10 @@ container_images_template:
   params:
   - DockerAodhNotifierImage
 
+- imagename: "{{namespace}}/{{name_prefix}}barbican-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerBarbicanApiImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-central{{name_suffix}}:{{tag}}"
   params:
   - DockerCeilometerCentralImage
