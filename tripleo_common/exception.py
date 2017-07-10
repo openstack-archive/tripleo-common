@@ -104,10 +104,6 @@ class RootDeviceDetectionError(Exception):
     """Failed to detect the root device"""
 
 
-class PlanOperationError(Exception):
-    """Error while performing a deployment plan operation"""
-
-
 class DeriveParamsError(Exception):
     """Error while performing a derive parameters operation"""
 
