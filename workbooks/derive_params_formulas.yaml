@@ -1,0 +1,342 @@
+---
+version: '2.0'
+name: tripleo.derive_params_formulas.v1
+description: TripleO Workflows to derive deployment parameters from the introspected data
+
+workflows:
+
+
+  dpdk_derive_params:
+    description: >
+      Workflow to derive parameters for DPDK service.
+    input:
+      - plan
+      - role_name
+      - hw_data # introspection data
+      - user_inputs
+      - derived_parameters: {}
+
+    output:
+      derived_parameters: <% $.derived_parameters.mergeWith($.get('dpdk_parameters', {})) %>
+
+    tasks:
+      get_network_config:
+        action: tripleo.parameters.get_network_config
+        input:
+          container: <% $.plan %>
+          role_name: <% $.role_name %>
+        publish:
+          network_configs: <% task().result.get('network_config', []) %>
+        on-success: get_dpdk_nics_numa_info
+        on-error: set_status_failed_get_network_config
+
+      get_dpdk_nics_numa_info:
+        action: tripleo.derive_params.get_dpdk_nics_numa_info
+        input:
+          network_configs: <% $.network_configs %>
+          inspect_data: <% $.hw_data %>
+        publish:
+          dpdk_nics_numa_info: <% task().result %>
+        on-success:
+          # TODO: Need to remove condtions here
+          # adding condition and trhow error in action for empty check
+          - get_dpdk_nics_numa_nodes: <% $.dpdk_nics_numa_info %>
+          - set_status_failed_get_dpdk_nics_numa_info: <% not $.dpdk_nics_numa_info %>
+        on-error: set_status_failed_on_error_get_dpdk_nics_numa_info
+
+      get_dpdk_nics_numa_nodes:
+        publish:
+          dpdk_nics_numa_nodes: <% $.dpdk_nics_numa_info.groupBy($.numa_node).select($[0]).orderBy($) %>
+        on-success:
+          - get_numa_nodes: <% $.dpdk_nics_numa_nodes %>
+          - set_status_failed_get_dpdk_nics_numa_nodes: <% not $.dpdk_nics_numa_nodes %>
+
+      get_numa_nodes:
+        publish:
+          numa_nodes: <% $.hw_data.numa_topology.ram.select($.numa_node).orderBy($) %>
+        on-success:
+          - get_num_cores_per_numa_nodes: <% $.numa_nodes %>
+          - set_status_failed_get_numa_nodes: <% not $.numa_nodes %>
+
+      # For NUMA node with DPDK nic, number of cores should be used from user input (defaults to 2)
+      # For NUMA node without DPDK nic, number of cores should be 1
+      get_num_cores_per_numa_nodes:
+        publish:
+          num_cores_per_numa_nodes: <% let(dpdk_nics_nodes => $.dpdk_nics_numa_nodes, cores => $.user_inputs.get('num_phy_cores_per_numa_node_for_pmd', 2)) -> $.numa_nodes.select(switch($ in $dpdk_nics_nodes => $cores, not $ in $dpdk_nics_nodes => 1)) %>
+        on-success: get_pmd_cpus
+
+      get_pmd_cpus:
+        action: tripleo.derive_params.get_dpdk_core_list
+        input:
+          inspect_data: <% $.hw_data %>
+          numa_nodes_cores_count: <% $.num_cores_per_numa_nodes %>
+        publish:
+          pmd_cpus: <% task().result %>
+        on-success:
+          - get_host_cpus: <% $.pmd_cpus %>
+          - set_status_failed_get_pmd_cpus: <% not $.pmd_cpus %>
+        on-error: set_status_failed_on_error_get_pmd_cpus
+
+      get_host_cpus:
+        action: tripleo.derive_params.get_host_cpus_list inspect_data=<% $.hw_data %>
+        publish:
+          host_cpus: <% task().result  %>
+        on-success:
+          - get_sock_mem: <% $.host_cpus %>
+          - set_status_failed_get_host_cpus: <% not $.host_cpus %>
+        on-error: set_status_failed_on_error_get_host_cpus
+
+      get_sock_mem:
+        action: tripleo.derive_params.get_dpdk_socket_memory
+        input:
+          dpdk_nics_numa_info: <% $.dpdk_nics_numa_info %>
+          numa_nodes: <% $.numa_nodes %>
+          overhead: <% $.user_inputs.get('overhead', 800) %>
+          packet_size_in_buffer: <% 4096*64 %>
+        publish:
+          sock_mem: <% task().result %>
+        on-success:
+          - get_memory_slot_info: <% $.sock_mem %>
+          - set_status_failed_get_sock_mem: <% not $.sock_mem %>
+        on-error: set_status_failed_on_error_get_sock_mem
+
+      get_memory_slot_info:
+        publish:
+          memory_slot_info: <% $.hw_data.extra.memory.values().select($.get("slot")).where($) %>
+        on-success:
+          - remove_slots_prefix_string: <% $.memory_slot_info %>
+          - set_status_failed_get_memory_slot_info: <% not $.memory_slot_info %>
+
+      # Memory channels are identified by the number of memory slots to the NUMA node
+      # Memory slots will be off different formats in the introspection data, like P1-DIMMA1, DIMM_A1, etc
+      # This task removes the prefix string format like 'P1-DIMM' or 'DIMM_' and provides the list with only slot names like 'A1'
+      remove_slots_prefix_string:
+        publish:
+          updated_mem_slot_info: <% $.memory_slot_info.select($.replaceBy(regex("[A-Z0-9]*[-_]*DIMM{1}[-_]*"), '')) %>
+        on-success: remove_slots_suffix_number
+
+      # In the above list of slot names, this task removes the suffix number like '1' in 'A1' and provide the list with slot name as 'A'
+      remove_slots_suffix_number:
+        publish:
+          updated_mem_slot_info: <% $.updated_mem_slot_info.select($.replaceBy(regex("[0-9]"), '')) %>
+        on-success: get_memory_channels_per_node
+
+      # The total memory slot names list will have both NUMA nodes slot.
+      # Average out the length of slot name list with number of NUMA nodes to get the final value
+      get_memory_channels_per_node:
+        publish:
+          mem_channel: <% $.updated_mem_slot_info.distinct().len() / $.numa_nodes.len() %>
+        on-success:
+          - get_dpdk_parameters: <% $.mem_channel %>
+          - set_status_failed_get_memory_channels_per_node: <% not $.mem_channel %>
+
+      get_dpdk_parameters:
+        publish:
+          dpdk_parameters: <% dict(concat($.role_name, 'Parameters') => dict('OvsPmdCoreList' => $.get('pmd_cpus', ''), 'OvsDpdkCoreList' => $.get('host_cpus', ''), 'OvsDpdkSocketMemory' => $.get('sock_mem', ''), 'OvsDpdkMemoryChannels' => $.get('mem_channel', ''))) %>
+
+      set_status_failed_get_network_config:
+        publish:
+          status: FAILED
+          message: <% task(get_network_config).result %>
+        on-success: fail
+
+      set_status_failed_get_dpdk_nics_numa_info:
+        publish:
+          status: FAILED
+          message: "Unable to determine DPDK NIC's NUMA information"
+        on-success: fail
+
+      set_status_failed_on_error_get_dpdk_nics_numa_info:
+        publish:
+          status: FAILED
+          message: <% task(get_dpdk_nics_numa_info).result %>
+        on-success: fail
+
+      set_status_failed_get_dpdk_nics_numa_nodes:
+        publish:
+          status: FAILED
+          message: "Unable to determine DPDK NIC's numa nodes"
+        on-success: fail
+
+      set_status_failed_get_numa_nodes:
+        publish:
+          status: FAILED
+          message: 'Unable to determine available NUMA nodes'
+        on-success: fail
+
+      set_status_failed_get_pmd_cpus:
+        publish:
+          status: FAILED
+          message: 'Unable to determine OvsPmdCoreList parameter'
+        on-success: fail
+
+      set_status_failed_on_error_get_pmd_cpus:
+        publish:
+          status: FAILED
+          message: <% task(get_pmd_cpus).result %>
+        on-success: fail
+
+      set_status_failed_get_host_cpus:
+        publish:
+          status: FAILED
+          message: 'Unable to determine OvsDpdkCoreList parameter'
+        on-success: fail
+
+      set_status_failed_on_error_get_host_cpus:
+        publish:
+          status: FAILED
+          message: <% task(get_host_cpus).result %>
+        on-success: fail
+
+      set_status_failed_get_sock_mem:
+        publish:
+          status: FAILED
+          message: 'Unable to determine OvsDpdkSocketMemory parameter'
+        on-success: fail
+
+      set_status_failed_on_error_get_sock_mem:
+        publish:
+          status: FAILED
+          message: <% task(get_sock_mem).result %>
+        on-success: fail
+
+      set_status_failed_get_memory_slot_info:
+        publish:
+          status: FAILED
+          message: 'Unable to determine memory slot name on NUMA nodes'
+        on-success: fail
+
+      set_status_failed_get_memory_channels_per_node:
+        publish:
+          status: FAILED
+          message: 'Unable to determine OvsDpdkMemoryChannels parameter'
+        on-success: fail
+
+
+  host_derive_params:
+    description: >
+      This workflow derives parameters for the Host process, and is mainly associated with CPU pinning and huge memory pages.
+      This workflow can be dependent on any feature or also can be invoked individually as well.
+
+    input:
+      - role_name
+      - hw_data # introspection data
+      - user_inputs
+      - derived_parameters: {}
+
+    output:
+      derived_parameters: <% $.derived_parameters.mergeWith($.get('host_parameters', {})) %>
+
+    tasks:
+
+      get_cpus:
+        publish:
+          cpus: <% $.hw_data.numa_topology.cpus %>
+        on-success:
+          - get_role_derive_params: <% $.cpus %>
+          - set_status_failed_get_cpus: <% not $.cpus %>
+
+      get_role_derive_params:
+        publish:
+          role_derive_params: <% $.derived_parameters.get(concat($.role_name, 'Parameters'), {}) %>
+        on-success: get_host_dpdk_combined_cpus
+
+      get_host_dpdk_combined_cpus:
+        publish:
+          host_dpdk_combined_cpus: <%  let(params => $.role_derive_params) -> concat($params.get('OvsPmdCoreList', ''), ',', $params.get('OvsDpdkCoreList', '')).split(",").select(int($)) %>
+        on-success:
+          - get_nova_cpus: <% $.host_dpdk_combined_cpus %>
+          - set_status_failed_get_host_dpdk_combined_cpus: <% not $.host_dpdk_combined_cpus %>
+
+      get_nova_cpus:
+        publish:
+          nova_cpus: <% let(invalid_threads => $.host_dpdk_combined_cpus) -> $.cpus.select($.thread_siblings).flatten().where(not $ in $invalid_threads).join(',') %>
+        on-success:
+          - get_isol_cpus: <% $.nova_cpus %>
+          - set_status_failed_get_nova_cpus: <% not $.nova_cpus %>
+
+      get_isol_cpus:
+        publish:
+          isol_cpus: <% let(params => $.role_derive_params) -> concat($params.get('OvsPmdCoreList',''), ',', $.nova_cpus) %>
+        on-success: get_host_mem
+
+      get_host_mem:
+        publish:
+          host_mem: <% $.user_inputs.get('host_mem_default', 4096) %>
+        on-success: check_default_hugepage_supported
+
+      check_default_hugepage_supported:
+        publish:
+          default_hugepage_supported: <% $.hw_data.get('inventory', {}).get('cpu', {}).get('flags', []).contains('cpu_hugepages_1g') %>
+        on-success:
+          - get_total_memory: <% $.default_hugepage_supported %>
+          - set_status_failed_check_default_hugepage_supported: <% not $.default_hugepage_supported %>
+
+      get_total_memory:
+        publish:
+          total_memory: <% $.hw_data.get('inventory', {}).get('memory', {}).get('physical_mb', 0) %>
+        on-success:
+          - get_hugepages: <% $.total_memory %>
+          - set_status_failed_get_total_memory: <% not $.total_memory %>
+
+      get_hugepages:
+        publish:
+          hugepages: <% let(huge_page_perc => float($.user_inputs.get('huge_page_allocation_percentage', 90))/100)-> int((($.total_memory/1024)-4) * $huge_page_perc) %>
+        on-success:
+          - get_cpu_model: <% $.hugepages %>
+          - set_status_failed_get_hugepages: <% not $.hugepages %>
+
+      get_cpu_model:
+        publish:
+          intel_cpu_model: <% $.hw_data.get('inventory', {}).get('cpu', {}).get('model_name', '').startsWith('Intel') %>
+        on-success: get_iommu_info
+
+      get_iommu_info:
+        publish:
+          iommu_info: <% switch($.intel_cpu_model => 'intel_iommu=on iommu=pt', not $.intel_cpu_model => '') %>
+        on-success: get_kernel_args
+
+      get_kernel_args:
+        publish:
+          kernel_args: <% concat('default_hugepagesz=1GB hugepagesz=1G ', 'hugepages=', str($.hugepages), ' ',  $.iommu_info, ' isolcpus=', $.isol_cpus) %>
+        on-success: get_host_parameters
+
+      get_host_parameters:
+        publish:
+          host_parameters: <% dict(concat($.role_name, 'Parameters') => dict('NovaVcpuPinSet' => $.get('nova_cpus', ''), 'NovaReservedHostMemory' => $.get('host_mem', ''), 'KernelArgs' => $.get('kernel_args', ''), 'IsolCpusList' => $.get('isol_cpus', ''))) %>
+
+      set_status_failed_get_cpus:
+        publish:
+          status: FAILED
+          message: "Unable to determine CPU's on NUMA nodes"
+        on-success: fail
+
+      set_status_failed_get_host_dpdk_combined_cpus:
+        publish:
+          status: FAILED
+          message: 'Unable to combine host and dpdk cpus list'
+        on-success: fail
+
+      set_status_failed_get_nova_cpus:
+        publish:
+          status: FAILED
+          message: 'Unable to determine nova vcpu pin set'
+        on-success: fail
+
+      set_status_failed_check_default_hugepage_supported:
+        publish:
+          status: FAILED
+          message: 'default huge page size 1GB is not supported'
+        on-success: fail
+
+      set_status_failed_get_total_memory:
+        publish:
+          status: FAILED
+          message: 'Unable to determine total memory'
+        on-success: fail
+
+      set_status_failed_get_hugepages:
+        publish:
+          status: FAILED
+          message: 'Unable to determine huge pages'
+        on-success: fail

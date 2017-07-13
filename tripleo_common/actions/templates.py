@@ -299,10 +299,17 @@ class ProcessTemplatesAction(base.TripleOAction):
             # merge generated passwords into params first
             passwords = plan_env.get('passwords', {})
             merged_params.update(passwords)
+
+            # derived parameters are merged before 'parameter defaults'
+            # so that user-specified values can override the derived values.
+            derived_params = plan_env.get('derived_parameters', {})
+            merged_params.update(derived_params)
+
             # handle user set parameter values next in case a user has set
             # a new value for a password parameter
             params = plan_env.get('parameter_defaults', {})
-            merged_params.update(params)
+            merged_params = template_utils.deep_update(merged_params, params)
+
             if merged_params:
                 env_temp_file = _create_temp_file(
                     {'parameter_defaults': merged_params})
