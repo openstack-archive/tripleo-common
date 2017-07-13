@@ -94,7 +94,7 @@ class AnsibleAction(actions.Action):
         if (isinstance(self._inventory, six.string_types) and
                 os.path.exists(self._inventory)):
             return self._inventory
-        else:
+        elif not isinstance(self._inventory, six.string_types):
             self._inventory = yaml.safe_dump(self._inventory)
 
         path = os.path.join(self.work_dir, 'inventory.yaml')
@@ -266,7 +266,7 @@ class AnsiblePlaybookAction(actions.Action):
         if (isinstance(self._inventory, six.string_types) and
                 os.path.exists(self._inventory)):
             return self._inventory
-        else:
+        elif not isinstance(self._inventory, six.string_types):
             self._inventory = yaml.safe_dump(self._inventory)
 
         path = os.path.join(self.work_dir, 'inventory.yaml')
@@ -291,7 +291,7 @@ class AnsiblePlaybookAction(actions.Action):
         if (isinstance(self._playbook, six.string_types) and
                 os.path.exists(self._playbook)):
             return self._playbook
-        else:
+        elif not isinstance(self._playbook, six.string_types):
             self._playbook = yaml.safe_dump(self._playbook)
 
         path = os.path.join(self.work_dir, 'playbook.yaml')
