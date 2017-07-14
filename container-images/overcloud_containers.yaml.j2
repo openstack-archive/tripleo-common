@@ -157,6 +157,10 @@ container_images_template:
   params:
   - DockerManilaSchedulerImage
 
+- imagename: "{{namespace}}/{{name_prefix}}manila-share{{name_suffix}}:{{tag}}"
+  params:
+  - DockerManilaShareImage
+
 - imagename: "{{namespace}}/{{name_prefix}}mariadb{{name_suffix}}:{{tag}}"
   params:
   - DockerClustercheckConfigImage
