@@ -1,0 +1,3 @@
+#!/bin/sh
+
+mysql -e 'show databases' || exit 1
