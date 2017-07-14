@@ -20,6 +20,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-gnocchi-metricd:latest
 - imagename: tripleoupstream/centos-binary-gnocchi-statsd:latest
 - imagename: tripleoupstream/centos-binary-haproxy:latest
+- imagename: tripleoupstream/centos-binary-heat-all:latest
 - imagename: tripleoupstream/centos-binary-heat-api-cfn:latest
 - imagename: tripleoupstream/centos-binary-heat-api:latest
 - imagename: tripleoupstream/centos-binary-heat-engine:latest

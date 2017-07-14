@@ -98,6 +98,8 @@ container_images_template:
   - DockerHAProxyConfigImage
   - DockerHAProxyImage
 
+- imagename: "{{namespace}}/{{name_prefix}}heat-all{{name_suffix}}:{{tag}}"
+
 - imagename: "{{namespace}}/{{name_prefix}}heat-api-cfn{{name_suffix}}:{{tag}}"
   params:
   - DockerHeatApiCfnConfigImage
