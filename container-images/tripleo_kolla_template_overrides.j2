@@ -5,6 +5,10 @@
 {% set base_yum_url_packages_override = [] %}
 {% set base_yum_repo_keys_override = [] %}
 
+# Remove EPEL and the dependency requiring it
+{% set base_centos_yum_repo_packages_remove = ['epel-release'] %}
+{% set cinder_volume_packages_remove = ['scsi-target-utils'] %}
+
 # This installs the puppet dependency in the base container and includes helper scripts
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
