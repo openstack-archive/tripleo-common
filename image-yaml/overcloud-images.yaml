@@ -28,7 +28,6 @@ disk_images:
       - plotnetcfg
       - sos
       - ntp
-      - ntpd
       - device-mapper-multipath
       - python-heat-agent-puppet
       - python-heat-agent-hiera

@@ -25,7 +25,6 @@ disk_images:
       - overcloud-secure
     packages:
       - ntp
-      - ntpd
       - python-psutil
       - python-debtcollector
       - plotnetcfg
