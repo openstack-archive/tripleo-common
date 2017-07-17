@@ -34,6 +34,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-manila-api:latest
 - imagename: tripleoupstream/centos-binary-manila-base:latest
 - imagename: tripleoupstream/centos-binary-manila-scheduler:latest
+- imagename: tripleoupstream/centos-binary-manila-share:latest
 - imagename: tripleoupstream/centos-binary-mariadb:latest
 - imagename: tripleoupstream/centos-binary-memcached:latest
 - imagename: tripleoupstream/centos-binary-mistral-api:latest
