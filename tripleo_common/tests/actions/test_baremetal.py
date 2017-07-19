@@ -63,7 +63,7 @@ class TestConfigureBootAction(base.TestCase):
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID',
                                                instance_boot_option='netboot')
         result = action.run(self.context)
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
         self.node_update[0].update({'value': 'boot_option:netboot'})
         self.ironic.node.update.assert_called_once_with(mock.ANY,
@@ -72,7 +72,7 @@ class TestConfigureBootAction(base.TestCase):
     def test_run_instance_boot_option_not_set(self):
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID')
         result = action.run(self.context)
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
         self.node_update[0].update({'value': 'boot_option:local'})
         self.ironic.node.update.assert_called_once_with(mock.ANY,
@@ -85,7 +85,7 @@ class TestConfigureBootAction(base.TestCase):
 
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID')
         result = action.run(self.context)
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
         self.node_update[0].update({'value': 'boot_option:netboot'})
         self.ironic.node.update.assert_called_once_with(mock.ANY,
@@ -99,7 +99,7 @@ class TestConfigureBootAction(base.TestCase):
         action = baremetal.ConfigureBootAction(node_uuid='MOCK_UUID',
                                                instance_boot_option='local')
         result = action.run(self.context)
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
         self.node_update[0].update({'value': 'boot_option:local'})
         self.ironic.node.update.assert_called_once_with(mock.ANY,
@@ -116,7 +116,7 @@ class TestConfigureBootAction(base.TestCase):
                                                    ramdisk_name='test_ramdisk')
             result = action.run(self.context)
 
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
         self.node_update[1].update({'value': 'test_ramdisk_id'})
         self.node_update[2].update({'value': 'test_kernel_id'})
