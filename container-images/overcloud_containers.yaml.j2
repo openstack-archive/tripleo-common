@@ -360,4 +360,9 @@ container_images_template:
   - DockerZaqarConfigImage
   - DockerZaqarImage
 
-- imagename: "ceph/daemon:tag-build-master-jewel-centos-7"
+# FIXME(gfidente): we don't use any prefix here so it would be nice to
+# not have the --pull-source registry prepended, we can probably add
+# another {{keyword}} to describe where we want and where we do not
+#- imagename: "ceph/daemon:tag-build-master-jewel-centos-7"
+#  params:
+#  - DockerCephDaemonImage
