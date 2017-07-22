@@ -123,6 +123,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}ironic-api{{name_suffix}}:{{tag}}"
   params:
   - DockerIronicApiImage
+  - DockerIronicApiConfigImage
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-conductor{{name_suffix}}:{{tag}}"
   params:
