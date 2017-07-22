@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    Add a Mistral workflow that uses hardware introspection data to derive
+    deployment parameters for features such as DPDK and HCI (hyperconverged
+    Nova compute and Ceph OSD nodes). The derived parameters workflow is
+    automatically invoked during deployment when the workflow is listed in
+    the plan environment file.
+
+    For each role in the deployment, the workflow analyzes the Heat resource
+    tree to determine which features are relevant to that role. The main
+    workflow invokes secondary workflows responsible for deriving parameters
+    associated with each feature.
