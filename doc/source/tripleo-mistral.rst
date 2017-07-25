@@ -16,7 +16,7 @@ Undercloud Setup
 ================
 
 To install the undercloud follow the `TripleO developer documentation
-<http://docs.openstack.org/developer/tripleo-docs/environments/environments.html>`_.
+<https://docs.openstack.org/tripleo-docs/latest/install/environments/environments.html>`_.
 
 =============
 Code Location
@@ -47,7 +47,7 @@ Mistral actions can be run through the CLI:
    openstack action execution run tripleo.plan.create_container input.json
 
 For REST API usage please reference the `full Mistral documentation
-<http://docs.openstack.org/developer/mistral/>`_.
+<https://docs.openstack.org/mistral/latest/>`_.
 
 ===============
 Using Workflows
@@ -71,7 +71,7 @@ can be used to get the status and output of that workflow execution.
    openstack workflow execution show output <execution ID>
 
 For REST API usage please reference the `full Mistral documentation
-<http://docs.openstack.org/developer/mistral/>`_.
+<https://docs.openstack.org/mistral/latest/>`_.
 
 By default a workflow execution expires after 48 hours.  This can be configured
 in /etc/mistral/mistral.conf.
