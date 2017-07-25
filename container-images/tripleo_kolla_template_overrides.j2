@@ -8,7 +8,7 @@
 # This installs the puppet dependency in the base container and includes helper scripts
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
-{% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie'] %}
+{% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini'] %}
 {% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
 
 # Required for mistral-db-populate to load tripleo custom actions on

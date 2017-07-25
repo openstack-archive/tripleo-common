@@ -1,0 +1,5 @@
+#!/bin/sh
+
+bind_host=$(crudini --get /etc/heat/heat.conf heat_api bind_host 2> /dev/null || echo 127.0.0.1)
+bind_port=$(crudini --get /etc/heat/heat.conf heat_api bind_port 2> /dev/null || echo 8004)
+curl --fail http://${bind_host}:${bind_port}/ || exit 1
