@@ -224,7 +224,7 @@ class NodesTest(base.TestCase):
     def _get_node(self):
         return {'cpu': '1', 'memory': '2048', 'disk': '30', 'arch': 'amd64',
                 'mac': ['aaa'], 'pm_addr': 'foo.bar', 'pm_user': 'test',
-                'pm_password': 'random', 'pm_type': 'pxe_ssh', 'name': 'node1',
+                'pm_password': 'random', 'pm_type': 'ipmi', 'name': 'node1',
                 'capabilities': 'num_nics:6'}
 
     def test_register_all_nodes_ironic_no_hw_stats(self):
@@ -243,11 +243,10 @@ class NodesTest(base.TestCase):
         ironic = mock.MagicMock()
         new_nodes = nodes.register_all_nodes(node_list, client=ironic)
         self.assertEqual([ironic.node.create.return_value], new_nodes)
-        pxe_node_driver_info = {"ssh_address": "foo.bar",
-                                "ssh_username": "test",
-                                "ssh_key_contents": "random",
-                                "ssh_virt_type": "virsh"}
-        pxe_node = mock.call(driver="pxe_ssh",
+        pxe_node_driver_info = {"ipmi_address": "foo.bar",
+                                "ipmi_username": "test",
+                                "ipmi_password": "random"}
+        pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
                              properties=node_properties)
@@ -265,11 +264,10 @@ class NodesTest(base.TestCase):
                            "capabilities": "num_nics:6"}
         ironic = mock.MagicMock()
         nodes.register_all_nodes(node_list, client=ironic)
-        pxe_node_driver_info = {"ssh_address": "foo.bar",
-                                "ssh_username": "test",
-                                "ssh_key_contents": "random",
-                                "ssh_virt_type": "virsh"}
-        pxe_node = mock.call(driver="pxe_ssh",
+        pxe_node_driver_info = {"ipmi_address": "foo.bar",
+                                "ipmi_username": "test",
+                                "ipmi_password": "random"}
+        pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
                              properties=node_properties)
@@ -293,13 +291,12 @@ class NodesTest(base.TestCase):
         nodes.register_all_nodes(node_list, client=ironic,
                                  glance_client=glance, kernel_name='bm-kernel',
                                  ramdisk_name='bm-ramdisk')
-        pxe_node_driver_info = {"ssh_address": "foo.bar",
-                                "ssh_username": "test",
-                                "ssh_key_contents": "random",
-                                "ssh_virt_type": "virsh",
+        pxe_node_driver_info = {"ipmi_address": "foo.bar",
+                                "ipmi_username": "test",
+                                "ipmi_password": "random",
                                 "deploy_kernel": "kernel-123",
                                 "deploy_ramdisk": "ramdisk-999"}
-        pxe_node = mock.call(driver="pxe_ssh",
+        pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
                              properties=node_properties)
@@ -318,11 +315,10 @@ class NodesTest(base.TestCase):
                            "capabilities": "num_nics:6"}
         ironic = mock.MagicMock()
         nodes.register_all_nodes(node_list, client=ironic)
-        pxe_node_driver_info = {"ssh_address": "foo.bar",
-                                "ssh_username": "test",
-                                "ssh_key_contents": "random",
-                                "ssh_virt_type": "virsh"}
-        pxe_node = mock.call(driver="pxe_ssh",
+        pxe_node_driver_info = {"ipmi_address": "foo.bar",
+                                "ipmi_username": "test",
+                                "ipmi_password": "random"}
+        pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
                              properties=node_properties,
@@ -344,11 +340,10 @@ class NodesTest(base.TestCase):
                            "capabilities": "num_nics:7"}
         ironic = mock.MagicMock()
         nodes.register_all_nodes(node_list, client=ironic)
-        pxe_node_driver_info = {"ssh_address": "foo.bar",
-                                "ssh_username": "test",
-                                "ssh_key_contents": "random",
-                                "ssh_virt_type": "virsh"}
-        pxe_node = mock.call(driver="pxe_ssh",
+        pxe_node_driver_info = {"ipmi_address": "foo.bar",
+                                "ipmi_username": "test",
+                                "ipmi_password": "random"}
+        pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
                              properties=node_properties)
@@ -365,15 +360,14 @@ class NodesTest(base.TestCase):
         def side_effect(*args, **kwargs):
             update_patch = [
                 {'path': '/name', 'value': 'node1'},
-                {'path': '/driver_info/ssh_key_contents', 'value': 'random'},
-                {'path': '/driver_info/ssh_address', 'value': 'foo.bar'},
+                {'path': '/driver_info/ipmi_password', 'value': 'random'},
+                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
                 {'path': '/properties/memory_mb', 'value': '2048'},
                 {'path': '/properties/local_gb', 'value': '30'},
                 {'path': '/properties/cpu_arch', 'value': 'amd64'},
                 {'path': '/properties/cpus', 'value': '1'},
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
-                {'path': '/driver_info/ssh_username', 'value': 'test'},
-                {'path': '/driver_info/ssh_virt_type', 'value': 'virsh'}]
+                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for key in update_patch:
                 key['op'] = 'add'
             self.assertThat(update_patch,
@@ -395,8 +389,8 @@ class NodesTest(base.TestCase):
         def side_effect(*args, **kwargs):
             update_patch = [
                 {'path': '/name', 'value': 'node1'},
-                {'path': '/driver_info/ssh_key_contents', 'value': 'random'},
-                {'path': '/driver_info/ssh_address', 'value': 'foo.bar'},
+                {'path': '/driver_info/ipmi_password', 'value': 'random'},
+                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
                 {'path': '/properties/memory_mb', 'value': '2048'},
                 {'path': '/properties/local_gb', 'value': '30'},
                 {'path': '/properties/cpu_arch', 'value': 'amd64'},
@@ -404,8 +398,7 @@ class NodesTest(base.TestCase):
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
                 {'path': '/driver_info/deploy_kernel', 'value': 'image-k'},
                 {'path': '/driver_info/deploy_ramdisk', 'value': 'image-r'},
-                {'path': '/driver_info/ssh_username', 'value': 'test'},
-                {'path': '/driver_info/ssh_virt_type', 'value': 'virsh'}]
+                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for key in update_patch:
                 key['op'] = 'add'
             self.assertThat(update_patch,
@@ -462,15 +455,14 @@ class NodesTest(base.TestCase):
         def side_effect(*args, **kwargs):
             update_patch = [
                 {'path': '/name', 'value': 'node1'},
-                {'path': '/driver_info/ssh_key_contents', 'value': 'random'},
-                {'path': '/driver_info/ssh_address', 'value': 'foo.bar'},
+                {'path': '/driver_info/ipmi_password', 'value': 'random'},
+                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
                 {'path': '/properties/memory_mb', 'value': '2048'},
                 {'path': '/properties/local_gb', 'value': '30'},
                 {'path': '/properties/cpu_arch', 'value': 'amd64'},
                 {'path': '/properties/cpus', 'value': '1'},
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
-                {'path': '/driver_info/ssh_username', 'value': 'test'},
-                {'path': '/driver_info/ssh_virt_type', 'value': 'virsh'}]
+                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for key in update_patch:
                 key['op'] = 'add'
             self.assertThat(update_patch,
@@ -491,15 +483,14 @@ class NodesTest(base.TestCase):
         def side_effect(*args, **kwargs):
             update_patch = [
                 {'path': '/name', 'value': 'node1'},
-                {'path': '/driver_info/ssh_key_contents', 'value': 'random'},
-                {'path': '/driver_info/ssh_address', 'value': 'foo.bar'},
+                {'path': '/driver_info/ipmi_password', 'value': 'random'},
+                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
                 {'path': '/properties/memory_mb', 'value': '2048'},
                 {'path': '/properties/local_gb', 'value': '30'},
                 {'path': '/properties/cpu_arch', 'value': 'amd64'},
                 {'path': '/properties/cpus', 'value': '1'},
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
-                {'path': '/driver_info/ssh_username', 'value': 'test'},
-                {'path': '/driver_info/ssh_virt_type', 'value': 'virsh'}]
+                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for key in update_patch:
                 key['op'] = 'add'
             self.assertThat(update_patch,
@@ -637,15 +628,14 @@ class NodesTest(base.TestCase):
         def side_effect(*args, **kwargs):
             update_patch = [
                 {'path': '/name', 'value': 'node1'},
-                {'path': '/driver_info/ssh_key_contents', 'value': 'random'},
-                {'path': '/driver_info/ssh_address', 'value': 'foo.bar'},
+                {'path': '/driver_info/ipmi_password', 'value': 'random'},
+                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
                 {'path': '/properties/memory_mb', 'value': '2048'},
                 {'path': '/properties/local_gb', 'value': '30'},
                 {'path': '/properties/cpu_arch', 'value': 'amd64'},
                 {'path': '/properties/cpus', 'value': '1'},
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
-                {'path': '/driver_info/ssh_username', 'value': 'test'},
-                {'path': '/driver_info/ssh_virt_type', 'value': 'virsh'}]
+                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for key in update_patch:
                 key['op'] = 'add'
             self.assertThat(update_patch,
