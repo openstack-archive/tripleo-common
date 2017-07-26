@@ -372,6 +372,10 @@ container_images_template:
   - OS::TripleO::Services::NeutronOvsAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-sriov-agent{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronSriovImage
+  services:
+  - OS::TripleO::Services::NeutronSriovAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server{{name_suffix}}:{{tag}}"
   params:
@@ -386,6 +390,7 @@ container_images_template:
   - OS::TripleO::Services::NeutronMetadataAgent
   - OS::TripleO::Services::NeutronOvsAgent
   - OS::TripleO::Services::NeutronServer
+  - OS::TripleO::Services::NeutronSriovAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
   params:
