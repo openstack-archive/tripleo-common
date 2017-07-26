@@ -13,41 +13,26 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
-import time
 
 from heatclient.common import template_utils
 from heatclient import exc as heat_exc
 from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
-from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
-from tripleo_common.update import PackageUpdateManager
 from tripleo_common.utils import plan as plan_utils
 
 LOG = logging.getLogger(__name__)
 
 
-class ClearBreakpointsAction(base.TripleOAction):
-    def __init__(self, stack_id, refs):
-        super(ClearBreakpointsAction, self).__init__()
-        self.stack_id = stack_id
-        self.refs = refs
-
-    def run(self, context):
-        heat = self.get_orchestration_client(context)
-        nova = self.get_compute_client(context)
-        update_manager = PackageUpdateManager(
-            heat, nova, self.stack_id, stack_fields={})
-        update_manager.clear_breakpoints(self.refs)
-
-
 class UpdateStackAction(templates.ProcessTemplatesAction):
 
-    def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, timeout, container_registry,
+                 container=constants.DEFAULT_CONTAINER_NAME):
         super(UpdateStackAction, self).__init__(container)
         self.timeout_mins = timeout
+        self.container_registry = container_registry
 
     def run(self, context):
         # get the stack. Error if doesn't exist
@@ -59,12 +44,6 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             LOG.exception(msg)
             return actions.Result(error=msg)
 
-        parameters = dict()
-        timestamp = int(time.time())
-        parameters['DeployIdentifier'] = timestamp
-        parameters['UpdateIdentifier'] = timestamp
-        parameters['StackAction'] = 'UPDATE'
-
         swift = self.get_object_client(context)
 
         try:
@@ -75,14 +54,30 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        try:
-            plan_utils.update_in_env(swift, env, 'parameter_defaults',
-                                     parameters)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error updating environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
+        update_env = {}
+        if self.container_registry is not None:
+            update_env.update(self.container_registry)
+
+        noop_env = {
+            'resource_registry': {
+                'OS::TripleO::DeploymentSteps': 'OS::Heat::None',
+            },
+        }
+
+        for output in stack.to_dict().get('outputs', {}):
+            if output['output_key'] == 'RoleData':
+                for role in output['output_value']:
+                    role_env = {
+                        "OS::TripleO::Tasks::%sPreConfig" % role:
+                        'OS::Heat::None',
+                        "OS::TripleO::Tasks::%sPostConfig" % role:
+                        'OS::Heat::None',
+                    }
+                    noop_env['resource_registry'].update(role_env)
+        update_env.update(noop_env)
+        template_utils.deep_update(env, update_env)
+        plan_utils.update_in_env(swift, env, 'parameter_defaults',
+                                 self.container_registry['parameter_defaults'])
 
         # process all plan files and create or update a stack
         processed_data = super(UpdateStackAction, self).run(context)
@@ -93,24 +88,6 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             return processed_data
 
         stack_args = processed_data.copy()
-
-        env = stack_args.get('environment', {})
-        template_utils.deep_update(env, {
-            'resource_registry': {
-                'resources': {
-                    '*': {
-                        '*': {
-                            constants.UPDATE_RESOURCE_NAME: {
-                                'hooks': 'pre-update'}
-                        }
-                    }
-                }
-            }
-        })
-        stack_args['environment'] = env
-
-        stack_args['timeout_mins'] = self.timeout_mins
-        stack_args['existing'] = 'true'
 
         LOG.info("Performing Heat stack update")
         LOG.info('updating stack: %s', stack.stack_name)
