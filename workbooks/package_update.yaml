@@ -11,15 +11,34 @@ workflows:
 
     input:
       - container
+      - container_registry
       - timeout: 240
       - queue_name: tripleo
+      - skip_deploy_identifier: False
+      - config_dir: '/tmp/'
 
     tags:
       - tripleo-common-managed
 
     tasks:
+      update_plan:
+        action: tripleo.plan.update_from_dir
+        input:
+          container: <% $.container %>
+        on-success: update
+        on-error: set_update_failed
+
       update:
-        action: tripleo.package_update.update_stack container=<% $.container %> timeout=<% $.timeout %>
+        action: tripleo.package_update.update_stack container=<% $.container %> timeout=<% $.timeout %> container_registry=<% $.container_registry %>
+        input:
+          timeout: <% $.timeout %>
+          container: <% $.container %>
+          container_registry: <% $.container_registry %>
+        on-success: get_config
+        on-error: set_update_failed
+
+      get_config:
+        action: tripleo.config.get_overcloud_config
         on-success: send_message
         on-error: set_update_failed
 
@@ -41,42 +60,75 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          - fail: <% $.get('get_config') = "FAILED" %>
 
-  # Clear an update breakpoint
-  clear_breakpoints:
-    description: Clear any pending breakpoints and continue with update
+  update_nodes:
+    description: Take a container and perform an update nodes by nodes
 
     input:
-      - stack_id
-      - refs
+      - node_user: heat-admin
+      - nodes
+      - playbook
+      - inventory_file
       - queue_name: tripleo
 
     tags:
       - tripleo-common-managed
 
     tasks:
-      clear:
-        action: tripleo.package_update.clear_breakpoints stack_id=<% $.stack_id %> refs=<% $.refs %>
-        on-success: send_message
-        on-error: set_clear_breakpoints_failed
+      download_config:
+        action: tripleo.config.download_config
+        on-success: get_private_key
+        publish:
+          tmp_path: <% task(download_config).result %>
+        on-error: node_update_failed
 
-      set_clear_breakpoints_failed:
-        on-success: send_message
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task(get_private_key).result %>
+        on-success: node_update
+
+      node_update:
+        action: tripleo.ansible-playbook
+        input:
+          inventory: <% $.inventory_file %>
+          playbook: <% $.tmp_path %>/<% $.playbook %>
+          remote_user: <% $.node_user %>
+          become: true
+          become_user: root
+          verbosity: 0
+          ssh_private_key: <% $.private_key %>
+          ssh_extra_args: '-o StrictHostKeyChecking=no'
+          limit_hosts:  <% $.nodes %>
+        on-success: node_update_passed
+        on-error: node_update_failed
+        publish:
+          output: <% task(node_update).result %>
+
+      node_update_passed:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: Updated nodes - <% $.nodes %>
+
+      node_update_failed:
+        on-success: notify_zaqar
         publish:
           status: FAILED
-          message: <% task(clear).result %>
+          message: Failed to update nodes - <% $.nodes %>, please see the logs.
 
-      send_message:
+      notify_zaqar:
         action: zaqar.queue_post
+        retry: count=5 delay=1
         input:
           queue_name: <% $.queue_name %>
           messages:
             body:
-              type: tripleo.package_update.v1.clear_breakpoints
+              type: tripleo.package_update.v1.update_nodes
               payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
+                status: <% $.status %>
+                message: <% task(node_update).result %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
