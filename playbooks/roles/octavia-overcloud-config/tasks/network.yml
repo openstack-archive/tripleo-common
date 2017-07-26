@@ -1,0 +1,70 @@
+---
+  - name: create management network for load balancers
+    shell: |
+      if [[ $(openstack network show {{ lb_mgmt_net_name }} > /dev/null; echo $?) -eq 1 ]]; then
+        openstack network create -f value -c id {{ lb_mgmt_net_name }}
+      fi
+    register: out_lb_mgmt_net
+    changed_when: "out_lb_mgmt_net.stdout != ''"
+  - name: getting management network ID
+    shell: |
+      openstack network show {{ lb_mgmt_net_name }} -f value -c id
+    register: out_lb_mgmt_net_id
+    changed_when: False
+  - name: setting management network ID fact
+    set_fact:
+      lb_mgmt_net_id: "{{ out_lb_mgmt_net_id.stdout }}"
+  - name: create subnet
+    shell: |
+      if [[ $(openstack subnet show {{ lb_mgmt_subnet_name }} > /dev/null; echo $?) -eq 1 ]]; then
+        openstack subnet create {{ lb_mgmt_subnet_name }} \
+          --allocation-pool=start={{ lb_mgmt_subnet_pool_start }},end={{ lb_mgmt_subnet_pool_end }} \
+          --gateway={{ lb_mgmt_subnet_gateway }} \
+          --network {{ lb_mgmt_net_id }} \
+          --subnet-range {{ lb_mgmt_subnet_cidr }}
+      fi
+    register: lb_mgmt_subnet_result
+    changed_when: "lb_mgmt_subnet_result.stdout != ''"
+  - name: create security group #get the security group id
+    shell: |
+      if [[ $(openstack security group show {{ lb_mgmt_sec_grp_name }} > /dev/null; echo $?) -eq 1 ]]; then
+        openstack security group create --project service --project-domain Default {{ lb_mgmt_sec_grp_name }} -f value -c id
+      else
+        openstack security group show {{ lb_mgmt_sec_grp_name }} -f value -c id
+      fi
+    register: lb_mgmt_secgroup_result
+    changed_when: "lb_mgmt_secgroup_result.stdout != ''"
+
+  - name: setting fact for management network security group
+    set_fact:
+      lb_mgmt_secgroup_id: "{{ lb_mgmt_secgroup_result.stdout }}"
+  - name: create security group rule to open amphora management ssh port
+    shell: |
+      if [[ $(openstack security group rule list {{ lb_mgmt_sec_grp_name }} --protocol tcp --ingress -f value 2>&1  | grep "0.0.0.0/0 22:22") == "" ]]; then
+        openstack security group rule create --protocol tcp --dst-port 22 {{ lb_mgmt_sec_grp_name }}
+      fi
+    register: sec_group_rule_one
+    changed_when: "sec_group_rule_one.stdout != ''"
+  - name: create security group rule to open amphora management API port
+    shell: |
+      if [[ $(openstack security group rule list {{ lb_mgmt_sec_grp_name }} --protocol tcp --ingress -f value 2>&1  | grep "0.0.0.0/0 9443:9443") == "" ]]; then
+        openstack security group rule create --protocol tcp --dst-port 9443 {{ lb_mgmt_sec_grp_name }}
+      fi
+    register: sec_group_rule_two
+    changed_when: "sec_group_rule_two.stdout != ''"
+  - name: create security group for health manager
+    shell: |
+      if [[ $(openstack security group show {{ lb_health_mgr_sec_grp_name }} > /dev/null; echo $?) -eq 1 ]]; then
+        openstack security group create --project service --project-domain Default {{ lb_health_mgr_sec_grp_name }} -f value -c id
+      else
+        openstack security group show {{ lb_health_mgr_sec_grp_name }} -f value -c id
+      fi
+    register: lb_health_manager_sec_grp_result
+    changed_when: "lb_health_manager_sec_grp_result.stdout != ''"
+  - name: create security group rule for health manager
+    shell: |
+      if [[ $(openstack security group rule list {{ lb_health_mgr_sec_grp_name }} --protocol udp --ingress -f value 2>&1  | grep "0.0.0.0/0 5555:5555") == "" ]]; then
+        openstack security group rule create --protocol udp --dst-port 5555 {{ lb_health_mgr_sec_grp_name }}
+      fi
+    register: health_mgr_sec_grp_rule
+    changed_when: "health_mgr_sec_grp_rule.stdout != ''"

@@ -1,0 +1,57 @@
+---
+  - name: create management port
+    shell: |
+      port_id=$(openstack port show octavia-health-manager-{{ node_hostname }}-listen-port -f value -c id 2> /dev/null)
+      if [[ $port_id == "" ]]; then
+      neutron port-create {{ lb_mgmt_net_name }} --binding:host_id={{ node_hostname }} --no-security-groups --port-security-enabled=False --device-owner Octavia:health-mgr \
+            --name octavia-health-manager-{{ node_hostname }}-listen-port -f value -c id
+      fi
+    register: out_mgmt_port
+    changed_when: "out_mgmt_port.stdout != ''"
+    notify:
+      - octavia config updated
+  - name: getting management port
+    shell: |
+      openstack port show octavia-health-manager-{{ node_hostname }}-listen-port -f value -c id
+    register: out_mgmt_port_id
+    changed_when: False
+  - name: setting fact for management network controller port ID
+    set_fact:
+      mgmt_port_id: "{{ out_mgmt_port_id.stdout }}"
+  - name: get management port mac
+    shell: |
+      openstack port show {{ mgmt_port_id }} -f value -c mac_address
+    register: out_mgmt_port_mac
+    changed_when: False
+  - name: setting fact for management network controller port MAC
+    set_fact:
+      mgmt_port_mac: "{{ out_mgmt_port_mac.stdout }}"
+  - name: get management port ip
+    shell: |
+      openstack port show {{ mgmt_port_id }} -f value -c fixed_ips | cut -f1 -d, | cut -f2 -d= | tr -d "'"
+    register: out_mgmt_port_ip
+    changed_when: False
+  - name: setting fact for management network controller port IP
+    set_fact:
+      mgmt_port_ip: "{{ out_mgmt_port_ip.stdout }}"
+  - name: get management port net mask
+    shell: |
+      subnet_id=$(openstack port show {{ mgmt_port_id }} -f value -c fixed_ips  | cut -f2 -d, | cut -f2 -d= | tr -d "'" 2> /dev/null)
+      openstack subnet show $subnet_id -f value -c cidr 2> /dev/null
+    register: out_mgmt_subnet_cidr
+  - name: setting fact for management subnet cidr
+    set_fact:
+      mgmt_subnet_cidr: "{{ out_mgmt_subnet_cidr.stdout }}"
+  - name: setting fact for management network netmask
+    set_fact:
+      mgmt_port_netmask: "{{ mgmt_subnet_cidr | ipaddr('netmask') }}"
+  - name: get MTU for managment port
+    shell: |
+      openstack network show {{ lb_mgmt_net_name }} -f value -c mtu
+    register: out_mgmt_port_mtu
+  - name: setting fact for management port MTU
+    set_fact:
+      mgmt_port_mtu: "{{ out_mgmt_port_mtu.stdout }}"
+  - name: creating fact for management network health manager controller IP
+    set_fact:
+      o_hm_ip: "{{ mgmt_port_ip }}:5555"

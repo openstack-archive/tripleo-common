@@ -1,0 +1,82 @@
+---
+- hosts: undercloud[0]
+  remote_user: stack
+  gather_facts: False
+  environment:
+    OS_USERNAME: "{{ os_username }}"
+    OS_USER_DOMAIN_NAME: "Default"
+    OS_PROJECT_DOMAIN_NAME: "Default"
+    NOVA_VERSION: "1.1"
+    OS_PROJECT_NAME: "{{ os_project_name }}"
+    OS_PASSWORD: "{{ os_password }}"
+    COMPUTE_API_VERSION: "1.1"
+    OS_CLOUDNAME: "overcloud"
+    OS_AUTH_URL: "{{ os_auth_url }}"
+    OS_IDENTITY_API_VERSION: "{{ os_identity_api_version }}"
+    OS_IMAGE_API_VERSION: "2"
+    OS_AUTH_TYPE: "{{ os_auth_type }}"
+  roles:
+    - octavia-undercloud
+
+- hosts: octavia_nodes[0]
+  gather_facts: True
+  vars:
+    generate_certs: "{{ generate_certs }}"
+    octavia_confd_prefix: "/var/lib/config-data/puppet-generated/octavia"
+    openssl_temp_dir: "/tmp/octavia-ssl"
+    ca_cert_path: "{{ ca_cert_path }}"
+    ca_private_key_path: "{{ ca_private_key_path }}"
+    ca_passphrase: "{{ ca_passphrase }}"
+    client_cert_path: "{{ client_cert_path }}"
+  environment:
+    OS_USERNAME: "{{ os_username }}"
+    OS_USER_DOMAIN_NAME: "Default"
+    OS_PROJECT_DOMAIN_NAME: "Default"
+    NOVA_VERSION: "1.1"
+    OS_PROJECT_NAME: "{{ os_project_name }}"
+    OS_PASSWORD: "{{ os_password }}"
+    COMPUTE_API_VERSION: "1.1"
+    OS_CLOUDNAME: "overcloud"
+    OS_AUTH_URL: "{{ os_auth_url }}"
+    OS_IDENTITY_API_VERSION: "{{ os_identity_api_version }}"
+    OS_IMAGE_API_VERSION: "2"
+    OS_AUTH_TYPE: "{{ os_auth_type }}"
+  roles:
+    - octavia-overcloud-config
+
+- hosts: octavia_nodes
+  gather_facts: True
+  vars:
+    octavia_confd_prefix: "/var/lib/config-data/puppet-generated/octavia"
+    lb_mgmt_net_id: "{{ hostvars[groups['octavia_nodes'][0]]['lb_mgmt_net_id'] }}"
+    lb_mgmt_secgroup_id: "{{ hostvars[groups['octavia_nodes'][0]]['lb_mgmt_secgroup_id'] }}"
+    private_key_content: "{{ hostvars[groups['octavia_nodes'][0]]['private_key_content'] }}"
+    ca_cert_content: "{{ hostvars[groups['octavia_nodes'][0]]['ca_cert_content'] }}"
+    service_pem_content: "{{ hostvars[groups['octavia_nodes'][0]]['service_pem_content'] }}"
+    generate_certs: "{{ generate_certs }}"
+    ca_cert_path: "{{ ca_cert_path }}"
+    ca_private_key_path: "{{ ca_private_key_path }}"
+    ca_passphrase: "{{ ca_passphrase }}"
+    client_cert_path: "{{ client_cert_path }}"
+  environment:
+    OS_USERNAME: "{{ os_username }}"
+    OS_USER_DOMAIN_NAME: "Default"
+    OS_PROJECT_DOMAIN_NAME: "Default"
+    NOVA_VERSION: "1.1"
+    OS_PROJECT_NAME: "{{ os_project_name }}"
+    OS_PASSWORD: "{{ os_password }}"
+    COMPUTE_API_VERSION: "1.1"
+    OS_CLOUDNAME: "overcloud"
+    OS_AUTH_URL: "{{ os_auth_url }}"
+    OS_IDENTITY_API_VERSION: "{{ os_identity_api_version }}"
+    OS_IMAGE_API_VERSION: "2"
+    OS_AUTH_TYPE: "{{ os_auth_type }}"
+  roles:
+    - octavia-controller-config
+
+- hosts: octavia_nodes
+  gather_facts: True
+  vars:
+    octavia_confd_prefix: "/var/lib/config-data/puppet-generated/octavia"
+  roles:
+    - octavia-controller-post-config

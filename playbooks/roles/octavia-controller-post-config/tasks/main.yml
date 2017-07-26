@@ -1,0 +1,44 @@
+  - debug:
+      msg: "Octavia services will be restarted because of updated configuration"
+    when: octavia_config_updated
+
+  - name: create ip list
+    set_fact:
+      o_hm_ip_list: "{% for octavia_node in groups['octavia_nodes'] %}{{ hostvars[octavia_node].o_hm_ip }}, {%endfor%}"
+  - set_fact:
+      o_hm_ip_list: "{{ o_hm_ip_list[:-2] }}" #remove the last two characters
+  - name: read the current IP list
+    become: true
+    become_user: root
+    shell: |
+      crudini --get "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf" health_manager controller_ip_port_list
+    register: config_contents
+    failed_when: config_contents.rc != 0 and 'Parameter not found' not in config_contents.stderr
+    changed_when: false
+    ignore_errors: true
+  - name: retrieve current ip list
+    set_fact:
+      current_ip_list: "{{config_contents.stdout}}"
+
+  # This isn't perfect as they execution order will make them not match, but we can avoid a restart
+  # if things have stayed the same.
+  - name: check if ip list needs updating
+    set_fact:
+      octavia_config_updated: true
+    when: current_ip_list != o_hm_ip_list
+
+  - name: update octavia health manager config file
+    become: true
+    become_user: root
+    ini_file:
+      section: "health_manager"
+      option: "controller_ip_port_list"
+      value: "{{ o_hm_ip_list }}"
+      path: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf"
+    when: octavia_config_updated
+
+  - name: restart octavia containers
+    become: true
+    become_user: root
+    shell: "docker restart $(sudo docker ps -f name=octavia -q)"
+    when: octavia_config_updated

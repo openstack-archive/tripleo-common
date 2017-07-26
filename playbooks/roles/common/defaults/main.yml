@@ -1,0 +1,13 @@
+---
+amp_image_name: "octavia-amphora"
+amp_image_filename: "/usr/share/openstack-octavia-amphora-images/amphora-x64-haproxy.qcow2"
+amp_image_tag: "amphora-image"
+lb_mgmt_net_name: "lb-mgmt-net"
+lb_mgmt_subnet_name: "lb-mgmt-subnet"
+lb_mgmt_subnet_cidr: "192.168.199.0/24"
+lb_mgmt_subnet_gateway: "192.168.199.1"
+lb_mgmt_subnet_pool_start: "192.168.199.50"
+lb_mgmt_subnet_pool_end: "192.168.199.200"
+lb_mgmt_sec_grp_name: "lb-mgmt-sec-grp"
+lb_health_mgr_sec_grp_name: "lb-health-mgr-sec-grp"
+mgmt_port_dev: "o-hm0"
