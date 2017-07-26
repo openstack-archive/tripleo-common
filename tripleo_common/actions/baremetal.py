@@ -13,9 +13,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
+import socket
+import tempfile
 
 import ironic_inspector_client
 from mistral_lib import actions
+import netaddr
+from oslo_concurrency import processutils
 from oslo_utils import units
 import six
 
@@ -349,3 +353,135 @@ class GetProfileAction(base.TripleOAction):
         result['profile'] = nodes.get_node_profile(self.node)
         result['uuid'] = self.node.get('uuid')
         return result
+
+
+class GetCandidateNodes(base.TripleOAction):
+    """Given IPs, ports and credentials, return potential new nodes."""
+
+    def __init__(self, ip_addresses, ports, credentials, existing_nodes):
+        self.ip_addresses = ip_addresses
+        self.ports = ports
+        self.credentials = credentials
+        self.existing_nodes = existing_nodes
+
+    def _existing_ips(self):
+        result = set()
+
+        for node in self.existing_nodes:
+            try:
+                handler = nodes.find_driver_handler(node['driver'])
+            except exception.InvalidNode:
+                LOG.warning('No known handler for driver %(driver)s of '
+                            'node %(node)s, ignoring it',
+                            {'driver': node['driver'], 'node': node['uuid']})
+                continue
+
+            address_field = handler.convert_key('pm_addr')
+            if address_field is None:
+                LOG.info('No address field for driver %(driver)s of '
+                         'node %(node)s, ignoring it',
+                         {'driver': node['driver'], 'node': node['uuid']})
+                continue
+
+            address = node['driver_info'].get(address_field)
+            if address is None:
+                LOG.warning('No address for node %(node)s, ignoring it',
+                            {'node': node['uuid']})
+                continue
+
+            try:
+                ip = socket.gethostbyname(address)
+            except socket.gaierror as exc:
+                LOG.warning('Cannot resolve %(field)s "%(value)s" '
+                            'for node %(node)s: %(error)s',
+                            {'field': address_field, 'value': address,
+                             'node': node['uuid'], 'error': exc})
+                continue
+
+            port_field = handler.convert_key('pm_port')
+            port = node['driver_info'].get(port_field, handler.default_port)
+            if port is not None:
+                port = int(port)
+
+            LOG.debug('Detected existing BMC at %s with port %s', ip, port)
+            result.add((ip, port))
+
+        return result
+
+    def _ip_address_list(self):
+        if isinstance(self.ip_addresses, six.string_types):
+            return [str(ip) for ip in
+                    netaddr.IPNetwork(self.ip_addresses).iter_hosts()]
+        else:
+            return self.ip_addresses
+
+    def run(self, context):
+        existing = self._existing_ips()
+        try:
+            ip_addresses = self._ip_address_list()
+        except netaddr.AddrFormatError as exc:
+            LOG.error("Cannot parse network address: %s", exc)
+            return actions.Result(
+                error="%s: %s" % (type(exc).__name__, str(exc))
+            )
+
+        result = []
+        # NOTE(dtantsur): we iterate over IP addresses last to avoid
+        # spamming the same BMC with too many requests in a row.
+        for username, password in self.credentials:
+            for port in self.ports:
+                port = int(port)
+                for ip in ip_addresses:
+                    if (ip, port) in existing or (ip, None) in existing:
+                        LOG.info('Skipping existing node %s:%s', ip, port)
+                        continue
+
+                    result.append({'ip': ip, 'username': username,
+                                   'password': password, 'port': port})
+
+        return result
+
+
+class ProbeNode(base.TripleOAction):
+    """Try to find BMCs on the given IP."""
+
+    def __init__(self, ip, port, username, password,
+                 attempts=2, ipmi_driver='ipmi'):
+        super(ProbeNode, self).__init__()
+        self.ip = ip
+        self.port = int(port)
+        self.username = username
+        self.password = password
+        self.attempts = attempts
+        self.ipmi_driver = ipmi_driver
+
+    def run(self, context):
+        # TODO(dtantsur): redfish support
+        LOG.debug('Probing for IPMI BMC: %s@%s:%s',
+                  self.username, self.ip, self.port)
+
+        with tempfile.NamedTemporaryFile(mode='wt') as fp:
+            fp.write(self.password or '\0')
+            fp.flush()
+
+            try:
+                # TODO(dtantsur): try also IPMI v1.5
+                processutils.execute('ipmitool', '-I', 'lanplus',
+                                     '-H', self.ip, '-L', 'ADMINISTRATOR',
+                                     '-p', str(self.port), '-U', self.username,
+                                     '-f', fp.name, 'power', 'status',
+                                     attempts=self.attempts)
+            except processutils.ProcessExecutionError as exc:
+                LOG.debug('Probing %(ip)s failed: %(exc)s',
+                          {'ip': self.ip, 'exc': exc})
+                return None
+
+        LOG.info('Found a BMC on %(ip)s with user %(user)s',
+                 {'ip': self.ip, 'user': self.username})
+        return {
+            'pm_type': self.ipmi_driver,
+            'pm_addr': self.ip,
+            'pm_user': self.username,
+            'pm_password': self.password,
+            'pm_port': self.port,
+        }

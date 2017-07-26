@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Add two new workflows for discovering IPMI BMC: ``discover_nodes`` and
+    ``discover_and_enroll_nodes``.
+
+    The former scans given IP addresses and ports, and tries to log into BMC
+    using given credentials. It returns node information in a format accepted
+    by the TripleO enrollment workflow.
+
+    The latter calls the former, enrolls the resulting nodes and optionally
+    moves them to manageable state.

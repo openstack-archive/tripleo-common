@@ -31,11 +31,16 @@ class DriverInfo(object):
     DEFAULTS = {}
 
     def __init__(self, prefix, mapping, deprecated_mapping=None,
-                 mandatory_fields=()):
+                 mandatory_fields=(), default_port=None):
         self._prefix = prefix
         self._mapping = mapping
         self._deprecated_mapping = deprecated_mapping or {}
         self._mandatory_fields = mandatory_fields
+        self._default_port = default_port
+
+    @property
+    def default_port(self):
+        return self._default_port
 
     def convert_key(self, key):
         if key in self._mapping:
@@ -87,7 +92,8 @@ class DriverInfo(object):
 
 class PrefixedDriverInfo(DriverInfo):
     def __init__(self, prefix, deprecated_mapping=None,
-                 has_port=False, address_field='address'):
+                 has_port=False, address_field='address',
+                 default_port=None):
         mapping = {
             'pm_addr': '%s_%s' % (prefix, address_field),
             'pm_user': '%s_username' % prefix,
@@ -103,6 +109,7 @@ class PrefixedDriverInfo(DriverInfo):
             prefix, mapping,
             deprecated_mapping=deprecated_mapping,
             mandatory_fields=mandatory_fields,
+            default_port=default_port,
         )
 
     def unique_id_from_fields(self, fields):
@@ -223,7 +230,8 @@ class iBootDriverInfo(PrefixedDriverInfo):
 
 DRIVER_INFO = {
     # production drivers
-    '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True),
+    '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True,
+                                             default_port=623),
     '.*_drac': PrefixedDriverInfo('drac', has_port=True),
     '.*_ilo': PrefixedDriverInfo('ilo'),
     '.*_ucs': PrefixedDriverInfo(
@@ -254,7 +262,7 @@ DRIVER_INFO = {
 }
 
 
-def _find_driver_handler(driver):
+def find_driver_handler(driver):
     for driver_tpl, handler in DRIVER_INFO.items():
         if re.match(driver_tpl, driver) is not None:
             return handler
@@ -270,7 +278,7 @@ def _find_node_handler(fields):
     except KeyError:
         raise exception.InvalidNode('pm_type (ironic driver to use) is '
                                     'required', node=fields)
-    return _find_driver_handler(driver)
+    return find_driver_handler(driver)
 
 
 def register_ironic_node(node, client):
@@ -329,7 +337,7 @@ def _populate_node_mapping(client):
         for port in client.node.list_ports(node.uuid):
             node_map['mac'][port.address] = node.uuid
 
-        handler = _find_driver_handler(node.driver)
+        handler = find_driver_handler(node.driver)
         unique_id = handler.unique_id_from_node(node)
         if unique_id:
             node_map['pm_addr'][unique_id] = node.uuid
