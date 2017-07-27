@@ -11,6 +11,9 @@ workflows:
       - ceph_ansible_extra_vars: {}
       - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
     tasks:
+      deploy_ssh_key:
+        workflow: tripleo.validations.v1.copy_ssh_key
+        on-success: get_private_key
       get_private_key:
         action: tripleo.validations.get_privkey
         publish:
@@ -67,7 +70,8 @@ workflows:
           verbosity: <% $.ansible_playbook_verbosity %>
           forks: <% $.fork_count %>
           ssh_private_key: <% $.private_key %>
-          ssh_extra_args: '-o StrictHostKeyChecking=no'
+          ssh_common_args: '-o StrictHostKeyChecking=no'
+          ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
           skip_tags: 'package-install,with_pkg'
           extra_env_variables:
             ANSIBLE_CONFIG: /usr/share/ceph-ansible/ansible.cfg
