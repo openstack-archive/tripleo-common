@@ -10,6 +10,17 @@ healthcheck_curl () {
     "$@" || return 1
 }
 
+healthcheck_port () {
+  process=$1
+  shift 1
+
+  port_args=()
+  for arg in "$@"; do
+    port_args+=("-i" "tcp:${arg}")
+  done
+  lsof +c0 -nP "${port_args[@]}" | awk '{print $1}' | grep -q "^${process}$"
+}
+
 get_config_val () {
   crudini --get "$1" "$2" "$3" 2> /dev/null || echo "$4"
 }

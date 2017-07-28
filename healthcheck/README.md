@@ -16,4 +16,3 @@ want to run scripts without installing to that file, you can set the
     $ ./heat-api
     {"versions": [{"status": "CURRENT", "id": "v1.0", "links": [{"href": "http://192.168.24.1:8004/v1/", "rel": "self"}]}]}
     300 192.168.24.1:8004 0.002 seconds
-
