@@ -1,0 +1,13 @@
+---
+upgrade:
+  - |
+    The default bare metal API version used by the overcloud was bumped
+    to 1.34, which is latest API version supported by Pike ironicclient.
+deprecations:
+  - |
+    In the Queens release ironicclient will start defaulting to the latest
+    supported bare metal API version, instead of the lowest. After that,
+    we will stop pinning the bare metal API version in ``overcloudrc``.
+    All scripts that rely on a specific version should set it explicitly via
+    either ``OS_BAREMETAL_API_VERSION`` environment variable or
+    ``--os-baremetal-api-version`` command line argument.
