@@ -1128,7 +1128,7 @@ class GetNetworkConfigActionTest(base.TestCase):
         action = parameters.GetNetworkConfigAction(container='overcloud',
                                                    role_name='Compute')
         result = action.run(mock_ctx)
-        self.assertIsNone(result)
+        self.assertTrue(result.is_error())
         mock_heat.stacks.preview.assert_called_once_with(
             environment={},
             files={},

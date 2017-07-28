@@ -567,9 +567,13 @@ class GetNetworkConfigAction(templates.ProcessTemplatesAction):
         }
         orc = self.get_orchestration_client(context)
         preview_data = orc.stacks.preview(**fields)
-        result = self.get_network_config(preview_data, container_temp,
-                                         self.role_name)
-        return result
+        try:
+            result = self.get_network_config(preview_data, container_temp,
+                                             self.role_name)
+            return result
+        except exception.DeriveParamsError as err:
+            LOG.exception('Derive Params Error: %s' % err)
+            return actions.Result(error=str(err))
 
     def get_network_config(self, preview_data, stack_name, role_name):
         result = None
@@ -588,6 +592,12 @@ class GetNetworkConfigAction(templates.ProcessTemplatesAction):
                         if net_config:
                             result = json.loads(net_config)
                     break
+
+        if not result:
+            err_msg = ("Unable to determine network config for role '%s'."
+                       % self.role_name)
+            raise exception.DeriveParamsError(err_msg)
+
         return result
 
     def process_preview_list(self, res, stack_name, role_name):
