@@ -5,6 +5,15 @@
 {% set base_yum_url_packages_override = [] %}
 {% set base_yum_repo_keys_override = [] %}
 
+# Remove EPEL and the dependencies requiring it
+{% set base_centos_yum_repo_packages_remove = ['epel-release'] %}
+{% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
+{% set cinder_volume_packages_remove = ['scsi-target-utils'] %}
+{% set ironic_conductor_packages_remove = ['shellinabox'] %}
+{% block cinder_volume_redhat_setup %}
+# RUN sed -i '1 i include /var/lib/cinder/volumes/*' /etc/tgt/tgtd.conf
+{% endblock %}
+
 # This installs the puppet dependency in the base container and includes helper scripts
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
@@ -33,10 +42,23 @@
 {% set neutron_server_packages_append = ['httpd', 'mod_ssl'] %}
 
 # Remove packages not present in repos
-{% set openstack_base_packages_remove = ['Percona-Server-shared-56'] %}
+{% set openstack_base_packages_remove = [
+    'Percona-Server-shared-56',
+    'libtomcrypt',    # EPEL, Unknown use
+    'libtommath',     # EPEL, Unknown use
+    'python2-crypto', # EPEL, RDO is python-crypto
+    'python2-msgpack' # EPEL, RDO is python-msgpack
+] %}
+# Pick up the proper packages for python2-crypto and python2-msgpack
+{% set openstack_base_packages_append = ['python-crypto', 'python-msgpack'] %}
 
 # Use mariadb-server-galera and xinetd for galera and clustercheck
-{% set mariadb_packages_remove = ['MariaDB-Galera-server', 'MariaDB-client'] %}
+{% set mariadb_packages_remove = [
+    'MariaDB-Galera-server',
+    'MariaDB-client',
+    'percona-xtrabackup', # EPEL
+    'pv'                  # EPEL
+] %}
 {% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
 
 # redis resource-agent requires pidof
