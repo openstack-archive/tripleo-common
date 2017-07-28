@@ -42,22 +42,31 @@
 {% set neutron_server_packages_append = ['httpd', 'mod_ssl'] %}
 
 # Remove packages not present in repos
+#
+{# 'libtomcrypt',    # EPEL, Unknown use
+   'libtommath',     # EPEL, Unknown use
+   'python2-crypto', # EPEL, RDO is python-crypto
+   'python2-msgpack' # EPEL, RDO is python-msgpack
+#}
 {% set openstack_base_packages_remove = [
     'Percona-Server-shared-56',
-    'libtomcrypt',    # EPEL, Unknown use
-    'libtommath',     # EPEL, Unknown use
-    'python2-crypto', # EPEL, RDO is python-crypto
-    'python2-msgpack' # EPEL, RDO is python-msgpack
+    'libtomcrypt',
+    'libtommath',
+    'python2-crypto',
+    'python2-msgpack'
 ] %}
 # Pick up the proper packages for python2-crypto and python2-msgpack
 {% set openstack_base_packages_append = ['python-crypto', 'python-msgpack'] %}
 
 # Use mariadb-server-galera and xinetd for galera and clustercheck
+{#  'percona-xtrabackup', # EPEL
+    'pv'                  # EPEL
+#}
 {% set mariadb_packages_remove = [
     'MariaDB-Galera-server',
     'MariaDB-client',
-    'percona-xtrabackup', # EPEL
-    'pv'                  # EPEL
+    'percona-xtrabackup',
+    'pv'
 ] %}
 {% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
 
