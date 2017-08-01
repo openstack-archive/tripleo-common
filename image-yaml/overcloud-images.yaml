@@ -1,7 +1,6 @@
 disk_images:
   -
     imagename: overcloud-full
-    arch: amd64
     type: qcow2
     elements:
       - baremetal
@@ -41,7 +40,6 @@ disk_images:
       DIB_PYTHON_VERSION: '2'
   -
     imagename: ironic-python-agent
-    arch: amd64
     # This is bogus, but there's no initrd type in diskimage-builder
     type: qcow2
     # So we just override the extension instead

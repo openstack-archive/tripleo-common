@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The default architecure for image builds now defaults to the cpu of the
+    host instead of x86_64/amd64.  This allows for a single package of
+    tripleo-common to be used across multiple architectures to generate images.

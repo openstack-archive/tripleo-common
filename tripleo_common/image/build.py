@@ -19,6 +19,7 @@ import re
 from oslo_log import log
 from oslo_utils import strutils
 
+import tripleo_common.arch
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageSpecificationException
 from tripleo_common.image.image_builder import ImageBuilder
@@ -48,7 +49,7 @@ class ImageBuildManager(BaseImageManager):
         disk_images = self.load_config_files(self.DISK_IMAGES)
 
         for image in disk_images:
-            arch = image.get('arch', 'amd64')
+            arch = image.get('arch', tripleo_common.arch.dib_arch())
             image_type = image.get('type', 'qcow2')
             image_name = image.get('imagename')
             builder = image.get('builder', 'dib')

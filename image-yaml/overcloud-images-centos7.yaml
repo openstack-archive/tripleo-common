@@ -1,7 +1,6 @@
 disk_images:
   -
     imagename: overcloud-full
-    arch: amd64
     type: qcow2
     distro: centos7
     elements:
@@ -12,7 +11,6 @@ disk_images:
       - yum-plugin-priorities
   -
     imagename: ironic-python-agent
-    arch: amd64
     type: qcow2
     distro: centos7
     elements:
