@@ -267,7 +267,7 @@ workflows:
 
       check_default_hugepage_supported:
         publish:
-          default_hugepage_supported: <% $.hw_data.get('inventory', {}).get('cpu', {}).get('flags', []).contains('cpu_hugepages_1g') %>
+          default_hugepage_supported: <% $.hw_data.get('inventory', {}).get('cpu', {}).get('flags', []).contains('pdpe1gb') %>
         on-success:
           - get_total_memory: <% $.default_hugepage_supported %>
           - set_status_failed_check_default_hugepage_supported: <% not $.default_hugepage_supported %>
