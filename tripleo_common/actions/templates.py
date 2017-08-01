@@ -197,11 +197,24 @@ class ProcessTemplatesAction(base.TripleOAction):
             r_map[r.get('name')] = r
         excl_templates = j2_excl_data.get('name')
 
+        n_map = {}
+        for n in network_data:
+            if (n.get('enabled') is not False):
+                n_map[n.get('name')] = n
+                if not n.get('name_lower'):
+                    n_map[n.get('name')]['name_lower'] = n.get('name').lower()
+            else:
+                LOG.info("skipping %s network: network is disabled." %
+                         n.get('name'))
+
         for f in [f.get('name') for f in container_files[1]]:
-            # We do two templating passes here:
+            # We do three templating passes here:
             # 1. *.role.j2.yaml - we template just the role name
             #    and create multiple files (one per role)
-            # 2. *.j2.yaml - we template with all roles_data,
+            # 2  *.network.j2.yaml - we template the network name and
+            #    data and create multiple files for networks and
+            #    network ports (one per network)
+            # 3. *.j2.yaml - we template with all roles_data,
             #    and create one file common to all roles
             if f.endswith('.role.j2.yaml'):
                 LOG.info("jinja2 rendering role template %s" % f)
@@ -234,6 +247,31 @@ class ProcessTemplatesAction(base.TripleOAction):
                                                     j2_data,
                                                     out_f_path,
                                                     context=context)
+                    else:
+                        LOG.info("Skipping rendering of %s, defined in %s" %
+                                 (out_f_path, j2_excl_data))
+
+            elif (f.endswith('.network.j2.yaml')):
+                LOG.info("jinja2 rendering network template %s" % f)
+                j2_template = swift.get_object(self.container, f)[1]
+                LOG.info("jinja2 rendering networks %s" % ",".join(n_map))
+                for network in n_map:
+                    j2_data = {'network': n_map[network]}
+                    # Output file names in "<name>.yaml" format
+                    out_f = os.path.basename(f).replace('.network.j2.yaml',
+                                                        '.yaml')
+                    if os.path.dirname(f).endswith('ports'):
+                        out_f = out_f.replace('port',
+                                              n_map[network]['name_lower'])
+                    else:
+                        out_f = out_f.replace('network',
+                                              n_map[network]['name_lower'])
+                    out_f_path = os.path.join(os.path.dirname(f), out_f)
+                    if not (out_f_path in excl_templates):
+                        self._j2_render_and_put(j2_template,
+                                                j2_data,
+                                                out_f_path,
+                                                context=context)
                     else:
                         LOG.info("Skipping rendering of %s, defined in %s" %
                                  (out_f_path, j2_excl_data))
