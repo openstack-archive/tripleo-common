@@ -1,0 +1,6 @@
+---
+fixes:
+  - When performing an interactive minor update with deployed-server, the
+    client never prompted to clear breakpoints and just ran to completion and
+    exited. The stack was left IN_PROGRESS. That issue has now been fixed so
+    that the client will prompt to clear breakpoints.

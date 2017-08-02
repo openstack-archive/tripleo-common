@@ -99,3 +99,44 @@ class StackUpdateManagerTest(base.TestCase):
         result = self.stack_update_manager._input_to_refs(
             ']].*', ['instance_id'])
         self.assertEqual(result, [])
+
+    def test_get_servers(self):
+        self.stack_update_manager._get_servers()
+        self.novaclient.servers.list.assert_called()
+
+    def test_get_servers_deployed_server(self):
+        self.novaclient.servers.list.return_value = []
+        self.heatclient.resources.list.return_value = [
+            mock.MagicMock(
+                links=[{'rel': 'stack',
+                        'href': 'http://192.0.2.1:8004/v1/'
+                                'a959ac7d6a4a475daf2428df315c41ef/'
+                                'stacks/overcloud/123'}],
+                logical_resource_id='logical_id',
+                physical_resource_id='controller_resource_id',
+                type='OS::Heat::DeployedServer'
+            ),
+            mock.MagicMock(
+                links=[{'rel': 'stack',
+                        'href': 'http://192.0.2.1:8004/v1/'
+                                'a959ac7d6a4a475daf2428df315c41ef/'
+                                'stacks/overcloud/123'}],
+                logical_resource_id='logical_id',
+                physical_resource_id='compute_resource_id',
+                type='OS::Heat::DeployedServer'
+            )
+        ]
+        self.heatclient.stacks.get.side_effect = [
+            mock.MagicMock(
+                outputs=[{'output_key': 'name',
+                          'output_value': 'overcloud-controller-0'}]),
+            mock.MagicMock(
+                outputs=[{'output_key': 'name',
+                          'output_value': 'overcloud-compute-0'}]),
+        ]
+
+        servers = self.stack_update_manager._get_servers()
+        self.assertEqual(servers[0].name, 'overcloud-controller-0')
+        self.assertEqual(servers[0].id, 'controller_resource_id')
+        self.assertEqual(servers[1].name, 'overcloud-compute-0')
+        self.assertEqual(servers[1].id, 'compute_resource_id')
