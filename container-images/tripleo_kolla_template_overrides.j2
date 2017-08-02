@@ -380,6 +380,10 @@ RUN mkdir -p /openstack && \
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
+{% block ovn_northd_footer %}
+RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+{% endblock %}
+
 {% block base_footer %}
 # workaround LP1696283
 RUN mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_hosts
