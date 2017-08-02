@@ -25,6 +25,11 @@ import heatclient.exc
 LOG = logging.getLogger(__name__)
 
 
+class DeployedServer(object):
+    id = None
+    name = None
+
+
 class StackUpdateManager(object):
     def __init__(self, heatclient, novaclient, stack, hook_type,
                  nested_depth=5, hook_resource=None):
@@ -182,12 +187,34 @@ class StackUpdateManager(object):
         name = self.server_names.get(deployment_id)
         if not name:
             if not self.servers:
-                self.servers = self.novaclient.servers.list()
+                self.servers = self._get_servers()
             depl = self.heatclient.software_deployments.get(deployment_id)
             name = next(server.name for server in self.servers if
                         server.id == depl.server_id)
             self.server_names[deployment_id] = name
         return name
+
+    def _get_servers(self):
+        servers = self.novaclient.servers.list()
+
+        # If no servers were found from Nova, we must be using split-stack,
+        # so we will have to interrogate Heat for the names and id's.
+        if not servers:
+            resources = self.heatclient.resources.list(
+                self.stack.id, nested_depth=self.nested_depth,
+                filters=dict(type="OS::Heat::DeployedServer"))
+            for res in resources:
+                server = DeployedServer()
+                stack_name, stack_id = next(
+                    x['href'] for x in res.links if
+                    x['rel'] == 'stack').rsplit('/', 2)[1:]
+                stack = self.heatclient.stacks.get(stack_id)
+                server.name = next(o['output_value'] for o in stack.outputs if
+                                   o['output_key'] == 'name')
+                server.id = res.physical_resource_id
+                servers.append(server)
+
+        return servers
 
     def _input_to_refs(self, regexp, refs):
         if regexp:
