@@ -80,6 +80,11 @@ container_images_template:
   - DockerCongressApiImage
   - DockerCongressConfigImage
 
+- imagename: "{{namespace}}/{{name_prefix}}cron{{name_suffix}}:{{tag}}"
+  params:
+  - DockerCrondConfigImage
+  - DockerCrondImage
+
 - imagename: "{{namespace}}/{{name_prefix}}ec2-api{{name_suffix}}:{{tag}}"
   params:
   - DockerEc2ApiConfigImage
