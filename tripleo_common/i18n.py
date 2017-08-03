@@ -14,7 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# http://docs.openstack.org/developer/oslo.i18n/usage.html
+# https://docs.openstack.org/oslo.i18n/latest/user/usage.html
 
 import oslo_i18n as i18n
 

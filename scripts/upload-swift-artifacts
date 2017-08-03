@@ -120,7 +120,7 @@ else
 fi
 
 function get_tempurl {
-  # https://docs.openstack.org/developer/swift/api/temporary_url_middleware.html#hmac-sha1-signature-for-temporary-urls
+  # https://docs.openstack.org/swift/latest/api/temporary_url_middleware.html#hmac-sha1-signature-for-temporary-urls
   local FILE="$1"
   local SWIFT_METHOD='GET'
   local SWIFT_PATH="/v1/${SWIFT_ACCOUNT}/${CONTAINER_NAME}/$(basename $FILE)"
