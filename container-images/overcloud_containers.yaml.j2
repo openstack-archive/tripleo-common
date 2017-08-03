@@ -232,9 +232,6 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}nova-api{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaApiImage
-
-- imagename: "{{namespace}}/{{name_prefix}}nova-base{{name_suffix}}:{{tag}}"
-  params:
   - DockerNovaConfigImage
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute-ironic{{name_suffix}}:{{tag}}"
