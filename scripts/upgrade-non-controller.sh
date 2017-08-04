@@ -134,6 +134,17 @@ if [ -n "$UPGRADE_NODE" ]; then
   node_ip=$(nova show $UPGRADE_NODE | grep "ctlplane network" | awk '{print $5}')
   log "Executing $UPGRADE_SCRIPT on $node_ip"
   ssh $UPGRADE_NODE_USER@$node_ip sudo $UPGRADE_SCRIPT 2>&1 | tee -a $LOGFILE
+  log "Clearing any existing dir $UPGRADE_NODE and downloading config"
+  rm -rf $UPGRADE_NODE
+  openstack overcloud config download --config-dir "$UPGRADE_NODE"
+  config_dir=$(ls -1 $UPGRADE_NODE)
+  target_host=$(openstack server list | grep $UPGRADE_NODE | awk '{print $4}')
+  log "Starting the upgrade steps playbook run for $target_host from $UPGRADE_NODE/$config_dir/"
+  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory \
+    $UPGRADE_NODE/$config_dir/upgrade_steps_playbook.yaml --limit $target_host
+  log "Starting the deploy-steps-playbook run for $target_host from $UPGRADE_NODE/$config_dir/"
+  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory \
+    $UPGRADE_NODE/$config_dir/deploy_steps_playbook.yaml --limit $target_host
 fi
 
 if [ -n "$QUERY_NODE" ]; then
