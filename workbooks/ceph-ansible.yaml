@@ -11,8 +11,8 @@ workflows:
       - ceph_ansible_extra_vars: {}
       - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
     tasks:
-      deploy_ssh_key:
-        workflow: tripleo.validations.v1.copy_ssh_key
+      enable_ssh_admin:
+        workflow: tripleo.access.v1.enable_ssh_admin
         on-success: get_private_key
       get_private_key:
         action: tripleo.validations.get_privkey
@@ -64,7 +64,7 @@ workflows:
             clients:
               hosts: <% $.client_ips.toDict($, {}) %>
           playbook: <% $.ceph_ansible_playbook %>
-          remote_user: heat-admin
+          remote_user: tripleo-admin
           become: true
           become_user: root
           verbosity: <% $.ansible_playbook_verbosity %>

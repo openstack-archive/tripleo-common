@@ -220,6 +220,9 @@ workflows:
 
   copy_ssh_key:
     input:
+      # FIXME: we should stop using heat-admin as e.g. split-stack
+      # environments (where Nova didn't create overcloud nodes) don't
+      # have it present
       - overcloud_admin: heat-admin
       - queue_name: tripleo
     tasks:
