@@ -25,6 +25,12 @@ from tripleo_common.utils import glance
 
 LOG = logging.getLogger(__name__)
 
+_KNOWN_INTERFACE_FIELDS = [
+    '%s_interface' % field for field in ('boot', 'console', 'deploy',
+                                         'inspect', 'management', 'network',
+                                         'power', 'raid', 'storage', 'vendor')
+]
+
 
 class DriverInfo(object):
     """Class encapsulating field conversion logic."""
@@ -290,6 +296,10 @@ def register_ironic_node(node, client):
     if "ramdisk_id" in node:
         driver_info["deploy_ramdisk"] = node["ramdisk_id"]
 
+    interface_fields = {field: node.pop(field)
+                        for field in _KNOWN_INTERFACE_FIELDS
+                        if field in node}
+
     driver_info.update(handler.convert(node))
 
     mapping = {'cpus': 'cpu',
@@ -309,6 +319,7 @@ def register_ironic_node(node, client):
     create_map = {"driver": node["pm_type"],
                   "properties": properties,
                   "driver_info": driver_info}
+    create_map.update(interface_fields)
 
     for field in ('name', 'uuid'):
         if field in node:
@@ -382,6 +393,9 @@ _NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
                       'kernel_id': '/driver_info/deploy_kernel',
                       'ramdisk_id': '/driver_info/deploy_ramdisk',
                       'capabilities': '/properties/capabilities'}
+
+_NON_DRIVER_FIELDS.update({field: '/%s' % field
+                           for field in _KNOWN_INTERFACE_FIELDS})
 
 
 def _update_or_register_ironic_node(node, node_map, client):

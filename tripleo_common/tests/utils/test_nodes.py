@@ -352,8 +352,54 @@ class NodesTest(base.TestCase):
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
+    def test_register_all_nodes_with_interfaces(self):
+        interfaces = {'boot_interface': 'pxe',
+                      'console_interface': 'ipmitool-socat',
+                      'deploy_interface': 'direct',
+                      'inspect_interface': 'inspector',
+                      'management_interface': 'ipmitool',
+                      'network_interface': 'neutron',
+                      'power_interface': 'ipmitool',
+                      'raid_interface': 'agent',
+                      'storage_interface': 'cinder',
+                      'vendor_interface': 'ipmitool'}
+
+        node_list = [self._get_node()]
+        node_list[0].update(interfaces)
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        ironic = mock.MagicMock()
+        nodes.register_all_nodes(node_list, client=ironic)
+        pxe_node_driver_info = {"ipmi_address": "foo.bar",
+                                "ipmi_username": "test",
+                                "ipmi_password": "random"}
+        pxe_node = mock.call(driver="ipmi",
+                             name='node1',
+                             driver_info=pxe_node_driver_info,
+                             properties=node_properties,
+                             **interfaces)
+        port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
+                              address='aaa')
+        ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
+        ironic.port.create.assert_has_calls([port_call])
+
     def test_register_update(self):
+        interfaces = {'boot_interface': 'pxe',
+                      'console_interface': 'ipmitool-socat',
+                      'deploy_interface': 'direct',
+                      'inspect_interface': 'inspector',
+                      'management_interface': 'ipmitool',
+                      'network_interface': 'neutron',
+                      'power_interface': 'ipmitool',
+                      'raid_interface': 'agent',
+                      'storage_interface': 'cinder',
+                      'vendor_interface': 'ipmitool'}
+
         node = self._get_node()
+        node.update(interfaces)
         ironic = mock.MagicMock()
         node_map = {'mac': {'aaa': 1}}
 
@@ -368,6 +414,8 @@ class NodesTest(base.TestCase):
                 {'path': '/properties/cpus', 'value': '1'},
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
                 {'path': '/driver_info/ipmi_username', 'value': 'test'}]
+            for iface, value in interfaces.items():
+                update_patch.append({'path': '/%s' % iface, 'value': value})
             for key in update_patch:
                 key['op'] = 'add'
             self.assertThat(update_patch,
@@ -398,6 +446,33 @@ class NodesTest(base.TestCase):
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
                 {'path': '/driver_info/deploy_kernel', 'value': 'image-k'},
                 {'path': '/driver_info/deploy_ramdisk', 'value': 'image-r'},
+                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
+            for key in update_patch:
+                key['op'] = 'add'
+            self.assertThat(update_patch,
+                            matchers.MatchesSetwise(*(map(matchers.Equals,
+                                                          args[1]))))
+            return mock.Mock(uuid='uuid1')
+
+        ironic.node.update.side_effect = side_effect
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
+        ironic.node.update.assert_called_once_with(1, mock.ANY)
+
+    def test_register_update_with_interfaces(self):
+        node = self._get_node()
+        ironic = mock.MagicMock()
+        node_map = {'mac': {'aaa': 1}}
+
+        def side_effect(*args, **kwargs):
+            update_patch = [
+                {'path': '/name', 'value': 'node1'},
+                {'path': '/driver_info/ipmi_password', 'value': 'random'},
+                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
+                {'path': '/properties/memory_mb', 'value': '2048'},
+                {'path': '/properties/local_gb', 'value': '30'},
+                {'path': '/properties/cpu_arch', 'value': 'amd64'},
+                {'path': '/properties/cpus', 'value': '1'},
+                {'path': '/properties/capabilities', 'value': 'num_nics:6'},
                 {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for key in update_patch:
                 key['op'] = 'add'

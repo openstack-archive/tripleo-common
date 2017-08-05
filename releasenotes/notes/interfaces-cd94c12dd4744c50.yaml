@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    It is now possible to set various interface fields when enrolling nodes
+    via ``instackenv.json``. This only works for new-style drivers like
+    ``ipmi`` or ``redfish``.
+    ironicclient 1.15 is required for setting the ``storage_interface`` field.
+upgrade:
+  - |
+    The minimum required Bare Metal (Ironic) API version was bumped to 1.33
+    (late Pike).
