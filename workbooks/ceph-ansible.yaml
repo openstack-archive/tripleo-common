@@ -8,6 +8,7 @@ workflows:
     # allows for additional extra_vars via workflow input
     input:
       - ansible_playbook_verbosity: 0
+      - ansible_skip_tags: 'package-install,with_pkg'
       - ceph_ansible_extra_vars: {}
       - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
     tasks:
@@ -72,7 +73,7 @@ workflows:
           ssh_private_key: <% $.private_key %>
           ssh_common_args: '-o StrictHostKeyChecking=no'
           ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
-          skip_tags: 'package-install,with_pkg'
+          skip_tags: <% $.ansible_skip_tags %>
           extra_env_variables:
             ANSIBLE_CONFIG: /usr/share/ceph-ansible/ansible.cfg
             ANSIBLE_ACTION_PLUGINS: /usr/share/ceph-ansible/plugins/actions/
