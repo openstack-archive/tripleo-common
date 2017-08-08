@@ -505,6 +505,13 @@ container_images_template:
   - OS::TripleO::Services::PankoApi
   - OS::TripleO::Services::UndercloudPankoApi
 
+- imagename: "{{namespace}}/{{name_prefix}}qdrouterd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerQdrouterdConfigImage
+  - DockerQdrouterdImage
+  services:
+  - OS::TripleO::Services::Qdr
+
 - imagename: "{{namespace}}/{{name_prefix}}rabbitmq{{name_suffix}}:{{tag}}"
   params:
   - DockerRabbitmqConfigImage
