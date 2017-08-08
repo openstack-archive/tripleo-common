@@ -430,6 +430,7 @@ workflows:
         on-error: set_status_failed_get_flatten_data
         publish:
           user_params: <% task().result.environment_parameters %>
+          plan_params: <% task().result.heat_resource_tree.parameters.keys() %>
           parameter_groups: <% task().result.heat_resource_tree.resources.values().where( $.get('parameter_groups') ).select($.parameter_groups).flatten() %>
 
       get_deprecated_params:
@@ -438,9 +439,17 @@ workflows:
           deprecated_params: <% $.parameter_groups.where($.get('label') = 'deprecated').select($.parameters).flatten().distinct() %>
 
       check_if_user_param_has_deprecated:
+        on-success: get_unused_params
+        publish:
+          deprecated_result: <% let(up => $.user_params) -> $.deprecated_params.select( dict('parameter' => $, 'deprecated' => true, 'user_defined' => $up.keys().contains($)) ) %>
+
+      # Get the list of parameters, which are defined by user via environment files's parameter_default, but not part of the plan definition
+      # It may be possible that the parameter will be used by a service, but the service is not part of the plan.
+      # In such cases, the parameter will be reported as unused, care should be take to understand whether it is really unused or not.
+      get_unused_params:
         on-success: send_message
         publish:
-          formatted: <% let(up => $.user_params) -> $.deprecated_params.select( dict('parameter' => $, 'deprecated' => true, 'user_defined' => $up.keys().contains($)) ) %>
+          unused_params: <% let(plan_params => $.plan_params) ->  $.user_params.keys().where( not $plan_params.contains($) ) %>
 
       set_status_failed_get_flatten_data:
         on-success: send_message
@@ -459,6 +468,7 @@ workflows:
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
-                deprecated: <% $.get('formatted', []) %>
+                deprecated: <% $.get('deprecated_result', []) %>
+                unused: <% $.get('unused_params', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
