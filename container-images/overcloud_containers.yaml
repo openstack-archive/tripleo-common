@@ -50,6 +50,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-sriov-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-server:latest
+- imagename: tripleoupstream/centos-binary-neutron-server-ovn:latest
 - imagename: tripleoupstream/centos-binary-nova-api:latest
 - imagename: tripleoupstream/centos-binary-nova-compute-ironic:latest
 - imagename: tripleoupstream/centos-binary-nova-compute:latest

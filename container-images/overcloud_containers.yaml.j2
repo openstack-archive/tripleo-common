@@ -229,6 +229,11 @@ container_images_template:
   - DockerNeutronApiImage
   - DockerNeutronConfigImage
 
+- imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronOvnApiImage
+  - DockerNeutronOvnConfigImage
+
 - imagename: "{{namespace}}/{{name_prefix}}nova-api{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaApiImage
@@ -291,20 +296,20 @@ container_images_template:
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-controller{{name_suffix}}:{{tag}}"
   params:
-  - DockerOVNControllerConfigImage
-  - DockerOVNControllerImage
+  - DockerOvnControllerConfigImage
+  - DockerOvnControllerImage
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-nb-db-server{{name_suffix}}:{{tag}}"
   params:
-  - DockerOVNNbDbImage
+  - DockerOvnNbDbImage
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-northd{{name_suffix}}:{{tag}}"
   params:
-  - DockerOVNNorthdImage
+  - DockerOvnNorthdImage
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-sb-db-server{{name_suffix}}:{{tag}}"
   params:
-  - DockerOVNSbDbImage
+  - DockerOvnSbDbImage
 
 - imagename: "{{namespace}}/{{name_prefix}}panko-api{{name_suffix}}:{{tag}}"
   params:
