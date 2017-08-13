@@ -1,6 +1,17 @@
 {% set namespace=namespace or "tripleoupstream" %}
+
+{% if name_prefix and not name_prefix.endswith('-') %}
+{% set name_prefix=name_prefix + "-" %}
+{% else %}
 {% set name_prefix=name_prefix or "centos-binary-" %}
+{% endif %}
+
+{% if name_suffix and not name_suffix.startswith('-') %}
+{% set name_suffix="-" + name_suffix %}
+{% else %}
 {% set name_suffix=name_suffix or "" %}
+{% endif %}
+
 {% set tag=tag or "latest" %}
 container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}aodh-api{{name_suffix}}:{{tag}}"
