@@ -34,6 +34,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}barbican-api{{name_suffix}}:{{tag}}"
   params:
   - DockerBarbicanApiImage
+  - DockerBarbicanConfigImage
 
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-central{{name_suffix}}:{{tag}}"
   params:
