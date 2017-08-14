@@ -79,42 +79,42 @@
 
 {% block aodh_evaluator_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/aodh-evaluator /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/aodh-evaluator /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block aodh_listener_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/aodh-listener /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/aodh-listener /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block aodh_notifier_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/aodh-notifier /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/aodh-notifier /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block ceilometer_central_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/ceilometer-agent-central /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-central /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block ceilometer_ipmi_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/ceilometer-agent-ipmi /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-ipmi /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block ceilometer_notification_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/ceilometer-agent-notification /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-notification /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
@@ -123,14 +123,14 @@ HEALTHCHECK CMD /openstack/healthcheck
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/cinder-backup /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-backup /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block cinder_scheduler_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/cinder-scheduler /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-scheduler /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
@@ -139,35 +139,35 @@ HEALTHCHECK CMD /openstack/healthcheck
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/cinder-volume /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-volume /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block glance_api_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/glance-api /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/glance-api /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block heat_api_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/heat-api /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/heat-api /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block heat_api_cfn_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/heat-api-cnf /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/heat-api-cnf /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block heat_engine_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/heat-engine /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/heat-engine /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
@@ -178,21 +178,21 @@ RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir
 
 {% block ironic_conductor_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/ironic-conductor /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-conductor /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block keystone_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/keystone-public /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone-public /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block manila_scheduler_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/manila-scheduler /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/manila-scheduler /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
@@ -208,119 +208,119 @@ RUN rm /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/mariadb /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/mariadb /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block mistral_engine_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/mistral-engine /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-engine /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block mistral_executor_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/mistral-executor /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-executor /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block neutron_dhcp_agent_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/neutron-dhcp /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-dhcp /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block neutron_l3_agent_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/neutron-l3 /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-l3 /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block neutron_metadata_agent_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/neutron-metadata /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-metadata /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block neutron_openvswitch_agent_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/neutron-ovs-agent /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-ovs-agent /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block nova_api_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/nova-api /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-api /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block nova_compute_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/nova-compute /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-compute /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block nova_compute_ironic_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/nova-ironic /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-ironic /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block nova_consoleauth_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/nova-consoleauth /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-consoleauth /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block nova_novncproxy_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/nova-vnc-proxy /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-vnc-proxy /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}]
 
 {% block nova_scheduler_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/nova-scheduler /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-scheduler /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block nova_conductor_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/nova-conductor /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-conductor /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block octavia_health_manager_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/octavia-health-manager /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/octavia-health-manager /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block octavia_housekeeping_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/octavia-housekeeping /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/octavia-housekeeping /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block octavia_worker_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/octavia-worker /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/octavia-worker /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
@@ -329,7 +329,7 @@ HEALTHCHECK CMD /openstack/healthcheck
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/rabbitmq /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/rabbitmq /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
@@ -340,42 +340,42 @@ RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir
 
 {% block sahara_engine_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/sahara-engine /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/sahara-engine /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block sensu_client_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/sensu-client /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/sensu-client /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block swift_account_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/swift-account-server /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-account-server /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block swift_container_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/swift-container-server /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-container-server /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block swift_object_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/swift-object-server /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-object-server /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block swift_proxy_server_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/tripleo-common/healthcheck/swift-proxy /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-proxy /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}

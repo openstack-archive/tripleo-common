@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ${HEALTHCHECK_SCRIPTS:-/usr/share/tripleo-common/healthcheck}/common.sh
+. ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
 process='nova-scheduler'
 args="${@:-5671 5672}"
