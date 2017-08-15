@@ -14,7 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+import os
+import tempfile
+
+from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common import constants
+from tripleo_common.utils import tarball
+
+LOG = logging.getLogger(__name__)
 
 
 def empty_container(swiftclient, name):
@@ -43,3 +52,45 @@ def empty_container(swiftclient, name):
 def delete_container(swiftclient, name):
     empty_container(swiftclient, name)
     swiftclient.delete_container(name)
+
+
+def download_container(swiftclient, container, dest):
+    """Download the contents of a Swift container to a directory"""
+
+    objects = swiftclient.get_container(container)[1]
+
+    for obj in objects:
+        filename = obj['name']
+        contents = swiftclient.get_object(container, filename)[1]
+        path = os.path.join(dest, filename)
+        dirname = os.path.dirname(path)
+
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        with open(path, 'w') as f:
+            f.write(contents)
+
+
+def get_or_create_container(swiftclient, container):
+    try:
+        return swiftclient.get_container(container)
+    except swiftexceptions.ClientException:
+        LOG.debug("Container %s doesn't exist, creating...", container)
+        return swiftclient.put_container(container)
+
+
+def create_and_upload_tarball(swiftclient,
+                              tmp_dir,
+                              container,
+                              tarball_name,
+                              delete_after=3600):
+    """Create a tarball containing the tmp_dir and upload it to Swift."""
+    headers = {'X-Delete-After': delete_after}
+
+    get_or_create_container(swiftclient, container)
+
+    with tempfile.NamedTemporaryFile() as tmp_tarball:
+        tarball.create_tarball(tmp_dir, tmp_tarball.name)
+        swiftclient.put_object(container, tarball_name, tmp_tarball,
+                               headers=headers)

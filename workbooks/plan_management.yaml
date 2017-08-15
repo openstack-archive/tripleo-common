@@ -462,3 +462,140 @@ workflows:
                 deprecated: <% $.get('formatted', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  publish_ui_logs_to_swift:
+    description: >
+      This workflow drains a zaqar queue, and publish its messages into a log
+      file in swift.  This workflow is called by cron trigger.
+
+    input:
+      - queue_name: tripleo
+      - logging_queue_name: tripleo-ui-logging
+      - logging_container: tripleo-ui-logs
+
+    tasks:
+
+      get_messages:
+        action: zaqar.queue_messages
+        on-success: format_messages
+        on-error: get_messages_set_status_failed
+        input:
+          queue_name: <% $.logging_queue_name %>
+
+        publish:
+          messages: <% task(get_messages).result %>
+
+      format_messages:
+        action: tripleo.logging_to_swift.format_messages
+        on-success: upload_to_swift
+        input:
+          messages: <% $.messages %>
+
+        publish:
+          messages: <% task(format_messages).result %>
+
+      upload_to_swift:
+        action: tripleo.logging_to_swift.publish_ui_log_to_swift
+        on-success: set_status_success
+        on-error: upload_to_swift_set_status_failed
+        input:
+          logging_data: <% $.messages %>
+          logging_container: <% $.logging_container %>
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(upload_to_swift).result %>
+
+      upload_to_swift_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(upload_to_swift).result %>
+
+      get_messages_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(get_messages).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.publish_ui_logs_to_swift
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  download_logs:
+    description: Creates a tarball with logging data
+    input:
+      - queue_name: tripleo
+      - logging_container: "tripleo-ui-logs"
+      - downloads_container: "tripleo-ui-logs-downloads"
+      - delete_after: 3600
+
+    tasks:
+
+      prepare_log_download:
+        action: tripleo.logging_to_swift.prepare_log_download
+        input:
+          logging_container: <% $.logging_container %>
+          downloads_container: <% $.downloads_container %>
+          delete_after: <% $.delete_after %>
+        on-success: create_tempurl
+        on-error: download_logs_set_status_failed
+        publish:
+          filename: <% task(prepare_log_download).result %>
+
+      create_tempurl:
+        action: tripleo.swift.tempurl
+        on-success: set_status_success
+        on-error: create_tempurl_set_status_failed
+        input:
+          container: <% $.downloads_container %>
+          obj: <% $.filename %>
+          valid: 3600
+        publish:
+          tempurl: <% task(create_tempurl).result %>
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(create_tempurl).result %>
+          tempurl: <% task(create_tempurl).result %>
+
+      download_logs_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(prepare_log_download).result %>
+
+      create_tempurl_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_tempurl).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.download_logs
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                tempurl: <% $.get('tempurl', '') %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
