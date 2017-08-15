@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Set the ``resource_class`` field of newly created nodes to ``baremetal``
+    to adapt to the recent scheduling changes. See `bug 1708653
+    <https://bugs.launchpad.net/tripleo/+bug/1708653>`_ for details.
