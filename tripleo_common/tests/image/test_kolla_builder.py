@@ -206,6 +206,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         def ffunc(entry):
             if 'params' in entry:
                 del(entry['params'])
+            if 'services' in entry:
+                del(entry['services'])
             return entry
 
         result = tmpl_builder.container_images_from_template(filter=ffunc)

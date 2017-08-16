@@ -14,22 +14,41 @@
 
 {% set tag=tag or "latest" %}
 container_images_template:
+
 - imagename: "{{namespace}}/{{name_prefix}}aodh-api{{name_suffix}}:{{tag}}"
   params:
   - DockerAodhApiImage
   - DockerAodhConfigImage
+  services:
+  - OS::TripleO::Services::AodhApi
+  - OS::TripleO::Services::AodhEvaluator
+  - OS::TripleO::Services::AodhListener
+  - OS::TripleO::Services::AodhNotifier
+  - OS::TripleO::Services::UndercloudAodhApi
+  - OS::TripleO::Services::UndercloudAodhEvaluator
+  - OS::TripleO::Services::UndercloudAodhListener
+  - OS::TripleO::Services::UndercloudAodhNotifier
 
 - imagename: "{{namespace}}/{{name_prefix}}aodh-evaluator{{name_suffix}}:{{tag}}"
   params:
   - DockerAodhEvaluatorImage
+  services:
+  - OS::TripleO::Services::AodhEvaluator
+  - OS::TripleO::Services::UndercloudAodhEvaluator
 
 - imagename: "{{namespace}}/{{name_prefix}}aodh-listener{{name_suffix}}:{{tag}}"
   params:
   - DockerAodhListenerImage
+  services:
+  - OS::TripleO::Services::AodhListener
+  - OS::TripleO::Services::UndercloudAodhListener
 
 - imagename: "{{namespace}}/{{name_prefix}}aodh-notifier{{name_suffix}}:{{tag}}"
   params:
   - DockerAodhNotifierImage
+  services:
+  - OS::TripleO::Services::AodhNotifier
+  - OS::TripleO::Services::UndercloudAodhNotifier
 
 - imagename: "{{namespace}}/{{name_prefix}}barbican-api{{name_suffix}}:{{tag}}"
   params:
@@ -39,46 +58,76 @@ container_images_template:
   params:
   - DockerCeilometerCentralImage
   - DockerCeilometerConfigImage
+  services:
+  - OS::TripleO::Services::CeilometerAgentCentral
+  - OS::TripleO::Services::CeilometerAgentIpmi
+  - OS::TripleO::Services::CeilometerAgentNotification
+  - OS::TripleO::Services::ComputeCeilometerAgent
+  - OS::TripleO::Services::UndercloudCeilometerAgentCentral
+  - OS::TripleO::Services::UndercloudCeilometerAgentIpmi
+  - OS::TripleO::Services::UndercloudCeilometerAgentNotification
 
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-compute{{name_suffix}}:{{tag}}"
   params:
   - DockerCeilometerComputeImage
+  services:
+  - OS::TripleO::Services::ComputeCeilometerAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-notification{{name_suffix}}:{{tag}}"
   params:
   - DockerCeilometerNotificationImage
+  services:
+  - OS::TripleO::Services::CeilometerAgentNotification
+  - OS::TripleO::Services::UndercloudCeilometerAgentNotification
 
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-ipmi{{name_suffix}}:{{tag}}"
   params:
   - DockerCeilometerIpmiImage
+  services:
+  - OS::TripleO::Services::CeilometerAgentIpmi
+  - OS::TripleO::Services::UndercloudCeilometerAgentIpmi
 
 - imagename: "{{namespace}}/{{name_prefix}}cinder-api{{name_suffix}}:{{tag}}"
   params:
   - DockerCinderApiImage
   - DockerCinderConfigImage
-
+  services:
+  - OS::TripleO::Services::CinderApi
+  - OS::TripleO::Services::CinderBackup
+  - OS::TripleO::Services::CinderScheduler
+  - OS::TripleO::Services::CinderVolume
 
 - imagename: "{{namespace}}/{{name_prefix}}cinder-backup{{name_suffix}}:{{tag}}"
   params:
   - DockerCinderBackupImage
+  services:
+  - OS::TripleO::Services::CinderBackup
 
 - imagename: "{{namespace}}/{{name_prefix}}cinder-scheduler{{name_suffix}}:{{tag}}"
   params:
   - DockerCinderSchedulerImage
+  services:
+  - OS::TripleO::Services::CinderScheduler
 
 - imagename: "{{namespace}}/{{name_prefix}}cinder-volume{{name_suffix}}:{{tag}}"
   params:
   - DockerCinderVolumeImage
+  services:
+  - OS::TripleO::Services::CinderVolume
 
 - imagename: "{{namespace}}/{{name_prefix}}collectd{{name_suffix}}:{{tag}}"
   params:
   - DockerCollectdConfigImage
   - DockerCollectdImage
+  services:
+  - OS::TripleO::Services::Collectd
 
 - imagename: "{{namespace}}/{{name_prefix}}congress-api{{name_suffix}}:{{tag}}"
   params:
   - DockerCongressApiImage
   - DockerCongressConfigImage
+  services:
+  - OS::TripleO::Services::Congress
 
 - imagename: "{{namespace}}/{{name_prefix}}cron{{name_suffix}}:{{tag}}"
   params:
@@ -89,34 +138,55 @@ container_images_template:
   params:
   - DockerEc2ApiConfigImage
   - DockerEc2ApiImage
+  services:
+  - OS::TripleO::Services::Ec2Api
 
 - imagename: "{{namespace}}/{{name_prefix}}etcd{{name_suffix}}:{{tag}}"
   params:
   - DockerEtcdConfigImage
   - DockerEtcdImage
+  services:
+  - OS::TripleO::Services::Etcd
 
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   params:
   - DockerGlanceApiConfigImage
   - DockerGlanceApiImage
+  services:
+  - OS::TripleO::Services::GlanceApi
 
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-api{{name_suffix}}:{{tag}}"
   params:
   - DockerGnocchiApiImage
   - DockerGnocchiConfigImage
+  services:
+  - OS::TripleO::Services::GnocchiApi
+  - OS::TripleO::Services::GnocchiMetricd
+  - OS::TripleO::Services::GnocchiStatsd
+  - OS::TripleO::Services::UndercloudGnocchiApi
+  - OS::TripleO::Services::UndercloudGnocchiMetricd
+  - OS::TripleO::Services::UndercloudGnocchiStatsd
 
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-metricd{{name_suffix}}:{{tag}}"
   params:
   - DockerGnocchiMetricdImage
+  services:
+  - OS::TripleO::Services::GnocchiMetricd
+  - OS::TripleO::Services::UndercloudGnocchiMetricd
 
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-statsd{{name_suffix}}:{{tag}}"
   params:
   - DockerGnocchiStatsdImage
+  services:
+  - OS::TripleO::Services::GnocchiStatsd
+  - OS::TripleO::Services::UndercloudGnocchiStatsd
 
 - imagename: "{{namespace}}/{{name_prefix}}haproxy{{name_suffix}}:{{tag}}"
   params:
   - DockerHAProxyConfigImage
   - DockerHAProxyImage
+  services:
+  - OS::TripleO::Services::HAproxy
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-all{{name_suffix}}:{{tag}}"
 
@@ -124,30 +194,43 @@ container_images_template:
   params:
   - DockerHeatApiCfnConfigImage
   - DockerHeatApiCfnImage
+  services:
+  - OS::TripleO::Services::HeatApiCfn
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-api{{name_suffix}}:{{tag}}"
   params:
   - DockerHeatApiConfigImage
   - DockerHeatApiImage
   - DockerHeatConfigImage
+  services:
+  - OS::TripleO::Services::HeatApi
+  - OS::TripleO::Services::HeatEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-engine{{name_suffix}}:{{tag}}"
   params:
   - DockerHeatEngineImage
+  services:
+  - OS::TripleO::Services::HeatEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}horizon{{name_suffix}}:{{tag}}"
   params:
   - DockerHorizonConfigImage
   - DockerHorizonImage
+  services:
+  - OS::TripleO::Services::Horizon
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-api{{name_suffix}}:{{tag}}"
   params:
   - DockerIronicApiImage
   - DockerIronicApiConfigImage
+  services:
+  - OS::TripleO::Services::IronicApi
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-conductor{{name_suffix}}:{{tag}}"
   params:
   - DockerIronicConductorImage
+  services:
+  - OS::TripleO::Services::IronicConductor
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-inspector{{name_suffix}}:{{tag}}"
   params:
@@ -158,31 +241,46 @@ container_images_template:
   params:
   - DockerIronicConfigImage
   - DockerIronicPxeImage
+  services:
+  - OS::TripleO::Services::IronicConductor
+  - OS::TripleO::Services::IronicPxe
 
 - imagename: "{{namespace}}/{{name_prefix}}iscsid{{name_suffix}}:{{tag}}"
   params:
   - DockerIscsidConfigImage
   - DockerIscsidImage
+  services:
+  - OS::TripleO::Services::Iscsid
 
 - imagename: "{{namespace}}/{{name_prefix}}keystone{{name_suffix}}:{{tag}}"
   params:
   - DockerKeystoneConfigImage
   - DockerKeystoneImage
+  services:
+  - OS::TripleO::Services::Keystone
 
 - imagename: "{{namespace}}/{{name_prefix}}manila-api{{name_suffix}}:{{tag}}"
   params:
   - DockerManilaApiImage
   - DockerManilaConfigImage
+  services:
+  - OS::TripleO::Services::ManilaApi
+  - OS::TripleO::Services::ManilaScheduler
+  - OS::TripleO::Services::ManilaShare
 
 - imagename: "{{namespace}}/{{name_prefix}}manila-base{{name_suffix}}:{{tag}}"
 
 - imagename: "{{namespace}}/{{name_prefix}}manila-scheduler{{name_suffix}}:{{tag}}"
   params:
   - DockerManilaSchedulerImage
+  services:
+  - OS::TripleO::Services::ManilaScheduler
 
 - imagename: "{{namespace}}/{{name_prefix}}manila-share{{name_suffix}}:{{tag}}"
   params:
   - DockerManilaShareImage
+  services:
+  - OS::TripleO::Services::ManilaShare
 
 - imagename: "{{namespace}}/{{name_prefix}}mariadb{{name_suffix}}:{{tag}}"
   params:
@@ -191,24 +289,36 @@ container_images_template:
   - DockerMysqlConfigImage
   - DockerMysqlImage
   - DockerMysqlClientConfigImage
+  services:
+  - OS::TripleO::Services::MySQL
 
 - imagename: "{{namespace}}/{{name_prefix}}memcached{{name_suffix}}:{{tag}}"
   params:
   - DockerMemcachedConfigImage
   - DockerMemcachedImage
+  services:
+  - OS::TripleO::Services::Memcached
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-api{{name_suffix}}:{{tag}}"
   params:
   - DockerMistralApiImage
   - DockerMistralConfigImage
+  services:
+  - OS::TripleO::Services::MistralApi
+  - OS::TripleO::Services::MistralEngine
+  - OS::TripleO::Services::MistralExecutor
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-engine{{name_suffix}}:{{tag}}"
   params:
   - DockerMistralEngineImage
+  services:
+  - OS::TripleO::Services::MistralEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-executor{{name_suffix}}:{{tag}}"
   params:
   - DockerMistralExecutorImage
+  services:
+  - OS::TripleO::Services::MistralExecutor
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-event-engine{{name_suffix}}:{{tag}}"
 
@@ -216,27 +326,40 @@ container_images_template:
   params:
   - DockerMongodbConfigImage
   - DockerMongodbImage
+  services:
+  - OS::TripleO::Services::MongoDb
 
 - imagename: "{{namespace}}/{{name_prefix}}multipathd{{name_suffix}}:{{tag}}"
   params:
   - DockerMultipathdConfigImage
   - DockerMultipathdImage
+  services:
+  - OS::TripleO::Services::Multipathd
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-dhcp-agent{{name_suffix}}:{{tag}}"
   params:
   - DockerNeutronDHCPImage
+  services:
+  - OS::TripleO::Services::NeutronDhcpAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-l3-agent{{name_suffix}}:{{tag}}"
   params:
   - DockerNeutronL3AgentImage
+  services:
+  - OS::TripleO::Services::NeutronL3Agent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent{{name_suffix}}:{{tag}}"
   params:
   - DockerNeutronMetadataImage
+  services:
+  - OS::TripleO::Services::NeutronMetadataAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-openvswitch-agent{{name_suffix}}:{{tag}}"
   params:
   - DockerOpenvswitchImage
+  services:
+  - OS::TripleO::Services::ComputeNeutronOvsAgent
+  - OS::TripleO::Services::NeutronOvsAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-sriov-agent{{name_suffix}}:{{tag}}"
 
@@ -244,6 +367,15 @@ container_images_template:
   params:
   - DockerNeutronApiImage
   - DockerNeutronConfigImage
+  services:
+  - OS::TripleO::Services::ComputeNeutronOvsAgent
+  - OS::TripleO::Services::NeutronApi
+  - OS::TripleO::Services::NeutronCorePlugin
+  - OS::TripleO::Services::NeutronDhcpAgent
+  - OS::TripleO::Services::NeutronL3Agent
+  - OS::TripleO::Services::NeutronMetadataAgent
+  - OS::TripleO::Services::NeutronOvsAgent
+  - OS::TripleO::Services::NeutronServer
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
   params:
@@ -254,40 +386,65 @@ container_images_template:
   params:
   - DockerNovaApiImage
   - DockerNovaConfigImage
+  services:
+  - OS::TripleO::Services::NovaApi
+  - OS::TripleO::Services::NovaConductor
+  - OS::TripleO::Services::NovaConsoleauth
+  - OS::TripleO::Services::NovaIronic
+  - OS::TripleO::Services::NovaScheduler
+  - OS::TripleO::Services::NovaVncProxy
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute-ironic{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaComputeIronicImage
+  services:
+  - OS::TripleO::Services::NovaIronic
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaComputeImage
   - DockerNovaLibvirtConfigImage
+  services:
+  - OS::TripleO::Services::NovaCompute
+  - OS::TripleO::Services::NovaLibvirt
+  - OS::TripleO::Services::NovaMigrationTarget
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-conductor{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaConductorImage
+  services:
+  - OS::TripleO::Services::NovaConductor
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-consoleauth{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaConsoleauthImage
+  services:
+  - OS::TripleO::Services::NovaConsoleauth
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-libvirt{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaLibvirtImage
+  services:
+  - OS::TripleO::Services::NovaLibvirt
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-novncproxy{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaVncProxyImage
+  services:
+  - OS::TripleO::Services::NovaVncProxy
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-placement-api{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaPlacementConfigImage
   - DockerNovaPlacementImage
+  services:
+  - OS::TripleO::Services::NovaPlacement
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-scheduler{{name_suffix}}:{{tag}}"
   params:
   - DockerNovaSchedulerImage
+  services:
+  - OS::TripleO::Services::NovaScheduler
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-base{{name_suffix}}:{{tag}}"
 
@@ -295,18 +452,29 @@ container_images_template:
   params:
   - DockerOctaviaApiImage
   - DockerOctaviaConfigImage
+  services:
+  - OS::TripleO::Services::OctaviaApi
+  - OS::TripleO::Services::OctaviaHealthManager
+  - OS::TripleO::Services::OctaviaHousekeeping
+  - OS::TripleO::Services::OctaviaWorker
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-health-manager{{name_suffix}}:{{tag}}"
   params:
   - DockerOctaviaHealthManagerImage
+  services:
+  - OS::TripleO::Services::OctaviaHealthManager
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-housekeeping{{name_suffix}}:{{tag}}"
   params:
   - DockerOctaviaHousekeepingImage
+  services:
+  - OS::TripleO::Services::OctaviaHousekeeping
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-worker{{name_suffix}}:{{tag}}"
   params:
   - DockerOctaviaWorkerImage
+  services:
+  - OS::TripleO::Services::OctaviaWorker
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-base{{name_suffix}}:{{tag}}"
 
@@ -331,61 +499,90 @@ container_images_template:
   params:
   - DockerPankoApiImage
   - DockerPankoConfigImage
+  services:
+  - OS::TripleO::Services::PankoApi
+  - OS::TripleO::Services::UndercloudPankoApi
 
 - imagename: "{{namespace}}/{{name_prefix}}rabbitmq{{name_suffix}}:{{tag}}"
   params:
   - DockerRabbitmqConfigImage
   - DockerRabbitmqImage
+  services:
+  - OS::TripleO::Services::RabbitMQ
 
 - imagename: "{{namespace}}/{{name_prefix}}redis{{name_suffix}}:{{tag}}"
   params:
   - DockerRedisConfigImage
   - DockerRedisImage
+  services:
+  - OS::TripleO::Services::Redis
 
 - imagename: "{{namespace}}/{{name_prefix}}sahara-api{{name_suffix}}:{{tag}}"
   params:
   - DockerSaharaApiImage
   - DockerSaharaConfigImage
+  services:
+  - OS::TripleO::Services::SaharaApi
+  - OS::TripleO::Services::SaharaEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}sahara-engine{{name_suffix}}:{{tag}}"
   params:
   - DockerSaharaEngineImage
+  services:
+  - OS::TripleO::Services::SaharaEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}sensu-client{{name_suffix}}:{{tag}}"
   params:
   - DockerSensuClientImage
   - DockerSensuConfigImage
+  services:
+  - OS::TripleO::Services::SensuClient
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-account{{name_suffix}}:{{tag}}"
   params:
   - DockerSwiftAccountImage
+  services:
+  - OS::TripleO::Services::SwiftStorage
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-container{{name_suffix}}:{{tag}}"
   params:
   - DockerSwiftContainerImage
+  services:
+  - OS::TripleO::Services::SwiftStorage
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-object{{name_suffix}}:{{tag}}"
   params:
   - DockerSwiftObjectImage
+  services:
+  - OS::TripleO::Services::SwiftStorage
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-proxy-server{{name_suffix}}:{{tag}}"
   params:
   - DockerSwiftConfigImage
   - DockerSwiftProxyImage
+  services:
+  - OS::TripleO::Services::SwiftProxy
+  - OS::TripleO::Services::SwiftRingBuilder
+  - OS::TripleO::Services::SwiftStorage
 
 - imagename: "{{namespace}}/{{name_prefix}}tacker{{name_suffix}}:{{tag}}"
   params:
   - DockerTackerConfigImage
   - DockerTackerImage
+  services:
+  - OS::TripleO::Services::Tacker
 
 - imagename: "{{namespace}}/{{name_prefix}}zaqar{{name_suffix}}:{{tag}}"
   params:
   - DockerZaqarConfigImage
   - DockerZaqarImage
+  services:
+  - OS::TripleO::Services::Zaqar
 
 # FIXME(gfidente): we don't use any prefix here so it would be nice to
 # not have the --pull-source registry prepended, we can probably add
 # another {{keyword}} to describe where we want and where we do not
+#
 #- imagename: "ceph/daemon:tag-build-master-jewel-centos-7"
 #  params:
 #  - DockerCephDaemonImage
