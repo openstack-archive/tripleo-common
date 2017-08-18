@@ -554,6 +554,11 @@ workflows:
 
     tasks:
 
+      publish_logs:
+        workflow: tripleo.plan_management.v1.publish_ui_logs_to_swift
+        on-success: prepare_log_download
+        on-error: publish_logs_set_status_failed
+
       prepare_log_download:
         action: tripleo.logging_to_swift.prepare_log_download
         input:
@@ -582,6 +587,12 @@ workflows:
           status: SUCCESS
           message: <% task(create_tempurl).result %>
           tempurl: <% task(create_tempurl).result %>
+
+      publish_logs_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(publish_logs).result %>
 
       download_logs_set_status_failed:
         on-success: notify_zaqar
