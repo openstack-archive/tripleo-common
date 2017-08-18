@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. ${HEALTHCHECK_SCRIPTS:-/usr/share/tripleo-common/healthcheck}/common.sh
+. ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
 conf=/etc/swift/account-server.conf
 
