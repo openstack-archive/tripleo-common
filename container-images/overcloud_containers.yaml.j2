@@ -386,6 +386,7 @@ container_images_template:
   params:
   - DockerNovaApiImage
   - DockerNovaConfigImage
+  - DockerNovaMetadataImage
   services:
   - OS::TripleO::Services::NovaApi
   - OS::TripleO::Services::NovaConductor
@@ -393,6 +394,7 @@ container_images_template:
   - OS::TripleO::Services::NovaIronic
   - OS::TripleO::Services::NovaScheduler
   - OS::TripleO::Services::NovaVncProxy
+  - OS::TripleO::Services::NovaMetadata
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute-ironic{{name_suffix}}:{{tag}}"
   params:
