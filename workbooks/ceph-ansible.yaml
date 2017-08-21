@@ -9,6 +9,13 @@ workflows:
     input:
       - ansible_playbook_verbosity: 0
       - ansible_skip_tags: 'package-install,with_pkg'
+      - ansible_extra_env_variables:
+          ANSIBLE_CONFIG: /usr/share/ceph-ansible/ansible.cfg
+          ANSIBLE_ACTION_PLUGINS: /usr/share/ceph-ansible/plugins/actions/
+          ANSIBLE_ROLES_PATH: /usr/share/ceph-ansible/roles/
+          ANSIBLE_RETRY_FILES_ENABLED: 'False'
+          ANSIBLE_LOG_PATH: /var/log/mistral/ceph-install-workflow.log
+          ANSIBLE_LIBRARY: /usr/share/ceph-ansible/library/
       - ceph_ansible_extra_vars: {}
       - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
     tasks:
@@ -74,10 +81,7 @@ workflows:
           ssh_common_args: '-o StrictHostKeyChecking=no'
           ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
           skip_tags: <% $.ansible_skip_tags %>
-          extra_env_variables:
-            ANSIBLE_CONFIG: /usr/share/ceph-ansible/ansible.cfg
-            ANSIBLE_ACTION_PLUGINS: /usr/share/ceph-ansible/plugins/actions/
-            ANSIBLE_LIBRARY: /usr/share/ceph-ansible/library
+          extra_env_variables: <% $.ansible_extra_env_variables %>
           extra_vars: <% $.extra_vars %>
         publish:
           output: <% task(ceph_install).result %>
