@@ -307,6 +307,7 @@ container_images_template:
   - OS::TripleO::Services::MistralApi
   - OS::TripleO::Services::MistralEngine
   - OS::TripleO::Services::MistralExecutor
+  - OS::TripleO::Services::MistralEventEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-engine{{name_suffix}}:{{tag}}"
   params:
@@ -321,6 +322,10 @@ container_images_template:
   - OS::TripleO::Services::MistralExecutor
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-event-engine{{name_suffix}}:{{tag}}"
+  params:
+  - DockerMistralEventEngineImage
+  services:
+  - OS::TripleO::Services::MistralEventEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}mongodb{{name_suffix}}:{{tag}}"
   params:
