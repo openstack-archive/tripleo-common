@@ -51,7 +51,7 @@ class ImageUploadManager(BaseImageManager):
         for item in upload_images:
             image_name = item.get('imagename')
             uploader = item.get('uploader', 'docker')
-            pull_source = item.get('pull_source', 'docker.io')
+            pull_source = item.get('pull_source')
             push_destination = item.get('push_destination',
                                         default_push_destination)
 
@@ -103,14 +103,17 @@ class DockerImageUploader(ImageUploader):
         else:
             image = image_name
             tag = 'latest'
-        repo = pull_source + '/' + image
+        if pull_source:
+            repo = pull_source + '/' + image
+        else:
+            repo = image
 
         response = [line for line in dockerc.pull(repo,
                     tag=tag, stream=True)]
         self.logger.debug(response)
 
         full_image = repo + ':' + tag
-        new_repo = push_destination + '/' + image
+        new_repo = push_destination + '/' + repo.partition('/')[2]
         response = dockerc.tag(image=full_image, repository=new_repo,
                                tag=tag, force=True)
         self.logger.debug(response)
