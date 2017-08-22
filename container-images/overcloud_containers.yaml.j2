@@ -133,6 +133,8 @@ container_images_template:
   params:
   - DockerCrondConfigImage
   - DockerCrondImage
+  services:
+  - OS::TripleO::Services::ContainersLogrotateCrond
 
 - imagename: "{{namespace}}/{{name_prefix}}ec2-api{{name_suffix}}:{{tag}}"
   params:
