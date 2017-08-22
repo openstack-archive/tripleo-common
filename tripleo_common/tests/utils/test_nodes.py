@@ -249,6 +249,7 @@ class NodesTest(base.TestCase):
         pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
+                             resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
@@ -270,6 +271,7 @@ class NodesTest(base.TestCase):
         pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
+                             resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
@@ -299,6 +301,7 @@ class NodesTest(base.TestCase):
         pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
+                             resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
@@ -322,6 +325,7 @@ class NodesTest(base.TestCase):
                              name='node1',
                              driver_info=pxe_node_driver_info,
                              properties=node_properties,
+                             resource_class='baremetal',
                              uuid="abcdef")
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
@@ -346,6 +350,7 @@ class NodesTest(base.TestCase):
         pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
+                             resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
@@ -380,6 +385,7 @@ class NodesTest(base.TestCase):
                              name='node1',
                              driver_info=pxe_node_driver_info,
                              properties=node_properties,
+                             resource_class='baremetal',
                              **interfaces)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
                               address='aaa')
@@ -592,6 +598,7 @@ class NodesTest(base.TestCase):
         client.node.create.assert_called_once_with(driver=mock.ANY,
                                                    name='node1',
                                                    properties=node_properties,
+                                                   resource_class='baremetal',
                                                    driver_info=mock.ANY)
 
     def test_register_ironic_node_fake_pxe(self):
@@ -609,6 +616,7 @@ class NodesTest(base.TestCase):
         client.node.create.assert_called_once_with(driver='fake_pxe',
                                                    name='node1',
                                                    properties=node_properties,
+                                                   resource_class='baremetal',
                                                    driver_info={})
 
     def test_register_ironic_node_pxe_ucs(self):
@@ -623,6 +631,7 @@ class NodesTest(base.TestCase):
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
             driver='pxe_ucs', name='node1', properties=node_properties,
+            resource_class='baremetal',
             driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
                          'ucs_username': 'test'})
 
@@ -639,6 +648,7 @@ class NodesTest(base.TestCase):
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
             driver='ipmi', name='node1', properties=node_properties,
+            resource_class='baremetal',
             driver_info={'ipmi_password': 'random', 'ipmi_address': 'foo.bar',
                          'ipmi_username': 'test', 'ipmi_port': '6230'})
 
@@ -655,6 +665,7 @@ class NodesTest(base.TestCase):
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
             driver='pxe_ipmitool', name='node1', properties=node_properties,
+            resource_class='baremetal',
             driver_info={'ipmi_password': 'random', 'ipmi_address': 'foo.bar',
                          'ipmi_username': 'test', 'ipmi_port': '6230'})
 
@@ -671,6 +682,7 @@ class NodesTest(base.TestCase):
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
             driver='pxe_drac', name='node1', properties=node_properties,
+            resource_class='baremetal',
             driver_info={'drac_password': 'random', 'drac_address': 'foo.bar',
                          'drac_username': 'test', 'drac_port': '6230'})
 
@@ -687,6 +699,7 @@ class NodesTest(base.TestCase):
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
             driver='redfish', name='node1', properties=node_properties,
+            resource_class='baremetal',
             driver_info={'redfish_password': 'random',
                          'redfish_address': 'foo.bar',
                          'redfish_username': 'test',

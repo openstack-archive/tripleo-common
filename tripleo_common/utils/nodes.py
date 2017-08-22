@@ -299,6 +299,12 @@ def register_ironic_node(node, client):
     interface_fields = {field: node.pop(field)
                         for field in _KNOWN_INTERFACE_FIELDS
                         if field in node}
+    resource_class = node.pop('resource_class', 'baremetal')
+    if resource_class != 'baremetal':
+        LOG.warning('Resource class for a new node will be set to %s, which '
+                    'is different from the default "baremetal". A custom '
+                    'flavor will be required to deploy on such node',
+                    resource_class)
 
     driver_info.update(handler.convert(node))
 
@@ -318,7 +324,8 @@ def register_ironic_node(node, client):
 
     create_map = {"driver": node["pm_type"],
                   "properties": properties,
-                  "driver_info": driver_info}
+                  "driver_info": driver_info,
+                  "resource_class": resource_class}
     create_map.update(interface_fields)
 
     for field in ('name', 'uuid'):
@@ -390,6 +397,7 @@ _NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
                       'disk': '/properties/local_gb',
                       'arch': '/properties/cpu_arch',
                       'name': '/name',
+                      'resource_class': '/resource_class',
                       'kernel_id': '/driver_info/deploy_kernel',
                       'ramdisk_id': '/driver_info/deploy_ramdisk',
                       'capabilities': '/properties/capabilities'}
