@@ -39,6 +39,10 @@
 # NOTE (jaosorior): neutron-server with TLS everywhere needs these packages.
 {% set neutron_server_packages_append = ['httpd', 'mod_ssl'] %}
 
+# NOTE (jaosorior): redis with TLS everywhere needs these packages.
+# redis resource-agent requires pidof
+{% set redis_packages_append = ['stunnel', 'sysvinit-tools'] %}
+
 # Remove packages not present in repos
 #
 {# 'libtomcrypt',    # EPEL, Unknown use
@@ -67,9 +71,6 @@
     'pv'
 ] %}
 {% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
-
-# redis resource-agent requires pidof
-{% set redis_packages_append = ['sysvinit-tools'] %}
 
 # Required for nova migration
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
