@@ -12,13 +12,17 @@ healthcheck_curl () {
 
 healthcheck_port () {
   process=$1
-  shift 1
 
-  port_args=()
-  for arg in "$@"; do
-    port_args+=("-i" "tcp:${arg}")
-  done
-  lsof +c0 -nP "${port_args[@]}" | awk '{print $1}' | grep -q "^${process}$"
+  # ss truncate command name to 15 characters and this behaviour
+  # cannot be diabled
+  if [ ${#process} -gt 15 ] ; then
+    process=${process:0:15}
+  fi
+
+  shift 1
+  args=$@
+  ports=${args// /|}
+  ss -ntp | awk '{print $5,"-",$6}' | egrep ":($ports)" | grep "$process"
 }
 
 get_config_val () {
