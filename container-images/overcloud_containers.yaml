@@ -52,6 +52,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-neutron-openvswitch-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-sriov-agent:latest
 - imagename: tripleoupstream/centos-binary-neutron-server:latest
+- imagename: tripleoupstream/centos-binary-neutron-server-opendaylight:latest
 - imagename: tripleoupstream/centos-binary-neutron-server-ovn:latest
 - imagename: tripleoupstream/centos-binary-nova-api:latest
 - imagename: tripleoupstream/centos-binary-nova-compute-ironic:latest
@@ -67,6 +68,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-octavia-health-manager:latest
 - imagename: tripleoupstream/centos-binary-octavia-housekeeping:latest
 - imagename: tripleoupstream/centos-binary-octavia-worker:latest
+- imagename: tripleoupstream/centos-binary-opendaylight:latest
 - imagename: tripleoupstream/centos-binary-ovn-base:latest
 - imagename: tripleoupstream/centos-binary-ovn-controller:latest
 - imagename: tripleoupstream/centos-binary-ovn-nb-db-server:latest
