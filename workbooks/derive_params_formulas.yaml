@@ -507,6 +507,14 @@ workflows:
 
       get_num_osds:
         publish:
+          num_osds: <% $.heat_resource_tree.parameters.get('CephAnsibleDisksConfig', {}).get('default', {}).get('devices', []).count() %>
+        on-success:
+          - get_memory_mb: <% $.num_osds %>
+          # If there's no CephAnsibleDisksConfig then look for OSD configuration in hiera data
+          - get_num_osds_from_hiera: <% not $.num_osds %>
+
+      get_num_osds_from_hiera:
+        publish:
           num_osds: <% $.role_extra_config.get('ceph::profile::params::osds', $.extra_config.get('ceph::profile::params::osds', {})).keys().count() %>
         on-success:
           - get_memory_mb: <% $.num_osds %>
