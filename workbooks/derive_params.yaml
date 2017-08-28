@@ -64,7 +64,10 @@ workflows:
           container: <% $.plan %>
           key: 'derived_parameters'
         on-success:
+          # Add the derived parameters to the deployment plan only when $.result
+          # (the derived parameters) is non-empty. Otherwise, we're done.
           - update_derive_parameters_in_plan: <% $.result %>
+          - send_message: <% not $.result %>
         on-error: set_status_failed_reset_derive_parameters_in_plan
 
       update_derive_parameters_in_plan:
