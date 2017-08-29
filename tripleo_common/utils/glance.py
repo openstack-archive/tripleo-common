@@ -53,7 +53,8 @@ def _upload_file(glanceclient, name, path, disk_format, type_name,
                                               disk_format=disk_format)
             image = None
             for img in images:
-                if img['name'] == name and img['disk_format'] == disk_format:
+                if ((img['name'] == name or img['id'] == name) and
+                        img['disk_format'] == disk_format):
                     image = img
             if not image:
                 raise exceptions.NotFound("No image found")
