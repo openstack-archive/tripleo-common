@@ -62,9 +62,6 @@ class PublishUILogToSwiftActionTest(base.TestCase):
         self.swift.head_object.return_value = {
             'content-length': 1
         }
-        self.swift.get_container.return_value = (
-            {}, []
-        )
         data = 'data'
         action = logging_to_swift.PublishUILogToSwiftAction(
             data, self.container)
@@ -73,7 +70,7 @@ class PublishUILogToSwiftActionTest(base.TestCase):
         self.swift.get_object.assert_called_once()
         self.swift.head_object.assert_called_once()
         self.swift.put_object.assert_called_once()
-        self.swift.get_container.assert_called_once()
+        self.swift.put_container.assert_called_once()
 
     def test_rotate(self):
         self.swift.head_object.return_value = {
