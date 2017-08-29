@@ -161,7 +161,7 @@ HEALTHCHECK CMD /openstack/healthcheck
 
 {% block heat_api_cfn_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/heat-api-cnf /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/heat-api-cfn /openstack/healthcheck && \
     chmod -R a+rx /openstack
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}

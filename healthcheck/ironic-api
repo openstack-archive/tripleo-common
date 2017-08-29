@@ -2,6 +2,5 @@
 
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/tripleo-common/healthcheck}/common.sh
 
-bind_host=$(get_config_val /etc/ironic/ironic.conf api host_ip 127.0.0.1)
-bind_port=$(get_config_val /etc/ironic/ironic.conf api port 6385)
-healthcheck_curl http://${bind_host}:${bind_port}/
+check_url=$(get_url_from_vhost /etc/httpd/conf.d/10-ironic_wsgi.conf)
+healthcheck_curl ${check_url}
