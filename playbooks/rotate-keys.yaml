@@ -1,19 +1,52 @@
 ---
 - hosts: keystone
   tasks:
-  - name: Remove previous fernet keys
-    shell: rm -rf /etc/keystone/fernet-keys/*
+  - name: Check for containerized keystone fernet repository
+    stat:
+      path: /var/lib/config-data/puppet-generated/keystone/etc/keystone/fernet-keys/
+    register: containerized_keystone_dir
 
-  - name: Persist fernet keys to repository
-    copy:
-      dest: "{{ item.key }}"
-      content: "{{ item.value.content }}"
-      mode: 0600
-      owner: keystone
-      group: keystone
-    with_dict: "{{ fernet_keys }}"
+  - set_fact:
+      is_container: containerized_keystone_dir.stat.isdir is defined and containerized_keystone_dir.stat.isdir
 
-  - name: Reload apache
-    service:
-      name: httpd
-      state: reloaded
+  - name: Rotate fernet keys for keystone container
+    block:
+      - name: Remove previous fernet keys
+        shell: rm -rf /var/lib/config-data/puppet-generated/keystone/etc/keystone/fernet-keys/*
+        args:
+          warn: false
+
+      - name: Persist fernet keys to repository
+        copy:
+          dest: "/var/lib/config-data/puppet-generated/keystone{{ item.key }}"
+          content: "{{ item.value.content }}"
+          mode: 0600
+          owner: keystone
+          group: keystone
+        with_dict: "{{ fernet_keys }}"
+
+      - name: Restart keystone container
+        shell: docker restart keystone
+    when: is_container
+
+  - name: Rotate fernet keys for keystone (no container)
+    block:
+      - name: Remove previous fernet keys
+        shell: rm -rf /etc/keystone/fernet-keys/*
+        args:
+          warn: false
+
+      - name: Persist fernet keys to repository
+        copy:
+          dest: "{{ item.key }}"
+          content: "{{ item.value.content }}"
+          mode: 0600
+          owner: keystone
+          group: keystone
+        with_dict: "{{ fernet_keys }}"
+
+      - name: Reload apache
+        service:
+          name: httpd
+          state: reloaded
+    when: not is_container
