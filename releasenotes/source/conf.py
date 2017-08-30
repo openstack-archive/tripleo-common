@@ -51,11 +51,10 @@ copyright = u'2016, TripleO Developers'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-from tripleo_common import __version__ as tripleo_version
 # The full version, including alpha/beta/rc tags.
-release = tripleo_version.version_string_with_vcs()
+release = ''
 # The short X.Y version.
-version = tripleo_version.canonical_version_string()
+version = ''
 
 # The full version, including alpha/beta/rc tags.
 
