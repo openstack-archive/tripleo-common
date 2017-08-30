@@ -492,18 +492,26 @@ container_images_template:
   params:
   - DockerOvnControllerConfigImage
   - DockerOvnControllerImage
+  services:
+  - OS::TripleO::Services::OVNController
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-nb-db-server{{name_suffix}}:{{tag}}"
   params:
   - DockerOvnNbDbImage
+  services:
+  - OS::TripleO::Services::OVNDBs
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-northd{{name_suffix}}:{{tag}}"
   params:
   - DockerOvnNorthdImage
+  services:
+  - OS::TripleO::Services::OVNDBs
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-sb-db-server{{name_suffix}}:{{tag}}"
   params:
   - DockerOvnSbDbImage
+  services:
+  - OS::TripleO::Services::OVNDBs
 
 - imagename: "{{namespace}}/{{name_prefix}}panko-api{{name_suffix}}:{{tag}}"
   params:
