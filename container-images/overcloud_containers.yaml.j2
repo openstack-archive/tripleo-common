@@ -1,5 +1,9 @@
 {% set namespace=namespace or "tripleoupstream" %}
 
+{% set ceph_namespace=ceph_namespace or "ceph" %}
+{% set ceph_image=ceph_image or "daemon" %}
+{% set ceph_tag=ceph_tag or "tag-build-master-jewel-centos-7" %}
+
 {% if name_prefix and not name_prefix.endswith('-') %}
 {% set name_prefix=name_prefix + "-" %}
 {% else %}
@@ -618,10 +622,12 @@ container_images_template:
   services:
   - OS::TripleO::Services::Zaqar
 
-# FIXME(gfidente): we don't use any prefix here so it would be nice to
-# not have the --pull-source registry prepended, we can probably add
-# another {{keyword}} to describe where we want and where we do not
-#
-#- imagename: "ceph/daemon:tag-build-master-jewel-centos-7"
-#  params:
-#  - DockerCephDaemonImage
+- imagename: "{{ceph_namespace}}/{{ceph_image}}:{{ceph_tag}}"
+  params:
+  - DockerCephDaemonImage
+  services:
+  - OS::TripleO::Services::CephMds
+  - OS::TripleO::Services::CephMon
+  - OS::TripleO::Services::CephOSD
+  - OS::TripleO::Services::CephRgw
+  - OS::TripleO::Services::CephRbdMirror
