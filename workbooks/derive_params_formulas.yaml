@@ -73,18 +73,36 @@ workflows:
         publish:
           pmd_cpus: <% task().result %>
         on-success:
-          - get_host_cpus: <% $.pmd_cpus %>
+          - get_pmd_cpus_range_list: <% $.pmd_cpus %>
           - set_status_failed_get_pmd_cpus: <% not $.pmd_cpus %>
         on-error: set_status_failed_on_error_get_pmd_cpus
+
+      get_pmd_cpus_range_list:
+        action: tripleo.derive_params.convert_number_to_range_list
+        input:
+          num_list: <% $.pmd_cpus %>
+        publish:
+          pmd_cpus: <% task().result %>
+        on-success: get_host_cpus
+        on-error: set_status_failed_get_pmd_cpus_range_list
 
       get_host_cpus:
         action: tripleo.derive_params.get_host_cpus_list inspect_data=<% $.hw_data %>
         publish:
           host_cpus: <% task().result  %>
         on-success:
-          - get_sock_mem: <% $.host_cpus %>
+          - get_host_cpus_range_list: <% $.host_cpus %>
           - set_status_failed_get_host_cpus: <% not $.host_cpus %>
         on-error: set_status_failed_on_error_get_host_cpus
+
+      get_host_cpus_range_list:
+        action: tripleo.derive_params.convert_number_to_range_list
+        input:
+          num_list: <% $.host_cpus %>
+        publish:
+          host_cpus: <% task().result %>
+        on-success: get_sock_mem
+        on-error: set_status_failed_get_host_cpus_range_list
 
       get_sock_mem:
         action: tripleo.derive_params.get_dpdk_socket_memory
@@ -176,6 +194,12 @@ workflows:
           message: <% task(get_pmd_cpus).result %>
         on-success: fail
 
+      set_status_failed_get_pmd_cpus_range_list:
+        publish:
+          status: FAILED
+          message: <% task(get_pmd_cpus_range_list).result %>
+        on-success: fail
+
       set_status_failed_get_host_cpus:
         publish:
           status: FAILED
@@ -186,6 +210,12 @@ workflows:
         publish:
           status: FAILED
           message: <% task(get_host_cpus).result %>
+        on-success: fail
+
+      set_status_failed_get_host_cpus_range_list:
+        publish:
+          status: FAILED
+          message: <% task(get_host_cpus_range_list).result %>
         on-success: fail
 
       set_status_failed_get_sock_mem:
@@ -243,22 +273,64 @@ workflows:
 
       get_host_dpdk_combined_cpus:
         publish:
-          host_dpdk_combined_cpus: <%  let(params => $.role_derive_params) -> concat($params.get('OvsPmdCoreList', ''), ',', $params.get('OvsDpdkCoreList', '')).split(",").select(int($)) %>
+          host_dpdk_combined_cpus: <% concat($.role_derive_params.get('OvsPmdCoreList', ''), ',', $.role_derive_params.get('OvsDpdkCoreList', '')) %>
         on-success:
-          - get_nova_cpus: <% $.host_dpdk_combined_cpus %>
+          - get_host_dpdk_combined_cpus_num_list: <% $.host_dpdk_combined_cpus %>
           - set_status_failed_get_host_dpdk_combined_cpus: <% not $.host_dpdk_combined_cpus %>
+
+      get_host_dpdk_combined_cpus_num_list:
+        action: tripleo.derive_params.convert_range_to_number_list
+        input:
+          range_list: <% $.host_dpdk_combined_cpus %>
+        publish:
+          host_dpdk_combined_cpus: <% task().result %>
+        on-success: get_nova_cpus
+        on-error: set_status_failed_get_host_dpdk_combined_cpus_num_list
 
       get_nova_cpus:
         publish:
-          nova_cpus: <% let(invalid_threads => $.host_dpdk_combined_cpus) -> $.cpus.select($.thread_siblings).flatten().where(not $ in $invalid_threads).join(',') %>
+          nova_cpus: <% let(reserved_cpus => $.host_dpdk_combined_cpus.split(',')) -> $.cpus.select($.thread_siblings).flatten().where(not (str($) in $reserved_cpus)).join(',') %>
         on-success:
           - get_isol_cpus: <% $.nova_cpus %>
           - set_status_failed_get_nova_cpus: <% not $.nova_cpus %>
 
+      # concatinates OvsPmdCoreList range format and NovaVcpuPinSet in range format. it may not be in perfect range format.
+      # example: concatinates '12-15,19' and 16-18' ranges '12-15,19,16-18'
       get_isol_cpus:
         publish:
-          isol_cpus: <% let(params => $.role_derive_params) -> concat($params.get('OvsPmdCoreList',''), ',', $.nova_cpus) %>
+          isol_cpus: <% concat($.role_derive_params.get('OvsPmdCoreList',''), ',', $.nova_cpus) %>
+        on-success: get_isol_cpus_num_list
+
+      # Gets the isol_cpus in the number list
+      # example: '12-15,19,16-18' into '12,13,14,15,16,17,18,19'
+      get_isol_cpus_num_list:
+        action: tripleo.derive_params.convert_range_to_number_list
+        input:
+          range_list: <% $.isol_cpus %>
+        publish:
+          isol_cpus: <% task().result %>
+        on-success: get_nova_cpus_range_list
+        on-error: set_status_failed_get_isol_cpus_num_list
+
+      get_nova_cpus_range_list:
+        action: tripleo.derive_params.convert_number_to_range_list
+        input:
+          num_list: <% $.nova_cpus %>
+        publish:
+          nova_cpus: <% task().result %>
+        on-success: get_isol_cpus_range_list
+        on-error: set_status_failed_get_nova_cpus_range_list
+
+      # converts number format isol_cpus into range format
+      # example: '12,13,14,15,16,17,18,19' into '12-19'
+      get_isol_cpus_range_list:
+        action: tripleo.derive_params.convert_number_to_range_list
+        input:
+          num_list: <% $.isol_cpus %>
+        publish:
+          isol_cpus: <% task().result %>
         on-success: get_host_mem
+        on-error: set_status_failed_get_isol_cpus_range_list
 
       get_host_mem:
         publish:
@@ -317,10 +389,34 @@ workflows:
           message: 'Unable to combine host and dpdk cpus list'
         on-success: fail
 
+      set_status_failed_get_host_dpdk_combined_cpus_num_list:
+        publish:
+          status: FAILED
+          message: <% task(get_host_dpdk_combined_cpus_num_list).result %>
+        on-success: fail
+
       set_status_failed_get_nova_cpus:
         publish:
           status: FAILED
           message: 'Unable to determine nova vcpu pin set'
+        on-success: fail
+
+      set_status_failed_get_nova_cpus_range_list:
+        publish:
+          status: FAILED
+          message: <% task(get_nova_cpus_range_list).result %>
+        on-success: fail
+
+      set_status_failed_get_isol_cpus_num_list:
+        publish:
+          status: FAILED
+          message: <% task(get_isol_cpus_num_list).result %>
+        on-success: fail
+
+      set_status_failed_get_isol_cpus_range_list:
+        publish:
+          status: FAILED
+          message: <% task(get_isol_cpus_range_list).result %>
         on-success: fail
 
       set_status_failed_check_default_hugepage_supported:
