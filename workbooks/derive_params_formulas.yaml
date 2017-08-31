@@ -501,6 +501,8 @@ workflows:
         publish:
           extra_config: <% $.environment_parameters.get('ExtraConfig', {}) %>
           role_extra_config: <% $.environment_parameters.get(concat($.role_name, 'ExtraConfig'), {}) %>
+          role_env_params: <% $.environment_parameters.get(concat($.role_name, 'Parameters'), {}) %>
+          role_derive_params: <% $.derived_parameters.get(concat($.role_name, 'Parameters'), {}) %>
         on-success: get_num_osds
 
       get_num_osds:
@@ -514,12 +516,37 @@ workflows:
         publish:
           memory_mb: <% $.introspection_data.get('memory_mb', 0) %>
         on-success:
-          - get_num_cores: <% $.memory_mb %>
+          - get_nova_vcpu_pin_set: <% $.memory_mb %>
           - set_failed_get_memory_mb: <% not $.memory_mb %>
+
+      # Determine the number of CPU cores available to Nova and Ceph. If
+      # NovaVcpuPinSet is defined then use the number of vCPUs in the set,
+      # otherwise use all of the cores identified in the introspection data.
+
+      get_nova_vcpu_pin_set:
+        publish:
+          # NovaVcpuPinSet can be defined in multiple locations, and it's
+          # important to select the value in order of precedence:
+          #
+          # 1) User specified value for this role
+          # 2) User specified default value for all roles
+          # 3) Value derived by another derived parameters workflow
+          nova_vcpu_pin_set: <% $.role_env_params.get('NovaVcpuPinSet', $.environment_parameters.get('NovaVcpuPinSet', $.role_derive_params.get('NovaVcpuPinSet', ''))) %>
+        on-success:
+          - get_nova_vcpu_count: <% $.nova_vcpu_pin_set %>
+          - get_num_cores: <% not $.nova_vcpu_pin_set %>
+
+      get_nova_vcpu_count:
+        action: tripleo.derive_params.convert_range_to_number_list
+        input:
+          range_list: <% $.nova_vcpu_pin_set %>
+        publish:
+          num_cores: <% task().result.split(',').count() %>
+        on-success: calculate_nova_parameters
+        on-error: set_failed_get_nova_vcpu_count
 
       get_num_cores:
         publish:
-          # TODO(abishop): If NovaVcpuPinSet is defined then use it to determine num_cores
           num_cores: <% $.introspection_data.get('cpus', 0) %>
         on-success:
           - calculate_nova_parameters: <% $.num_cores %>
@@ -632,6 +659,11 @@ workflows:
       set_failed_get_memory_mb:
         publish:
           message: "Unable to determine the amount of physical memory (no 'memory_mb' found in introspection_data)."
+        on-success: fail
+
+      set_failed_get_nova_vcpu_count:
+        publish:
+          message: <% task(get_nova_vcpu_count).result %>
         on-success: fail
 
       set_failed_get_num_cores:
