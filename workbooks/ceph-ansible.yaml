@@ -47,15 +47,16 @@ workflows:
       set_role_vars:
         publish:
           # NOTE(gfidente): collect role settings from all tht roles
-          mon_vars: <% env().get('role_merged_configs').items().select($[1].get('ceph_mon_ansible_vars', {})).aggregate($1.mergeWith($2)) %>
-          osd_vars: <% env().get('role_merged_configs').items().select($[1].get('ceph_osd_ansible_vars', {})).aggregate($1.mergeWith($2)) %>
-          mds_vars: <% env().get('role_merged_configs').items().select($[1].get('ceph_mds_ansible_vars', {})).aggregate($1.mergeWith($2)) %>
-          rgw_vars: <% env().get('role_merged_configs').items().select($[1].get('ceph_rgw_ansible_vars', {})).aggregate($1.mergeWith($2)) %>
+          mon_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_mon_ansible_vars', {})).aggregate($1 + $2) %>
+          osd_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_osd_ansible_vars', {})).aggregate($1 + $2) %>
+          mds_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_mds_ansible_vars', {})).aggregate($1 + $2) %>
+          rgw_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_rgw_ansible_vars', {})).aggregate($1 + $2) %>
+          client_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_client_ansible_vars', {})).aggregate($1 + $2) %>
         on-success: build_extra_vars
       build_extra_vars:
         publish:
           # NOTE(gfidente): merge vars from all ansible roles
-          extra_vars: <% {'fetch_directory'=> $.fetch_directory} + $.mon_vars + $.osd_vars + $.mds_vars + $.rgw_vars + $.ceph_ansible_extra_vars %>
+          extra_vars: <% {'fetch_directory'=> $.fetch_directory} + $.mon_vars + $.osd_vars + $.mds_vars + $.rgw_vars + $.client_vars + $.ceph_ansible_extra_vars %>
         on-success: ceph_install
       ceph_install:
         action: tripleo.ansible-playbook
