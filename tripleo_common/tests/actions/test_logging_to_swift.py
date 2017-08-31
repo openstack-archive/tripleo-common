@@ -126,15 +126,13 @@ class PrepareLogDownloadActionTest(base.TestCase):
         self.ctx = mock.MagicMock()
 
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
-    @mock.patch('tempfile.mkdtemp')
-    def test_run_success(self, mock_mkdtemp, mock_create_tarball):
+    def test_run_success(self, mock_create_tarball):
         get_object_mock_calls = [
             mock.call('logging-container', lf) for lf in self.log_files
         ]
         get_container_mock_calls = [
             mock.call('logging-container')
         ]
-        mock_mkdtemp.return_value = '/tmp/test123'
 
         action = logging_to_swift.PrepareLogDownloadAction(
             'logging-container', 'downloads-container', 3600
