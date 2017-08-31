@@ -173,3 +173,87 @@ class TestDockerImageUploader(base.TestCase):
         self.dockermock.return_value.push(
             push_destination + '/' + image,
             tag=expected_tag, stream=True)
+
+    def test_discover_image_tag(self):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
+        vimage = 'docker.io/tripleoupstream/heat-docker-agents-centos:1.2.3'
+
+        dockerc = self.dockermock.return_value
+        dockerc.pull.return_value = ['{"status": "done"}']
+        dockerc.inspect_image.return_value = {
+            'Config': {'Labels': {'image-version': '1.2.3'}}
+        }
+        result = self.uploader.discover_image_tag(image, 'image-version')
+        self.assertEqual('1.2.3', result)
+
+        self.dockermock.assert_called_once_with(
+            base_url='unix://var/run/docker.sock', version='auto')
+
+        dockerc.pull.assert_has_calls([
+            mock.call(image, tag=None, stream=True),
+            mock.call(vimage, tag=None, stream=True),
+        ])
+
+    def test_discover_image_tag_no_latest(self):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+        limage = image + ':latest'
+        vimage = image + ':1.2.3'
+
+        dockerc = self.dockermock.return_value
+        dockerc.pull.return_value = ['{"status": "done"}']
+        dockerc.inspect_image.return_value = {
+            'Config': {'Labels': {'image-version': '1.2.3'}}
+        }
+        result = self.uploader.discover_image_tag(image, 'image-version')
+        self.assertEqual('1.2.3', result)
+
+        dockerc.pull.assert_has_calls([
+            mock.call(limage, tag=None, stream=True),
+            mock.call(vimage, tag=None, stream=True),
+        ])
+
+    def test_discover_image_tag_no_tag_from_image(self):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
+
+        dockerc = self.dockermock.return_value
+        dockerc.pull.return_value = ['{"status": "done"}']
+        dockerc.inspect_image.return_value = {
+            'Config': {'Labels': {'image-version': '1.2.3'}}
+        }
+        self.assertRaises(ImageUploaderException,
+                          self.uploader.discover_image_tag, image)
+
+    def test_discover_image_tag_missing_label(self):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
+
+        dockerc = self.dockermock.return_value
+        dockerc.pull.return_value = ['{"status": "done"}']
+        dockerc.inspect_image.return_value = {
+            'Config': {'Labels': {'image-version': '1.2.3'}}
+        }
+        self.assertRaises(ImageUploaderException,
+                          self.uploader.discover_image_tag, image, 'foo')
+
+    def test_discover_image_tag_missing_tag(self):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
+        vimage = 'docker.io/tripleoupstream/heat-docker-agents-centos:1.2.3'
+
+        dockerc = self.dockermock.return_value
+        dockerc.pull.side_effect = [
+            ['{"status": "done"}'],  # First pull, :latest
+            ['{"error": "ouch"}'],  # Second pull, :1.2.3
+        ]
+        dockerc.inspect_image.return_value = {
+            'Config': {'Labels': {'image-version': '1.2.3'}}
+        }
+        self.assertRaises(ImageUploaderException,
+                          self.uploader.discover_image_tag, image,
+                          'image-version')
+
+        self.dockermock.assert_called_once_with(
+            base_url='unix://var/run/docker.sock', version='auto')
+
+        dockerc.pull.assert_has_calls([
+            mock.call(image, tag=None, stream=True),
+            mock.call(vimage, tag=None, stream=True),
+        ])
