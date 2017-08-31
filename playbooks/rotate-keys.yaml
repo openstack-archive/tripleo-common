@@ -24,6 +24,7 @@
           owner: keystone
           group: keystone
         with_dict: "{{ fernet_keys }}"
+        no_log: true
 
       - name: Restart keystone container
         shell: docker restart keystone
@@ -44,6 +45,7 @@
           owner: keystone
           group: keystone
         with_dict: "{{ fernet_keys }}"
+        no_log: true
 
       - name: Reload apache
         service:

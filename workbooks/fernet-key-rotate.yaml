@@ -53,6 +53,7 @@ workflows:
           inventory: /usr/bin/tripleo-ansible-inventory
           ssh_private_key: <% task(get_privkey).result %>
           ssh_extra_args: '-o StrictHostKeyChecking=no'
+          verbosity: 0
           remote_user: heat-admin
           become: true
           extra_vars:
