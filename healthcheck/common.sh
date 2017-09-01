@@ -28,3 +28,16 @@ healthcheck_port () {
 get_config_val () {
   crudini --get "$1" "$2" "$3" 2> /dev/null || echo "$4"
 }
+
+# apachectl -S is slightly harder to parse and doesn't say if the vhost is serving SSL
+get_url_from_vhost () {
+  vhost_file=$1
+  server_name=$(awk '/ServerName/ {print $2}' $vhost_file)
+  ssl_enabled=$(awk '/SSLEngine/ {print $2}' $vhost_file)
+  bind_port=$(grep -h "<VirtualHost .*>" $vhost_file | sed 's/<VirtualHost .*:\(.*\)>/\1/')
+  proto=http
+  if [[ $ssl_enabled == "on" ]]; then
+    proto=https
+  fi
+  echo ${proto}://${server_name}:${bind_port}/
+}
