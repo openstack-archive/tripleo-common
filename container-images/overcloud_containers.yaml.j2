@@ -54,6 +54,8 @@ container_images_template:
   params:
   - DockerBarbicanApiImage
   - DockerBarbicanConfigImage
+  services:
+  - OS::TripleO::Services::BarbicanApi
 
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-central{{name_suffix}}:{{tag}}"
   params:
