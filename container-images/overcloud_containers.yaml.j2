@@ -153,6 +153,13 @@ container_images_template:
   services:
   - OS::TripleO::Services::Etcd
 
+- imagename: "{{namespace}}/{{name_prefix}}fluentd{{name_suffix}}:{{tag}}"
+  params:
+  - DockerFluentdConfigImage
+  - DockerFluentdClientImage
+  services:
+  - OS::TripleO::Services::FluentdClient
+
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   params:
   - DockerGlanceApiConfigImage

@@ -17,6 +17,7 @@ container_images:
 - imagename: tripleoupstream/centos-binary-cron:latest
 - imagename: tripleoupstream/centos-binary-ec2-api:latest
 - imagename: tripleoupstream/centos-binary-etcd:latest
+- imagename: tripleoupstream/centos-binary-fluentd:latest
 - imagename: tripleoupstream/centos-binary-glance-api:latest
 - imagename: tripleoupstream/centos-binary-gnocchi-api:latest
 - imagename: tripleoupstream/centos-binary-gnocchi-metricd:latest
