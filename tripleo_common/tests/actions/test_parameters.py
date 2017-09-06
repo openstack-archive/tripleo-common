@@ -1052,7 +1052,7 @@ class GetNetworkConfigActionTest(base.TestCase):
 
         mock_heat = mock.MagicMock()
         mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
-            "resource_identity": {"stack_name": "overcloud-Compute-0"},
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
             "resource_name": "OsNetConfigImpl",
             "properties": {"config": "echo \'{\"network_config\": {}}\'"}
             }])
@@ -1070,7 +1070,7 @@ class GetNetworkConfigActionTest(base.TestCase):
             environment={},
             files={},
             template={'heat_template_version': '2016-04-30'},
-            stack_name='overcloud',
+            stack_name='overcloud-TEMP',
         )
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
@@ -1113,7 +1113,7 @@ class GetNetworkConfigActionTest(base.TestCase):
 
         mock_heat = mock.MagicMock()
         mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
-            "resource_identity": {"stack_name": "overcloud-Compute-0"},
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
             "resource_name": "OsNetConfigImpl",
             "properties": {"config": ""}
             }])
@@ -1130,5 +1130,5 @@ class GetNetworkConfigActionTest(base.TestCase):
             environment={},
             files={},
             template={'heat_template_version': '2016-04-30'},
-            stack_name='overcloud',
+            stack_name='overcloud-TEMP',
         )

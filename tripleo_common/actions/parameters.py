@@ -556,15 +556,18 @@ class GetNetworkConfigAction(templates.ProcessTemplatesAction):
         if isinstance(processed_data, actions.Result):
             return processed_data
 
+        # stacks.preview method raises validation message if stack is
+        # already deployed. here renaming container to get preview data.
+        container_temp = self.container + "-TEMP"
         fields = {
             'template': processed_data['template'],
             'files': processed_data['files'],
             'environment': processed_data['environment'],
-            'stack_name': self.container,
+            'stack_name': container_temp,
         }
         orc = self.get_orchestration_client(context)
         preview_data = orc.stacks.preview(**fields)
-        result = self.get_network_config(preview_data, self.container,
+        result = self.get_network_config(preview_data, container_temp,
                                          self.role_name)
         return result
 
