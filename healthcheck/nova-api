@@ -2,6 +2,5 @@
 
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
-bind_host=$(get_config_val /etc/nova/nova.conf DEFAULT osapi_compute_listen 127.0.0.1)
-bind_port=$(get_config_val /etc/nova/nova.conf DEFAULT osapi_compute_listen_port 8774)
-healthcheck_curl http://${bind_host}:${bind_port}/
+check_url=$(get_url_from_vhost /etc/httpd/conf.d/10-nova_api_wsgi.conf)
+healthcheck_curl ${check_url}
