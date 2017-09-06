@@ -11,6 +11,8 @@ workflows:
     input:
       - container
       - queue_name: tripleo
+    tags:
+      - tripleo-common-managed
     tasks:
       check_container:
         action: swift.head_container container=<% $.container %>

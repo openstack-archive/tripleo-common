@@ -13,6 +13,9 @@ workflows:
       - queue_name: tripleo
       - user_inputs: {}
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       get_flattened_parameters:
         action: tripleo.parameters.get_flatten container=<% $.plan %>
@@ -153,6 +156,9 @@ workflows:
       derived_parameters: <% $.get('derived_parameters', {}) %>
       # Need role_name in output parameter to display the status for all roles in main workflow when any role fails here.
       role_name: <% $.role_name %>
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       get_role_info:
@@ -321,6 +327,9 @@ workflows:
     input:
       - role_name
       - heat_resource_tree
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       get_resource_chains:

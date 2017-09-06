@@ -18,6 +18,8 @@ workflows:
           ANSIBLE_LIBRARY: /usr/share/ceph-ansible/library/
       - ceph_ansible_extra_vars: {}
       - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
+    tags:
+      - tripleo-common-managed
     tasks:
       enable_ssh_admin:
         workflow: tripleo.access.v1.enable_ssh_admin

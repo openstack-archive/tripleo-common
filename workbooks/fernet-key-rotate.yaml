@@ -11,6 +11,9 @@ workflows:
       - container
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       rotate_keys:

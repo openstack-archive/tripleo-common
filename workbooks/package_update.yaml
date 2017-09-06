@@ -14,6 +14,9 @@ workflows:
       - timeout: 240
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       update:
         action: tripleo.package_update.update_stack container=<% $.container %> timeout=<% $.timeout %>
@@ -48,6 +51,9 @@ workflows:
       - stack_id
       - refs
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       clear:
