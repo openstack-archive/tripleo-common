@@ -19,6 +19,9 @@ workflows:
     output:
       derived_parameters: <% $.derived_parameters.mergeWith($.get('dpdk_parameters', {})) %>
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       get_network_config:
         action: tripleo.parameters.get_network_config
@@ -227,6 +230,9 @@ workflows:
     output:
       derived_parameters: <% $.derived_parameters.mergeWith($.get('host_parameters', {})) %>
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       get_cpus:
@@ -354,6 +360,9 @@ workflows:
 
     output:
       derived_parameters: <% $.derived_parameters.mergeWith($.get('hci_parameters', {})) %>
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       get_hci_inputs:

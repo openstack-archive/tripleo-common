@@ -11,6 +11,9 @@ workflows:
       - state_action
       - target_state
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       set_provision_state:
@@ -30,6 +33,9 @@ workflows:
       - node_uuid
       - state_action
       - target_state
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -53,6 +59,9 @@ workflows:
       - retry_delay: 10
       - retry_count: 720
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -98,6 +107,9 @@ workflows:
      - nodes_json
      - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       validate_nodes:
@@ -139,6 +151,9 @@ workflows:
      - ramdisk_name: null
      - instance_boot_option: local
      - initial_state: manageable
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -236,6 +251,9 @@ workflows:
       - node_uuids
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       set_nodes_available:
@@ -314,6 +332,9 @@ workflows:
     input:
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       get_manageable_nodes:
@@ -360,6 +381,9 @@ workflows:
       - node_uuids
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       set_nodes_manageable:
@@ -405,6 +429,9 @@ workflows:
 
     output:
       result: <% task(start_introspection).result %>
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       start_introspection:
@@ -481,6 +508,9 @@ workflows:
       - concurrency: 20
       - max_retry_attempts: 2
       - node_timeout: 1200
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       initialize:
@@ -590,6 +620,9 @@ workflows:
       - run_validations: False
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       get_manageable_nodes:
@@ -653,6 +686,9 @@ workflows:
       - root_device_minimum_size: 4
       - overwrite_root_device_hints: False
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       configure_boot:
@@ -708,6 +744,9 @@ workflows:
       - root_device: null
       - root_device_minimum_size: 4
       - overwrite_root_device_hints: False
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -771,6 +810,9 @@ workflows:
     task-defaults:
       on-error: send_message
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       update_node:
@@ -806,6 +848,9 @@ workflows:
 
     task-defaults:
       on-error: send_message
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -856,6 +901,9 @@ workflows:
       - profile
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       get_available_nodes:
         action: ironic.node_list maintenance=false provision_state='available' detail=true
@@ -904,6 +952,9 @@ workflows:
       - node_uuids
       - configuration
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -967,6 +1018,9 @@ workflows:
       - node_uuids
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       cell_v2_discover_hosts:
@@ -1016,6 +1070,9 @@ workflows:
       - credentials
       - ports: [623]
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -1101,6 +1158,9 @@ workflows:
       - instance_boot_option: local
       - initial_state: manageable
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 

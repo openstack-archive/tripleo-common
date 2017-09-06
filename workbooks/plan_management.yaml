@@ -13,6 +13,8 @@ workflows:
       - container
       - queue_name: tripleo
       - generate_passwords: true
+    tags:
+      - tripleo-common-managed
     tasks:
       call_create_deployment_plan:
         workflow: tripleo.plan_management.v1.create_deployment_plan
@@ -62,6 +64,9 @@ workflows:
       - queue_name: tripleo
       - generate_passwords: true
       - use_default_templates: false
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       container_required_check:
@@ -200,6 +205,8 @@ workflows:
       - source_url: null
       - queue_name: tripleo
       - generate_passwords: true
+    tags:
+      - tripleo-common-managed
     tasks:
       templates_source_check:
         on-success:
@@ -313,6 +320,9 @@ workflows:
       - container
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       verify_container_exists:
@@ -362,6 +372,9 @@ workflows:
     input:
       - plan
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -423,6 +436,9 @@ workflows:
       - container: overcloud
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       get_flatten_data:
         action: tripleo.parameters.get_flatten container=<% $.container %>
@@ -482,6 +498,9 @@ workflows:
       - queue_name: tripleo
       - logging_queue_name: tripleo-ui-logging
       - logging_container: tripleo-ui-logs
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -551,6 +570,9 @@ workflows:
       - logging_container: "tripleo-ui-logs"
       - downloads_container: "tripleo-ui-logs-downloads"
       - delete_after: 3600
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 

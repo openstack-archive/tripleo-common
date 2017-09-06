@@ -15,6 +15,9 @@ workflows:
       - sos_options: boot,cluster,hardware,kernel,memory,nfs,openstack,packagemanager,performance,services,storage,system,webserver,virt
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       collect_logs_on_servers:
         workflow: tripleo.deployment.v1.deploy_on_servers
@@ -64,6 +67,9 @@ workflows:
       - container
       - sos_dir: /var/tmp/tripleo-sos
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       # actions
@@ -138,6 +144,9 @@ workflows:
       - container
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       check_container:
         action: swift.head_container container=<% $.container %>
@@ -186,6 +195,9 @@ workflows:
       - concurrency: 5
       - timeout: 900
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       # actions
@@ -274,6 +286,9 @@ workflows:
       - concurrency: 5
       - timeout: 1800
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       # actions

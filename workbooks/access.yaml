@@ -18,6 +18,8 @@ workflows:
       of servers) need to be provided -- these are only used
       temporarily to create the actual ssh admin user for use by
       Mistral.
+    tags:
+      - tripleo-common-managed
     input:
       - ssh_private_key: null
       - ssh_user: null
@@ -86,6 +88,8 @@ workflows:
     input:
       - tasks
       - queue_name: tripleo
+    tags:
+      - tripleo-common-managed
     tasks:
       get_servers:
         action: nova.servers_list
@@ -113,6 +117,8 @@ workflows:
       - ssh_private_key
       - ssh_user
       - ssh_servers
+    tags:
+      - tripleo-common-managed
     tasks:
       write_tmp_playbook:
         action: tripleo.ansible-playbook

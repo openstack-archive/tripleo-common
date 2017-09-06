@@ -15,6 +15,9 @@ workflows:
       - group
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       deploy_config:
@@ -53,6 +56,9 @@ workflows:
       - config
       - group: script
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -112,6 +118,9 @@ workflows:
       - timeout: 240
       - skip_deploy_identifier: False
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
