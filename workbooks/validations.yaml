@@ -11,6 +11,9 @@ workflows:
       - plan: overcloud
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       notify_running:
@@ -68,6 +71,9 @@ workflows:
       - plan: overcloud
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       notify_running:
@@ -119,6 +125,9 @@ workflows:
       - group_names: []
       - plan: overcloud
       - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
 
@@ -177,11 +186,15 @@ workflows:
   list:
     input:
       - group_names: []
+    tags:
+      - tripleo-common-managed
     tasks:
       find_validations:
         action: tripleo.validations.list_validations groups=<% $.group_names %>
 
   list_groups:
+    tags:
+      - tripleo-common-managed
     tasks:
       find_groups:
         action: tripleo.validations.list_groups
@@ -190,6 +203,9 @@ workflows:
     input:
      - container
      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       test_validations_enabled:
@@ -225,6 +241,8 @@ workflows:
       # have it present
       - overcloud_admin: heat-admin
       - queue_name: tripleo
+    tags:
+      - tripleo-common-managed
     tasks:
       get_servers:
         action: nova.servers_list
@@ -264,6 +282,8 @@ workflows:
       warnings: <% $.warnings %>
       kernel_id: <% $.kernel_id %>
       ramdisk_id: <% $.ramdisk_id %>
+    tags:
+      - tripleo-common-managed
     tasks:
       check_run_validations:
         on-complete:
@@ -330,6 +350,9 @@ workflows:
       warnings: <% $.warnings %>
       flavors: <% $.flavors %>
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       check_run_validations:
         on-complete:
@@ -384,6 +407,9 @@ workflows:
     output:
       errors: <% $.errors %>
       warnings: <% $.warnings %>
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       check_run_validations:
@@ -456,6 +482,9 @@ workflows:
       errors: <% $.errors %>
       warnings: <% $.warnings %>
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
       check_run_validations:
         on-complete:
@@ -526,6 +555,9 @@ workflows:
       statistics: <% $.statistics %>
       errors: <% $.errors %>
       warnings: <% $.warnings %>
+
+    tags:
+      - tripleo-common-managed
 
     tasks:
       check_run_validations:
@@ -656,6 +688,8 @@ workflows:
       ramdisk_id: <% $.ramdisk_id %>
       flavors: <% $.flavors %>
       statistics: <% $.statistics %>
+    tags:
+      - tripleo-common-managed
     tasks:
       init_messages:
         on-success: check_boot_images

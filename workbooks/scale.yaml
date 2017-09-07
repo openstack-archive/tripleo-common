@@ -14,6 +14,9 @@ workflows:
       - timeout: 240
       - queue_name: tripleo
 
+    tags:
+      - tripleo-common-managed
+
     tasks:
 
       delete_node:
