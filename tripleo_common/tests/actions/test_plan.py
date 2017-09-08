@@ -302,8 +302,7 @@ class ExportPlanActionTest(base.TestCase):
         self.ctx = mock.MagicMock()
 
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
-    @mock.patch('tempfile.mkdtemp')
-    def test_run_success(self, mock_mkdtemp, mock_create_tarball):
+    def test_run_success(self, mock_create_tarball):
         get_object_mock_calls = [
             mock.call(self.plan, tf) for tf in self.template_files
         ]
@@ -311,7 +310,6 @@ class ExportPlanActionTest(base.TestCase):
             mock.call(self.plan),
             mock.call('plan-exports')
         ]
-        mock_mkdtemp.return_value = '/tmp/test123'
 
         action = plan.ExportPlanAction(self.plan, self.delete_after,
                                        self.exports_container)
