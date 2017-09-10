@@ -613,6 +613,18 @@ container_images_template:
   services:
   - OS::TripleO::Services::SensuClient
 
+- imagename: "{{namespace}}/{{name_prefix}}skydive-agent{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSkydiveAgentImage
+  services:
+  - OS::TripleO::Services::SkydiveAgent
+
+- imagename: "{{namespace}}/{{name_prefix}}skydive-analyzer{{name_suffix}}:{{tag}}"
+  params:
+  - DockerSkydiveAnalyzerImage
+  services:
+  - OS::TripleO::Services::SkydiveAnalyzer
+
 - imagename: "{{namespace}}/{{name_prefix}}swift-account{{name_suffix}}:{{tag}}"
   params:
   - DockerSwiftAccountImage
