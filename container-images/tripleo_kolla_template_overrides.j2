@@ -5,6 +5,15 @@
 {% set base_yum_url_packages_override = [] %}
 {% set base_yum_repo_keys_override = [] %}
 
+# Enable ODL repo in ODL Dockerfile
+{% block opendaylight_header %}
+RUN echo $'[opendaylight-6-release]\n\
+name=CentOS CBS OpenDaylight Carbon repository\n\
+baseurl=http://cbs.centos.org/repos/nfv7-opendaylight-6-release/$basearch/os/\n\
+enabled=1\n\
+gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
+{% endblock %}
+
 # Remove EPEL and the dependencies requiring it
 {% set base_centos_yum_repo_packages_remove = ['epel-release'] %}
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
