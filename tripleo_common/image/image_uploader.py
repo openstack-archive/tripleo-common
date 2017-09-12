@@ -15,6 +15,7 @@
 
 
 import abc
+import json
 import logging
 import netifaces
 import six
@@ -37,6 +38,11 @@ class ImageUploadManager(BaseImageManager):
 
     def __init__(self, config_files, verbose=False, debug=False):
         super(ImageUploadManager, self).__init__(config_files)
+
+    def discover_image_tag(self, image, tag_from_label=None):
+        uploader = ImageUploader.get_uploader('docker')
+        return uploader.discover_image_tag(
+            image, tag_from_label=tag_from_label)
 
     def upload(self):
         """Start the upload process"""
@@ -89,6 +95,11 @@ class ImageUploader(object):
         """Upload a disk image"""
         pass
 
+    @abc.abstractmethod
+    def discover_image_tag(self, image, tag_from_label=None):
+        """Discover a versioned tag for an image"""
+        pass
+
 
 class DockerImageUploader(ImageUploader):
     """Upload images using docker push"""
@@ -108,9 +119,7 @@ class DockerImageUploader(ImageUploader):
         else:
             repo = image
 
-        response = [line for line in dockerc.pull(repo,
-                    tag=tag, stream=True)]
-        self.logger.debug(response)
+        self._pull(dockerc, repo, tag=tag)
 
         full_image = repo + ':' + tag
         new_repo = push_destination + '/' + repo.partition('/')[2]
@@ -123,3 +132,44 @@ class DockerImageUploader(ImageUploader):
         self.logger.debug(response)
 
         self.logger.info('Completed upload for docker image %s' % image_name)
+
+    def _pull(self, dockerc, image, tag=None):
+        self.logger.debug('Pulling %s' % image)
+        for line in dockerc.pull(image, tag=tag, stream=True):
+            status = json.loads(line)
+            if 'error' in status:
+                raise ImageUploaderException('Could not pull image: %s' %
+                                             status['error'])
+            self.logger.debug(status.get('status'))
+
+    def discover_image_tag(self, image, tag_from_label=None):
+        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
+
+        image_name, colon, tag = image.partition(':')
+        if not tag:
+            tag = 'latest'
+        image = '%s:%s' % (image_name, tag)
+
+        self._pull(dockerc, image)
+        i = dockerc.inspect_image(image)
+        labels = i['Config']['Labels']
+
+        label_keys = ', '.join(labels.keys())
+
+        if not tag_from_label:
+            raise ImageUploaderException(
+                'No label specified. Available labels: %s' % label_keys
+            )
+
+        tag_label = labels.get(tag_from_label)
+        if tag_label is None:
+            raise ImageUploaderException(
+                'Image %s has no label %s. Available labels: %s' %
+                (image, tag_from_label, label_keys)
+            )
+
+        # confirm the tag exists by pulling it, which should be fast
+        # because that image has just been pulled
+        versioned_image = '%s:%s' % (image_name, tag_label)
+        self._pull(dockerc, versioned_image)
+        return tag_label
