@@ -13,6 +13,10 @@
 #    under the License.
 
 from nova.scheduler import filters
+from oslo_log import log as logging
+
+
+LOG = logging.getLogger(__name__)
 
 
 class TripleOCapabilitiesFilter(filters.BaseHostFilter):
@@ -31,5 +35,13 @@ class TripleOCapabilitiesFilter(filters.BaseHostFilter):
         instance_node = spec_obj.scheduler_hints.get('capabilities:node')
         # The instance didn't request a specific node
         if not instance_node:
+            LOG.debug('No specific node requested')
             return True
-        return host_node == instance_node[0]
+        if host_node == instance_node[0]:
+            LOG.debug('Node tagged %s matches requested node %s', host_node,
+                      instance_node[0])
+            return True
+        else:
+            LOG.debug('Node tagged %s does not match requested node %s',
+                      host_node, instance_node[0])
+            return False
