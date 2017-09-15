@@ -513,6 +513,9 @@ workflows:
     tags:
       - tripleo-common-managed
 
+    task-defaults:
+      on-error: unhandled_error
+
     tasks:
       initialize:
         publish:
@@ -596,6 +599,12 @@ workflows:
         publish:
           status: SUCCESS
           message: 'Successfully introspected nodes.'
+        on-complete: send_message
+
+      unhandled_error:
+        publish:
+          status: ERROR
+          message: "Unhandled workflow error"
         on-complete: send_message
 
       send_message:
