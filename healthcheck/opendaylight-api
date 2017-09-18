@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
+
+username=$(get_config_val /opt/opendaylight/etc/org.jolokia.osgi.cfg DEFAULT org.jolokia.user admin)
+password=$(get_config_val /opt/opendaylight/etc/org.jolokia.osgi.cfg DEFAULT org.jolokia.password admin)
+bind_host=$(grep -r '<Set name="host">' "/opt/opendaylight/etc/jetty.xml" | awk -F'>' FNR==1'{print $2}')
+bind_port=$(grep -r '<Property name="jetty.port" default=' "/opt/opendaylight/etc/jetty.xml" | awk FNR==2'{print $3}' | cut -d'"' -f2)
+odl_check_url=restconf/operational/network-topology:network-topology/topology/netvirt:1
+
+healthcheck_curl -u $username:$password http://$bind_host:$bind_port/$odl_check_url
