@@ -559,7 +559,7 @@ workflows:
         with-items: uuid in <% $.node_uuids %>
         action: baremetal_introspection.get_status
         input:
-          uuid: <% $.uuid%>
+          uuid: <% $.uuid %>
         publish:
           introspected_nodes: <% task().result.toDict($.uuid, $) %>
           # Currently there is no way for us to ignore user introspection
@@ -568,7 +568,16 @@ workflows:
           # If a node hasn't finished, we consider it to be failed.
           # TODO(d0ugal): When possible, don't retry introspection of nodes
           #               that a user manually aborted.
-          failed_introspection: <% task().result.where($.finished = true and $.error != null) + task().result.where($.finished = false) %>
+          failed_introspection: <% task().result.where($.finished = true and $.error != null).select($.uuid) + task().result.where($.finished = false).select($.uuid) %>
+        publish-on-error:
+          # If a node fails to start introspection, getting the status can fail.
+          # When that happens, the result is a string and the nodes need to be
+          # filtered out.
+          introspected_nodes: <% task().result.where(isDict($)).toDict($.uuid, $) %>
+          # If there was an error, the exception string we get doesn't give us
+          # the UUID. So we use a set difference to find the UUIDs missing in
+          # the results. These are then added to the failed nodes.
+          failed_introspection: <% ($.node_uuids.toSet() - task().result.where(isDict($)).select($.uuid).toSet()) + task().result.where(isDict($)).where($.finished = true and $.error != null).toSet() + task().result.where(isDict($)).where($.finished = false).toSet() %>
         on-error: increase_attempt_counter
         on-success:
           - successful_introspection: <% $.failed_introspection.len() = 0 %>
@@ -585,7 +594,7 @@ workflows:
           status: RUNNING
           message: <% 'Retrying {0} nodes that failed introspection. Attempt {1} of {2} '.format($.failed_introspection.len(), $.introspection_attempt, $.max_retry_attempts + 1) %>
           # We are about to retry, update the tracking stats.
-          node_uuids: <% $.failed_introspection.select($.uuid) %>
+          node_uuids: <% $.failed_introspection %>
         on-success:
           - send_message
           - introspect_nodes
@@ -621,6 +630,7 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
                 introspected_nodes: <% $.get('introspected_nodes', []) %>
+                failed_introspection: <% $.get('failed_introspection', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
