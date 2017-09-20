@@ -13,7 +13,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-
 #
 # Utility script that will be invoked by the operator as part of the documented
 # upgrades workflow. Those roles that have disable_upgrade_deployment set to
@@ -33,42 +32,51 @@ UPGRADE_NODE_USER=${UPGRADE_NODE_USER:-"heat-admin"}
 UPGRADE_NODE=""
 QUERY_NODE=""
 SCRIPT=""
+HOSTNAME=""
+IP_ADDR=""
 
 function show_options {
     echo "Usage: $SCRIPT_NAME"
     echo
     echo "Options:"
     echo "  -h|--help                    -- print this help."
-    echo "  -u|--upgrade <nova node>     -- nova node name or id to upgrade"
-    echo "  -s|--script <absolute_path>  -- absolute path to the script you wish"
-    echo "                                  to use for the upgrade"
-    echo "  -q|--query <nova node>       -- determine if the node is ACTIVE and"
-    echo "                                  has the upgrade script. Also, tail"
+    echo "  -u|--upgrade <nova node>     -- nova node name or id or ctlplane IP to upgrade"
+    echo "  -q|--query <nova node>       -- check if the node is ACTIVE and tail"
     echo "                                  yum.log for any package update info"
     echo
     echo "Invoke the /root/tripleo_upgrade_node.sh script on roles that have"
-    echo " disable_upgrade_deployment flag set true, as part of the tripleo"
-    echo " upgrade workflow. The tripleo_upgrade_node.sh is delivered when you"
-    echo " execute the composable ansible upgrade steps. This utility is used"
-    echo " by the operator to invoke the tripleo_upgrade_node.sh on a given"
-    echo " named node (by nova name or uuid). Logfiles are generated in the"
-    echo " current working directory by node name/uuid"
+    echo "the 'disable_upgrade_deployment' flag set true and then download and"
+    echo "execute the upgrade and deployment steps ansible playbooks."
     echo
-    echo "  Example invocations:"
+    echo "The tripleo_upgrade_node.sh is delivered to the 'disable_upgrade_deployment'"
+    echo "nodes, when you execute the composable upgrade steps on the "
+    echo "controlplane nodes (i.e. the first step of the upgrade process). "
+    echo
+    echo "This utility is then used by the operator to invoke the upgrade workflow"
+    echo "by named node (nova name or uuid) on the 'disable_upgrade_deployment'"
+    echo "nodes. You can use the nova UUID, name or an IP address on the provisioning"
+    echo "network (e.g. for split stack deployments)."
+    echo
+    echo "Logfiles are generated in the"
+    echo "current working directory by node name/UUID/IP as appropriate."
+    echo
+    echo "Example invocations:"
     echo
     echo "    upgrade-non-controller.sh --upgrade overcloud-compute-0 "
+    echo "    upgrade-non-controller.sh -u 734eea90-087b-4f12-9cd9-4807da83ea78 "
+    echo "    upgrade-non-controller.sh -u 192.168.24.15 "
     echo
-    echo "  You can run on multiple nodes in parallel: "
+    echo "You can run on multiple nodes in parallel: "
 
     echo "    for i in \$(seq 0 2); do "
     echo "      upgrade-non-controller.sh --upgrade overcloud-compute-\$i &"
-    echo "    # Remove the '&' above to have these upgrade in sequence"
-    echo "    # rather than in parallel."
+    echo "      # Remove the '&' above to have these upgrade in sequence"
+    echo "    done"
     echo
     exit $1
 }
 
-TEMP=`getopt -o h,u:,q:,s: -l help,upgrade:,query:,script: -n $SCRIPT_NAME -- "$@"`
+TEMP=`getopt -o h,u:,q: -l help,upgrade:,query:,script: -n $SCRIPT_NAME -- "$@"`
 
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
@@ -93,66 +101,67 @@ LOGFILE="$SCRIPT_NAME"-$UPGRADE_NODE$QUERY_NODE
 function log {
   echo "`date` $SCRIPT_NAME $1" 2>&1 | tee -a  $LOGFILE
 }
-log "Logging to $LOGFILE"
 
-function find_nova_node_by_name_or_id {
-  name_or_id=$1
-  node_status=$(openstack server show $name_or_id -f value -c status)
-  if ! [[ $node_status == "ACTIVE" ]]; then
-    log "ERROR: node $name_or_id not found to be ACTIVE. Current status is $node_status"
-    exit 1
+if [[ -n $UPGRADE_NODE$QUERY_NODE ]]; then
+    log "Logging to $LOGFILE"
+fi
+
+function reset_hostname_ip {
+    HOSTNAME=""
+    IP_ADDR=""
+}
+
+# find_node_by_name_id_or_ip expects one parameter that is the nova name,
+# uuid or cltplane IP address of the node we want to upgrade.
+# The function will try and determine the hostname and (ctlplane) IP address
+# for that node and assign these values to the global HOSTNAME and IP_ADDR.
+# These variables are thus reset at the outset.
+function find_node_by_name_id_or_ip {
+  reset_hostname_ip
+  name_id_or_ip=$1
+  # First try as a nova node name or UUID. Could also be an IP (split stack)
+  set +e # dont want to fail if nova or ping does below
+  nova_name=$(openstack server show $name_id_or_ip -f value -c name)
+  if [[ -n $nova_name ]]; then
+    set -e
+    HOSTNAME=$nova_name
+    addr_string=$(openstack server show $name_id_or_ip -f value -c addresses)
+    IP_ADDR=${addr_string#*=} # remove the ctlpane from  ctlplane=192.168.24.11
+    log "nova node $HOSTNAME found with IP $IP_ADDR "
+  else
+    log "$name_id_or_ip not known to nova. Trying it as an IP address"
+    if ping -c1 $name_id_or_ip ; then
+        set -e
+        HOSTNAME=$(ssh $UPGRADE_NODE_USER@$name_id_or_ip hostname)
+        IP_ADDR=$name_id_or_ip
+        log "node $HOSTNAME found with address $IP_ADDR "
+    else
+        set -e
+        log "ERROR $name_id_or_ip not known to nova or not responding to ping if it is an IP address. Exiting"
+        exit 1
+    fi
   fi
-  log "nova node $name_or_id found with status $node_status"
-}
-
-function confirm_script_on_node {
-  name_or_id=$1
-  node_ip=$(nova show $name_or_id | grep "ctlplane network" | awk '{print $5}')
-  log "checking for upgrade script $UPGRADE_SCRIPT on node $name_or_id ($node_ip)"
-  results=$(ssh $UPGRADE_NODE_USER@$node_ip "sudo ls -l $UPGRADE_SCRIPT")
-  log "upgrade script $UPGRADE_SCRIPT found on node $name_or_id ($node_ip)"
-}
-
-function deliver_script {
-  script=$1
-  node=$2
-  node_ip=$(nova show $node | grep "ctlplane network" | awk '{print $5}')
-  file_name=$(echo ${script##*/})
-  log "Sending upgrade script $script to $node_ip as $UPGRADE_NODE_USER"
-  scp $script $UPGRADE_NODE_USER@$node_ip:/home/$UPGRADE_NODE_USER/$file_name
-  log "Copying upgrade script to right location and setting permissions"
-  ssh $UPGRADE_NODE_USER@$node_ip "sudo cp /home/$UPGRADE_NODE_USER/$file_name $UPGRADE_SCRIPT ; \
-                           sudo chmod 755 $UPGRADE_SCRIPT ; "
+  set -e
 }
 
 if [ -n "$UPGRADE_NODE" ]; then
-  find_nova_node_by_name_or_id $UPGRADE_NODE
-  if  [ -n "$SCRIPT" ]; then
-    deliver_script $SCRIPT $UPGRADE_NODE
-  fi
-  confirm_script_on_node $UPGRADE_NODE
-  node_ip=$(nova show $UPGRADE_NODE | grep "ctlplane network" | awk '{print $5}')
-  log "Executing $UPGRADE_SCRIPT on $node_ip"
-  ssh $UPGRADE_NODE_USER@$node_ip sudo $UPGRADE_SCRIPT 2>&1 | tee -a $LOGFILE
+  find_node_by_name_id_or_ip $UPGRADE_NODE
+  log "Executing $UPGRADE_SCRIPT on $IP_ADDR"
+  ssh $UPGRADE_NODE_USER@$IP_ADDR sudo $UPGRADE_SCRIPT 2>&1 | tee -a $LOGFILE
   log "Clearing any existing dir $UPGRADE_NODE and downloading config"
   rm -rf $UPGRADE_NODE
   openstack overcloud config download --config-dir "$UPGRADE_NODE"
   config_dir=$(ls -1 $UPGRADE_NODE)
-  target_host=$(openstack server list | grep $UPGRADE_NODE | awk '{print $4}')
-  log "Starting the upgrade steps playbook run for $target_host from $UPGRADE_NODE/$config_dir/"
-  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory \
-    $UPGRADE_NODE/$config_dir/upgrade_steps_playbook.yaml --limit $target_host
-  log "Starting the deploy-steps-playbook run for $target_host from $UPGRADE_NODE/$config_dir/"
-  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory \
-    $UPGRADE_NODE/$config_dir/deploy_steps_playbook.yaml --limit $target_host
+  log "Starting the upgrade steps playbook run for $HOSTNAME from $UPGRADE_NODE/$config_dir/"
+  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory $UPGRADE_NODE/$config_dir/upgrade_steps_playbook.yaml --limit $HOSTNAME
+  log "Starting the deploy-steps-playbook run for $HOSTNAME from $UPGRADE_NODE/$config_dir/"
+  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory $UPGRADE_NODE/$config_dir/deploy_steps_playbook.yaml --limit $HOSTNAME
 fi
 
 if [ -n "$QUERY_NODE" ]; then
   # check node exists, check for upgrade script
-  find_nova_node_by_name_or_id $QUERY_NODE
-  confirm_script_on_node $QUERY_NODE
-  node_ip=$(nova show $QUERY_NODE | grep "ctlplane network" | awk '{print $5}')
+  find_node_by_name_id_or_ip $QUERY_NODE
   log "We can't remotely tell if the upgrade has run on $QUERY_NODE."
   log "We can check for package updates... trying to tail yum.log on $QUERY_NODE:"
-  ssh $UPGRADE_NODE_USER@$node_ip "sudo tail /var/log/yum.log" 2>&1 | tee -a $LOGFILE
+  ssh $UPGRADE_NODE_USER@$IP_ADDR "sudo tail /var/log/yum.log" 2>&1 | tee -a $LOGFILE
 fi
