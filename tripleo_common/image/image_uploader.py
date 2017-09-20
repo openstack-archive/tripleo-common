@@ -19,6 +19,7 @@ import json
 import logging
 import netifaces
 import six
+import time
 
 try:
     from docker import APIClient as Client
@@ -119,7 +120,7 @@ class DockerImageUploader(ImageUploader):
         else:
             repo = image
 
-        self._pull(dockerc, repo, tag=tag)
+        self._pull_retry(dockerc, repo, tag=tag)
 
         full_image = repo + ':' + tag
         new_repo = push_destination + '/' + repo.partition('/')[2]
@@ -138,9 +139,22 @@ class DockerImageUploader(ImageUploader):
         for line in dockerc.pull(image, tag=tag, stream=True):
             status = json.loads(line)
             if 'error' in status:
-                raise ImageUploaderException('Could not pull image: %s' %
-                                             status['error'])
+                self.logger.warning('docker pull failed: %s' % status['error'])
+                return 1
             self.logger.debug(status.get('status'))
+        return 0
+
+    def _pull_retry(self, dockerc, image, tag=None):
+        retval = -1
+        count = 0
+        while retval != 0:
+            if count >= 5:
+                raise ImageUploaderException('Could not pull image %s' % image)
+            count += 1
+            retval = self._pull(dockerc, image, tag)
+            if retval != 0:
+                time.sleep(3)
+                self.logger.warning('retrying pulling image: %s' % image)
 
     def discover_image_tag(self, image, tag_from_label=None):
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
@@ -150,7 +164,7 @@ class DockerImageUploader(ImageUploader):
             tag = 'latest'
         image = '%s:%s' % (image_name, tag)
 
-        self._pull(dockerc, image)
+        self._pull_retry(dockerc, image)
         i = dockerc.inspect_image(image)
         labels = i['Config']['Labels']
 
@@ -171,5 +185,5 @@ class DockerImageUploader(ImageUploader):
         # confirm the tag exists by pulling it, which should be fast
         # because that image has just been pulled
         versioned_image = '%s:%s' % (image_name, tag_label)
-        self._pull(dockerc, versioned_image)
+        self._pull_retry(dockerc, versioned_image)
         return tag_label
