@@ -17,6 +17,7 @@
 {% endif %}
 
 {% set tag=tag or "latest" %}
+{% set neutron_driver=neutron_driver or "None" %}
 container_images_template:
 
 - imagename: "{{namespace}}/{{name_prefix}}aodh-api{{name_suffix}}:{{tag}}"
@@ -388,6 +389,19 @@ container_images_template:
   services:
   - OS::TripleO::Services::NeutronSriovAgent
 
+{% if neutron_driver == "odl" %}
+- imagename: "{{namespace}}/{{name_prefix}}neutron-server-opendaylight{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronApiImage
+  - DockerNeutronConfigImage
+  services:
+  - OS::TripleO::Services::NeutronApi
+  - OS::TripleO::Services::NeutronDhcpAgent
+  - OS::TripleO::Services::NeutronMetadataAgent
+  - OS::TripleO::Services::NeutronServer
+  - OS::TripleO::Services::OpenDaylightApi
+
+{% else %}
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server{{name_suffix}}:{{tag}}"
   params:
   - DockerNeutronApiImage
@@ -402,6 +416,7 @@ container_images_template:
   - OS::TripleO::Services::NeutronOvsAgent
   - OS::TripleO::Services::NeutronServer
   - OS::TripleO::Services::NeutronSriovAgent
+{% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
   params:
@@ -503,6 +518,15 @@ container_images_template:
   - DockerOctaviaWorkerImage
   services:
   - OS::TripleO::Services::OctaviaWorker
+
+{% if neutron_driver == "odl" %}
+- imagename: "{{namespace}}/{{name_prefix}}opendaylight{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOpendaylightApiImage
+  - DockerOpendaylightConfigImage
+  services:
+  - OS::TripleO::Services::OpenDaylightApi
+{% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-base{{name_suffix}}:{{tag}}"
 

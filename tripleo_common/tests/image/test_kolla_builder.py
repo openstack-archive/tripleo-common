@@ -216,4 +216,41 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
         container_images = yaml_builder.load_config_files(
             yaml_builder.CONTAINER_IMAGES)
+        # remove odl related image references from overcloud_containers.yaml
+        container_images.remove({'imagename': 'tripleoupstream/centos-binary'
+                                              '-neutron-server-opendaylight:'
+                                              'latest'})
+        container_images.remove({'imagename': 'tripleoupstream/centos-binary'
+                                              '-opendaylight:latest'})
+        self.assertSequenceEqual(container_images, result)
+
+    def test_container_images_yaml_in_sync_for_odl(self):
+        '''Confirm overcloud_containers.tpl.yaml equals overcloud_containers.yaml
+
+        TODO(sbaker) remove when overcloud_containers.yaml is deleted
+        '''
+        mod_dir = os.path.dirname(sys.modules[__name__].__file__)
+        project_dir = os.path.abspath(os.path.join(mod_dir, '../../../'))
+        files_dir = os.path.join(project_dir, 'container-images')
+
+        oc_tmpl_file = os.path.join(files_dir, 'overcloud_containers.yaml.j2')
+        tmpl_builder = kb.KollaImageBuilder([oc_tmpl_file])
+
+        def ffunc(entry):
+            if 'params' in entry:
+                del(entry['params'])
+            if 'services' in entry:
+                del(entry['services'])
+            return entry
+
+        result = tmpl_builder.container_images_from_template(
+            neutron_driver='odl', filter=ffunc)
+
+        oc_yaml_file = os.path.join(files_dir, 'overcloud_containers.yaml')
+        yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
+        container_images = yaml_builder.load_config_files(
+            yaml_builder.CONTAINER_IMAGES)
+        # remove neutron-server image reference from overcloud_containers.yaml
+        container_images.remove({'imagename': 'tripleoupstream/centos-binary'
+                                              '-neutron-server:latest'})
         self.assertSequenceEqual(container_images, result)
