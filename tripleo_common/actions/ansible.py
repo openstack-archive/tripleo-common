@@ -474,11 +474,12 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 env_variables.update(self.extra_env_variables)
 
             if self.use_openstack_credentials:
+                security_ctx = context.security
                 env_variables.update({
-                    'OS_AUTH_URL': context.auth_uri,
-                    'OS_USERNAME': context.user_name,
-                    'OS_AUTH_TOKEN': context.auth_token,
-                    'OS_PROJECT_NAME': context.project_name})
+                    'OS_AUTH_URL': security_ctx.auth_uri,
+                    'OS_USERNAME': security_ctx.user_name,
+                    'OS_AUTH_TOKEN': security_ctx.auth_token,
+                    'OS_PROJECT_NAME': security_ctx.project_name})
 
             command = [str(c) for c in command]
 
