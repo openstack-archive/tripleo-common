@@ -1,6 +1,6 @@
 {% set namespace=namespace or "tripleoupstream" %}
 
-{% set ceph_namespace=ceph_namespace or "ceph" %}
+{% set ceph_namespace=ceph_namespace or "docker.io/ceph" %}
 {% set ceph_image=ceph_image or "daemon" %}
 {% set ceph_tag=ceph_tag or "tag-build-master-jewel-centos-7" %}
 
@@ -650,6 +650,8 @@ container_images_template:
   params:
   - DockerCephDaemonImage
   services:
+  - OS::TripleO::Services::CephClient
+  - OS::TripleO::Services::CephExternal
   - OS::TripleO::Services::CephMds
   - OS::TripleO::Services::CephMon
   - OS::TripleO::Services::CephOSD
