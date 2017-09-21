@@ -326,6 +326,13 @@ RUN mkdir -p /openstack && \
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
+{% block opendaylight_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/opendaylight-api /openstack/healthcheck && \
+    chmod -R a+rx /openstack
+HEALTHCHECK CMD /openstack/healthcheck
+{% endblock %}
+
 {% block rabbitmq_footer %}
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 
