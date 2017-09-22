@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+SERVICE_NAME=$1
+if [ -z "$SERVICE_NAME" ]; then
+  echo "Please supply a valid service name."
+  exit 1
+fi
+shift
+if [ -z "$*" ]; then
+  echo "Please supply a valid 'command' to run as an argument."
+  exit 1
+fi
+HOSTNAME=$(/bin/hostname -s)
+SERVICE_NODEID=$(/bin/hiera -c /etc/puppet/hiera.yaml "${SERVICE_NAME}_short_bootstrap_node_name")
+if [[ "$HOSTNAME" == "$SERVICE_NODEID" ]]; then
+  eval $*
+else
+  echo "Skipping execution since this is not the bootstrap node for this service."
+fi
