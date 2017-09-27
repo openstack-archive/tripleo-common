@@ -485,6 +485,7 @@ workflows:
                 status: <% $.status %>
                 message: <% $.message %>
                 introspected_node: <% $.get('introspected_node') %>
+                node_uuid: <% $.node_uuid %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
