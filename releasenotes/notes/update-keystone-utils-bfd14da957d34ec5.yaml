@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    The keystone utils in tripleo-common had gotten out of sync with the way
+    Mistral was using authentication. This patch aligns the two so that they
+    are closer to equivalent.
