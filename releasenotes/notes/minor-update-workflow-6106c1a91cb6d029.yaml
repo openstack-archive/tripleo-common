@@ -1,0 +1,19 @@
+---
+features:
+  - A new minor update workflow has been added, which implemented all the
+    steps in Mistral. It include the following, setup the Heat outputs of the
+    Overcloud, pushed the configuration files of the deployment into swift,
+    including Ansible playbook and tasks, the Puppet files, and run the
+    ansible update playbook via the Ansible action.
+
+  - The config download code has been moved from python-tripleoclient to a
+    dedicated library in order to be consumed by other APIs or tools.
+    A mistral action has been added to handle this library
+
+fixes:
+  - Fixes
+    `bug 1691740 <https://bugs.launchpad.net/tripleo/+bug/1715557>`__
+
+deprecations:
+  - The old minor update workflow is now deprecated, the code for the
+    action ClearBreakpointsAction has been removed
