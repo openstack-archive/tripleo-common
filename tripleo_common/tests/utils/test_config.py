@@ -27,13 +27,15 @@ class TestConfig(base.TestCase):
     def setUp(self):
         super(TestConfig, self).setUp()
 
+    @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
     @patch.object(ooo_config.Config, '_open_file')
     @mock.patch('tempfile.mkdtemp', autospec=True)
     def test_overcloud_config_generate_config(self,
                                               mock_tmpdir,
                                               mock_open,
-                                              mock_mkdir):
+                                              mock_mkdir,
+                                              mock_copyfile):
         config_type_list = ['config_settings', 'global_config_settings',
                             'logging_sources', 'monitoring_subscriptions',
                             'service_config_settings',
@@ -62,13 +64,15 @@ class TestConfig(base.TestCase):
                                             (role, config))]
         mock_open.assert_has_calls(expected_calls, any_order=True)
 
+    @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
     @patch.object(ooo_config.Config, '_open_file')
     @mock.patch('tempfile.mkdtemp', autospec=True)
     def test_overcloud_config_one_config_type(self,
                                               mock_tmpdir,
                                               mock_open,
-                                              mock_mkdir):
+                                              mock_mkdir,
+                                              mock_copyfile):
 
         expected_config_type = 'config_settings'
         fake_role = [role for role in
