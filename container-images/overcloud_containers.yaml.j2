@@ -401,6 +401,15 @@ container_images_template:
   - OS::TripleO::Services::NeutronServer
   - OS::TripleO::Services::OpenDaylightApi
 
+{% elif neutron_driver == "ovn" %}
+- imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
+  params:
+  - DockerNeutronApiImage
+  - DockerNeutronConfigImage
+  services:
+  - OS::TripleO::Services::NeutronApi
+  - OS::TripleO::Services::NeutronServer
+
 {% else %}
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server{{name_suffix}}:{{tag}}"
   params:
@@ -417,11 +426,6 @@ container_images_template:
   - OS::TripleO::Services::NeutronServer
   - OS::TripleO::Services::NeutronSriovAgent
 {% endif %}
-
-- imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
-  params:
-  - DockerNeutronOvnApiImage
-  - DockerNeutronOvnConfigImage
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-api{{name_suffix}}:{{tag}}"
   params:
@@ -528,6 +532,7 @@ container_images_template:
   - OS::TripleO::Services::OpenDaylightApi
 {% endif %}
 
+{% if neutron_driver == "ovn" %}
 - imagename: "{{namespace}}/{{name_prefix}}ovn-base{{name_suffix}}:{{tag}}"
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-controller{{name_suffix}}:{{tag}}"
@@ -546,6 +551,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}ovn-northd{{name_suffix}}:{{tag}}"
   params:
   - DockerOvnNorthdImage
+  - DockerOvnDbsImage
+  - DockerOvnDbsConfigImage
   services:
   - OS::TripleO::Services::OVNDBs
 
@@ -554,6 +561,7 @@ container_images_template:
   - DockerOvnSbDbImage
   services:
   - OS::TripleO::Services::OVNDBs
+{% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}panko-api{{name_suffix}}:{{tag}}"
   params:
