@@ -185,12 +185,16 @@ class ListRolesAction(base.TripleOAction):
     Parses roles_data.yaml and returns the names of all available roles.
 
     :param container: name of the Swift container / plan name
+    :param detail: if false(default), displays role names only.  if true,
+                   returns all roles data
     :return: list of roles in the container's deployment plan
     """
 
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
+                 detail=False):
         super(ListRolesAction, self).__init__()
         self.container = container
+        self.detail = detail
 
     def run(self, context):
         try:
@@ -203,7 +207,10 @@ class ListRolesAction(base.TripleOAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        return [role['name'] for role in roles_data]
+        if self.detail:
+            return roles_data
+        else:
+            return [role['name'] for role in roles_data]
 
 
 class ExportPlanAction(base.TripleOAction):

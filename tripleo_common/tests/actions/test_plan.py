@@ -235,10 +235,10 @@ class DeletePlanActionTest(base.TestCase):
         swift.delete_container.assert_called_with(self.container_name)
 
 
-class RoleListActionTest(base.TestCase):
+class ListRolesActionTest(base.TestCase):
 
     def setUp(self):
-        super(RoleListActionTest, self).setUp()
+        super(ListRolesActionTest, self).setUp()
         self.container = 'overcloud'
         self.ctx = mock.MagicMock()
 
@@ -255,6 +255,31 @@ class RoleListActionTest(base.TestCase):
 
         # verify
         expected = ['MyController', 'Compute', 'CustomRole']
+        self.assertEqual(expected, result)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_show_detail(self, get_obj_client_mock):
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = plan.ListRolesAction(detail=True)
+        result = action.run(self.ctx)
+
+        # verify
+        expected = [
+            {u'CountDefault': 1,
+             u'ServicesDefault': [u'OS::TripleO::Services::CACerts'],
+             u'name': u'MyController'},
+            {u'HostnameFormatDefault': u'%stackname%-novacompute-%index%',
+             u'ServicesDefault': [u'OS::TripleO::Services::NovaCompute',
+                                  u'OS::TripleO::Services::DummyService'],
+             u'name': u'Compute'},
+            {u'ServicesDefault': [u'OS::TripleO::Services::Kernel'],
+             u'name': u'CustomRole'}]
+
         self.assertEqual(expected, result)
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
