@@ -74,6 +74,7 @@ workflows:
         input:
           queue_name: <% $.queue_name %>
           tasks: <% $.create_admin_tasks %>
+          overcloud_admin: <% $.overcloud_admin %>
 
       # SSH variant
       create_admin_via_ssh:
@@ -88,6 +89,7 @@ workflows:
     input:
       - tasks
       - queue_name: tripleo
+      - overcloud_admin: tripleo-admin
     tags:
       - tripleo-common-managed
     tasks:
@@ -99,6 +101,7 @@ workflows:
 
       create_admin:
         workflow: tripleo.deployment.v1.deploy_on_server
+        on-success: get_privkey
         with-items: server in <% $.servers %>
         input:
           server_name: <% $.server.name %>
@@ -110,6 +113,30 @@ workflows:
             - hosts: localhost
               connection: local
               tasks: <% json_pp($.tasks) %>
+
+      get_privkey:
+        action: tripleo.validations.get_privkey
+        on-success: wait_for_occ
+        publish:
+          privkey: <% task(get_privkey).result %>
+
+      wait_for_occ:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            overcloud:
+              hosts: <% $.servers.addresses.ctlplane.addr.flatten().toDict($, {}) %>
+          remote_user: <% $.overcloud_admin %>
+          ssh_private_key: <% $.privkey %>
+          ssh_common_args: '-o StrictHostKeyChecking=no'
+          playbook:
+            - hosts: overcloud
+              gather_facts: no
+              tasks:
+                - name: wait for connection
+                  wait_for_connection:
+                    sleep: 5
+                    timeout: 300
 
   create_admin_via_ssh:
     input:
