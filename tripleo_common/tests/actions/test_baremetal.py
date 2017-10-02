@@ -202,6 +202,21 @@ class TestConfigureRootDeviceAction(base.TestCase):
         self.assertEqual(mock.call('ABCDEFGH', expected_patch),
                          root_device_args)
 
+    def test_smallest_with_ext(self):
+        self.disks[2]['wwn_with_extension'] = 'wwnext'
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='smallest')
+        action.run(self.context)
+
+        self.assertEqual(self.ironic.node.update.call_count, 1)
+        root_device_args = self.ironic.node.update.call_args_list[0]
+        expected_patch = [{'op': 'add', 'path': '/properties/root_device',
+                           'value': {'wwn_with_extension': 'wwnext'}},
+                          {'op': 'add', 'path': '/properties/local_gb',
+                           'value': 4}]
+        self.assertEqual(mock.call('ABCDEFGH', expected_patch),
+                         root_device_args)
+
     def test_largest(self):
         action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
                                                      root_device='largest')
@@ -211,6 +226,21 @@ class TestConfigureRootDeviceAction(base.TestCase):
         root_device_args = self.ironic.node.update.call_args_list[0]
         expected_patch = [{'op': 'add', 'path': '/properties/root_device',
                            'value': {'wwn': 'wwn3'}},
+                          {'op': 'add', 'path': '/properties/local_gb',
+                           'value': 20}]
+        self.assertEqual(mock.call('ABCDEFGH', expected_patch),
+                         root_device_args)
+
+    def test_largest_with_ext(self):
+        self.disks[3]['wwn_with_extension'] = 'wwnext'
+        action = baremetal.ConfigureRootDeviceAction(node_uuid='MOCK_UUID',
+                                                     root_device='largest')
+        action.run(self.context)
+
+        self.assertEqual(self.ironic.node.update.call_count, 1)
+        root_device_args = self.ironic.node.update.call_args_list[0]
+        expected_patch = [{'op': 'add', 'path': '/properties/root_device',
+                           'value': {'wwn_with_extension': 'wwnext'}},
                           {'op': 'add', 'path': '/properties/local_gb',
                            'value': 20}]
         self.assertEqual(mock.call('ABCDEFGH', expected_patch),
