@@ -81,6 +81,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
         'COMPUTE_API_VERSION': '1.1',
         'OS_USERNAME': 'admin',
         'OS_PROJECT_NAME': 'admin',
+        'OS_TENANT_NAME': 'admin',
         'OS_NO_CACHE': 'True',
         'OS_CLOUDNAME': stack.stack_name,
         'no_proxy': ','.join(no_proxy_list),
