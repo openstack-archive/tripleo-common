@@ -701,6 +701,69 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  list_available_networks:
+    input:
+      - container
+      - queue_name: tripleo
+
+    output:
+      available_networks: <% $.available_networks %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_network_file_names:
+        action: swift.get_container
+        input:
+          container: <% $.container %>
+        publish:
+          network_names: <% task().result[1].where($.name.startsWith('networks/')).where($.name.endsWith('.yaml')).name %>
+        on-success: get_network_files
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      get_network_files:
+        with-items: network_name in <% $.network_names %>
+        action: swift.get_object
+        on-success: transform_output
+        on-error: notify_zaqar
+        input:
+          container: <% $.container %>
+          obj: <% $.network_name %>
+        publish:
+          status: SUCCESS
+          available_yaml_networks: <% task().result.select($[1]) %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      transform_output:
+        publish:
+          status: SUCCESS
+          available_networks: <% yaml_parse($.available_yaml_networks.join("\n")) %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-complete: notify_zaqar
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.list_available_networks
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                available_networks: <% $.get('available_networks', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   list_networks:
     input:
       - container: 'overcloud'
