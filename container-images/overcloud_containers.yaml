@@ -89,4 +89,4 @@ container_images:
 - imagename: tripleoupstream/centos-binary-swift-proxy-server:latest
 - imagename: tripleoupstream/centos-binary-tacker:latest
 - imagename: tripleoupstream/centos-binary-zaqar:latest
-- imagename: docker.io/ceph/daemon:tag-build-master-jewel-centos-7
+- imagename: docker.io/ceph/daemon:tag-stable-3.0-jewel-centos-7
