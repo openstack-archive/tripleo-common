@@ -41,6 +41,9 @@ STACK_TIMEOUT_DEFAULT = 240
 #: The default name to use for a plan container
 DEFAULT_CONTAINER_NAME = 'overcloud'
 
+#: The default name to use for the config files of the container
+CONFIG_CONTAINER_NAME = 'overcloud-config'
+
 #: The default key to use for updating parameters in plan environment.
 DEFAULT_PLAN_ENV_KEY = 'parameter_defaults'
 
