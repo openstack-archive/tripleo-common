@@ -71,6 +71,7 @@ workflows:
       - playbook
       - inventory_file
       - queue_name: tripleo
+      - module_path: /usr/share/ansible-modules
 
     tags:
       - tripleo-common-managed
@@ -100,7 +101,8 @@ workflows:
           verbosity: 0
           ssh_private_key: <% $.private_key %>
           ssh_extra_args: '-o StrictHostKeyChecking=no'
-          limit_hosts:  <% $.nodes %>
+          limit_hosts: <% $.nodes %>
+          module_path: <% $.module_path %>
         on-success: node_update_passed
         on-error: node_update_failed
         publish:
