@@ -186,9 +186,7 @@ class Config(object):
                 elif config == 'step_config':
                     filepath = os.path.join(role_path, 'step_config.pp')
                     with self._open_file(filepath) as step_config:
-                        step_config.write('\n'.join(step for step in
-                                                    role[config]
-                                                    if step is not None))
+                        step_config.write(role[config])
                 else:
                     if 'upgrade_tasks' in config:
                         filepath = os.path.join(role_path, '%s_playbook.yaml' %
