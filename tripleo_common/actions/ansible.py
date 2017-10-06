@@ -221,6 +221,7 @@ class AnsiblePlaybookAction(actions.Action):
         self._kwargs_for_run = kwargs
         self._playbook = self._kwargs_for_run.pop('playbook', None)
         self.limit_hosts = self._kwargs_for_run.pop('limit_hosts', None)
+        self.module_path = self._kwargs_for_run.pop('module_path', None)
         self.remote_user = self._kwargs_for_run.pop('remote_user', None)
         self.become = self._kwargs_for_run.pop('become', None)
         self.become_user = self._kwargs_for_run.pop('become_user', None)
@@ -341,6 +342,9 @@ class AnsiblePlaybookAction(actions.Action):
 
         if self.limit_hosts:
             command.extend(['--limit', self.limit_hosts])
+
+        if self.module_path:
+            command.extend(['--module-path', self.module_path])
 
         if self.remote_user:
             command.extend(['--user', self.remote_user])
