@@ -1,0 +1,31 @@
+---
+version: '2.0'
+name: tripleo.swift_ring.v1
+description: Rebalance and distribute Swift rings using Ansible
+
+
+workflows:
+  rebalance:
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        on-success: deploy_rings
+
+      deploy_rings:
+        action: tripleo.ansible-playbook
+        publish:
+          output: <% task().result %>
+        input:
+          ssh_private_key: <% task(get_private_key).result %>
+          ssh_common_args: '-o StrictHostKeyChecking=no'
+          ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
+          verbosity: 1
+          remote_user: heat-admin
+          become: true
+          become_user: root
+          playbook: /usr/share/tripleo-common/playbooks/swift_ring_rebalance.yaml
+          inventory: /usr/bin/tripleo-ansible-inventory
+          use_openstack_credentials: true

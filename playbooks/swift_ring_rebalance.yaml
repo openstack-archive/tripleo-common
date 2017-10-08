@@ -1,0 +1,123 @@
+---
+
+- name: Update Swift rings
+  hosts: swift_storage,swift_proxy
+  gather_facts: False
+  any_errors_fatal: true
+  max_fail_percentage: 0
+  vars:
+    base_directory: "/var/lib/config-data/puppet-generated/swift/"
+    rebalance_is_safe: False
+  environment:
+    # TODO (cschwede): Remove v3 suffix once
+    # https://review.openstack.org/#/c/473740/ is included in image
+    OS_AUTH_URL: "{{ lookup('env','OS_AUTH_URL') }}v3"
+    OS_USERNAME: "{{ lookup('env','OS_USERNAME') }}"
+    OS_PROJECT_NAME: "{{ lookup('env','OS_PROJECT_NAME') }}"
+    OS_PASSWORD: "{{ lookup('env','OS_PASSWORD') }}"
+    OS_IDENTITY_API_VERSION: "{{ lookup('env','OS_IDENTITY_API_VERSION') }}"
+  tasks:
+    - name: Get reference ring checksum
+      run_once: true
+      block:
+        - name: Ensure /tmp/swift-rings directory exists
+          file: path=/tmp/swift-rings state=directory
+
+        - name: Fetch Swift rings from undercloud
+          command: swift --insecure download -o /tmp/swift-rings.tar.gz overcloud-swift-rings swift-rings.tar.gz
+
+        - name: Extract Swift rings
+          unarchive:
+            src: /tmp/swift-rings.tar.gz
+            dest: /tmp/swift-rings
+            remote_src: yes
+
+        - name: Get reference ring checksum
+          stat:
+            path: /tmp/swift-rings/etc/swift/object.ring.gz
+          register: result_reference
+
+    - name: Get file attributes of object rings
+      stat:
+        path: "{{ base_directory }}/etc/swift/object.ring.gz"
+      register: result
+
+    - name: Abort playbook run if consistency check fails
+      fail:
+        msg: "object.ring.gz does not match reference checksum"
+      when: (result.stat.exists == True) and (result_reference.stat.exists == True) and (result_reference.stat.checksum != result.stat.checksum)
+
+    - name: Deploy missing Swift rings
+      when: result.stat.exists == False
+      block:
+        - name: Fetch missing Swift rings from undercloud
+          command: swift --insecure download -o /tmp/swift-rings.tar.gz overcloud-swift-rings swift-rings.tar.gz
+
+        - name: Extract missing Swift rings
+          unarchive:
+            src: /tmp/swift-rings.tar.gz
+            dest: /{{ base_directory }}
+            remote_src: yes
+
+    - name: Get recon data
+      command: cat /var/cache/swift/object.recon
+      register: recon
+
+    - name: Check if it is safe to continue rebalancing
+      set_fact:
+        rebalance_is_safe: True
+      when: (result.stat.exists == True) and ((recon.stdout | from_json).object_replication_last | int) > ((result.stat.mtime) | int)
+
+    - name: Show warning and stop playbook run if unsafe
+      debug:
+        msg: "Rebalancing is unsafe at the moment, stopping. Please try again later"
+      when: not rebalance_is_safe
+
+    # We exit here in case there is at least one host that fails the above check
+    - meta: end_play
+      when: not rebalance_is_safe
+
+    - name: Rebalance Swift rings
+      run_once: true
+      block:
+        - name: Ensure /tmp/swift-rings directory exists
+          file: path=/tmp/swift-rings state=directory
+
+        - name: Fetch Swift rings from undercloud
+          command: swift --insecure download -o /tmp/swift-rings.tar.gz overcloud-swift-rings swift-rings.tar.gz
+
+        - name: Extract Swift rings
+          unarchive:
+            src: /tmp/swift-rings.tar.gz
+            dest: /tmp/swift-rings
+            remote_src: yes
+
+        # Can't use with_fileglob (see https://github.com/ansible/ansible/issues/17136)
+        - name: Rebalance Swift rings
+          command: swift-ring-builder /tmp/swift-rings/etc/swift/{{ item }} rebalance
+          with_items:
+            - object.builder
+            - container.builder
+            - account.builder
+          failed_when: result.rc > 1
+          register: result
+
+        - name: Create Swift ring archive
+          archive:
+            path:
+                - "/tmp/swift-rings/etc"
+            dest: /tmp/swift-rings.tar.gz
+
+        - name: Copy Swift rings to the undercloud
+          command: swift --insecure upload --object-name swift-rings.tar.gz overcloud-swift-rings /tmp/swift-rings.tar.gz
+
+    - name: Update Swift rings on all nodes
+      block:
+        - name: Fetch Swift rings from undercloud
+          command: swift --insecure download -o /tmp/swift-rings.tar.gz overcloud-swift-rings swift-rings.tar.gz
+
+        - name: Extract Swift rings
+          unarchive:
+            src: /tmp/swift-rings.tar.gz
+            dest: /{{ base_directory }}
+            remote_src: yes
