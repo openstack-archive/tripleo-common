@@ -256,7 +256,7 @@ class ConfigureRootDeviceAction(base.TripleOAction):
                     {'strategy': strategy, 'node': node.uuid})
 
         hint = None
-        for hint_name in ('wwn', 'serial'):
+        for hint_name in ('wwn_with_extension', 'wwn', 'serial'):
             if root_device.get(hint_name):
                 hint = {hint_name: root_device[hint_name]}
                 break
