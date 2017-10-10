@@ -184,9 +184,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::DesignateWorker
 
-- imagename: "{{namespace}}/{{name_prefix}}designate-base{{name_suffix}}:{{tag}}"
-  image_source: kolla
-
 - imagename: "{{namespace}}/{{name_prefix}}designate-central{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -405,9 +402,6 @@ container_images_template:
   - OS::TripleO::Services::ManilaApi
   - OS::TripleO::Services::ManilaScheduler
   - OS::TripleO::Services::ManilaShare
-
-- imagename: "{{namespace}}/{{name_prefix}}manila-base{{name_suffix}}:{{tag}}"
-  image_source: kolla
 
 - imagename: "{{namespace}}/{{name_prefix}}manila-scheduler{{name_suffix}}:{{tag}}"
   image_source: kolla
@@ -665,9 +659,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::Novajoin
 
-- imagename: "{{namespace}}/{{name_prefix}}octavia-base{{name_suffix}}:{{tag}}"
-  image_source: kolla
-
 - imagename: "{{namespace}}/{{name_prefix}}octavia-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -711,9 +702,6 @@ container_images_template:
 {% endif %}
 
 {% if neutron_driver == "ovn" %}
-- imagename: "{{namespace}}/{{name_prefix}}ovn-base{{name_suffix}}:{{tag}}"
-  image_source: kolla
-
 - imagename: "{{namespace}}/{{name_prefix}}ovn-controller{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:

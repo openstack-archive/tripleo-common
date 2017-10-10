@@ -483,9 +483,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                           '-neutron-server-ovn:current-tripleo'},
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-ovn-base:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
                           '-opendaylight:current-tripleo'},
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
@@ -514,9 +511,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-ovn-base:current-tripleo'},
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
                           '-ovn-northd:current-tripleo'},

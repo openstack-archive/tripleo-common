@@ -39,8 +39,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-designate-backend-bind9:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-base:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-designate-central:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-designate-mdns:current-tripleo
@@ -94,8 +92,6 @@ container_images:
 - imagename: docker.io/tripleomaster/centos-binary-keystone:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-manila-api:current-tripleo
-  image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-manila-base:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-manila-scheduler:current-tripleo
   image_source: kolla
@@ -157,8 +153,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-novajoin-server:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-octavia-base:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-octavia-api:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-octavia-health-manager:current-tripleo
@@ -168,8 +162,6 @@ container_images:
 - imagename: docker.io/tripleomaster/centos-binary-octavia-worker:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-opendaylight:current-tripleo
-  image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ovn-base:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-ovn-controller:current-tripleo
   image_source: kolla
