@@ -306,7 +306,6 @@ RUN mkdir -p /openstack && \
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/opendaylight-api /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
-HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
 {% block rabbitmq_footer %}
