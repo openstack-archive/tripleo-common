@@ -14,12 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import six
+
+from keystoneauth1 import loading
 from keystoneclient import service_catalog as ks_service_catalog
 from keystoneclient.v3 import client as ks_client
 from keystoneclient.v3 import endpoints as ks_endpoints
-import six
+from oslo_config import cfg
 
 from tripleo_common import exception
+
+CONF = cfg.CONF
 
 
 def client(ctx):
@@ -35,6 +40,60 @@ def client(ctx):
     cl.management_url = auth_url
 
     return cl
+
+
+def _admin_client(trust_id=None):
+    if CONF.keystone_authtoken.auth_type is None:
+        auth_url = CONF.keystone_authtoken.auth_uri
+        project_name = CONF.keystone_authtoken.admin_tenant_name
+
+        # You can't use trust and project together
+
+        if trust_id:
+            project_name = None
+
+        cl = ks_client.Client(
+            username=CONF.keystone_authtoken.admin_user,
+            password=CONF.keystone_authtoken.admin_password,
+            project_name=project_name,
+            auth_url=auth_url,
+            trust_id=trust_id
+        )
+
+        cl.management_url = auth_url
+
+        return cl
+    else:
+        kwargs = {}
+
+        if trust_id:
+            # Remove project_name and project_id, since we need a trust scoped
+            # auth object
+            kwargs['project_name'] = None
+            kwargs['project_domain_name'] = None
+            kwargs['project_id'] = None
+            kwargs['trust_id'] = trust_id
+
+        auth = loading.load_auth_from_conf_options(
+            CONF,
+            'keystone_authtoken',
+            **kwargs
+        )
+        sess = loading.load_session_from_conf_options(
+            CONF,
+            'keystone_authtoken',
+            auth=auth
+        )
+
+        return ks_client.Client(session=sess)
+
+
+def client_for_admin():
+    return _admin_client()
+
+
+def client_for_trusts(trust_id):
+    return _admin_client(trust_id=trust_id)
 
 
 def get_endpoint_for_project(ctx, service_name=None, service_type=None,
@@ -98,14 +157,28 @@ def get_endpoint_for_project(ctx, service_name=None, service_type=None,
 def obtain_service_catalog(ctx):
     token = ctx.auth_token
 
-    response = ctx.service_catalog
+    if ctx.is_trust_scoped and is_token_trust_scoped(ctx, token):
+        if ctx.trust_id is None:
+            raise Exception(
+                "'trust_id' must be provided in the admin context."
+            )
 
-    # Target service catalog may not be passed via API.
-    if not response and ctx.is_target:
-        response = client().tokens.get_token_data(
+        trust_client = client_for_trusts(ctx.trust_id)
+        token_data = trust_client.tokens.get_token_data(
             token,
             include_catalog=True
-        )['token']
+        )
+        response = token_data['token']
+    else:
+        response = ctx.service_catalog
+
+        # Target service catalog may not be passed via API.
+        # If we don't have the catalog yet, it should be requested.
+        if not response:
+            response = client(ctx).tokens.get_token_data(
+                token,
+                include_catalog=True
+            )['token']
 
     if not response:
         raise exception.UnauthorizedException()
@@ -120,3 +193,7 @@ def format_url(url_template, values):
     # see https://github.com/openstack/keystone/blob/master/keystone/
     # catalog/core.py#L42-L60
     return url_template.replace('$(', '%(') % values
+
+
+def is_token_trust_scoped(ctx, auth_token):
+    return 'OS-TRUST:trust' in client_for_admin().tokens.validate(auth_token)
