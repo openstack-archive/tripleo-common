@@ -348,8 +348,8 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.exception("Error occurred while processing custom roles.")
             return actions.Result(error=six.text_type(err))
 
-        template_name = plan_env.get('template')
-        environments = plan_env.get('environments')
+        template_name = plan_env.get('template', "")
+        environments = plan_env.get('environments', [])
         env_paths = []
         temp_files = []
 

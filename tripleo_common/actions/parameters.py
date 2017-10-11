@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import copy
 import json
 import logging
 import uuid
@@ -121,7 +122,7 @@ class ResetParametersAction(base.TripleOAction):
         return env
 
 
-class UpdateParametersAction(base.TripleOAction):
+class UpdateParametersAction(templates.ProcessTemplatesAction):
     """Updates plan environment with parameters."""
 
     def __init__(self, parameters,
@@ -134,6 +135,7 @@ class UpdateParametersAction(base.TripleOAction):
 
     def run(self, context):
         swift = self.get_object_client(context)
+        heat = self.get_orchestration_client(context)
 
         try:
             env = plan_utils.get_env(swift, self.container)
@@ -143,19 +145,71 @@ class UpdateParametersAction(base.TripleOAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
+        saved_env = copy.deepcopy(env)
         try:
+
             plan_utils.update_in_env(swift, env, self.key,
                                      self.parameters)
+
         except swiftexceptions.ClientException as err:
             err_msg = ("Error updating environment for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        self.cache_delete(context,
-                          self.container,
-                          "tripleo.parameters.get")
-        return env
+        processed_data = super(UpdateParametersAction, self).run(context)
+
+        # If we receive a 'Result' instance it is because the parent action
+        # had an error.
+        if isinstance(processed_data, actions.Result):
+            return processed_data
+
+        processed_data['show_nested'] = True
+        env = plan_utils.get_env(swift, self.container)
+
+        params = env.get('parameter_defaults')
+        fields = {
+            'template': processed_data['template'],
+            'files': processed_data['files'],
+            'environment': processed_data['environment'],
+            'show_nested': True
+        }
+
+        try:
+            result = {
+                'heat_resource_tree': heat.stacks.validate(**fields),
+                'environment_parameters': params,
+            }
+
+            # Validation passes so the old cache gets replaced.
+            self.cache_set(context,
+                           self.container,
+                           "tripleo.parameters.get",
+                           result)
+
+            if result['heat_resource_tree']:
+                flattened = {'resources': {}, 'parameters': {}}
+                _flat_it(flattened, 'Root',
+                         result['heat_resource_tree'])
+                result['heat_resource_tree'] = flattened
+
+        except heat_exc.HTTPException as err:
+            LOG.debug("Validation failed rebuilding saved env")
+
+            # There has been an error validating we must reprocess the
+            # templates with the saved working env
+            plan_utils.put_env(swift, saved_env)
+            env = saved_env
+            processed_data = super(UpdateParametersAction, self).run(context)
+
+            err_msg = ("Error validating environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return actions.Result(error=err_msg)
+
+        LOG.debug("Validation worked new env is saved")
+
+        return result
 
 
 class UpdateRoleParametersAction(UpdateParametersAction):
@@ -368,47 +422,6 @@ class GetFlattenedParametersAction(GetParametersAction):
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
         super(GetFlattenedParametersAction, self).__init__(container)
 
-    def _process_params(self, flattened, params):
-        for item in params:
-            if item not in flattened['parameters']:
-                param_obj = {}
-                for key, value in params.get(item).items():
-                    camel_case_key = key[0].lower() + key[1:]
-                    param_obj[camel_case_key] = value
-                param_obj['name'] = item
-                flattened['parameters'][item] = param_obj
-        return list(params)
-
-    def _process(self, flattened, name, data):
-        key = str(uuid.uuid4())
-        value = {}
-        value.update({
-            'name': name,
-            'id': key
-        })
-        if 'Type' in data:
-            value['type'] = data['Type']
-        if 'Description' in data:
-            value['description'] = data['Description']
-        if 'Parameters' in data:
-            value['parameters'] = self._process_params(flattened,
-                                                       data['Parameters'])
-        if 'ParameterGroups' in data:
-            value['parameter_groups'] = data['ParameterGroups']
-        if 'NestedParameters' in data:
-            nested = data['NestedParameters']
-            nested_ids = []
-            for nested_key in nested.keys():
-                nested_data = self._process(flattened, nested_key,
-                                            nested.get(nested_key))
-                # nested_data will always have one key (and only one)
-                nested_ids.append(list(nested_data)[0])
-
-            value['resources'] = nested_ids
-
-        flattened['resources'][key] = value
-        return {key: value}
-
     def run(self, context):
         # process all plan files and create or update a stack
         processed_data = super(GetFlattenedParametersAction, self).run(context)
@@ -420,11 +433,54 @@ class GetFlattenedParametersAction(GetParametersAction):
 
         if processed_data['heat_resource_tree']:
             flattened = {'resources': {}, 'parameters': {}}
-            self._process(flattened, 'Root',
-                          processed_data['heat_resource_tree'])
+            _flat_it(flattened, 'Root',
+                     processed_data['heat_resource_tree'])
             processed_data['heat_resource_tree'] = flattened
 
         return processed_data
+
+
+def _process_params(flattened, params):
+    for item in params:
+        if item not in flattened['parameters']:
+            param_obj = {}
+            for key, value in params.get(item).items():
+                camel_case_key = key[0].lower() + key[1:]
+                param_obj[camel_case_key] = value
+            param_obj['name'] = item
+            flattened['parameters'][item] = param_obj
+    return list(params)
+
+
+def _flat_it(flattened, name, data):
+    key = str(uuid.uuid4())
+    value = {}
+    value.update({
+        'name': name,
+        'id': key
+    })
+    if 'Type' in data:
+        value['type'] = data['Type']
+    if 'Description' in data:
+        value['description'] = data['Description']
+    if 'Parameters' in data:
+        value['parameters'] = _process_params(flattened,
+                                              data['Parameters'])
+    if 'ParameterGroups' in data:
+        value['parameter_groups'] = data['ParameterGroups']
+    if 'NestedParameters' in data:
+        nested = data['NestedParameters']
+        nested_ids = []
+        for nested_key in nested.keys():
+            nested_data = _flat_it(flattened, nested_key,
+                                   nested.get(nested_key))
+            # nested_data will always have one key (and only one)
+            nested_ids.append(list(nested_data)[0])
+
+        value['resources'] = nested_ids
+
+    flattened['resources'][key] = value
+    return {key: value}
 
 
 class GetProfileOfFlavorAction(base.TripleOAction):
