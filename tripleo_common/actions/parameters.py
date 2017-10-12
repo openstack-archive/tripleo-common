@@ -370,12 +370,12 @@ class GenerateFencingParametersAction(base.TripleOAction):
 
                 # If the MAC isn't in the hostmap, this node hasn't been
                 # provisioned, so no fencing parameters are necessary
-                if mac_addr not in hostmap:
+                if hostmap and mac_addr not in hostmap:
                     continue
 
             # Build up fencing parameters based on which Ironic driver this
             # node is using
-            if node["pm_type"] == "pxe_ssh":
+            if hostmap and node["pm_type"] == "pxe_ssh":
                 # Ironic fencing driver
                 node_data["agent"] = "fence_ironic"
                 params["auth_url"] = self.os_auth["auth_url"]
@@ -394,7 +394,9 @@ class GenerateFencingParametersAction(base.TripleOAction):
                 params["ipaddr"] = node["pm_addr"]
                 params["passwd"] = node["pm_password"]
                 params["login"] = node["pm_user"]
-                params["pcmk_host_list"] = hostmap[mac_addr]["compute_name"]
+                if hostmap:
+                    params["pcmk_host_list"] = \
+                        hostmap[mac_addr]["compute_name"]
                 if "pm_port" in node:
                     params["ipport"] = node["pm_port"]
                 if self.ipmi_lanplus:

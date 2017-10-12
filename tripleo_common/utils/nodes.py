@@ -634,7 +634,10 @@ def generate_hostmap(baremetal_client, compute_client):
         for port in baremetal_client.port.list(node=bm_node.uuid):
             hostmap[port.address] = {"compute_name": node.name,
                                      "baremetal_name": bm_node.name}
-    return hostmap
+    if hostmap == {}:
+        return None
+    else:
+        return hostmap
 
 
 def run_nova_cell_v2_discovery():
