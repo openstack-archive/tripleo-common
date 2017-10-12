@@ -323,3 +323,26 @@ class UpdatePlanEnvironmentAction(base.TripleOAction):
         except Exception as err:
             msg = "Error while updating plan: %s" % err
             return actions.Result(error=msg)
+
+
+class UpdateNetworksAction(base.TripleOAction):
+    def __init__(self, networks, current_networks, replace_all=False):
+        super(UpdateNetworksAction, self).__init__()
+        self.networks = networks
+        self.current_networks = current_networks
+        self.replace_all = replace_all
+
+    def run(self, context):
+        network_data_to_save = self.networks or []
+
+        # if replace_all flag is true, discard current networks and save input
+        # if replace_all flag is false, merge input into current networks
+        if not self.replace_all:
+            # merge the networks_data and the network_input into networks
+            # to be saved
+            network_data_to_save = [net for net in {
+                x['name']: x for x in
+                self.current_networks + self.networks
+            }.values()]
+
+        return actions.Result(data={'network_data': network_data_to_save})

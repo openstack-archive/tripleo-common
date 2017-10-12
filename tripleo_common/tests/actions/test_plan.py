@@ -400,3 +400,49 @@ class ExportPlanActionTest(base.TestCase):
 
         error = "Error while creating a tarball"
         self.assertIn(error, result.error)
+
+
+class UpdateNetworksActionTest(base.TestCase):
+
+    def setUp(self):
+        super(UpdateNetworksActionTest, self).setUp()
+        self.current_networks = [
+            {
+                'name': 'FirstCurrentNetwork'
+            }
+        ]
+        self.ctx = mock.MagicMock()
+
+    def test_run_success(self):
+        networks = [
+            {
+                'name': 'MyFirstNetwork'
+            }
+        ]
+
+        action = plan.UpdateNetworksAction(networks, self.current_networks,
+                                           replace_all=False)
+        result = action.run(self.ctx)
+
+        expected = [
+            {'name': 'FirstCurrentNetwork'},
+            {'name': 'MyFirstNetwork'}
+        ]
+        self.assertEqual(expected,
+                         sorted(result.data['network_data'],
+                                key=lambda k: k['name']))
+
+    def test_run_success_replace(self):
+        networks = [
+            {
+                'name': 'MyReplacementNetwork'
+            }
+        ]
+
+        action = plan.UpdateNetworksAction(networks, self.current_networks,
+                                           replace_all=True)
+        result = action.run(self.ctx)
+        expected = [
+            {'name': 'MyReplacementNetwork'}
+        ]
+        self.assertEqual({"network_data": expected}, result.data)
