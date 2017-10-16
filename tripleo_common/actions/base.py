@@ -120,6 +120,7 @@ class TripleOAction(actions.Action):
         nova_endpoint = keystone_utils.get_endpoint_for_project(
             context, 'nova')
 
+        # TODO(apetrich) Change this auth to a keystone session
         client = nova_client(
             2,
             username=None,
@@ -129,7 +130,9 @@ class TripleOAction(actions.Action):
             tenant_id=context.project_id,
             region_name=keystone_endpoint.region,
             auth_url=keystone_endpoint.url,
-            insecure=context.insecure
+            insecure=context.insecure,
+            project_domain_name="Default",
+            user_domain_name="Default"
         )
 
         client.client.management_url = keystone_utils.format_url(
