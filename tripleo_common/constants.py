@@ -141,6 +141,9 @@ TRIPLEO_CACHE_CONTAINER = "__cache__"
 TRIPLEO_UI_LOG_FILE_SIZE = 1e7  # 10MB
 TRIPLEO_UI_LOG_FILENAME = 'tripleo-ui.logs'
 
+API_NETWORK = 'InternalApi'
+LEGACY_API_NETWORK = 'Internal'
+
 # Default nested depth when recursing Heat stacks
 NESTED_DEPTH = 7
 

@@ -157,6 +157,26 @@ class ProcessTemplatesAction(base.TripleOAction):
                      "the J2 excludes list to: %s" % j2_excl_data)
         return j2_excl_data
 
+    def _heat_resource_exists(self, resource_name, context):
+        heatclient = self.get_orchestration_client(context)
+        stack_exists = False
+        for stack in heatclient.stacks.list():
+            if self.container == str(stack.stack_name):
+                stack_exists = True
+                break
+        if not stack_exists:
+            LOG.debug("Resource does not exist because stack does not exist")
+            return False
+
+        resources = heatclient.resources.list(self.container, nested_depth=6)
+        for resource in resources:
+            if str(resource.resource_name) == resource_name:
+                LOG.debug("Resource exists: {}".format(resource_name))
+                return True
+
+        LOG.debug("Resource does not exist: {}".format(resource_name))
+        return False
+
     def _process_custom_roles(self, context):
         swift = self.get_object_client(context)
 
@@ -199,10 +219,19 @@ class ProcessTemplatesAction(base.TripleOAction):
 
         n_map = {}
         for n in network_data:
-            if (n.get('enabled') is not False):
+            if n.get('enabled') is not False:
                 n_map[n.get('name')] = n
                 if not n.get('name_lower'):
                     n_map[n.get('name')]['name_lower'] = n.get('name').lower()
+            if n.get('name') == constants.API_NETWORK and 'compat_name' \
+                    not in n.keys():
+                # Check to see if legacy named API network exists
+                # and if so we need to set compat_name
+                api_net = "{}Network".format(constants.LEGACY_API_NETWORK)
+                if self._heat_resource_exists(api_net, context):
+                    n['compat_name'] = 'Internal'
+                    LOG.info("Upgrade compatibility enabled for legacy "
+                             "network resource Internal.")
             else:
                 LOG.info("skipping %s network: network is disabled." %
                          n.get('name'))
