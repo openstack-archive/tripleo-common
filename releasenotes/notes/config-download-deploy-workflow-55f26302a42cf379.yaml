@@ -1,0 +1,5 @@
+---
+features:
+  - Adds a new workflow, tripleo.deployment.v1.config_download_deploy,
+    that does an overcloud configuration using the config download
+    mechanism.
