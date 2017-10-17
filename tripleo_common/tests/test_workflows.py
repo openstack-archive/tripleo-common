@@ -30,6 +30,8 @@ class TestWorkflowStructure(base.TestCase):
 
     def test_tags_are_set(self):
         for workbook in self.workbooks:
+            if workbook.startswith('.'):
+                continue
             full_path = os.path.join(WORKBOOK_DIRECTORY, workbook)
             with open(full_path) as f:
                 wb_yaml = yaml.load(f)
