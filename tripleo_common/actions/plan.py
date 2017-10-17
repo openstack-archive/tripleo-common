@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
+from operator import itemgetter
 import shutil
 import tempfile
 import yaml
@@ -27,6 +28,7 @@ from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import roles as roles_utils
 from tripleo_common.utils import swift as swiftutils
 from tripleo_common.utils import tarball
 from tripleo_common.utils.validations import pattern_validator
@@ -144,16 +146,18 @@ class ListRolesAction(base.TripleOAction):
     """
 
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
+                 role_file_name=constants.OVERCLOUD_J2_ROLES_NAME,
                  detail=False):
         super(ListRolesAction, self).__init__()
         self.container = container
+        self.role_file_name = role_file_name
         self.detail = detail
 
     def run(self, context):
         try:
             swift = self.get_object_client(context)
             roles_data = yaml.safe_load(swift.get_object(
-                self.container, constants.OVERCLOUD_J2_ROLES_NAME)[1])
+                self.container, self.role_file_name)[1])
         except Exception as err:
             err_msg = ("Error retrieving roles data from deployment plan: %s"
                        % err)
@@ -346,3 +350,87 @@ class UpdateNetworksAction(base.TripleOAction):
             }.values()]
 
         return actions.Result(data={'network_data': network_data_to_save})
+
+
+class ValidateRolesDataAction(base.TripleOAction):
+    """Validates Roles Data
+
+    Validates the format of input (verify that each role in input has the
+    required attributes set. see README in roles directory in t-h-t),
+    validates that roles in input exist in roles directory in deployment plan
+    """
+
+    def __init__(self, roles, available_roles,
+                 container=constants.DEFAULT_CONTAINER_NAME):
+        super(ValidateRolesDataAction, self).__init__()
+        self.container = container
+        self.roles = roles
+        self.available_roles = available_roles
+
+    def run(self, context):
+        err_msg = ""
+        # validate roles in input exist in roles directory in t-h-t
+        try:
+            roles_utils.check_role_exists(
+                [role['name'] for role in self.available_roles],
+                [role['name'] for role in self.roles])
+        except Exception as chk_err:
+            err_msg = str(chk_err)
+
+        # validate role yaml
+        for role in self.roles:
+            try:
+                roles_utils.validate_role_yaml(yaml.safe_dump([role]))
+            except exception.RoleMetadataError as rme:
+                if 'name' in role:
+                    err_msg += "\n%s for %s" % (str(rme), role['name'])
+                else:
+                    err_msg += "\n%s" % str(rme)
+
+        if err_msg:
+            return actions.Result(error=err_msg)
+        return actions.Result(data=True)
+
+
+class UpdateRolesAction(base.TripleOAction):
+    """Updates roles_data.yaml object in plan with given roles.
+
+    :param roles: role input data (json)
+    :param current_roles: data from roles_data.yaml file in plan (json)
+    :param replace_all: boolean value indicating if input roles should merge
+    with or replace data from roles_data.yaml.  Defaults to False (merge)
+    :param container: name of the Swift container / plan name
+    """
+
+    def __init__(self, roles, current_roles, replace_all=False,
+                 container=constants.DEFAULT_CONTAINER_NAME):
+        super(UpdateRolesAction, self).__init__()
+        self.container = container
+        self.roles = roles
+        self.current_roles = current_roles
+        self.replace_all = replace_all
+
+    def run(self, context):
+        role_data_to_save = self.roles
+
+        # if replace_all flag is true, discard current roles and save input
+        # if replace_all flag is false, merge input into current roles
+        if not self.replace_all:
+            # merge the roles_data and the role_input into roles to be saved
+            role_data_to_save = [role for role in {
+                x['name']: x for x in
+                self.current_roles + self.roles
+            }.values()]
+
+        # ensure required primary tag exists in roles to be saved
+        primary = [role for role in role_data_to_save if
+                   'tags' in role and 'primary' in role['tags']]
+        if len(primary) < 1:
+            # throw error
+            raise exception.RoleMetadataError("At least one role must contain"
+                                              " a 'primary' tag.")
+
+        # sort the data to have a predictable result
+        save_roles = sorted(role_data_to_save, key=itemgetter('name'),
+                            reverse=True)
+        return actions.Result(data={'roles': save_roles})

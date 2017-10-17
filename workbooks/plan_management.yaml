@@ -1141,3 +1141,152 @@ workflows:
                 available_roles: <% $.get('available_roles', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  update_roles:
+    description: >
+      takes data in json format validates its contents and persists them in
+      roles_data.yaml, after successful update, templates are regenerated.
+    input:
+      - container
+      - roles
+      - roles_data_file: 'roles_data.yaml'
+      - replace_all: false
+      - queue_name: tripleo
+    tags:
+      - tripleo-common-managed
+    tasks:
+      get_available_roles:
+        workflow: list_available_roles
+        publish:
+          available_roles: <% task().result.available_roles %>
+        on-success: validate_input
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      validate_input:
+        description: >
+          validate the format of input (verify that each role in input has the
+          required attributes set. check README in roles directory in t-h-t),
+          validate that roles in input exist in roles directory in t-h-t
+        action: tripleo.plan.validate_roles
+        input:
+          container: <% $.container %>
+          roles: <% $.roles %>
+          available_roles: <% $.available_roles %>
+        on-success: get_network_data
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      get_network_data:
+        workflow: list_networks
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+        publish:
+          network_data: <% task().result.network_data %>
+        on-success: validate_network_names
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      validate_network_names:
+        description: >
+          validate that Network names assigned to Role exist in
+          network-data.yaml object in Swift container
+        workflow: _validate_networks_from_roles
+        input:
+          container: <% $.container %>
+          defined_networks: <% $.network_data.name %>
+          networks_in_roles: <% $.roles.networks.flatten().distinct() %>
+          queue_name: <% $.queue_name %>
+        on-success: get_current_roles
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result.message %>
+
+      get_current_roles:
+        workflow: list_roles
+        input:
+          container: <% $.container %>
+          roles_data_file: <% $.roles_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+            current_roles: <% task().result.roles_data %>
+        on-success: update_roles_data
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      update_roles_data:
+        description: >
+          update roles_data.yaml object in Swift with roles from workflow input
+        action: tripleo.plan.update_roles
+        input:
+          container: <% $.container %>
+          roles: <% $.roles %>
+          current_roles: <% $.current_roles %>
+          replace_all: <% $.replace_all %>
+        publish:
+          updated_roles_data: <% task().result.roles %>
+        on-success: update_roles_data_in_swift
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      update_roles_data_in_swift:
+        description: >
+          update roles_data.yaml object in Swift with data from workflow input
+        action: swift.put_object
+        input:
+          container: <% $.container %>
+          obj: <% $.roles_data_file %>
+          contents: <% yaml_dump($.updated_roles_data) %>
+        on-success: regenerate_templates
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      regenerate_templates:
+        action: tripleo.templates.process container=<% $.container %>
+        on-success: get_updated_roles
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      get_updated_roles:
+        workflow: list_roles
+        input:
+          container: <% $.container %>
+          roles_data_file:  <% $.roles_data_file %>
+        publish:
+            updated_roles: <% task().result.roles_data %>
+            status: SUCCESS
+        on-complete: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.roles.v1.update_roles
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                updated_roles: <% $.get('updated_roles', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
