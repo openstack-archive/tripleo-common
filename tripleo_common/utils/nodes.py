@@ -238,24 +238,12 @@ DRIVER_INFO = {
     # production drivers
     '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True,
                                              default_port=623),
-    '.*_drac': PrefixedDriverInfo('drac', has_port=True),
-    '.*_ilo': PrefixedDriverInfo('ilo'),
-    '.*_ucs': PrefixedDriverInfo(
-        'ucs',
-        deprecated_mapping={
-            'pm_service_profile': 'ucs_service_profile'
-        }),
-    '.*_irmc': PrefixedDriverInfo(
-        'irmc', has_port=True,
-        deprecated_mapping={
-            'pm_auth_method': 'irmc_auth_method',
-            'pm_client_timeout': 'irmc_client_timeout',
-            'pm_sensor_method': 'irmc_sensor_method',
-            'pm_deploy_iso': 'irmc_deploy_iso',
-        }),
+    '(idrac|.*_drac)': PrefixedDriverInfo('drac', has_port=True),
+    '(ilo|.*_ilo)': PrefixedDriverInfo('ilo', has_port=True),
+    '(cisco\-ucs\-managed|.*_ucs)': PrefixedDriverInfo('ucs'),
+    '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True),
     'redfish': RedfishDriverInfo(),
     # test drivers
-    '.*_ssh': SshDriverInfo(),
     '.*_iboot': iBootDriverInfo(),
     '.*_wol': DriverInfo(
         'wol',
