@@ -31,7 +31,6 @@ UPGRADE_SCRIPT=${UPGRADE_SCRIPT:-/root/tripleo_upgrade_node.sh}
 UPGRADE_NODE_USER=${UPGRADE_NODE_USER:-"heat-admin"}
 UPGRADE_NODE=""
 QUERY_NODE=""
-SCRIPT=""
 HOSTNAME=""
 IP_ADDR=""
 
@@ -43,6 +42,9 @@ function show_options {
     echo "  -u|--upgrade <nova node>     -- nova node name or id or ctlplane IP to upgrade"
     echo "  -q|--query <nova node>       -- check if the node is ACTIVE and tail"
     echo "                                  yum.log for any package update info"
+    echo "  -U|--overcloud-user <name>   -- the user with which to ssh to the"
+    echo "                                  target upgrade node - defaults to"
+    echo "                                  'heat-admin'"
     echo
     echo "Invoke the /root/tripleo_upgrade_node.sh script on roles that have"
     echo "the 'disable_upgrade_deployment' flag set true and then download and"
@@ -65,6 +67,7 @@ function show_options {
     echo "    upgrade-non-controller.sh --upgrade overcloud-compute-0 "
     echo "    upgrade-non-controller.sh -u 734eea90-087b-4f12-9cd9-4807da83ea78 "
     echo "    upgrade-non-controller.sh -u 192.168.24.15 "
+    echo "    upgrade-non-controller.sh -U stack -u 192.168.24.15 "
     echo
     echo "You can run on multiple nodes in parallel: "
 
@@ -76,7 +79,7 @@ function show_options {
     exit $1
 }
 
-TEMP=`getopt -o h,u:,q: -l help,upgrade:,query:,script: -n $SCRIPT_NAME -- "$@"`
+TEMP=`getopt -o h,u:,q:,U: -l help,upgrade:,query:,overcloud-user: -n $SCRIPT_NAME -- "$@"`
 
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
@@ -90,8 +93,8 @@ while true ; do
     case "$1" in
         -h | --help ) show_options 0 >&2;;
         -u | --upgrade ) UPGRADE_NODE="$2" ; shift 2 ;;
-        -s | --script ) SCRIPT="$2"; shift 2 ;;
         -q | --query ) QUERY_NODE="$2" ; shift 2 ;;
+        -U | --overcloud-user ) UPGRADE_NODE_USER="$2"; shift 2;;
         -- ) shift ; break ;;
         * ) echo "Error: unsupported option $1." ; exit 1 ;;
     esac
