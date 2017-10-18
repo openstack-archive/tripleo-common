@@ -28,23 +28,28 @@ SCRIPT_NAME=$(basename $0)
 #can make the upgrade script overridable (if a different target will be used)
 UPGRADE_SCRIPT=${UPGRADE_SCRIPT:-/root/tripleo_upgrade_node.sh}
 #allow override incase the ssh user is not 'heat-admin' - must be able to sudo
-UPGRADE_NODE_USER=${UPGRADE_NODE_USER:-"heat-admin"}
+UPGRADE_NODE_USER_DEFAULT="heat-admin"
+UPGRADE_NODE_USER=${UPGRADE_NODE_USER:-$UPGRADE_NODE_USER_DEFAULT}
 UPGRADE_NODE=""
 QUERY_NODE=""
 HOSTNAME=""
 IP_ADDR=""
+INVENTORY=""
 
 function show_options {
     echo "Usage: $SCRIPT_NAME"
     echo
     echo "Options:"
-    echo "  -h|--help                    -- print this help."
-    echo "  -u|--upgrade <nova node>     -- nova node name or id or ctlplane IP to upgrade"
-    echo "  -q|--query <nova node>       -- check if the node is ACTIVE and tail"
-    echo "                                  yum.log for any package update info"
-    echo "  -U|--overcloud-user <name>   -- the user with which to ssh to the"
-    echo "                                  target upgrade node - defaults to"
-    echo "                                  'heat-admin'"
+    echo "  -h|--help                  -- print this help."
+    echo "  -u|--upgrade <nova node>   -- nova node name or id or ctlplane IP"
+    echo "                                to upgrade"
+    echo "  -q|--query <nova node>     -- check if the node is ACTIVE and tail"
+    echo "                                yum.log for any package update info"
+    echo "  -U|--overcloud-user <name> -- the user with which to ssh to the"
+    echo "                                target upgrade node - defaults to"
+    echo "                                $UPGRADE_NODE_USER_DEFAULT"
+    echo "  -I|--inventory <path>      -- use the specified tripleo ansible "
+    echo "                                inventory "
     echo
     echo "Invoke the /root/tripleo_upgrade_node.sh script on roles that have"
     echo "the 'disable_upgrade_deployment' flag set true and then download and"
@@ -68,6 +73,8 @@ function show_options {
     echo "    upgrade-non-controller.sh -u 734eea90-087b-4f12-9cd9-4807da83ea78 "
     echo "    upgrade-non-controller.sh -u 192.168.24.15 "
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.15 "
+    echo "    upgrade-non-controller.sh -U stack -u 192.168.24.16 \ "
+    echo "                              -I /home/stack/tripleo-ansible-inventory"
     echo
     echo "You can run on multiple nodes in parallel: "
 
@@ -79,7 +86,7 @@ function show_options {
     exit $1
 }
 
-TEMP=`getopt -o h,u:,q:,U: -l help,upgrade:,query:,overcloud-user: -n $SCRIPT_NAME -- "$@"`
+TEMP=`getopt -o h,u:,q:,U:,I: -l help,upgrade:,query:,overcloud-user:,inventory: -n $SCRIPT_NAME -- "$@"`
 
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
@@ -95,6 +102,7 @@ while true ; do
         -u | --upgrade ) UPGRADE_NODE="$2" ; shift 2 ;;
         -q | --query ) QUERY_NODE="$2" ; shift 2 ;;
         -U | --overcloud-user ) UPGRADE_NODE_USER="$2"; shift 2;;
+        -I | --inventory ) INVENTORY="$2"; shift 2;;
         -- ) shift ; break ;;
         * ) echo "Error: unsupported option $1." ; exit 1 ;;
     esac
@@ -147,6 +155,24 @@ function find_node_by_name_id_or_ip {
   set -e
 }
 
+# Generate static tripleo ansible inventory. This is mainly to deal with different
+# ssh user for the ansible playbooks, e.g. in a split stack environment.
+# $1 is the path for to write the tripleo-ansible-inventory to
+function get_static_inventory {
+  local config_dir=$1
+  if [ -d "$config_dir" ] ;then
+    local inventory_args=" --static-inventory $config_dir/tripleo-ansible-inventory"
+    if [[ $UPGRADE_NODE_USER != $UPGRADE_NODE_USER_DEFAULT ]]; then
+      inventory_args+=" --ansible_ssh_user $UPGRADE_NODE_USER"
+    fi
+    log "Generating static tripleo-ansible-inventory with these args: $inventory_args"
+    /usr/bin/tripleo-ansible-inventory $inventory_args
+  else
+    log "ERROR can't generate tripleo-ansible-inventory - cannot find $config_dir"
+    exit 1
+  fi
+}
+
 if [ -n "$UPGRADE_NODE" ]; then
   find_node_by_name_id_or_ip $UPGRADE_NODE
   log "Executing $UPGRADE_SCRIPT on $IP_ADDR"
@@ -155,10 +181,14 @@ if [ -n "$UPGRADE_NODE" ]; then
   rm -rf $UPGRADE_NODE
   openstack overcloud config download --config-dir "$UPGRADE_NODE"
   config_dir=$(ls -1 $UPGRADE_NODE)
+  if [ -z "$INVENTORY" ]; then
+    get_static_inventory $UPGRADE_NODE/$config_dir
+    INVENTORY=$UPGRADE_NODE/$config_dir/tripleo-ansible-inventory
+  fi
   log "Starting the upgrade steps playbook run for $HOSTNAME from $UPGRADE_NODE/$config_dir/"
-  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory $UPGRADE_NODE/$config_dir/upgrade_steps_playbook.yaml --limit $HOSTNAME
+  ansible-playbook -b -i $INVENTORY $UPGRADE_NODE/$config_dir/upgrade_steps_playbook.yaml --limit $HOSTNAME
   log "Starting the deploy-steps-playbook run for $HOSTNAME from $UPGRADE_NODE/$config_dir/"
-  ansible-playbook -b -i /usr/bin/tripleo-ansible-inventory $UPGRADE_NODE/$config_dir/deploy_steps_playbook.yaml --limit $HOSTNAME
+  ansible-playbook -b -i $INVENTORY $UPGRADE_NODE/$config_dir/deploy_steps_playbook.yaml --limit $HOSTNAME
 fi
 
 if [ -n "$QUERY_NODE" ]; then
