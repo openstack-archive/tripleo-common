@@ -38,6 +38,14 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # the undercloud baremetal workflows.
 {% set mistral_executor_packages_append = ['openstack-nova-common'] %}
 
+# NOTE(mandre) remove once https://review.openstack.org/#/c/513089/ merges
+{% set mistral_api_packages_append = ['httpd','mod_ssl', 'mod_wsgi'] %}
+{% block mistral_api_footer %}
+RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
+    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
+    && echo "if [[ \$USER == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_mistral_extend_start
+{% endblock %}
+
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
 {% set swift_proxy_server_packages_append = ['openstack-ceilometer-common', 'httpd', 'mod_ssl'] %}
