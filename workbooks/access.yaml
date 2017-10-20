@@ -90,6 +90,8 @@ workflows:
       - tasks
       - queue_name: tripleo
       - overcloud_admin: tripleo-admin
+      - ansible_extra_env_variables:
+            ANSIBLE_HOST_KEY_CHECKING: 'False'
     tags:
       - tripleo-common-managed
     tasks:
@@ -128,7 +130,7 @@ workflows:
               hosts: <% $.servers.addresses.ctlplane.addr.flatten().toDict($, {}) %>
           remote_user: <% $.overcloud_admin %>
           ssh_private_key: <% $.privkey %>
-          ssh_common_args: '-o StrictHostKeyChecking=no'
+          extra_env_variables: <% $.ansible_extra_env_variables %>
           playbook:
             - hosts: overcloud
               gather_facts: no
@@ -144,6 +146,9 @@ workflows:
       - ssh_private_key
       - ssh_user
       - ssh_servers
+      - ansible_extra_env_variables:
+            ANSIBLE_HOST_KEY_CHECKING: 'False'
+
     tags:
       - tripleo-common-managed
     tasks:
@@ -155,7 +160,7 @@ workflows:
               hosts: <% $.ssh_servers.toDict($, {}) %>
           remote_user: <% $.ssh_user %>
           ssh_private_key: <% $.ssh_private_key %>
-          ssh_common_args: '-o StrictHostKeyChecking=no'
+          extra_env_variables: <% $.ansible_extra_env_variables %>
           become: true
           become_user: root
           playbook:

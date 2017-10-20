@@ -72,6 +72,8 @@ workflows:
       - inventory_file
       - queue_name: tripleo
       - module_path: /usr/share/ansible-modules
+      - ansible_extra_env_variables:
+            ANSIBLE_HOST_KEY_CHECKING: 'False'
 
     tags:
       - tripleo-common-managed
@@ -100,7 +102,7 @@ workflows:
           become_user: root
           verbosity: 0
           ssh_private_key: <% $.private_key %>
-          ssh_extra_args: '-o StrictHostKeyChecking=no'
+          extra_env_variables: <% $.ansible_extra_env_variables %>
           limit_hosts: <% $.nodes %>
           module_path: <% $.module_path %>
         on-success: node_update_passed
