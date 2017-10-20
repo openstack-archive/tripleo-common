@@ -10,6 +10,8 @@ workflows:
     input:
       - container
       - queue_name: tripleo
+      - ansible_extra_env_variables:
+            ANSIBLE_HOST_KEY_CHECKING: 'False'
 
     tags:
       - tripleo-common-managed
@@ -55,7 +57,7 @@ workflows:
           hosts: keystone
           inventory: /usr/bin/tripleo-ansible-inventory
           ssh_private_key: <% task(get_privkey).result %>
-          ssh_extra_args: '-o StrictHostKeyChecking=no'
+          extra_env_variables: <% $.ansible_extra_env_variables %>
           verbosity: 0
           remote_user: heat-admin
           become: true
