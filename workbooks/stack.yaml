@@ -21,7 +21,7 @@ workflows:
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'DELETE_IN_PROGRESS'] %>
+          continue-on: <% task().result.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'DELETE_IN_PROGRESS'] %>
 
   wait_for_stack_in_progress:
     input:
@@ -39,7 +39,7 @@ workflows:
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task(wait_for_stack_status).result.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED', 'DELETE_FAILED'] %>
+          continue-on: <% task().result.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED', 'DELETE_FAILED'] %>
 
   wait_for_stack_does_not_exist:
     input:
