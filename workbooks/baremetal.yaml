@@ -26,7 +26,7 @@ workflows:
         retry:
           delay: 3
           count: 400
-          continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
+          continue-on: <% task().result.provision_state != $.target_state %>
 
   set_power_state:
     input:
@@ -49,7 +49,7 @@ workflows:
         retry:
           delay: 6
           count: 20
-          continue-on: <% task(wait_for_power_state).result.power_state != $.target_state %>
+          continue-on: <% task().result.power_state != $.target_state %>
 
   manual_cleaning:
     input:
@@ -83,7 +83,7 @@ workflows:
         retry:
           delay: <% $.retry_delay %>
           count: <% $.retry_count %>
-          continue-on: <% task(wait_for_provision_state).result.provision_state != 'manageable' %>
+          continue-on: <% task().result.provision_state != 'manageable' %>
 
       send_message:
         action: zaqar.queue_post
@@ -185,8 +185,8 @@ workflows:
            ramdisk_name: <% $.ramdisk_name %>
            instance_boot_option: <% $.instance_boot_option %>
         publish:
-          registered_nodes: <% task(register_or_update_nodes).result %>
-          new_nodes: <% task(register_or_update_nodes).result.where($.provision_state = 'enroll') %>
+          registered_nodes: <% task().result %>
+          new_nodes: <% task().result.where($.provision_state = 'enroll') %>
 
       set_status_failed_register_or_update_nodes:
         on-success: send_message
@@ -342,7 +342,7 @@ workflows:
         on-success: provide_manageable
         on-error: set_status_failed_get_manageable_nodes
         publish:
-          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+          managed_nodes: <% task().result.where($.provision_state = 'manageable').uuid %>
 
       set_status_failed_get_manageable_nodes:
         on-success: send_message
@@ -651,7 +651,7 @@ workflows:
         on-success: introspect_manageable
         on-error: set_status_failed_get_manageable_nodes
         publish:
-          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+          managed_nodes: <% task().result.where($.provision_state = 'manageable').uuid %>
 
       set_status_failed_get_manageable_nodes:
         on-success: send_message
@@ -668,7 +668,7 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          introspected_nodes: <% task(introspect_manageable).result.introspected_nodes %>
+          introspected_nodes: <% task().result.introspected_nodes %>
           message: 'Nodes introspected successfully.'
 
       set_status_introspect_manageable:
@@ -776,7 +776,7 @@ workflows:
         on-success: configure_manageable
         on-error: set_status_failed_get_manageable_nodes
         publish:
-          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+          managed_nodes: <% task().result.where($.provision_state = 'manageable').uuid %>
 
       configure_manageable:
         on-success: send_message
@@ -840,7 +840,7 @@ workflows:
         on-success: send_message
         action: tripleo.baremetal.update_node_capability node_uuid=<% $.node_uuid %> capability='profile' value=<% $.role %>
         publish:
-          message: <% task(update_node).result %>
+          message: <% task().result %>
           status: SUCCESS
 
       send_message:
@@ -898,7 +898,7 @@ workflows:
         on-success: send_message
         action: tripleo.parameters.update_role role=<% $.role %> container=<% $.plan %>
         publish:
-          message: <% task(update_role_parameters).result %>
+          message: <% task().result %>
           status: SUCCESS
 
       send_message:
@@ -937,7 +937,7 @@ workflows:
         on-success: send_message
         on-error: set_status_failed_get_matching_nodes
         publish:
-          matching_nodes: <% let(input_profile_name => $.profile) -> task(get_matching_nodes).result.where($.profile = $input_profile_name).uuid %>
+          matching_nodes: <% let(input_profile_name => $.profile) -> task().result.where($.profile = $input_profile_name).uuid %>
 
       set_status_failed_get_available_nodes:
         on-success: send_message
@@ -1007,7 +1007,7 @@ workflows:
         on-success: send_message
         on-error: apply_configuration_failed
         publish:
-          message: <% task(apply_configuration).result %>
+          message: <% task().result %>
           status: SUCCESS
 
       apply_configuration_failed:
@@ -1105,7 +1105,7 @@ workflows:
         on-success: get_candidate_nodes
         on-error: get_all_nodes_failed
         publish:
-          existing_nodes: <% task(get_all_nodes).result %>
+          existing_nodes: <% task().result %>
 
       get_all_nodes_failed:
         on-success: send_message
@@ -1123,7 +1123,7 @@ workflows:
         on-success: probe_nodes
         on-error: get_candidate_nodes_failed
         publish:
-          candidates: <% task(get_candidate_nodes).result %>
+          candidates: <% task().result %>
 
       get_candidate_nodes_failed:
         on-success: send_message
@@ -1143,7 +1143,7 @@ workflows:
         with-items:
           - node in <% $.candidates %>
         publish:
-          nodes_json: <% task(probe_nodes).result.where($ != null) %>
+          nodes_json: <% task().result.where($ != null) %>
 
       probe_nodes_failed:
         on-success: send_message
@@ -1195,7 +1195,7 @@ workflows:
         on-success: enroll_nodes
         on-error: discover_nodes_failed
         publish:
-          nodes_json: <% task(discover_nodes).result.nodes_json %>
+          nodes_json: <% task().result.nodes_json %>
 
       discover_nodes_failed:
         on-success: send_message
@@ -1214,7 +1214,7 @@ workflows:
         on-success: send_message
         on-error: enroll_nodes_failed
         publish:
-          registered_nodes: <% task(enroll_nodes).result.registered_nodes %>
+          registered_nodes: <% task().result.registered_nodes %>
 
       enroll_nodes_failed:
         on-success: send_message
