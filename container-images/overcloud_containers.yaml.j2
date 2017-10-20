@@ -2,7 +2,7 @@
 
 {% set ceph_namespace=ceph_namespace or "docker.io/ceph" %}
 {% set ceph_image=ceph_image or "daemon" %}
-{% set ceph_tag=ceph_tag or "tag-build-master-jewel-centos-7" %}
+{% set ceph_tag=ceph_tag or "tag-stable-3.0-jewel-centos-7" %}
 
 {% if name_prefix and not name_prefix.endswith('-') %}
 {% set name_prefix=name_prefix + "-" %}
