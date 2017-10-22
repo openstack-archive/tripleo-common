@@ -1,0 +1,32 @@
+deploy_server_id: {{ server_id }}
+
+{% for deployment in deployments %}
+{{ deployment.get('deployment_name') }}:
+{% if deployment.get('scalar') %}
+  config: |
+{% else %}
+  config:
+{% endif %}
+{{ deployment.get('config') | string | indent(4, true) }}
+  creation_time: "{{ deployment.get('creation_time') }}"
+  deployment_name: {{ deployment.get('deployment_name') }}
+  group: {{ deployment.get('group') }}
+  id: {{ deployment.get('id') }}
+  inputs:
+{% for input in deployment.get('inputs') %}
+    - name: {{ input.get('name') }}
+      description: {{ input.get('description') }}
+      type: {{ input.get('type') }}
+      value: |-
+{{ input.get('value') | string | indent(8, true) }}
+{% endfor %}
+  name: {{ deployment.get('name') }}
+  options: {{ deployment.get('options') }}
+  outputs:
+{% for output in deployment.get('outputs') %}
+    - name: {{ output.get('name') }}
+      description: {{ output.get('description') }}
+      type: {{ output.get('type') }}
+{% endfor %}
+
+{% endfor %}

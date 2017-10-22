@@ -136,3 +136,12 @@ TRIPLEO_CACHE_CONTAINER = "__cache__"
 
 TRIPLEO_UI_LOG_FILE_SIZE = 1e7  # 10MB
 TRIPLEO_UI_LOG_FILENAME = 'tripleo-ui.logs'
+
+# Default nested depth when recursing Heat stacks
+NESTED_DEPTH = 7
+
+# Default string format for server resource types
+SERVER_RESOURCE_TYPES = 'OS::TripleO::%sServer'
+
+# Resource name for deployment resources when using config download
+TRIPLEO_DEPLOYMENT_RESOURCE = 'TripleODeployment'

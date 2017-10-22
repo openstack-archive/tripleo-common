@@ -1,0 +1,42 @@
+- name: Create /var/lib/heat-config/tripleo-config-download directory for deployment data
+  file:
+    path: /var/lib/heat-config/tripleo-config-download
+    state: directory
+  become: true
+
+- name: "Render deployment file for {{ item }}"
+  template:
+    src: ../templates/heat-config.j2
+    dest: "/var/lib/heat-config/tripleo-config-download/{{ item }}"
+  become: true
+  vars:
+    deployment: "{{ vars[item] | to_json }}"
+
+- name: "Force remove deployed file for {{ item }}"
+  file:
+    path: /var/lib/heat-config/deployed/{{ vars[item].id }}.json
+    state: absent
+  become: true
+  when: force | bool
+
+- name: "Run deployment {{ item }}"
+  shell: |
+    # TODO(emilien) deploying jq this way is a workaround until we figure where to do it
+    # properly. jq is required by this task.
+    yum install -y jq
+    /usr/libexec/os-refresh-config/configure.d/55-heat-config
+    exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ vars[item].id }}.notify.json)
+  become: true
+  environment:
+    HEAT_SHELL_CONFIG: /var/lib/heat-config/tripleo-config-download/{{ item }}
+  register: deployment_result
+  ignore_errors: yes
+
+- name: "Output for {{ item }}"
+  debug:
+    msg:
+      - stderr: "{{ deployment_result.stderr.split('\n') }}"
+      - status_code: "{{ deployment_result.rc }}"
+  tags:
+    - output
+  failed_when: deployment_result.rc not in (0, 2)
