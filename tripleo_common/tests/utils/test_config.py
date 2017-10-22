@@ -41,7 +41,8 @@ class TestConfig(base.TestCase):
                             'service_config_settings',
                             'service_metadata_settings',
                             'service_names',
-                            'upgrade_batch_tasks', 'upgrade_tasks']
+                            'upgrade_batch_tasks', 'upgrade_tasks',
+                            'external_deploy_tasks']
         fake_role = [role for role in
                      fakes.FAKE_STACK['outputs'][1]['output_value']]
 
@@ -56,7 +57,9 @@ class TestConfig(base.TestCase):
         expected_calls = []
         for config in config_type_list:
             for role in fake_role:
-                if config == 'step_config':
+                if 'external' in config:
+                    continue
+                elif config == 'step_config':
                     expected_calls += [call('/tmp/tht/%s/%s.pp' %
                                             (role, config))]
                 else:

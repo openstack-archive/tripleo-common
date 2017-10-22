@@ -180,7 +180,10 @@ class Config(object):
             role_path = os.path.join(tmp_path, role_name)
             self._mkdir(role_path)
             for config in config_type or role.keys():
-                if config == 'step_config':
+                if config in constants.EXTERNAL_TASKS:
+                    # external tasks are collected globally, not per-role
+                    continue
+                elif config == 'step_config':
                     filepath = os.path.join(role_path, 'step_config.pp')
                     with self._open_file(filepath) as step_config:
                         step_config.write('\n'.join(step for step in
@@ -208,7 +211,10 @@ class Config(object):
         for config_name, config in six.iteritems(role_config):
             conf_path = os.path.join(tmp_path, config_name + ".yaml")
             with self._open_file(conf_path) as conf_file:
-                conf_file.write(config)
+                if isinstance(config, list) or isinstance(config, dict):
+                    yaml.safe_dump(config, conf_file, default_flow_style=False)
+                else:
+                    conf_file.write(config)
 
         # Get deployment data
         self.log.info("Getting server data from Heat...")

@@ -145,3 +145,5 @@ SERVER_RESOURCE_TYPES = 'OS::TripleO::%sServer'
 
 # Resource name for deployment resources when using config download
 TRIPLEO_DEPLOYMENT_RESOURCE = 'TripleODeployment'
+
+EXTERNAL_TASKS = ['external_deploy_tasks']
