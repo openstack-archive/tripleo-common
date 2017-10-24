@@ -34,6 +34,8 @@ def write_default_ansible_cfg(work_dir,
     config.read(ansible_config_path)
 
     config.set('defaults', 'retry_files_enabled', 'False')
+    config.set('defaults', 'log_path',
+               os.path.join(work_dir, 'ansible.log'))
 
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
@@ -207,7 +209,8 @@ class AnsibleAction(actions.Action):
                 *command, cwd=self.work_dir,
                 env_variables=env_variables,
                 log_errors=processutils.LogErrors.ALL)
-            return {"stderr": stderr, "stdout": stdout}
+            return {"stderr": stderr, "stdout": stdout,
+                    "log_path": os.path.join(self.work_dir, 'ansible.log')}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.
             if not self.verbosity:
@@ -411,7 +414,8 @@ class AnsiblePlaybookAction(actions.Action):
                 *command, cwd=self.work_dir,
                 env_variables=env_variables,
                 log_errors=processutils.LogErrors.ALL)
-            return {"stderr": stderr, "stdout": stdout}
+            return {"stderr": stderr, "stdout": stdout,
+                    "log_path": os.path.join(self.work_dir, 'ansible.log')}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.
             if not self.verbosity:

@@ -357,11 +357,13 @@ workflows:
           verbosity: 1
           become: true
           timeout: <% $.timeout %>
+        publish:
+          log_path: <% task(run_ansible).result.get('log_path') %>
         on-success: send_message
         on-error: send_message
         publish-on-error:
           status: FAILED
-          message: Ansible failed, check execution <% execution().id %> output
+          message: Ansible failed, check log at <% $.get('log_path') %>.
 
       send_message:
         action: zaqar.queue_post
