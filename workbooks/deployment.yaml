@@ -257,6 +257,7 @@ workflows:
     input:
       - timeout: 240
       - queue_name: tripleo
+      - work_dir: /var/lib/mistral
 
     tags:
       - tripleo-common-managed
@@ -273,8 +274,8 @@ workflows:
 
       download_config:
         action: tripleo.config.download_config
-        publish:
-          tmp_path: <% task(download_config).result %>
+        input:
+          work_dir: <% $.get('work_dir') %>/<% execution().id %>
         on-success: send_msg_config_download
         on-error: send_message
         publish-on-error:
@@ -290,7 +291,7 @@ workflows:
               type: tripleo.deployment.v1.config_download
               payload:
                 status: <% $.get('status', 'RUNNING') %>
-                message: Config downloaded at <% $.get('tmp_path') %>
+                message: Config downloaded at <% $.get('work_dir') %>/<% execution().id %>
                 execution: <% execution() %>
         on-success: get_private_key
 
@@ -308,6 +309,7 @@ workflows:
         action: tripleo.ansible-generate-inventory
         input:
           ansible_ssh_user: tripleo-admin
+          work_dir: <% $.get('work_dir') %>/<% execution().id %>
         publish:
           inventory: <% task().result %>
         on-success: send_msg_generate_inventory
@@ -339,8 +341,8 @@ workflows:
               payload:
                 status: <% $.get('status', 'RUNNING') %>
                 message: >
-                  Running ansible playbook at <% $.get('work_dir') %>/deploy_steps_playbook.yaml.
-                  See log file at <% $.get('work_dir') %>/ansible.log for progress.
+                  Running ansible playbook at <% $.get('work_dir') %>/<% execution().id %>/deploy_steps_playbook.yaml.
+                  See log file at <% $.get('work_dir') %>/<% execution().id %>/ansible.log for progress.
                   ...
                 execution: <% execution() %>
         on-success: run_ansible
@@ -349,7 +351,7 @@ workflows:
         action: tripleo.ansible-playbook
         input:
           inventory: <% $.inventory %>
-          playbook: <% $.get('tmp_path') %>/deploy_steps_playbook.yaml
+          playbook: <% $.get('work_dir') %>/<% execution().id %>/deploy_steps_playbook.yaml
           remote_user: tripleo-admin
           ssh_extra_args: '-o StrictHostKeyChecking=no'
           ssh_private_key: <% $.private_key %>
@@ -357,13 +359,14 @@ workflows:
           verbosity: 1
           become: true
           timeout: <% $.timeout %>
+          work_dir: <% $.get('work_dir') %>/<% execution().id %>
         publish:
           log_path: <% task(run_ansible).result.get('log_path') %>
         on-success: send_message
         on-error: send_message
         publish-on-error:
           status: FAILED
-          message: Ansible failed, check log at <% $.get('log_path') %>.
+          message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
 
       send_message:
         action: zaqar.queue_post
