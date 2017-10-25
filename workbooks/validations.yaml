@@ -37,8 +37,8 @@ workflows:
         action: tripleo.validations.run_validation validation=<% $.validation_name %> plan=<% $.plan %>
         publish:
           status: SUCCESS
-          stdout: <% task(run_validation).result.stdout %>
-          stderr: <% task(run_validation).result.stderr %>
+          stdout: <% task().result.stdout %>
+          stderr: <% task().result.stderr %>
 
       set_status_failed:
         on-complete: send_message
@@ -135,7 +135,7 @@ workflows:
         on-success: notify_running
         action: tripleo.validations.list_validations groups=<% $.group_names %>
         publish:
-          validations: <% task(find_validations).result %>
+          validations: <% task().result %>
 
       notify_running:
         on-complete: run_validation_group
@@ -217,7 +217,7 @@ workflows:
         action: tripleo.validations.get_pubkey
         on-success: set_validation_key_parameter
         publish:
-          pubkey: <% task(get_pubkey).result %>
+          pubkey: <% task().result %>
 
       set_validation_key_parameter:
         action: tripleo.parameters.update
@@ -248,13 +248,13 @@ workflows:
         action: nova.servers_list
         on-success: get_pubkey
         publish:
-          servers: <% task(get_servers).result._info %>
+          servers: <% task().result._info %>
 
       get_pubkey:
         action: tripleo.validations.get_pubkey
         on-success: deploy_ssh_key
         publish:
-          pubkey: <% task(get_pubkey).result %>
+          pubkey: <% task().result %>
 
       deploy_ssh_key:
         workflow: tripleo.deployment.v1.deploy_on_server
@@ -294,7 +294,7 @@ workflows:
         action: glance.images_list
         on-success: check_images
         publish:
-          images: <% task(get_images).result %>
+          images: <% task().result %>
 
       check_images:
         action: tripleo.validations.check_boot_images
@@ -305,15 +305,15 @@ workflows:
         on-success: send_message
         on-error: fail_check_images
         publish:
-          kernel_id: <% task(check_images).result.kernel_id %>
-          ramdisk_id: <% task(check_images).result.ramdisk_id %>
-          warnings: <% task(check_images).result.warnings %>
-          errors: <% task(check_images).result.errors %>
+          kernel_id: <% task().result.kernel_id %>
+          ramdisk_id: <% task().result.ramdisk_id %>
+          warnings: <% task().result.warnings %>
+          errors: <% task().result.errors %>
         publish-on-error:
-          kernel_id: <% task(check_images).result.kernel_id %>
-          ramdisk_id: <% task(check_images).result.ramdisk_id %>
-          warnings: <% task(check_images).result.warnings %>
-          errors: <% task(check_images).result.errors %>
+          kernel_id: <% task().result.kernel_id %>
+          ramdisk_id: <% task().result.ramdisk_id %>
+          warnings: <% task().result.warnings %>
+          errors: <% task().result.errors %>
 
       fail_check_images:
         on-success: send_message
@@ -366,13 +366,13 @@ workflows:
         on-success: send_message
         on-error: fail_check_flavors
         publish:
-          flavors: <% task(check_flavors).result.flavors %>
-          errors: <% task(check_flavors).result.errors %>
-          warnings: <% task(check_flavors).result.warnings %>
+          flavors: <% task().result.flavors %>
+          errors: <% task().result.errors %>
+          warnings: <% task().result.warnings %>
         publish-on-error:
           flavors: {}
-          errors: <% task(check_flavors).result.errors %>
-          warnings: <% task(check_flavors).result.warnings %>
+          errors: <% task().result.errors %>
+          warnings: <% task().result.warnings %>
 
       fail_check_flavors:
         on-success: send_message
@@ -426,7 +426,7 @@ workflows:
           maintenance: false
           detail: true
         publish:
-          nodes: <% task(get_ironic_nodes).result %>
+          nodes: <% task().result %>
 
       failed_get_ironic_nodes:
         on-success: send_message
@@ -444,11 +444,11 @@ workflows:
         on-success: send_message
         on-error: fail_check_node_boot_configuration
         publish:
-          errors: <% task(check_node_boot_configuration).result.errors.flatten() %>
-          warnings: <% task(check_node_boot_configuration).result.warnings.flatten() %>
+          errors: <% task().result.errors.flatten() %>
+          warnings: <% task().result.warnings.flatten() %>
         publish-on-error:
-          errors: <% task(check_node_boot_configuration).result.errors.flatten() %>
-          warnings: <% task(check_node_boot_configuration).result.warnings.flatten() %>
+          errors: <% task().result.errors.flatten() %>
+          warnings: <% task().result.warnings.flatten() %>
 
       fail_check_node_boot_configuration:
         on-success: send_message
@@ -499,7 +499,7 @@ workflows:
           maintenance: false
           detail: true
         publish:
-          nodes: <% task(get_ironic_nodes).result %>
+          nodes: <% task().result %>
 
       failed_get_ironic_nodes:
         on-success: send_message
@@ -515,11 +515,11 @@ workflows:
         on-success: send_message
         on-error: fail_verify_profiles
         publish:
-          errors: <% task(verify_profiles).result.errors %>
-          warnings: <% task(verify_profiles).result.warnings %>
+          errors: <% task().result.errors %>
+          warnings: <% task().result.warnings %>
         publish-on-error:
-          errors: <% task(verify_profiles).result.errors %>
-          warnings: <% task(verify_profiles).result.warnings %>
+          errors: <% task().result.errors %>
+          warnings: <% task().result.warnings %>
 
       fail_verify_profiles:
         on-success: send_message
@@ -570,7 +570,7 @@ workflows:
         on-success: get_stack
         on-error: fail_get_hypervisor_statistics
         publish:
-          statistics: <% task(get_hypervisor_statistics).result %>
+          statistics: <% task().result %>
 
       fail_get_hypervisor_statistics:
         on-success: send_message
@@ -588,7 +588,7 @@ workflows:
         on-success: get_associated_nodes
         on-error: get_associated_nodes
         publish:
-          stack: <% task(get_stack).result %>
+          stack: <% task().result %>
         publish-on-error:
           stack: null
 
@@ -599,7 +599,7 @@ workflows:
         input:
           associated: true
         publish:
-          associated_nodes: <% task(get_associated_nodes).result %>
+          associated_nodes: <% task().result %>
 
       fail_get_associated_nodes:
         on-success: send_message
@@ -618,7 +618,7 @@ workflows:
           associated: false
           maintenance: false
         publish:
-          available_nodes: <% task(get_available_nodes).result %>
+          available_nodes: <% task().result %>
 
       fail_get_available_nodes:
         on-success: send_message
@@ -640,8 +640,8 @@ workflows:
         on-success: send_message
         on-error: fail_check_nodes_count
         publish:
-          errors: <% task(check_nodes_count).result.errors %>
-          warnings: <% task(check_nodes_count).result.warnings %>
+          errors: <% task().result.errors %>
+          warnings: <% task().result.warnings %>
 
       fail_check_nodes_count:
         on-success: send_message
@@ -705,15 +705,15 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task(check_boot_images).result.errors %>
-          warnings: <% $.warnings + task(check_boot_images).result.warnings %>
-          kernel_id: <% task(check_boot_images).result.kernel_id %>
-          ramdisk_id: <% task(check_boot_images).result.ramdisk_id %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
+          kernel_id: <% task().result.kernel_id %>
+          ramdisk_id: <% task().result.ramdisk_id %>
         publish-on-error:
-          errors: <% $.errors + task(check_boot_images).result.errors %>
-          warnings: <% $.warnings + task(check_boot_images).result.warnings %>
-          kernel_id: <% task(check_boot_images).result.kernel_id %>
-          ramdisk_id: <% task(check_boot_images).result.ramdisk_id %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
+          kernel_id: <% task().result.kernel_id %>
+          ramdisk_id: <% task().result.ramdisk_id %>
           status: FAILED
         on-success: collect_flavors
         on-error: collect_flavors
@@ -725,13 +725,13 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task(collect_flavors).result.errors %>
-          warnings: <% $.warnings + task(collect_flavors).result.warnings %>
-          flavors: <% task(collect_flavors).result.flavors %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
+          flavors: <% task().result.flavors %>
         publish-on-error:
-          errors: <% $.errors + task(collect_flavors).result.errors %>
-          warnings: <% $.warnings + task(collect_flavors).result.warnings %>
-          flavors: <% task(collect_flavors).result.flavors %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
+          flavors: <% task().result.flavors %>
           status: FAILED
         on-success: check_ironic_boot_configuration
         on-error: check_ironic_boot_configuration
@@ -744,11 +744,11 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task(check_ironic_boot_configuration).result.errors %>
-          warnings: <% $.warnings + task(check_ironic_boot_configuration).result.warnings %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
         publish-on-error:
-          errors: <% $.errors + task(check_ironic_boot_configuration).result.errors %>
-          warnings: <% $.warnings + task(check_ironic_boot_configuration).result.warnings %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
           status: FAILED
         on-success: verify_profiles
         on-error: verify_profiles
@@ -760,11 +760,11 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task(verify_profiles).result.errors %>
-          warnings: <% $.warnings + task(verify_profiles).result.warnings %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
         publish-on-error:
-          errors: <% $.errors + task(verify_profiles).result.errors %>
-          warnings: <% $.warnings + task(verify_profiles).result.warnings %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
           status: FAILED
         on-success: check_default_nodes_count
         on-error: check_default_nodes_count
@@ -778,13 +778,13 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task(check_default_nodes_count).result.errors %>
-          warnings: <% $.warnings + task(check_default_nodes_count).result.warnings %>
-          statistics: <% task(check_default_nodes_count).result.statistics %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
+          statistics: <% task().result.statistics %>
         publish-on-error:
-          errors: <% $.errors + task(check_default_nodes_count).result.errors %>
-          warnings: <% $.warnings + task(check_default_nodes_count).result.warnings %>
-          statistics: <% task(check_default_nodes_count).result.statistics %>
+          errors: <% $.errors + task().result.errors %>
+          warnings: <% $.warnings + task().result.warnings %>
+          statistics: <% task().result.statistics %>
           status: FAILED
         on-success: send_message
         on-error: send_message
