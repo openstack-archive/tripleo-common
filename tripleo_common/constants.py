@@ -127,6 +127,10 @@ DEFAULT_VOLUME_API_VERSION = '3'
 # import/export
 PLAN_ENVIRONMENT = 'plan-environment.yaml'
 
+# The name of the file which holds container image default parameters
+CONTAINER_DEFAULTS_ENVIRONMENT = ('environments/'
+                                  'containers-default-parameters.yaml')
+
 DEFAULT_DEPLOY_KERNEL_NAME = 'bm-deploy-kernel'
 
 DEFAULT_DEPLOY_RAMDISK_NAME = 'bm-deploy-ramdisk'
