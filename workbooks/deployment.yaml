@@ -66,7 +66,7 @@ workflows:
         action: nova.servers_list
         on-success: deploy_on_servers
         publish:
-          servers_with_name: <% task(get_servers_matching).result._info.where($.name.indexOf(execution().input.server_name) > -1) %>
+          servers_with_name: <% task().result._info.where($.name.indexOf(execution().input.server_name) > -1) %>
 
       deploy_on_servers:
         on-success: send_success_message
@@ -162,8 +162,8 @@ workflows:
         action: heat.stacks_get stack_id=<% $.container %>
         on-error: deploy
         on-success:
-          - set_stack_in_progress: <% "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
-          - deploy: <% not "_IN_PROGRESS" in task(get_heat_stack).result.stack_status %>
+          - set_stack_in_progress: <% "_IN_PROGRESS" in task().result.stack_status %>
+          - deploy: <% not "_IN_PROGRESS" in task().result.stack_status %>
 
       set_stack_in_progress:
         on-success: send_message
