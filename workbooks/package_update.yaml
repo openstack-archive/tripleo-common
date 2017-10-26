@@ -83,13 +83,13 @@ workflows:
         action: tripleo.config.download_config
         on-success: get_private_key
         publish:
-          tmp_path: <% task(download_config).result %>
+          tmp_path: <% task().result %>
         on-error: node_update_failed
 
       get_private_key:
         action: tripleo.validations.get_privkey
         publish:
-          private_key: <% task(get_private_key).result %>
+          private_key: <% task().result %>
         on-success: node_update
 
       node_update:
@@ -108,7 +108,7 @@ workflows:
         on-success: node_update_passed
         on-error: node_update_failed
         publish:
-          output: <% task(node_update).result %>
+          output: <% task().result %>
 
       node_update_passed:
         on-success: notify_zaqar
