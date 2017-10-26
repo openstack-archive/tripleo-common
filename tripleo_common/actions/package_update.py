@@ -28,11 +28,12 @@ LOG = logging.getLogger(__name__)
 
 class UpdateStackAction(templates.ProcessTemplatesAction):
 
-    def __init__(self, timeout, container_registry,
+    def __init__(self, timeout, container_registry, ceph_ansible_playbook,
                  container=constants.DEFAULT_CONTAINER_NAME):
         super(UpdateStackAction, self).__init__(container)
         self.timeout_mins = timeout
         self.container_registry = container_registry
+        self.ceph_ansible_playbook = ceph_ansible_playbook
 
     def run(self, context):
         # get the stack. Error if doesn't exist
@@ -76,11 +77,12 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
                     noop_env['resource_registry'].update(role_env)
         update_env.update(noop_env)
         template_utils.deep_update(env, update_env)
-
-        # Update parameters
         parameters = {}
         if self.container_registry is not None:
             parameters.update(self.container_registry['parameter_defaults'])
+        if self.ceph_ansible_playbook:
+            parameters.update({'CephAnsiblePlaybook': '%s' %
+                               self.ceph_ansible_playbook})
         plan_utils.update_in_env(swift, env, 'parameter_defaults', parameters)
 
         # process all plan files and create or update a stack

@@ -26,6 +26,7 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
+from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import swift as swiftutils
 from tripleo_common.utils import tarball
 from tripleo_common.utils.validations import pattern_validator
@@ -253,6 +254,61 @@ class UpdatePlanFromDirAction(base.TripleOAction):
                             self.container,
                             new,
                             swift.get_object(container_tmp, new)[1])
+        except swiftexceptions.ClientException as err:
+            msg = "Error attempting an operation on container: %s" % err
+            return actions.Result(error=msg)
+        except Exception as err:
+            msg = "Error while updating plan: %s" % err
+            return actions.Result(error=msg)
+
+
+class UpdatePlanEnvironmentAction(base.TripleOAction):
+    """Updates the plan environment values
+
+    Updates a plan environment values with the given parameters:
+        Add new parameter
+        Delete parameter
+
+    :param parameter: key value of the parameter to add or delete
+    :param value: value of the parameter to add or delete
+    :param delete: True if the parameter should be deleted from the env
+    :param env_key: environment key that should be one of the keys present
+                    in the plan environment dictionary:
+                         'passwords',
+                         'description',
+                         'parameter_defaults',
+                         'environments',
+                         'version',
+                         'template',
+                         'resource_registry',
+                         'name'
+    :param container: name of the Swift container / plan name
+    """
+
+    def __init__(self, parameter, env_key, value=None, delete=False,
+                 container=constants.DEFAULT_CONTAINER_NAME):
+        super(UpdatePlanEnvironmentAction, self).__init__()
+        self.container = container
+        self.parameter = parameter
+        self.value = value
+        self.delete = delete
+        self.env_key = env_key
+
+    def run(self, context):
+        try:
+            swift = self.get_object_client(context)
+            plan_env = plan_utils.get_env(swift, self.container)
+            if self.env_key in plan_env.keys():
+                if self.delete:
+                    try:
+                        plan_env[self.env_key].pop(self.parameter)
+                    except KeyError:
+                        pass
+                else:
+                    plan_env[self.env_key].update({self.parameter: self.value})
+            else:
+                msg = "The environment key doesn't exist: %s" % self.env_key
+                return actions.Result(error=msg)
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
             return actions.Result(error=msg)
