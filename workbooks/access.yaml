@@ -31,7 +31,7 @@ workflows:
         action: tripleo.validations.get_pubkey
         on-success: generate_playbook
         publish:
-          pubkey: <% task(get_pubkey).result %>
+          pubkey: <% task().result %>
 
       generate_playbook:
         on-success:
@@ -99,7 +99,7 @@ workflows:
         action: nova.servers_list
         on-success: create_admin
         publish:
-          servers: <% task(get_servers).result._info %>
+          servers: <% task().result._info %>
 
       create_admin:
         workflow: tripleo.deployment.v1.deploy_on_server
@@ -120,7 +120,7 @@ workflows:
         action: tripleo.validations.get_privkey
         on-success: wait_for_occ
         publish:
-          privkey: <% task(get_privkey).result %>
+          privkey: <% task().result %>
 
       wait_for_occ:
         action: tripleo.ansible-playbook
