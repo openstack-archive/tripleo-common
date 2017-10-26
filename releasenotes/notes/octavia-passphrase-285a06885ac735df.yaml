@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Add OctaviaCaKeyPassphrase to the list of passwords
+    to generate, so users don't have to pick a string or
+    rely on a default value for octavia CA private key
+    passphrase.
