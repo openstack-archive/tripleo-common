@@ -11,6 +11,9 @@
 
   - name: Rotate fernet keys for keystone container
     block:
+      - set_fact:
+          keystone_base: /var/lib/config-data/puppet-generated/keystone
+
       - name: Remove previous fernet keys
         shell: rm -rf /var/lib/config-data/puppet-generated/keystone/etc/keystone/fernet-keys/*
         args:
@@ -18,11 +21,14 @@
 
       - name: Persist fernet keys to repository
         copy:
-          dest: "/var/lib/config-data/puppet-generated/keystone{{ item.key }}"
+          dest: "{{ keystone_base }}{{ item.key }}"
           content: "{{ item.value.content }}"
           mode: 0600
-          owner: keystone
-          group: keystone
+        with_dict: "{{ fernet_keys }}"
+        no_log: true
+
+      - name: Set permissions to match container's user
+        shell: chown --reference={{ keystone_base }}/etc/keystone/fernet-keys {{ keystone_base }}{{ item.key }}
         with_dict: "{{ fernet_keys }}"
         no_log: true
 
