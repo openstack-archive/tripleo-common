@@ -690,6 +690,13 @@ container_images_template:
 #   services:
 #   - OS::TripleO::Services::Tacker
 
+- imagename: "{{namespace}}/{{name_prefix}}tripleo-ui{{name_suffix}}:{{tag}}"
+  params:
+  - DockerTripleoUIConfigImage
+  - DockerTripleoUIImage
+  services:
+  - OS::TripleO::Services::TripleoUI
+
 - imagename: "{{namespace}}/{{name_prefix}}zaqar{{name_suffix}}:{{tag}}"
   params:
   - DockerZaqarConfigImage
