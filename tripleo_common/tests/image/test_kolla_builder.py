@@ -169,6 +169,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'ceph_namespace': 'docker.io/ceph',
                 'ceph_image': 'daemon',
                 'ceph_tag': 'tag-stable-3.0-jewel-centos-7',
+                'logging': 'files',
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
                 'tag': 'latest',
@@ -183,6 +184,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'ceph_namespace': 'docker.io/cephh',
                 'ceph_image': 'ceph-daemon',
                 'ceph_tag': 'latest',
+                'logging': 'stdout',
                 'name_prefix': 'prefix-',
                 'name_suffix': '-suffix',
                 'tag': 'master',
@@ -196,7 +198,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 name_prefix='prefix',
                 name_suffix='suffix',
                 tag='master',
-                neutron_driver='ovn'
+                neutron_driver='ovn',
+                logging='stdout'
             )
         )
 
@@ -236,7 +239,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self.assertEqual(container_images, result)
 
     def _test_container_images_yaml_in_sync_helper(self, neutron_driver=None,
-                                                   remove_images=[]):
+                                                   remove_images=[],
+                                                   logging='files'):
         '''Confirm overcloud_containers.tpl.yaml equals overcloud_containers.yaml
 
         TODO(sbaker) remove when overcloud_containers.yaml is deleted
@@ -256,7 +260,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             return entry
 
         result = tmpl_builder.container_images_from_template(
-            filter=ffunc, neutron_driver=neutron_driver)
+            filter=ffunc, neutron_driver=neutron_driver, logging=logging)
 
         oc_yaml_file = os.path.join(files_dir, 'overcloud_containers.yaml')
         yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
@@ -285,7 +289,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             {'imagename': 'tripleoupstream/centos-binary-ovn-'
                           'nb-db-server:latest'},
             {'imagename': 'tripleoupstream/centos-binary-ovn-'
-                          'sb-db-server:latest'}]
+                          'sb-db-server:latest'},
+            {'imagename': 'tripleoupstream/centos-binary-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
 
@@ -303,7 +308,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             {'imagename': 'tripleoupstream/centos-binary-ovn-'
                           'nb-db-server:latest'},
             {'imagename': 'tripleoupstream/centos-binary-ovn-'
-                          'sb-db-server:latest'}]
+                          'sb-db-server:latest'},
+            {'imagename': 'tripleoupstream/centos-binary-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='odl', remove_images=remove_images)
 
@@ -314,6 +320,27 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                          {'imagename': 'tripleoupstream/centos-binary'
                                        '-neutron-server-opendaylight:latest'},
                          {'imagename': 'tripleoupstream/centos-binary'
-                                       '-opendaylight:latest'}]
+                                       '-opendaylight:latest'},
+                         {'imagename': 'tripleoupstream/centos-binary'
+                                       '-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
+
+    def test_container_images_yaml_in_sync_for_stdout_logging(self):
+        remove_images = [
+            {'imagename': 'tripleoupstream/centos-binary'
+                          '-neutron-server-opendaylight:latest'},
+            {'imagename': 'tripleoupstream/centos-binary'
+                          '-neutron-server-ovn:latest'},
+            {'imagename': 'tripleoupstream/centos-binary-ovn-base:latest'},
+            {'imagename': 'tripleoupstream/centos-binary'
+                          '-opendaylight:latest'},
+            {'imagename': 'tripleoupstream/centos-binary-ovn-northd:latest'},
+            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+                          'controller:latest'},
+            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+                          'nb-db-server:latest'},
+            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+                          'sb-db-server:latest'}]
+        self._test_container_images_yaml_in_sync_helper(
+            remove_images=remove_images, logging='stdout')

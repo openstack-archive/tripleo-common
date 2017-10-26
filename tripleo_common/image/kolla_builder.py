@@ -33,7 +33,8 @@ CONTAINER_IMAGES_DEFAULTS = {
     'name_prefix': 'centos-binary-',
     'name_suffix': '',
     'tag': 'latest',
-    'neutron_driver': None
+    'neutron_driver': None,
+    'logging': 'files'
 }
 
 
