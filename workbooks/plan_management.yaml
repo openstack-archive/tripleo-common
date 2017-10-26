@@ -538,7 +538,7 @@ workflows:
           queue_name: <% $.logging_queue_name %>
 
         publish:
-          messages: <% task(get_messages).result %>
+          messages: <% task().result %>
 
       format_messages:
         action: tripleo.logging_to_swift.format_messages
@@ -547,7 +547,7 @@ workflows:
           messages: <% $.messages %>
 
         publish:
-          messages: <% task(format_messages).result %>
+          messages: <% task().result %>
 
       upload_to_swift:
         action: tripleo.logging_to_swift.publish_ui_log_to_swift
@@ -616,7 +616,7 @@ workflows:
         on-success: create_tempurl
         on-error: download_logs_set_status_failed
         publish:
-          filename: <% task(prepare_log_download).result %>
+          filename: <% task().result %>
 
       create_tempurl:
         action: tripleo.swift.tempurl
@@ -627,7 +627,7 @@ workflows:
           obj: <% $.filename %>
           valid: 3600
         publish:
-          tempurl: <% task(create_tempurl).result %>
+          tempurl: <% task().result %>
 
       set_status_success:
         on-success: notify_zaqar
