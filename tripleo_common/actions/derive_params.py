@@ -148,7 +148,7 @@ class GetDpdkNicsNumaInfoAction(base.TripleOAction):
                     phy_name = self.get_physical_iface_name(
                         ordered_nics, name)
                     node = self.find_numa_node_id(numa_nics, phy_name)
-                    if not node:
+                    if node is None:
                         msg = ('Unable to determine NUMA node for '
                                'DPDK NIC: %s' % phy_name)
                         return actions.Result(error=msg)
@@ -203,8 +203,7 @@ class GetDpdkCoreListAction(base.TripleOAction):
                 numa_nodes_threads[cpu['numa_node']] = []
             numa_nodes_threads[cpu['numa_node']].extend(cpu['thread_siblings'])
 
-        for node_cores_count in self.numa_nodes_cores_count:
-            node = self.numa_nodes_cores_count.index(node_cores_count)
+        for node, node_cores_count in enumerate(self.numa_nodes_cores_count):
             # Gets least thread in NUMA node
             numa_node_min = min(numa_nodes_threads[node])
             cores_count = node_cores_count
