@@ -29,7 +29,7 @@ workflows:
       get_private_key:
         action: tripleo.validations.get_privkey
         publish:
-          private_key: <% task(get_private_key).result %>
+          private_key: <% task().result %>
         on-success: set_ip_lists
       set_ip_lists:
         publish:
@@ -46,7 +46,7 @@ workflows:
       make_fetch_directory:
         action: tripleo.files.make_temp_dir
         publish:
-          fetch_directory: <% task(make_fetch_directory).result.path %>
+          fetch_directory: <% task().result.path %>
         on-success: set_role_vars
       set_role_vars:
         publish:
@@ -87,7 +87,7 @@ workflows:
           extra_env_variables: <% $.ansible_extra_env_variables %>
           extra_vars: <% $.extra_vars %>
         publish:
-          output: <% task(ceph_install).result %>
+          output: <% task().result %>
         on-complete: purge_fetch_directory
       purge_fetch_directory:
         action: tripleo.files.remove_temp_dir path=<% $.fetch_directory %>
