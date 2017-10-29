@@ -25,6 +25,18 @@ import yaml
 from tripleo_common.image import base
 
 
+CONTAINER_IMAGES_DEFAULTS = {
+    'namespace': 'tripleoupstream',
+    'ceph_namespace': 'docker.io/ceph',
+    'ceph_image': 'daemon',
+    'ceph_tag': 'tag-stable-3.0-jewel-centos-7',
+    'name_prefix': 'centos-binary-',
+    'name_suffix': '',
+    'tag': 'latest',
+    'neutron_driver': None
+}
+
+
 class KollaImageBuilder(base.BaseImageManager):
     """Build images using kolla-build"""
 
@@ -50,6 +62,25 @@ class KollaImageBuilder(base.BaseImageManager):
         # what results should be acceptable as a regex to build one image
         return imagename
 
+    def container_images_template_inputs(self, **kwargs):
+        '''Build the template mapping from defaults and keyword arguments.
+
+        Defaults in CONTAINER_IMAGES_DEFAULTS are combined with keyword
+        argments to return a dict that can be used to render the container
+        images template. Any set values for name_prefix and name_suffix are
+        hyphenated appropriately.
+        '''
+        mapping = dict(kwargs)
+        for k, v in CONTAINER_IMAGES_DEFAULTS.items():
+            mapping.setdefault(k, v)
+        np = mapping['name_prefix']
+        if np and not np.endswith('-'):
+            mapping['name_prefix'] = np + '-'
+        ns = mapping['name_suffix']
+        if ns and not ns.startswith('-'):
+            mapping['name_suffix'] = '-' + ns
+        return mapping
+
     def container_images_from_template(self, filter=None, **kwargs):
         '''Build container_images data from container_images_template.
 
@@ -64,12 +95,9 @@ class KollaImageBuilder(base.BaseImageManager):
         modify the entry after substitution. If the filter function returns
         None then the entry will not be added to the resulting list.
 
-        Defaults are applied so that when no arguments are provided the
-        resulting entries have the form:
-        - imagename: tripleoupstream/centos-binary-<name>:latest
+        Defaults are applied so that when no arguments are provided.
         '''
-        mapping = dict(kwargs)
-
+        mapping = self.container_images_template_inputs(**kwargs)
         result = []
 
         if len(self.config_files) != 1:

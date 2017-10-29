@@ -156,6 +156,50 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         container_images = yaml.safe_load(filedata)['container_images']
         self.assertEqual(container_images, result)
 
+    def test_container_images_template_inputs(self):
+        builder = kb.KollaImageBuilder(self.filelist)
+        self.assertEqual(
+            kb.CONTAINER_IMAGES_DEFAULTS,
+            builder.container_images_template_inputs()
+        )
+
+        self.assertEqual(
+            {
+                'namespace': 'tripleoupstream',
+                'ceph_namespace': 'docker.io/ceph',
+                'ceph_image': 'daemon',
+                'ceph_tag': 'tag-stable-3.0-jewel-centos-7',
+                'name_prefix': 'centos-binary-',
+                'name_suffix': '',
+                'tag': 'latest',
+                'neutron_driver': None
+            },
+            builder.container_images_template_inputs()
+        )
+
+        self.assertEqual(
+            {
+                'namespace': 'docker.io/tripleoupstream',
+                'ceph_namespace': 'docker.io/cephh',
+                'ceph_image': 'ceph-daemon',
+                'ceph_tag': 'latest',
+                'name_prefix': 'prefix-',
+                'name_suffix': '-suffix',
+                'tag': 'master',
+                'neutron_driver': 'ovn'
+            },
+            builder.container_images_template_inputs(
+                namespace='docker.io/tripleoupstream',
+                ceph_namespace='docker.io/cephh',
+                ceph_image='ceph-daemon',
+                ceph_tag='latest',
+                name_prefix='prefix',
+                name_suffix='suffix',
+                tag='master',
+                neutron_driver='ovn'
+            )
+        )
+
     def test_container_images_from_template_filter(self):
         builder = kb.KollaImageBuilder(self.filelist)
 
