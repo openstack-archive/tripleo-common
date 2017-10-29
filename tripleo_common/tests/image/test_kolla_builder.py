@@ -27,34 +27,26 @@ from tripleo_common.tests import base
 
 
 filedata = six.u("""container_images:
-- imagename: tripleoupstream/heat-docker-agents-centos:latest
+- imagename: docker.io/tripleoupstream/heat-docker-agents-centos:latest
   push_destination: localhost:8787
-- imagename: tripleoupstream/centos-binary-nova-compute:liberty
+- imagename: docker.io/tripleoupstream/centos-binary-nova-compute:liberty
   uploader: docker
-  pull_source: docker.io
   push_destination: localhost:8787
-- imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
+- imagename: docker.io/tripleoupstream/centos-binary-nova-libvirt:liberty
   uploader: docker
-  pull_source: docker.io
-- imagename: tripleoupstream/image-with-missing-tag
+- imagename: docker.io/tripleoupstream/image-with-missing-tag
   push_destination: localhost:8787
 """)
 
 template_filedata = six.u("""
-{% set namespace=namespace or "tripleoupstream" %}
-{% set name_prefix=name_prefix or "centos-binary-" %}
-{% set name_suffix=name_suffix or "" %}
-{% set tag=tag or "latest" %}
 container_images_template:
 - imagename: "{{namespace}}/heat-docker-agents-centos:latest"
   push_destination: "{{push_destination}}"
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute{{name_suffix}}:{{tag}}"
   uploader: "docker"
-  pull_source: "{{pull_source}}"
   push_destination: "{{push_destination}}"
 - imagename: "{{namespace}}/{{name_prefix}}nova-libvirt{{name_suffix}}:{{tag}}"
   uploader: "docker"
-  pull_source: "{{pull_source}}"
 - imagename: "{{namespace}}/image-with-missing-tag"
   push_destination: "{{push_destination}}"
 """)
@@ -147,7 +139,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_from_template(self):
         builder = kb.KollaImageBuilder(self.filelist)
         result = builder.container_images_from_template(
-            pull_source='docker.io',
             push_destination='localhost:8787',
             tag='liberty'
         )
@@ -165,7 +156,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
         self.assertEqual(
             {
-                'namespace': 'tripleoupstream',
+                'namespace': 'docker.io/tripleoupstream',
                 'ceph_namespace': 'docker.io/ceph',
                 'ceph_image': 'daemon',
                 'ceph_tag': 'tag-stable-3.0-luminous-centos-7',
@@ -180,7 +171,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
         self.assertEqual(
             {
-                'namespace': 'docker.io/tripleoupstream',
+                'namespace': '192.0.2.0:5000/tripleoupstream',
                 'ceph_namespace': 'docker.io/cephh',
                 'ceph_image': 'ceph-daemon',
                 'ceph_tag': 'latest',
@@ -191,7 +182,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'neutron_driver': 'ovn'
             },
             builder.container_images_template_inputs(
-                namespace='docker.io/tripleoupstream',
+                namespace='192.0.2.0:5000/tripleoupstream',
                 ceph_namespace='docker.io/cephh',
                 ceph_image='ceph-daemon',
                 ceph_tag='latest',
@@ -213,7 +204,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 return
 
             # set source and destination on all entries
-            entry['pull_source'] = 'docker.io'
             entry['push_destination'] = 'localhost:8787'
             return entry
 
@@ -222,18 +212,17 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             tag='liberty'
         )
         container_images = [{
-            'imagename': 'tripleoupstream/centos-binary-nova-compute:liberty',
-            'pull_source': 'docker.io',
+            'imagename': 'docker.io/tripleoupstream/'
+                         'centos-binary-nova-compute:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
-            'imagename': 'tripleoupstream/centos-binary-nova-libvirt:liberty',
-            'pull_source': 'docker.io',
+            'imagename': 'docker.io/tripleoupstream/'
+                         'centos-binary-nova-libvirt:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
-            'imagename': 'tripleoupstream/image-with-missing-tag',
-            'pull_source': 'docker.io',
+            'imagename': 'docker.io/tripleoupstream/image-with-missing-tag',
             'push_destination': 'localhost:8787'
         }]
         self.assertEqual(container_images, result)
@@ -276,71 +265,80 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
     def test_container_images_yaml_in_sync(self):
         remove_images = [
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-neutron-server-opendaylight:latest'},
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-neutron-server-ovn:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-base:latest'},
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-ovn-base:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-opendaylight:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-northd:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-ovn-northd:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'controller:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'nb-db-server:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'sb-db-server:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-rsyslog-base:latest'}]
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
 
     def test_container_images_yaml_in_sync_for_odl(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-neutron-server:latest'},
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-neutron-server-ovn:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-base:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-northd:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-ovn-base:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-ovn-northd:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'controller:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'nb-db-server:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'sb-db-server:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-rsyslog-base:latest'}]
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='odl', remove_images=remove_images)
 
     def test_container_images_yaml_in_sync_for_ovn(self):
         # remove neutron-server image reference from overcloud_containers.yaml
-        remove_images = [{'imagename': 'tripleoupstream/centos-binary'
-                                       '-neutron-server:latest'},
-                         {'imagename': 'tripleoupstream/centos-binary'
-                                       '-neutron-server-opendaylight:latest'},
-                         {'imagename': 'tripleoupstream/centos-binary'
-                                       '-opendaylight:latest'},
-                         {'imagename': 'tripleoupstream/centos-binary'
-                                       '-rsyslog-base:latest'}]
+        remove_images = [
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-neutron-server:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-neutron-server-opendaylight:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-opendaylight:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
 
     def test_container_images_yaml_in_sync_for_stdout_logging(self):
         remove_images = [
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-neutron-server-opendaylight:latest'},
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-neutron-server-ovn:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-base:latest'},
-            {'imagename': 'tripleoupstream/centos-binary'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-ovn-base:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-opendaylight:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-northd:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
+                          'northd:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'controller:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'nb-db-server:latest'},
-            {'imagename': 'tripleoupstream/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'sb-db-server:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images, logging='stdout')

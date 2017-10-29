@@ -29,17 +29,17 @@ def create_disk_images():
 
 def create_parsed_upload_images():
     uploads = [
-        {'imagename': 'tripleoupstream/heat-docker-agents-centos:latest',
+        {'imagename': 'docker.io/tripleoupstream/'
+                      'heat-docker-agents-centos:latest',
          'push_destination': 'localhost:8787'},
-        {'imagename': 'tripleoupstream/centos-binary-nova-compute:liberty',
-         'push_destination': 'localhost:8787',
-         'pull_source': 'docker.io',
-         'uploader': 'docker'},
-        {'imagename': 'tripleoupstream/centos-binary-nova-libvirt:liberty',
-         'push_destination': 'localhost:8787',
-         'pull_source': 'docker.io',
-         'uploader': 'docker'},
-        {'imagename': 'tripleoupstream/image-with-missing-tag',
+        {'imagename': 'docker.io/tripleoupstream/'
+                      'centos-binary-nova-compute:liberty',
+         'push_destination': 'localhost:8787'},
+        {'imagename': 'docker.io/tripleoupstream/'
+                      'centos-binary-nova-libvirt:liberty',
+         'push_destination': 'localhost:8787'},
+        {'imagename': 'docker.io/tripleoupstream/'
+                      'image-with-missing-tag',
          'push_destination': 'localhost:8787'},
     ]
     return uploads

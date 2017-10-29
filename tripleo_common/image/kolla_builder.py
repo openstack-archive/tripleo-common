@@ -26,7 +26,7 @@ from tripleo_common.image import base
 
 
 CONTAINER_IMAGES_DEFAULTS = {
-    'namespace': 'tripleoupstream',
+    'namespace': 'docker.io/tripleoupstream',
     'ceph_namespace': 'docker.io/ceph',
     'ceph_image': 'daemon',
     'ceph_tag': 'tag-stable-3.0-luminous-centos-7',

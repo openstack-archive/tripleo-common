@@ -28,31 +28,12 @@ from tripleo_common.tests.image import fakes
 
 filedata = six.u(
     """container_images:
-    - imagename: tripleoupstream/heat-docker-agents-centos:latest
+    - imagename: docker.io/tripleoupstream/heat-docker-agents-centos:latest
       push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-compute:liberty
-      uploader: docker
-      pull_source: docker.io
+    - imagename: docker.io/tripleoupstream/centos-binary-nova-compute:liberty
       push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
-      uploader: docker
-      pull_source: docker.io
-    - imagename: tripleoupstream/image-with-missing-tag
-      push_destination: localhost:8787
-""")
-
-legacy_filedata = six.u(
-    """uploads:
-    - imagename: tripleoupstream/heat-docker-agents-centos:latest
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-compute:liberty
-      uploader: docker
-      pull_source: docker.io
-      push_destination: localhost:8787
-    - imagename: tripleoupstream/centos-binary-nova-libvirt:liberty
-      uploader: docker
-      pull_source: docker.io
-    - imagename: tripleoupstream/image-with-missing-tag
+    - imagename: docker.io/tripleoupstream/centos-binary-nova-libvirt:liberty
+    - imagename: docker.io/tripleoupstream/image-with-missing-tag
       push_destination: localhost:8787
 """)
 
@@ -71,23 +52,6 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.Client')
     def test_file_parsing(self, mockpath, mockioctl, mockdocker):
         print(filedata)
-        manager = ImageUploadManager(self.filelist, debug=True)
-        parsed_data = manager.upload()
-        mockpath(self.filelist[0])
-
-        expected_data = fakes.create_parsed_upload_images()
-        sorted_expected_data = sorted(expected_data,
-                                      key=operator.itemgetter('imagename'))
-        sorted_parsed_data = sorted(parsed_data,
-                                    key=operator.itemgetter('imagename'))
-        self.assertEqual(sorted_expected_data, sorted_parsed_data)
-
-    @mock.patch('tripleo_common.image.base.open',
-                mock.mock_open(read_data=legacy_filedata), create=True)
-    @mock.patch('os.path.isfile', return_value=True)
-    @mock.patch('fcntl.ioctl', side_effect=Exception)
-    @mock.patch('tripleo_common.image.image_uploader.Client')
-    def test_legacy_file_parsing(self, mockpath, mockioctl, mockdocker):
         manager = ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()
         mockpath(self.filelist[0])
@@ -127,51 +91,49 @@ class TestDockerImageUploader(base.TestCase):
         self.patcher.stop()
 
     def test_upload_image(self):
-        image = 'tripleoupstream/heat-docker-agents-centos'
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
         tag = 'latest'
-        pull_source = 'docker.io'
         push_destination = 'localhost:8787'
+        push_image = 'localhost:8787/tripleoupstream/heat-docker-agents-centos'
 
         self.uploader.upload_image(image + ':' + tag,
-                                   pull_source,
+                                   None,
                                    push_destination)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
 
         self.dockermock.return_value.pull.assert_called_once_with(
-            pull_source + '/' + image,
-            tag=tag, stream=True)
+            image, tag=tag, stream=True)
         self.dockermock.return_value.tag.assert_called_once_with(
-            image=pull_source + '/' + image + ':' + tag,
-            repository=push_destination + '/' + image,
+            image=image + ':' + tag,
+            repository=push_image,
             tag=tag, force=True)
         self.dockermock.return_value.push(
-            push_destination + '/' + image,
+            push_image,
             tag=tag, stream=True)
 
     def test_upload_image_missing_tag(self):
-        image = 'tripleoupstream/heat-docker-agents-centos'
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
         expected_tag = 'latest'
-        pull_source = 'docker.io'
         push_destination = 'localhost:8787'
+        push_image = 'localhost:8787/tripleoupstream/heat-docker-agents-centos'
 
         self.uploader.upload_image(image,
-                                   pull_source,
+                                   None,
                                    push_destination)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
 
         self.dockermock.return_value.pull.assert_called_once_with(
-            pull_source + '/' + image,
-            tag=expected_tag, stream=True)
+            image, tag=expected_tag, stream=True)
         self.dockermock.return_value.tag.assert_called_once_with(
-            image=pull_source + '/' + image + ':' + expected_tag,
-            repository=push_destination + '/' + image,
+            image=image + ':' + expected_tag,
+            repository=push_image,
             tag=expected_tag, force=True)
         self.dockermock.return_value.push(
-            push_destination + '/' + image,
+            push_image,
             tag=expected_tag, stream=True)
 
     def test_discover_image_tag(self):
