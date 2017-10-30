@@ -24,6 +24,7 @@ from mistralclient.api import client as mistral_client
 from novaclient.client import Client as nova_client
 from swiftclient import client as swift_client
 from swiftclient import exceptions as swiftexceptions
+from zaqarclient.queues.v2 import client as zaqarclient
 
 from tripleo_common import constants
 from tripleo_common.utils import keystone as keystone_utils
@@ -104,6 +105,23 @@ class TripleOAction(actions.Action):
             token=context.auth_token,
             username=context.user_name
         )
+
+    def get_messaging_client(self, context):
+        zaqar_endpoint = keystone_utils.get_endpoint_for_project(
+            context, service_type='messaging')
+        keystone_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'keystone')
+
+        opts = {
+            'os_auth_token': context.auth_token,
+            'os_auth_url': keystone_endpoint.url,
+            'os_project_id': context.project_id,
+            'insecure': context.insecure,
+        }
+        auth_opts = {'backend': 'keystone', 'options': opts}
+        conf = {'auth_opts': auth_opts}
+
+        return zaqarclient.Client(zaqar_endpoint.url, conf=conf)
 
     def get_workflow_client(self, context):
         mistral_endpoint = keystone_utils.get_endpoint_for_project(
