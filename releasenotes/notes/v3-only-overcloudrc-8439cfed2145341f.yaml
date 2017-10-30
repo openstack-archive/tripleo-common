@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The overcloudrc and overcloudrc.v3 now have the same contents and are
+    keystone-v3-enabled. This was done because keystone no longer supports the
+    v2.0 API.

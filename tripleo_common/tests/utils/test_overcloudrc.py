@@ -38,7 +38,7 @@ class OvercloudRcTest(base.TestCase):
 
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc'])
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc.v3'])
-        self.assertNotIn("OS_IDENTITY_API_VERSION=3", result['overcloudrc'])
+        self.assertIn("OS_IDENTITY_API_VERSION=3", result['overcloudrc'])
         self.assertIn("OS_IDENTITY_API_VERSION=3", result['overcloudrc.v3'])
         self.assertIn(overcloudrc.CLOUDPROMPT, result['overcloudrc'])
         self.assertIn(overcloudrc.CLOUDPROMPT, result['overcloudrc.v3'])
