@@ -195,7 +195,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: FAILED
-          message: <% task(create_plan).result %>
+          message: <% task(container_images_prepare).result %>
 
       notify_zaqar:
         action: zaqar.queue_post
@@ -323,7 +323,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: FAILED
-          message: <% task(create_plan).result %>
+          message: <% task(container_images_prepare).result %>
 
       notify_zaqar:
         action: zaqar.queue_post
