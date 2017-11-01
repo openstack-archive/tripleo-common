@@ -206,3 +206,45 @@ workflows:
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  get_horizon_url:
+
+    description: >
+      Retrieve the Horizon URL from the Overcloud stack.
+
+    input:
+      - stack: overcloud
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    output:
+      horizon_url: <% $.horizon_url %>
+
+    tasks:
+      get_horizon_url:
+        action: heat.stacks_get
+        input:
+          stack_id: <% $.stack %>
+        publish:
+          horizon_url: <% task().result.outputs.where($.output_key = "EndpointMap").output_value.HorizonPublic.uri.single() %>
+        on-success: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.deployment.v1.get_horizon_url
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
