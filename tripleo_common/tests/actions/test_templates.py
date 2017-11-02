@@ -43,7 +43,7 @@ ROLE_DATA_YAML = r"""
 
 NETWORK_DATA_YAML = r"""
 -
-  name: anetwork
+  name: InternalApi
 """
 
 EXPECTED_JINJA_RESULT = r"""
@@ -86,7 +86,7 @@ ROLE_DATA_DISABLE_CONSTRAINTS_YAML = r"""
 ROLE_DATA_ENABLE_NETWORKS = r"""
 - name: RoleWithNetworks
   networks:
-    - anetwork
+    - InternalApi
 """
 
 JINJA_SNIPPET_DISABLE_CONSTRAINTS_OLD = r"""
@@ -125,8 +125,8 @@ JINJA_SNIPPET_ROLE_NETWORKS = r"""
 """
 
 EXPECTED_JINJA_RESULT_ROLE_NETWORKS = r"""
-  anetworkPort:
-    type: RoleWithNetworks::anetwork::Port
+  InternalApiPort:
+    type: RoleWithNetworks::InternalApi::Port
 """
 
 
@@ -285,8 +285,12 @@ class ProcessTemplatesActionTest(base.TestCase):
             side_effect=return_container_files)
         return swift
 
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
+                '._heat_resource_exists')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_process_custom_roles(self, get_obj_client_mock):
+    def test_process_custom_roles(self, get_obj_client_mock,
+                                  resource_exists_mock):
+        resource_exists_mock.return_value = False
         swift = self._custom_roles_mock_objclient(
             'foo.j2.yaml', JINJA_SNIPPET)
         get_obj_client_mock.return_value = swift
@@ -315,9 +319,12 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.put_object.assert_has_calls(
             put_object_mock_calls, any_order=True)
 
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
+                '._heat_resource_exists')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def _process_custom_roles_disable_constraints(
-            self, snippet, get_obj_client_mock):
+            self, snippet, get_obj_client_mock, resource_exists_mock):
+        resource_exists_mock.return_value = False
         swift = self._custom_roles_mock_objclient(
             'disable-constraints.role.j2.yaml', snippet,
             ROLE_DATA_DISABLE_CONSTRAINTS_YAML)
@@ -352,8 +359,12 @@ class ProcessTemplatesActionTest(base.TestCase):
         self._process_custom_roles_disable_constraints(
             JINJA_SNIPPET_DISABLE_CONSTRAINTS)
 
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
+                '._heat_resource_exists')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_custom_roles_networks(self, get_obj_client_mock):
+    def test_custom_roles_networks(self, get_obj_client_mock,
+                                   resource_exists_mock):
+        resource_exists_mock.return_value = False
         swift = self._custom_roles_mock_objclient(
             'role-networks.role.j2.yaml', JINJA_SNIPPET_ROLE_NETWORKS,
             ROLE_DATA_ENABLE_NETWORKS)
@@ -486,3 +497,104 @@ class ProcessTemplatesActionTest(base.TestCase):
         # Test - J2 exclude file empty
         action = templates.ProcessTemplatesAction()
         self.assertTrue({'name': []} == action._get_j2_excludes_file(mock_ctx))
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_heat_resource_exists(self, client_mock):
+        mock_ctx = mock.MagicMock()
+        heat_client = mock.MagicMock()
+        heat_client.stacks.list.return_value = [
+            mock.MagicMock(stack_name='overcloud')
+        ]
+        heat_client.resources.list.return_value = [
+            mock.MagicMock(
+                links=[{'rel': 'stack',
+                        'href': 'http://192.0.2.1:8004/v1/'
+                                'a959ac7d6a4a475daf2428df315c41ef/'
+                                'stacks/overcloud/123'}],
+                logical_resource_id='logical_id',
+                physical_resource_id='resource_id',
+                resource_type='OS::Heat::ResourceGroup',
+                resource_name='InternalNetwork'
+            ),
+        ]
+        client_mock.return_value = heat_client
+        action = templates.ProcessTemplatesAction()
+        self.assertTrue(action._heat_resource_exists('InternalNetwork',
+                                                     mock_ctx))
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_no_heat_resource_exists(self, client_mock):
+        mock_ctx = mock.MagicMock()
+        heat_client = mock.MagicMock()
+        heat_client.stacks.list.return_value = [
+            mock.MagicMock(stack_name='overcloud')
+        ]
+        heat_client.resources.list.return_value = [
+            mock.MagicMock(
+                links=[{'rel': 'stack',
+                        'href': 'http://192.0.2.1:8004/v1/'
+                                'a959ac7d6a4a475daf2428df315c41ef/'
+                                'stacks/overcloud/123'}],
+                logical_resource_id='logical_id',
+                physical_resource_id='resource_id',
+                resource_type='OS::Heat::ResourceGroup',
+                resource_name='InternalApiNetwork'
+            ),
+        ]
+        client_mock.return_value = heat_client
+        action = templates.ProcessTemplatesAction()
+        self.assertFalse(action._heat_resource_exists('InternalNetwork',
+                                                      mock_ctx))
+
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
+                '._heat_resource_exists')
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
+                '._j2_render_and_put')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_legacy_api_network_exists(self, get_obj_client_mock, j2_mock,
+                                       resource_exists_mock):
+        resource_exists_mock.return_value = True
+        swift = self._custom_roles_mock_objclient(
+            'role-networks.role.j2.yaml', JINJA_SNIPPET_ROLE_NETWORKS,
+            ROLE_DATA_ENABLE_NETWORKS)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        mock_ctx = mock.MagicMock()
+        action._process_custom_roles(mock_ctx)
+        expected_j2_template = get_obj_client_mock.get_object(
+            action.container, 'foo.j2.yaml')[1]
+        expected_j2_data = {'roles': [{'name': 'CustomRole'}],
+                            'networks': [{'name': 'InternalApi',
+                                          'compat_name': 'Internal'}]
+                            }
+        assert j2_mock.called_with(expected_j2_template, expected_j2_data,
+                                   'foo.yaml', mock_ctx)
+
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
+                '._heat_resource_exists')
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
+                '._j2_render_and_put')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_no_legacy_api_network_exists(self, get_obj_client_mock, j2_mock,
+                                          resource_exists_mock):
+        resource_exists_mock.return_value = False
+        swift = self._custom_roles_mock_objclient(
+            'role-networks.role.j2.yaml', JINJA_SNIPPET_ROLE_NETWORKS,
+            ROLE_DATA_ENABLE_NETWORKS)
+        get_obj_client_mock.return_value = swift
+
+        # Test
+        action = templates.ProcessTemplatesAction()
+        mock_ctx = mock.MagicMock()
+        action._process_custom_roles(mock_ctx)
+        expected_j2_template = get_obj_client_mock.get_object(
+            action.container, 'foo.j2.yaml')[1]
+        expected_j2_data = {'roles': [{'name': 'CustomRole'}],
+                            'networks': [{'name': 'InternalApi'}]
+                            }
+        assert j2_mock.called_with(expected_j2_template, expected_j2_data,
+                                   'foo.yaml', mock_ctx)

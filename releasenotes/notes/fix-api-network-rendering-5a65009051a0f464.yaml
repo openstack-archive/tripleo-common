@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fixes compatibility between older deployments with Heat resource network
+    "InternalNetwork" and corrected "InternalApiNetwork".  Upgrades from
+    previous versions will still use the old naming scheme, while new
+    deployments will use the correct name of "InternalApiNetwork". 
