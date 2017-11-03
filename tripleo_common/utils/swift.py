@@ -89,6 +89,7 @@ def create_and_upload_tarball(swiftclient,
                               tmp_dir,
                               container,
                               tarball_name,
+                              tarball_options='-czf',
                               delete_after=3600):
     """Create a tarball containing the tmp_dir and upload it to Swift."""
     headers = {'X-Delete-After': delete_after}
@@ -96,6 +97,6 @@ def create_and_upload_tarball(swiftclient,
     get_or_create_container(swiftclient, container)
 
     with tempfile.NamedTemporaryFile() as tmp_tarball:
-        tarball.create_tarball(tmp_dir, tmp_tarball.name)
+        tarball.create_tarball(tmp_dir, tmp_tarball.name, tarball_options)
         swiftclient.put_object(container, tarball_name, tmp_tarball,
                                headers=headers)

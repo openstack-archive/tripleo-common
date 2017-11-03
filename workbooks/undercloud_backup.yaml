@@ -1,0 +1,133 @@
+---
+version: '2.0'
+name: tripleo.undercloud_backup.v1
+description: TripleO Undercloud backup workflows
+
+workflows:
+
+  backup:
+    description: This workflow will launch the Undercloud backup
+    tags:
+      - tripleo-common-managed
+    input:
+      - sources_path: '/home/stack/'
+      - queue_name: tripleo
+    tasks:
+      # Action to know if there is enough available space
+      # to run the Undercloud backup
+      get_free_space:
+        action: tripleo.undercloud.get_free_space
+        publish:
+            status: SUCCESS
+            message: <% task().result %>
+            free_space: <% task().result %>
+        on-success: create_backup_dir
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      # We create a temp directory to store the Undercloud
+      # backup
+      create_backup_dir:
+        action: tripleo.undercloud.create_backup_dir
+        publish:
+            status: SUCCESS
+            message: <% task().result %>
+            backup_path: <% task().result %>
+        on-success: get_database_credentials
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      # The Undercloud database password for the root
+      # user is stored in a Mistral environment, we
+      # need the password in order to run the database dump
+      get_database_credentials:
+        action: mistral.environments_get name='tripleo.undercloud-config'
+        publish:
+            status: SUCCESS
+            message: <% task().result %>
+            undercloud_db_password: <% task(get_database_credentials).result.variables.undercloud_db_password %>
+        on-success: create_database_backup
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      # Run the DB dump of all the databases and store the result
+      # in the temporary folder
+      create_database_backup:
+        input:
+            path: <% $.backup_path.path %>
+            dbuser: root
+            dbpassword: <% $.undercloud_db_password %>
+        action: tripleo.undercloud.create_database_backup
+        publish:
+            status: SUCCESS
+            message: <% task().result %>
+        on-success: create_fs_backup
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      # This action will run the fs backup
+      create_fs_backup:
+        input:
+            sources_path: <% $.sources_path %>
+            path: <% $.backup_path.path %>
+        action: tripleo.undercloud.create_file_system_backup
+        publish:
+            status: SUCCESS
+            message: <% task().result %>
+        on-success: upload_backup
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      # This action will push the backup to swift
+      upload_backup:
+        input:
+            backup_path: <% $.backup_path.path %>
+        action: tripleo.undercloud.upload_backup_to_swift
+        publish:
+            status: SUCCESS
+            message: <% task().result %>
+        on-success: cleanup_backup
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      # This action will remove the backup temp folder
+      cleanup_backup:
+        input:
+            path: <% $.backup_path.path %>
+        action: tripleo.undercloud.remove_temp_dir
+        publish:
+            status: SUCCESS
+            message: <% task().result %>
+        on-success: send_message
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      # Sending a message to show that the backup finished
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.undercloud_backup.v1.launch
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                execution: <% execution() %>
+                message: <% $.get('message', '') %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
