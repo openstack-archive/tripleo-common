@@ -91,6 +91,8 @@ def create_overcloudrc(stack, no_proxy, admin_password):
         'COMPUTE_API_VERSION': '1.1',
         'OS_USERNAME': 'admin',
         'OS_PROJECT_NAME': 'admin',
+        'OS_USER_DOMAIN_NAME': 'Default',
+        'OS_PROJECT_DOMAIN_NAME': 'Default',
         'OS_NO_CACHE': 'True',
         'OS_CLOUDNAME': stack.stack_name,
         'no_proxy': ','.join(no_proxy_list),
@@ -98,7 +100,8 @@ def create_overcloudrc(stack, no_proxy, admin_password):
                            'SSLContext object is not available"'),
         'OS_AUTH_TYPE': 'password',
         'OS_PASSWORD': admin_password,
-        'OS_AUTH_URL': overcloud_endpoint,
+        'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', '') + '/v3',
+        'OS_IDENTITY_API_VERSION': '3',
         'OS_BAREMETAL_API_VERSION': constants.DEFAULT_BAREMETAL_API_VERSION,
         'IRONIC_API_VERSION': constants.DEFAULT_BAREMETAL_API_VERSION,
         'OS_IMAGE_API_VERSION': constants.DEFAULT_IMAGE_API_VERSION,
@@ -111,20 +114,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
         overcloudrc = overcloudrc + line
     overcloudrc = overcloudrc + CLOUDPROMPT
 
-    rc_params.update({
-        'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', '') + '/v3',
-        'OS_USER_DOMAIN_NAME': 'Default',
-        'OS_PROJECT_DOMAIN_NAME': 'Default',
-        'OS_IDENTITY_API_VERSION': '3'
-    })
-
-    overcloudrc_v3 = CLEAR_ENV
-    for key, value in rc_params.items():
-        line = "export %(key)s=%(value)s\n" % {'key': key, 'value': value}
-        overcloudrc_v3 = overcloudrc_v3 + line
-    overcloudrc_v3 = overcloudrc_v3 + CLOUDPROMPT
-
     return {
         "overcloudrc": overcloudrc,
-        "overcloudrc.v3": overcloudrc_v3
+        "overcloudrc.v3": overcloudrc
     }
