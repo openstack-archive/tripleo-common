@@ -123,13 +123,20 @@ workflows:
         action: tripleo.plan.migrate plan=<% $.container %>
         on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
-          - process_templates: <% $.generate_passwords != true %>
+          - container_images_prepare: <% $.generate_passwords != true %>
         on-error: migrate_plan_set_status_failed
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
-        on-success: process_templates
+        on-success: container_images_prepare
         on-error: ensure_passwords_exist_set_status_failed
+
+      container_images_prepare:
+        description: >
+          Populate all container image parameters with default values.
+        action: tripleo.container_images.prepare container=<% $.container %>
+        on-success: process_templates
+        on-error: container_images_prepare_set_status_failed
 
       process_templates:
         action: tripleo.templates.process container=<% $.container %>
@@ -179,6 +186,12 @@ workflows:
           message: <% task(process_templates).result %>
 
       migrate_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_plan).result %>
+
+      container_images_prepare_set_status_failed:
         on-success: notify_zaqar
         publish:
           status: FAILED
@@ -244,13 +257,20 @@ workflows:
         action: tripleo.plan.migrate plan=<% $.container %>
         on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
-          - process_templates: <% $.generate_passwords != true %>
+          - container_images_prepare: <% $.generate_passwords != true %>
         on-error: migrate_plan_set_status_failed
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
-        on-success: process_templates
+        on-success: container_images_prepare
         on-error: ensure_passwords_exist_set_status_failed
+
+      container_images_prepare:
+        description: >
+          Populate all container image parameters with default values.
+        action: tripleo.container_images.prepare container=<% $.container %>
+        on-success: process_templates
+        on-error: container_images_prepare_set_status_failed
 
       process_templates:
         action: tripleo.templates.process container=<% $.container %>
@@ -298,6 +318,12 @@ workflows:
         publish:
           status: FAILED
           message: <% task(update_plan).result %>
+
+      container_images_prepare_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_plan).result %>
 
       notify_zaqar:
         action: zaqar.queue_post
