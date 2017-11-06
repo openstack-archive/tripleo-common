@@ -234,26 +234,41 @@ class TestDockerImageUploader(base.TestCase):
         self.assertRaises(ImageUploaderException,
                           self.uploader.discover_image_tag, image, 'foo')
 
-    def test_discover_image_tag_missing_tag(self):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
-        vimage = 'docker.io/tripleoupstream/heat-docker-agents-centos:1.2.3'
+    @mock.patch('time.sleep')
+    def test_pull_retry(self, sleep_mock):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
         dockerc.pull.side_effect = [
-            ['{"status": "done"}'],  # First pull, :latest
-            ['{"error": "ouch"}'],  # Second pull, :1.2.3
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"status": "done"}']
         ]
-        dockerc.inspect_image.return_value = {
-            'Config': {'Labels': {'image-version': '1.2.3'}}
-        }
-        self.assertRaises(ImageUploaderException,
-                          self.uploader.discover_image_tag, image,
-                          'image-version')
+        self.uploader._pull_retry(dockerc, image)
 
-        self.dockermock.assert_called_once_with(
-            base_url='unix://var/run/docker.sock', version='auto')
-
+        self.assertEqual(sleep_mock.call_count, 4)
         dockerc.pull.assert_has_calls([
-            mock.call(image, tag=None, stream=True),
-            mock.call(vimage, tag=None, stream=True),
+            mock.call(image, tag=None, stream=True)
+        ])
+
+    @mock.patch('time.sleep')
+    def test_pull_retry_failure(self, sleep_mock):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+
+        dockerc = self.dockermock.return_value
+        dockerc.pull.side_effect = [
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+        ]
+        self.assertRaises(ImageUploaderException,
+                          self.uploader._pull_retry, dockerc, image)
+
+        self.assertEqual(sleep_mock.call_count, 5)
+        dockerc.pull.assert_has_calls([
+            mock.call(image, tag=None, stream=True)
         ])
