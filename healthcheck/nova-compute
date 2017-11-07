@@ -2,13 +2,21 @@
 
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
-process='nova-compute'
-args="${@:-5671 5672}"
+if ps -e | grep nova-compute; then
+  process='nova-compute'
+  args="${@:-5671 5672}"
+  test_func='healthcheck_port'
+  err_msg="There is no $process process with opened RabbitMQ ports (${args// /,}) running in the container"
+else
+  process='sshd'
+  args="${@:-2022}"
+  test_func='healthcheck_listen'
+  err_msg="There is no $process process listening on port(s) ${args// /,} in the container"
+fi
 
-if healthcheck_port $process $args; then
+if $test_func $process $args; then
   exit 0
 else
-  ports=${args// /,}
-  echo "There is no $process process with opened RabbitMQ ports ($ports) running in the container"
+  echo $err_msg
   exit 1
 fi

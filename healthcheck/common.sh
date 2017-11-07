@@ -25,6 +25,21 @@ healthcheck_port () {
   ss -ntp | awk '{print $5,"-",$6}' | egrep ":($ports)" | grep "$process"
 }
 
+healthcheck_listen () {
+  process=$1
+
+  # ss truncate command name to 15 characters and this behaviour
+  # cannot be diabled
+  if [ ${#process} -gt 15 ] ; then
+    process=${process:0:15}
+  fi
+
+  shift 1
+  args=$@
+  ports=${args// /|}
+  ss -lnp | awk '{print $5,"-",$7}' | egrep ":($ports)" | grep "$process"
+}
+
 get_config_val () {
   crudini --get "$1" "$2" "$3" 2> /dev/null || echo "$4"
 }
