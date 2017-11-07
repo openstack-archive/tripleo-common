@@ -76,8 +76,12 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
                     noop_env['resource_registry'].update(role_env)
         update_env.update(noop_env)
         template_utils.deep_update(env, update_env)
-        plan_utils.update_in_env(swift, env, 'parameter_defaults',
-                                 self.container_registry['parameter_defaults'])
+
+        # Update parameters
+        parameters = {}
+        if self.container_registry is not None:
+            parameters.update(self.container_registry['parameter_defaults'])
+        plan_utils.update_in_env(swift, env, 'parameter_defaults', parameters)
 
         # process all plan files and create or update a stack
         processed_data = super(UpdateStackAction, self).run(context)
