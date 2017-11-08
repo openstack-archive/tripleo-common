@@ -253,6 +253,8 @@ container_images_template:
   params:
   - DockerIronicInspectorImage
   - DockerIronicInspectorConfigImage
+  services:
+  - OS::TripleO::Services::IronicInspector
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-pxe{{name_suffix}}:{{tag}}"
   params:
