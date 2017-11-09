@@ -363,9 +363,11 @@ workflows:
       check_features:
         on-success: build_feature_dict
         publish:
-          # TODO: Need to update this logic for ODL integration.
           # The role supports the DPDK feature if the NeutronDatapathType parameter is present.
           dpdk: <% $.role_services.any($.get('parameters', []).contains('NeutronDatapathType')) %>
+
+          # The role supports the DPDK feature in ODL if the OvsEnableDpdk parameter value is true in role parameters.
+          odl_dpdk: <% let(role => $.role_name) -> $.heat_resource_tree.parameters.get(concat($role, 'Parameters'), {}).get('default', {}).get('OvsEnableDpdk', false) %>
 
           # The role supports the HCI feature if it includes both NovaCompute and CephOSD services.
           hci: <% $.role_services.any($.get('type', '').endsWith('::NovaCompute')) and $.role_services.any($.get('type', '').endsWith('::CephOSD')) %>
@@ -373,7 +375,7 @@ workflows:
       build_feature_dict:
         on-success: filter_features
         publish:
-          feature_dict: <% dict(DPDK => $.dpdk, HCI => $.hci) %>
+          feature_dict: <% dict(DPDK => ($.dpdk or $.odl_dpdk), HCI => $.hci) %>
 
       filter_features:
         publish:
