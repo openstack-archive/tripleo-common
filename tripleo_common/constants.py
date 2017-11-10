@@ -75,6 +75,7 @@ PASSWORD_PARAMETER_NAMES = (
     'CephRgwKey',
     'CinderPassword',
     'CongressPassword',
+    'DesignatePassword',
     'Ec2ApiPassword',
     'EtcdInitialClusterToken',
     'GlancePassword',
