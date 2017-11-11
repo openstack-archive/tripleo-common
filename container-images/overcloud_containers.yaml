@@ -63,6 +63,8 @@ container_images:
 - imagename: tripleoupstream/centos-binary-nova-novncproxy:latest
 - imagename: tripleoupstream/centos-binary-nova-placement-api:latest
 - imagename: tripleoupstream/centos-binary-nova-scheduler:latest
+- imagename: tripleoupstream/centos-binary-novajoin-notifier:latest
+- imagename: tripleoupstream/centos-binary-novajoin-server:latest
 - imagename: tripleoupstream/centos-binary-octavia-base:latest
 - imagename: tripleoupstream/centos-binary-octavia-api:latest
 - imagename: tripleoupstream/centos-binary-octavia-health-manager:latest
