@@ -21,6 +21,7 @@ import netifaces
 import six
 import time
 
+import docker
 try:
     from docker import APIClient as Client
 except ImportError:
@@ -76,6 +77,11 @@ class ImageUploadManager(BaseImageManager):
             self.uploader(uploader).upload_image(
                 image_name, pull_source, push_destination)
 
+        # Do cleanup after all the uploads so common layers don't get deleted
+        # repeatedly
+        for uploader in self.uploaders.values():
+            uploader.cleanup()
+
         return upload_images  # simply to make test validation easier
 
     def get_ctrl_plane_ip(self):
@@ -107,11 +113,19 @@ class ImageUploader(object):
         """Discover a versioned tag for an image"""
         pass
 
+    @abc.abstractmethod
+    def cleanup(self):
+        """Remove unused images or temporary files from upload"""
+        pass
+
 
 class DockerImageUploader(ImageUploader):
     """Upload images using docker push"""
 
     logger = logging.getLogger(__name__ + '.DockerImageUploader')
+
+    def __init__(self):
+        self.local_images = set()
 
     def upload_image(self, image_name, pull_source, push_destination):
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
@@ -129,13 +143,16 @@ class DockerImageUploader(ImageUploader):
         self._pull_retry(dockerc, repo, tag=tag)
 
         full_image = repo + ':' + tag
+        self.local_images.add(full_image)
         new_repo = push_destination + '/' + repo.partition('/')[2]
+        full_new_repo = new_repo + ':' + tag
         response = dockerc.tag(image=full_image, repository=new_repo,
                                tag=tag, force=True)
         self.logger.debug(response)
 
         response = [line for line in dockerc.push(new_repo,
                     tag=tag, stream=True)]
+        self.local_images.add(full_new_repo)
         self.logger.debug(response)
 
         self.logger.info('Completed upload for docker image %s' % image_name)
@@ -196,3 +213,17 @@ class DockerImageUploader(ImageUploader):
         versioned_image = '%s:%s' % (image_name, tag_label)
         self._pull_retry(dockerc, versioned_image)
         return tag_label
+
+    def cleanup(self):
+        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
+
+        for image in sorted(self.local_images):
+            self.logger.info('Removing local copy of %s' % image)
+            try:
+                dockerc.remove_image(image)
+            except docker.errors.APIError as e:
+                if e.explanation:
+                    self.logger.warning(e.explanation)
+                else:
+                    self.logger.warning(e)
+        self.local_images.clear()

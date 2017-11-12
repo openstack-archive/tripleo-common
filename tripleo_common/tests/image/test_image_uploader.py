@@ -63,6 +63,27 @@ class TestImageUploadManager(base.TestCase):
                                     key=operator.itemgetter('imagename'))
         self.assertEqual(sorted_expected_data, sorted_parsed_data)
 
+        dockerc = mockdocker.return_value
+        dockerc.remove_image.assert_has_calls([
+            mock.call('docker.io/tripleoupstream'
+                      '/centos-binary-nova-compute:liberty'),
+            mock.call('docker.io/tripleoupstream'
+                      '/centos-binary-nova-libvirt:liberty'),
+            mock.call('docker.io/tripleoupstream'
+                      '/heat-docker-agents-centos:latest'),
+            mock.call('docker.io/tripleoupstream'
+                      '/image-with-missing-tag:latest'),
+
+            mock.call('localhost:8787/tripleoupstream'
+                      '/centos-binary-nova-compute:liberty'),
+            mock.call('localhost:8787/tripleoupstream'
+                      '/centos-binary-nova-libvirt:liberty'),
+            mock.call('localhost:8787/tripleoupstream'
+                      '/heat-docker-agents-centos:latest'),
+            mock.call('localhost:8787/tripleoupstream/'
+                      'image-with-missing-tag:latest'),
+        ])
+
 
 class TestImageUploader(base.TestCase):
 
