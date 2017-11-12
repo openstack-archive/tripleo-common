@@ -69,7 +69,7 @@ workflows:
     tasks:
       delete_the_stack:
         action: heat.stacks_delete stack_id=<% $.stack %>
-        on-success: wait_for_stack_in_progress
+        on-success: wait_for_stack_does_not_exist
         on-error: delete_the_stack_failed
 
       delete_the_stack_failed:
@@ -77,17 +77,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(delete_the_stack).result %>
-
-      wait_for_stack_in_progress:
-        workflow: tripleo.stack.v1.wait_for_stack_in_progress stack=<% $.stack %>
-        on-success: wait_for_stack_does_not_exist
-        on-error: wait_for_stack_in_progress_failed
-
-      wait_for_stack_in_progress_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(wait_for_stack_in_progress).result %>
 
       wait_for_stack_does_not_exist:
         workflow: tripleo.stack.v1.wait_for_stack_does_not_exist stack=<% $.stack %>
