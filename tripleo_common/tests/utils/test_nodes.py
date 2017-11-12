@@ -201,11 +201,16 @@ class FindNodeHandlerTest(base.TestCase):
     def test_found(self):
         test = [('fake', 'fake'),
                 ('fake_pxe', 'fake'),
-                ('pxe_ssh', 'ssh'),
                 ('pxe_ipmitool', 'ipmi'),
                 ('ipmi', 'ipmi'),
                 ('pxe_ilo', 'ilo'),
-                ('agent_irmc', 'irmc')]
+                ('ilo', 'ilo'),
+                ('pxe_drac', 'drac'),
+                ('idrac', 'drac'),
+                ('pxe_ucs', 'ucs'),
+                ('cisco-ucs-managed', 'ucs'),
+                ('agent_irmc', 'irmc'),
+                ('irmc', 'irmc')]
         for driver, prefix in test:
             handler = nodes._find_node_handler({'pm_type': driver})
             self.assertEqual(prefix, handler._prefix)
@@ -507,11 +512,20 @@ class NodesTest(base.TestCase):
     def test_update_node_ironic_pxe_ipmitool(self):
         self._update_by_type('pxe_ipmitool')
 
+    def test_update_node_ironic_idrac(self):
+        self._update_by_type('idrac')
+
     def test_update_node_ironic_pxe_drac(self):
         self._update_by_type('pxe_drac')
 
+    def test_update_node_ironic_ilo(self):
+        self._update_by_type('ilo')
+
     def test_update_node_ironic_pxe_ilo(self):
         self._update_by_type('pxe_ilo')
+
+    def test_update_node_ironic_irmc(self):
+        self._update_by_type('irmc')
 
     def test_update_node_ironic_pxe_irmc(self):
         self._update_by_type('pxe_irmc')
@@ -669,6 +683,40 @@ class NodesTest(base.TestCase):
             driver_info={'ipmi_password': 'random', 'ipmi_address': 'foo.bar',
                          'ipmi_username': 'test', 'ipmi_port': '6230'})
 
+    def test_register_ironic_node_idrac(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'idrac'
+        node['pm_port'] = '6230'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='idrac', name='node1', properties=node_properties,
+            resource_class='baremetal',
+            driver_info={'drac_password': 'random', 'drac_address': 'foo.bar',
+                         'drac_username': 'test', 'drac_port': '6230'})
+
+    def test_register_ironic_node_ilo(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'ilo'
+        node['pm_port'] = '1234'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='ilo', name='node1', properties=node_properties,
+            resource_class='baremetal',
+            driver_info={'ilo_password': 'random', 'ilo_address': 'foo.bar',
+                         'ilo_username': 'test', 'ilo_port': '1234'})
+
     def test_register_ironic_node_pxe_drac(self):
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
@@ -772,7 +820,7 @@ class TestPopulateNodeMapping(base.TestCase):
         ironic_node = collections.namedtuple('node', ['uuid', 'driver',
                                              'driver_info'])
         ironic_port = collections.namedtuple('port', ['address'])
-        node1 = ironic_node('abcdef', 'pxe_ssh', None)
+        node1 = ironic_node('abcdef', 'redfish', {})
         node2 = ironic_node('fedcba', 'pxe_ipmitool',
                             {'ipmi_address': '10.0.1.2'})
         node3 = ironic_node('xyz', 'ipmi', {'ipmi_address': '10.0.1.3'})
@@ -794,13 +842,6 @@ class TestPopulateNodeMapping(base.TestCase):
         expected = {'mac': {'aaa': 'abcdef'}, 'pm_addr': {},
                     'uuids': {'abcdef'}}
         self.assertEqual(expected, nodes._populate_node_mapping(client))
-
-
-EXAMPLE_SSH_PRIVATE_KEY = """
------BEGIN RSA PRIVATE KEY-----
-ABCDEF
------END RSA PRIVATE KEY-----
-"""
 
 
 VALID_NODE_JSON = [
@@ -837,16 +878,10 @@ VALID_NODE_JSON = [
      'capabilities': {'foo': 'bar'},
      'kernel_id': 'kernel1',
      'ramdisk_id': 'ramdisk1'},
-    {'pm_type': 'pxe_ssh',
+    {'pm_type': 'idrac',
      'pm_addr': '1.2.3.4',
      'pm_user': 'root',
-     'pm_password': EXAMPLE_SSH_PRIVATE_KEY,
-     '_comment': 'This is another comment',
-     'mac': ['11:11:11:11:11:11']},
-    {'pm_type': 'pxe_ssh',
-     'pm_addr': '1.2.3.4',
-     'pm_user': 'root',
-     'pm_password': EXAMPLE_SSH_PRIVATE_KEY,
+     'pm_password': 'p@$$w0rd',
      'mac': ['22:22:22:22:22:22'],
      'capabilities': 'foo:bar,foo1:bar1',
      'cpu': 2,

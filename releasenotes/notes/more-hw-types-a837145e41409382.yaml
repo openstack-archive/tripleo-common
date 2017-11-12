@@ -1,0 +1,19 @@
+---
+features:
+  - |
+    Adds support for enrolling nodes with all production hardware types,
+    matching previously supported classic drivers, namely ``ilo``, ``idrac``,
+    ``irmc`` and ``cisco-ucs-managed``.
+upgrade:
+  - |
+    Removes support for enrolling nodes with ``pxe_ssh`` driver (already
+    removed from ironic).
+  - |
+    Removes support for deprecated ``instackenv.json`` parameters:
+
+    * pm_service_profile (use ucs_service_profile)
+    * pm_auth_method (use irmc_auth_method)
+    * pm_client_timeout (use irmc_client_timeout)
+    * pm_sensor_method (use irmc_sensor_method)
+    * pm_deploy_iso (use irmc_deploy_iso)
+
