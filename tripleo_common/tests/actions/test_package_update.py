@@ -99,11 +99,11 @@ class UpdateStackActionTest(base.TestCase):
                       {'OS::TripleO::DeploymentSteps': 'OS::Heat::None'}}
 
         mock_getenv.return_value = env
-        fake_registry = {'parameter_defaults': [
+        fake_registry = {'parameter_defaults':
                          {'DockerKeystoneImage': '192.168.24.1:8787/'
                                                  'keystone-docker:latest',
                           'DockerHeatApiImage:': '192.168.24.1:8787/'
-                                                 'heat-api-docker:latest'}]}
+                                                 'heat-api-docker:latest'}}
         update_env.update(fake_registry)
         mock_swift.get_object.return_value = ({}, env)
         mock_object_client.return_value = mock_swift
