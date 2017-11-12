@@ -1,0 +1,74 @@
+deploy_server_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+
+ControllerHostEntryDeployment:
+  config: |
+    #!/bin/bash
+    echo "A script"
+  creation_time: "None"
+  deployment_name: ControllerHostEntryDeployment
+  group: script
+  id: 50fcb6ee-4ff2-4318-b734-d3a7b45a8d6d
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  name: None
+  options: None
+  outputs:
+
+NetworkDeployment:
+  config: |
+    #!/bin/bash
+    echo "Another script"
+  creation_time: "None"
+  deployment_name: NetworkDeployment
+  group: script
+  id: 613b3009-7708-4b06-8c2a-56f8cd379aff
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  name: None
+  options: None
+  outputs:
+
+MyPostConfig:
+  config: |
+    #!/bin/bash
+    echo "A PostConfig script"
+  creation_time: "None"
+  deployment_name: MyPostConfig
+  group: script
+  id: ac63372f-bddd-45a0-aca9-6f0950d581e2
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  name: None
+  options: None
+  outputs:
+
+MyExtraConfigPost:
+  config: |
+    #!/bin/bash
+    echo "An ExtraConfigPost script"
+  creation_time: "None"
+  deployment_name: MyExtraConfigPost
+  group: script
+  id: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  name: None
+  options: None
+  outputs:
+

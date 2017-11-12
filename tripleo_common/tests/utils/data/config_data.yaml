@@ -1,0 +1,126 @@
+deployments:
+  - server: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+    deployment: a08ac0c0-7168-4fc5-b3fa-98d83b388676
+    config: 50fcb6ee-4ff2-4318-b734-d3a7b45a8d6d
+    name: ControllerHostEntryDeployment
+  - server: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+    deployment: 01161ba4-a7a5-4a3e-b82f-f80b7537e866
+    config: 613b3009-7708-4b06-8c2a-56f8cd379aff
+    name: NetworkDeployment
+  - server: a7db3010-a51f-4ae0-a791-2364d629d20d
+    deployment: eaf3757f-315a-416c-8975-684a0d41f6bf
+    config: 26db1678-fe18-4acb-86db-19885fccae4c
+    name: ComputeHostEntryDeployment
+  - server: 8b07cd31-3083-4b88-a433-955f72039e2c
+    deployment: 5b464758-b4ff-4bc7-bb37-fec04db932f1
+    config: 26db1678-fe18-4acb-86db-19885fccae4c
+    name: ComputeHostEntryDeployment
+  - server: 169b46f8-1965-4d90-a7de-f36fb4a830fe
+    deployment: 0ace55f9-fd01-44d5-af4b-6da663633f2a
+    config: 26db1678-fe18-4acb-86db-19885fccae4c
+    name: ComputeHostEntryDeployment
+  - server: a7db3010-a51f-4ae0-a791-2364d629d20d
+    deployment: 6054566d-8ab0-483c-a3a7-70913032d9ed
+    config: d21aefd1-9d94-44c0-b73a-16c8d4bc605c
+    name: NetworkDeployment
+  - server: 8b07cd31-3083-4b88-a433-955f72039e2c
+    deployment: c3a59b6a-a9e6-4ac1-9ef0-c72dfe5242bd
+    config: d21aefd1-9d94-44c0-b73a-16c8d4bc605c
+    name: NetworkDeployment
+  - server: 169b46f8-1965-4d90-a7de-f36fb4a830fe
+    deployment: 6f37e874-4380-4252-8665-31b4c5654627
+    config: d21aefd1-9d94-44c0-b73a-16c8d4bc605c
+    name: NetworkDeployment
+
+  - server: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+    deployment: 8967f92f-3232-46ee-9e4f-b7d3b5433163
+    config: ac63372f-bddd-45a0-aca9-6f0950d581e2
+    name: MyPostConfig
+  - server: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+    deployment: 7a07b2dc-cebf-474c-a8f1-d7c93b299555
+    config: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
+    name: MyExtraConfigPost
+  - server: a7db3010-a51f-4ae0-a791-2364d629d20d
+    deployment: 2acaf5d0-c170-449b-8015-37c2598baaec
+    config: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
+    name: MyExtraConfigPost
+  - server: 8b07cd31-3083-4b88-a433-955f72039e2c
+    deployment: 7e0f2650-b1b9-410e-96a6-4745ca735125
+    config: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
+    name: MyExtraConfigPost
+  - server: 169b46f8-1965-4d90-a7de-f36fb4a830fe
+    deployment: 5096a321-64f9-4f07-a74c-53f2b029e62e
+    config: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
+    name: MyExtraConfigPost
+
+configs:
+  50fcb6ee-4ff2-4318-b734-d3a7b45a8d6d:
+    id: 50fcb6ee-4ff2-4318-b734-d3a7b45a8d6d
+    config: |
+      #!/bin/bash
+      echo "A script"
+    outputs: []
+    group: script
+  613b3009-7708-4b06-8c2a-56f8cd379aff:
+    id: 613b3009-7708-4b06-8c2a-56f8cd379aff
+    config: |
+      #!/bin/bash
+      echo "Another script"
+    outputs: []
+    group: script
+  26db1678-fe18-4acb-86db-19885fccae4c:
+    id: 26db1678-fe18-4acb-86db-19885fccae4c
+    config:
+      hiera_key1: hiera_value1
+      hiera_key2: hiera_value2
+    outputs: []
+    group: hiera
+  d21aefd1-9d94-44c0-b73a-16c8d4bc605c:
+    id: d21aefd1-9d94-44c0-b73a-16c8d4bc605c
+    config:
+      hiera_key3: hiera_value3
+      hiera_key4:
+        hiera_key4_subkey0: hiera_key4_subvalue0
+        hiera_key4_subkey1: hiera_key4_subvalue1
+    outputs: []
+    group: hiera
+  ac63372f-bddd-45a0-aca9-6f0950d581e2:
+    id: ac63372f-bddd-45a0-aca9-6f0950d581e2
+    config: |
+      #!/bin/bash
+      echo "A PostConfig script"
+    outputs: []
+    group: script
+  9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e:
+    id: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
+    config: |
+      #!/bin/bash
+      echo "An ExtraConfigPost script"
+    outputs: []
+    group: script
+
+servers:
+  - physical_resource_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+    name: overcloud-controller-0
+    OS::stack_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+    name: overcloud-controller-0
+  - physical_resource_id: a7db3010-a51f-4ae0-a791-2364d629d20d
+    name: overcloud-novacompute-0
+    OS::stack_id: a7db3010-a51f-4ae0-a791-2364d629d20d
+    name: overcloud-novacompute-0
+  - physical_resource_id: 8b07cd31-3083-4b88-a433-955f72039e2c
+    name: overcloud-novacompute-1
+    OS::stack_id: 8b07cd31-3083-4b88-a433-955f72039e2c
+    name: overcloud-novacompute-1
+  - physical_resource_id: 169b46f8-1965-4d90-a7de-f36fb4a830fe
+    name: overcloud-novacompute-2
+    OS::stack_id: 169b46f8-1965-4d90-a7de-f36fb4a830fe
+    name: overcloud-novacompute-2
+
+server_id_data:
+  Controller:
+    - 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  Compute:
+    - a7db3010-a51f-4ae0-a791-2364d629d20d
+    - 8b07cd31-3083-4b88-a433-955f72039e2c
+    - 169b46f8-1965-4d90-a7de-f36fb4a830fe
