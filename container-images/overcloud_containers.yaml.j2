@@ -162,8 +162,10 @@ container_images_template:
   params:
   - DockerFluentdConfigImage
   - DockerFluentdClientImage
+  - DockerFluentdImage
   services:
   - OS::TripleO::Services::FluentdClient
+  - OS::TripleO::Services::Fluentd
 
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   params:
