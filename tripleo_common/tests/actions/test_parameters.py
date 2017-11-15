@@ -140,6 +140,7 @@ _EXISTING_PASSWORDS = {
         'private_key': 'private_key',
         'public_key': 'public_key'
         },
+    'LibvirtTLSPassword': 'xCdt9yeamKz8Fb6EGba9u82XU',
 }
 
 
