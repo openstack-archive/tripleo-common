@@ -84,7 +84,8 @@ class PublishUILogToSwiftAction(base.TripleOAction):
         try:
             headers = swift.head_object(self.logging_container,
                                         constants.TRIPLEO_UI_LOG_FILENAME)
-            if headers['content-length'] < constants.TRIPLEO_UI_LOG_FILE_SIZE:
+            content_length = int(headers['content-length'])
+            if content_length < constants.TRIPLEO_UI_LOG_FILE_SIZE:
                 LOG.debug("Log file hasn't reached a full size so it doesn't"
                           " need to be rotated.")
                 return
