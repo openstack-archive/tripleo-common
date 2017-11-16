@@ -116,15 +116,9 @@ workflows:
         on-error: upload_to_container_set_status_failed
 
       create_plan:
-        description: >
-          Migrate the plan if needed, then continue with the workflow.
-          TODO(jpichon) - In Queens, the tripleo.plan.migrate action and on_error will
-          be removed, but the on-success will still be needed.
-        action: tripleo.plan.migrate plan=<% $.container %>
         on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
           - container_images_prepare: <% $.generate_passwords != true %>
-        on-error: migrate_plan_set_status_failed
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
@@ -185,12 +179,6 @@ workflows:
           status: FAILED
           message: <% task(process_templates).result %>
 
-      migrate_plan_set_status_failed:
-        on-success: notify_zaqar
-        publish:
-          status: FAILED
-          message: <% task(create_plan).result %>
-
       container_images_prepare_set_status_failed:
         on-success: notify_zaqar
         publish:
@@ -250,15 +238,9 @@ workflows:
           use_default_templates: true
 
       update_plan:
-        description: >
-          Migrate the plan if needed, then continue with the workflow.
-          TODO(jpichon) - In Queens, the tripleo.plan.migrate action and on_error will
-          be removed, but the on-success will still be needed.
-        action: tripleo.plan.migrate plan=<% $.container %>
         on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
           - container_images_prepare: <% $.generate_passwords != true %>
-        on-error: migrate_plan_set_status_failed
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
@@ -312,12 +294,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(ensure_passwords_exist).result %>
-
-      migrate_plan_set_status_failed:
-        on-success: notify_zaqar
-        publish:
-          status: FAILED
-          message: <% task(update_plan).result %>
 
       container_images_prepare_set_status_failed:
         on-success: notify_zaqar

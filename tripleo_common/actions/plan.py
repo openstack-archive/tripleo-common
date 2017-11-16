@@ -18,9 +18,7 @@ import tempfile
 import yaml
 
 from heatclient import exc as heatexceptions
-from keystoneauth1 import exceptions as keystoneauth_exc
 from mistral_lib import actions
-from mistralclient.api import base as mistralclient_base
 from oslo_concurrency import processutils
 import six
 from swiftclient import exceptions as swiftexceptions
@@ -28,7 +26,6 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
-from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import swift as swiftutils
 from tripleo_common.utils import tarball
 from tripleo_common.utils.validations import pattern_validator
@@ -68,53 +65,6 @@ class CreateContainerAction(base.TripleOAction):
                              " exists.") % self.container
             return actions.Result(error=result_string)
         oc.put_container(self.container, headers=default_container_headers)
-
-
-class MigratePlanAction(base.TripleOAction):
-    """Migrate plan from using a Mistral environment to using Swift
-
-    This action creates a plan-environment.yaml file based on the
-    Mistral environment or the default environment, if the file doesn't
-    already exist in Swift.
-
-    This action will be deleted in Queens, as it will no longer be
-    needed by then - all plans will include plan-environment.yaml by
-    default.
-    """
-
-    def __init__(self, plan):
-        super(MigratePlanAction, self).__init__()
-        self.plan = plan
-
-    def run(self, context):
-        swift = self.get_object_client(context)
-        mistral = self.get_workflow_client(context)
-        from_mistral = False
-
-        try:
-            env = plan_utils.get_env(swift, self.plan)
-        except swiftexceptions.ClientException:
-            # The plan has not been migrated yet. Check if there is a
-            # Mistral environment.
-            try:
-                env = mistral.environments.get(self.plan).variables
-                from_mistral = True
-            except (mistralclient_base.APIException,
-                    keystoneauth_exc.http.NotFound):
-                # No Mistral env and no template: likely deploying old
-                # templates aka previous version of OpenStack.
-                env = {'version': 1.0,
-                       'name': self.plan,
-                       'description': '',
-                       'template': 'overcloud.yaml',
-                       'environments': [
-                           {'path': 'overcloud-resource-registry-puppet.yaml'}
-                       ]}
-
-            # Store the environment info into Swift
-            plan_utils.put_env(swift, env)
-            if from_mistral:
-                mistral.environments.delete(self.plan)
 
 
 class ListPlansAction(base.TripleOAction):
