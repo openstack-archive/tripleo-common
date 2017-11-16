@@ -4,6 +4,8 @@ container_images:
 - imagename: tripleoupstream/centos-binary-aodh-listener:latest
 - imagename: tripleoupstream/centos-binary-aodh-notifier:latest
 - imagename: tripleoupstream/centos-binary-barbican-api:latest
+- imagename: tripleoupstream/centos-binary-barbican-keystone-listener:latest
+- imagename: tripleoupstream/centos-binary-barbican-worker:latest
 - imagename: tripleoupstream/centos-binary-ceilometer-central:latest
 - imagename: tripleoupstream/centos-binary-ceilometer-compute:latest
 - imagename: tripleoupstream/centos-binary-ceilometer-notification:latest

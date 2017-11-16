@@ -42,6 +42,20 @@ container_images_template:
   services:
   - OS::TripleO::Services::BarbicanApi
 
+- imagename: "{{namespace}}/{{name_prefix}}barbican-keystone-listener{{name_suffix}}:{{tag}}"
+  params:
+  - DockerBarbicanKeystoneListenerImage
+  - DockerBarbicanKeystoneListenerConfigImage
+  services:
+  - OS::TripleO::Services::BarbicanKeystoneListener
+
+- imagename: "{{namespace}}/{{name_prefix}}barbican-worker{{name_suffix}}:{{tag}}"
+  params:
+  - DockerBarbicanWorkerImage
+  - DockerBarbicanWorkerConfigImage
+  services:
+  - OS::TripleO::Services::BarbicanWorker
+
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-central{{name_suffix}}:{{tag}}"
   params:
   - DockerCeilometerCentralImage
