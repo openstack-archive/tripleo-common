@@ -23,6 +23,14 @@ workflows:
     tags:
       - tripleo-common-managed
     tasks:
+      collect_puppet_hieradata:
+        on-success: check_hieradata
+        publish:
+          hieradata: <% env().get('role_merged_configs', {}).values().select($.keys()).flatten().select(regex('^ceph::profile::params::osds$').search($)).where($ != null).toSet() %>
+      check_hieradata:
+        on-success:
+        - enable_ssh_admin: <% not bool($.hieradata) %>
+        - fail(msg=<% 'Ceph deployment stopped, puppet-ceph hieradata found. Convert it into ceph-ansible variables. {0}'.format($.hieradata) %>): <% bool($.hieradata) %>
       enable_ssh_admin:
         workflow: tripleo.access.v1.enable_ssh_admin
         on-success: get_private_key
