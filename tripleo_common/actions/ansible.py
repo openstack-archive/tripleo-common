@@ -416,3 +416,44 @@ class AnsiblePlaybookAction(actions.Action):
             # NOTE(flaper87): clean the mess if debug is disabled.
             if not self.verbosity:
                 shutil.rmtree(self.work_dir)
+
+
+class AnsibleGenerateInventoryAction(actions.Action):
+    """Executes tripleo-ansible-inventory to generate an inventory"""
+
+    def __init__(self, ansible_ssh_user):
+        self.ansible_ssh_user = ansible_ssh_user
+        self._work_dir = None
+
+    @property
+    def work_dir(self):
+        if self._work_dir:
+            return self._work_dir
+        self._work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action')
+        return self._work_dir
+
+    def run(self, context):
+
+        inventory_path = os.path.join(
+            self.work_dir, 'tripleo-ansible-inventory')
+        command = []
+        command.append('/usr/bin/tripleo-ansible-inventory')
+        command.append('--static-inventory')
+        command.append(inventory_path)
+
+        env_variables = {
+            'HOME': self.work_dir,
+            'OS_AUTH_URL': context.auth_uri,
+            'OS_USERNAME': context.user_name,
+            'OS_AUTH_TOKEN': context.auth_token,
+            'OS_PROJECT_NAME': context.project_name}
+
+        if self.ansible_ssh_user:
+            command.append('--ansible_ssh_user')
+            command.append(self.ansible_ssh_user)
+
+        stderr, stdout = processutils.execute(
+            *command, cwd=self.work_dir,
+            env_variables=env_variables,
+            log_errors=processutils.LogErrors.ALL)
+        return inventory_path
