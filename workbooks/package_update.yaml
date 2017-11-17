@@ -132,7 +132,7 @@ workflows:
               type: tripleo.package_update.v1.update_nodes
               payload:
                 status: <% $.status %>
-                message: <% task(node_update).result %>
+                message: <% concat(task(node_update).result.stderr.substring(0, 262144), task(node_update).result.stdout.substring(0, 262144)) %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
