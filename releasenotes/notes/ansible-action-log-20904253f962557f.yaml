@@ -1,0 +1,4 @@
+---
+features:
+  - The Ansible actions will now log to a log file named ansible.log in the
+    working directory.

@@ -130,3 +130,7 @@ class CopyConfigFileTest(base.TestCase):
 
         retry_files_enabled = config.get('defaults', 'retry_files_enabled')
         self.assertEqual(retry_files_enabled, 'False')
+
+        log_path = config.get('defaults', 'log_path')
+        self.assertEqual(log_path,
+                         os.path.join(work_dir, 'ansible.log'))
