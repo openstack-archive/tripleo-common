@@ -71,6 +71,7 @@ workflows:
       - playbook
       - inventory_file
       - queue_name: tripleo
+      - ansible_queue_name: tripleo
       - module_path: /usr/share/ansible-modules
       - ansible_extra_env_variables:
             ANSIBLE_HOST_KEY_CHECKING: 'False'
@@ -105,7 +106,10 @@ workflows:
           extra_env_variables: <% $.ansible_extra_env_variables %>
           limit_hosts: <% $.nodes %>
           module_path: <% $.module_path %>
-        on-success: node_update_passed
+          queue_name: <% $.ansible_queue_name %>
+        on-success:
+          - node_update_passed: <% task().result.returncode = 0 %>
+          - node_update_failed: <% task().result.returncode != 0 %>
         on-error: node_update_failed
         publish:
           output: <% task().result %>
@@ -132,7 +136,6 @@ workflows:
               type: tripleo.package_update.v1.update_nodes
               payload:
                 status: <% $.status %>
-                message: <% concat(task(node_update).result.stderr.substring(0, 262144), task(node_update).result.stdout.substring(0, 262144)) %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
