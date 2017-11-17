@@ -37,6 +37,10 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'log_path',
                os.path.join(work_dir, 'ansible.log'))
 
+    # mistral user has no home dir set, so no place to save a known hosts file
+    config.set('ssh_connection', 'ssh_args',
+               '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no')
+
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
 
@@ -252,7 +256,8 @@ class AnsiblePlaybookAction(actions.Action):
         self.extra_env_variables = self._kwargs_for_run.pop(
             'extra_env_variables', None)
 
-        self._work_dir = None
+        self._work_dir = self._kwargs_for_run.pop(
+            'work_dir', None)
 
     @property
     def work_dir(self):
@@ -425,9 +430,12 @@ class AnsiblePlaybookAction(actions.Action):
 class AnsibleGenerateInventoryAction(actions.Action):
     """Executes tripleo-ansible-inventory to generate an inventory"""
 
-    def __init__(self, ansible_ssh_user):
-        self.ansible_ssh_user = ansible_ssh_user
-        self._work_dir = None
+    def __init__(self, **kwargs):
+        self._kwargs_for_run = kwargs
+        self.ansible_ssh_user = self._kwargs_for_run.pop(
+            'ansible_ssh_user', 'tripleo-admin')
+        self._work_dir = self._kwargs_for_run.pop(
+            'work_dir', None)
 
     @property
     def work_dir(self):

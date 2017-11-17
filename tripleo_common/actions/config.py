@@ -67,13 +67,17 @@ class DownloadConfigAction(templates.ProcessTemplatesAction):
     :param container: name of the Swift container / plan name
     """
 
-    def __init__(self, container_config=constants.CONFIG_CONTAINER_NAME):
+    def __init__(self, container_config=constants.CONFIG_CONTAINER_NAME,
+                 work_dir=None):
         super(DownloadConfigAction, self).__init__(container_config)
         self.container_config = container_config
+        self.work_dir = work_dir
+        if not self.work_dir:
+            self.work_dir = tempfile.mkdtemp(
+                prefix='tripleo-', suffix='-config')
 
     def run(self, context):
         swift = self.get_object_client(context)
-        tmp_dir = tempfile.mkdtemp(prefix='tripleo-',
-                                   suffix='-config')
-        swiftutils.download_container(swift, self.container_config, tmp_dir)
-        return tmp_dir
+        swiftutils.download_container(swift, self.container_config,
+                                      self.work_dir)
+        return self.work_dir

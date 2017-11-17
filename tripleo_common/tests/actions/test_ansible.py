@@ -117,6 +117,7 @@ class CopyConfigFileTest(base.TestCase):
             work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action-test')
             # Needed for the configparser to be able to read this file.
             ansible_cfg_file.write(b'[defaults]\n')
+            ansible_cfg_file.write(b'[ssh_connection]\n')
             ansible_cfg_file.flush()
 
             resulting_ansible_config = ansible.write_default_ansible_cfg(
