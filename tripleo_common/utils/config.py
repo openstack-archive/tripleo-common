@@ -67,7 +67,7 @@ class Config(object):
                         # Skip to the next task,
                         # there is an existing 'step|int == N'
                         continue
-                    whenexpr.append("step|int == %s" % step)
+                    whenexpr.insert(0, "step|int == %s" % step)
                     task['when'] = whenexpr
                 else:
                     task.update({"when": "step|int == %s" % step})
