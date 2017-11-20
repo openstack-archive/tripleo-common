@@ -601,7 +601,7 @@ workflows:
 
       max_retry_attempts_reached:
         publish:
-          status: ERROR
+          status: FAILED
           message: <% 'Retry limit reached with {0} nodes still failing introspection'.format($.failed_introspection.len()) %>
         on-complete: send_message
 
@@ -613,7 +613,7 @@ workflows:
 
       unhandled_error:
         publish:
-          status: ERROR
+          status: FAILED
           message: "Unhandled workflow error"
         on-complete: send_message
 
