@@ -35,7 +35,6 @@ CONTAINER_IMAGES_DEFAULTS = {
     'name_suffix': '',
     'tag': 'current-tripleo',
     'neutron_driver': None,
-    'logging': 'files'
 }
 
 
