@@ -30,9 +30,6 @@
         - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
             files:
               - ^container-images/.*$
-        - tripleo-ci-centos-7-scenario003-multinode-oooq-container:
-            files:
-              - ^container-images/.*$
         - tripleo-ci-centos-7-scenario004-multinode-oooq-container:
             files:
               - workbooks/ceph-ansible.yaml
