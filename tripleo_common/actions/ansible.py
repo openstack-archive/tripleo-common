@@ -259,6 +259,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self.extra_env_variables = self._kwargs_for_run.pop(
             'extra_env_variables', None)
         self.queue_name = self._kwargs_for_run.pop('queue_name', None)
+        self.reproduce_command = self._kwargs_for_run.pop(
+            'reproduce_command', True)
 
         self._work_dir = self._kwargs_for_run.pop(
             'work_dir', None)
@@ -427,12 +429,28 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     'OS_AUTH_TOKEN': context.auth_token,
                     'OS_PROJECT_NAME': context.project_name})
 
+            command = [str(c) for c in command]
+
+            if self.reproduce_command:
+                command_path = os.path.join(self.work_dir,
+                                            "ansible-playbook-command.sh")
+                with open(command_path, 'w') as f:
+                    f.write('#!/bin/bash\n')
+                    f.write('\n')
+                    for var in env_variables:
+                        f.write('%s="%s"\n' % (var, env_variables[var]))
+                    f.write('\n')
+                    f.write(' '.join(command))
+                    f.write(' $@')
+                    f.write('\n')
+
+                os.chmod(command_path, 0o750)
+
             if self.queue_name:
                 zaqar = self.get_messaging_client(context)
                 queue = zaqar.queue(self.queue_name)
                 # TODO(d0ugal): We don't have the log errors functionality
                 # that processutils has, do we need to replicate that somehow?
-                command = [str(c) for c in command]
                 process = subprocess.Popen(command, stdout=subprocess.PIPE,
                                            stderr=subprocess.STDOUT,
                                            shell=False, bufsize=1,

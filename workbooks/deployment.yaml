@@ -361,6 +361,7 @@ workflows:
           timeout: <% $.timeout %>
           work_dir: <% $.get('work_dir') %>/<% execution().id %>
           queue_name: <% $.queue_name %>
+          reproduce_command: true
         publish:
           log_path: <% task(run_ansible).result.get('log_path') %>
         on-success: send_message
