@@ -50,7 +50,7 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('os.path.isfile', return_value=True)
     @mock.patch('fcntl.ioctl', side_effect=Exception)
     @mock.patch('tripleo_common.image.image_uploader.Client')
-    def test_file_parsing(self, mockpath, mockioctl, mockdocker):
+    def test_file_parsing(self, mockdocker, mockioctl, mockpath):
         print(filedata)
         manager = ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()

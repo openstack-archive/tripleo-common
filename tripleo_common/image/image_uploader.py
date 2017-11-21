@@ -39,11 +39,17 @@ class ImageUploadManager(BaseImageManager):
 
     def __init__(self, config_files, verbose=False, debug=False):
         super(ImageUploadManager, self).__init__(config_files)
+        self.uploaders = {}
 
     def discover_image_tag(self, image, tag_from_label=None):
-        uploader = ImageUploader.get_uploader('docker')
+        uploader = self.uploader('docker')
         return uploader.discover_image_tag(
             image, tag_from_label=tag_from_label)
+
+    def uploader(self, uploader):
+        if uploader not in self.uploaders:
+            self.uploaders[uploader] = ImageUploader.get_uploader(uploader)
+        return self.uploaders[uploader]
 
     def upload(self):
         """Start the upload process"""
@@ -67,8 +73,8 @@ class ImageUploadManager(BaseImageManager):
 
             self.logger.info('imagename: %s' % image_name)
 
-            uploader = ImageUploader.get_uploader(uploader)
-            uploader.upload_image(image_name, pull_source, push_destination)
+            self.uploader(uploader).upload_image(
+                image_name, pull_source, push_destination)
 
         return upload_images  # simply to make test validation easier
 
