@@ -389,8 +389,10 @@ class ProcessTemplatesAction(base.TripleOAction):
                 return retval
 
             def _object_request(method, url, token=context.auth_token):
-                return requests.request(
-                    method, url, headers={'X-Auth-Token': token}).content
+                response = requests.request(
+                    method, url, headers={'X-Auth-Token': token})
+                response.raise_for_status()
+                return response.content
 
             template_files, template = template_utils.get_template_contents(
                 template_object=template_object,
