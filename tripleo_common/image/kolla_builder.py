@@ -29,7 +29,7 @@ CONTAINER_IMAGES_DEFAULTS = {
     'namespace': 'tripleoupstream',
     'ceph_namespace': 'docker.io/ceph',
     'ceph_image': 'daemon',
-    'ceph_tag': 'tag-stable-3.0-jewel-centos-7',
+    'ceph_tag': 'tag-stable-3.0-luminous-centos-7',
     'name_prefix': 'centos-binary-',
     'name_suffix': '',
     'tag': 'latest',
