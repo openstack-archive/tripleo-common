@@ -83,6 +83,7 @@ PASSWORD_PARAMETER_NAMES = (
     'HeatPassword',
     'HeatStackDomainAdminPassword',
     'IronicPassword',
+    'LibvirtTLSPassword',
     'KeystoneCredential0',
     'KeystoneCredential1',
     'KeystoneFernetKey0',
