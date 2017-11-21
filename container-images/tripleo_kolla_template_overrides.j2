@@ -54,6 +54,9 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 # NOTE (jaosorior): glance-api with TLS everywhere needs these packages.
 {% set glance_api_packages_append = ['httpd', 'mod_ssl'] %}
 
+# NOTE (ratailor): ec2-api with TLS needs these packages.
+{% set ec2_api_packages_append = ['httpd', 'mod_ssl'] %}
+
 # NOTE (jaosorior): neutron-server with TLS everywhere needs these packages.
 {% set neutron_server_packages_append = ['httpd', 'mod_ssl'] %}
 
