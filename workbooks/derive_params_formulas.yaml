@@ -98,22 +98,14 @@ workflows:
         on-error: set_status_failed_get_pmd_cpus_range_list
 
       get_host_cpus:
-        action: tripleo.derive_params.get_host_cpus_list inspect_data=<% $.hw_data %>
-        publish:
-          host_cpus: <% task().result  %>
-        on-success:
-          - get_host_cpus_range_list: <% $.host_cpus %>
-          - set_status_failed_get_host_cpus: <% not $.host_cpus %>
-        on-error: set_status_failed_on_error_get_host_cpus
-
-      get_host_cpus_range_list:
-        action: tripleo.derive_params.convert_number_to_range_list
+        workflow: tripleo.derive_params_formulas.v1.get_host_cpus
         input:
-          num_list: <% $.host_cpus %>
+          role_name: <% $.role_name %>
+          hw_data: <% $.hw_data %>
         publish:
-          host_cpus: <% task().result %>
+          host_cpus: <% task().result.get('host_cpus', '') %>
         on-success: get_sock_mem
-        on-error: set_status_failed_get_host_cpus_range_list
+        on-error: set_status_failed_get_host_cpus
 
       get_sock_mem:
         action: tripleo.derive_params.get_dpdk_socket_memory
@@ -196,19 +188,7 @@ workflows:
       set_status_failed_get_host_cpus:
         publish:
           status: FAILED
-          message: 'Unable to determine OvsDpdkCoreList parameter'
-        on-success: fail
-
-      set_status_failed_on_error_get_host_cpus:
-        publish:
-          status: FAILED
-          message: <% task(get_host_cpus).result %>
-        on-success: fail
-
-      set_status_failed_get_host_cpus_range_list:
-        publish:
-          status: FAILED
-          message: <% task(get_host_cpus_range_list).result %>
+          message: <% task(get_host_cpus).result.get('message', '') %>
         on-success: fail
 
       set_status_failed_get_sock_mem:
@@ -221,6 +201,94 @@ workflows:
         publish:
           status: FAILED
           message: <% task(get_sock_mem).result %>
+        on-success: fail
+
+
+  sriov_derive_params:
+    description: >
+      This workflow derives parameters for the SRIOV feature.
+
+    input:
+      - role_name
+      - hw_data # introspection data
+      - derived_parameters: {}
+
+    output:
+      derived_parameters: <% $.derived_parameters.mergeWith($.get('sriov_parameters', {})) %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_host_cpus:
+        workflow: tripleo.derive_params_formulas.v1.get_host_cpus
+        input:
+          role_name: <% $.role_name %>
+          hw_data: <% $.hw_data %>
+        publish:
+          host_cpus: <% task().result.get('host_cpus', '') %>
+        on-success: get_sriov_parameters
+        on-error: set_status_failed_get_host_cpus
+
+      get_sriov_parameters:
+        publish:
+          # SriovHostCpusList parameter is added temporarily and it's removed later from derived parameters result.
+          sriov_parameters: <% dict(concat($.role_name, 'Parameters') => dict('SriovHostCpusList' => $.get('host_cpus', ''))) %>
+
+      set_status_failed_get_host_cpus:
+        publish:
+          status: FAILED
+          message: <% task(get_host_cpus).result.get('message', '') %>
+        on-success: fail
+
+
+  get_host_cpus:
+    description: >
+      Fetching the host CPU list from the introspection data, and then converting the raw list into a range list.
+
+    input:
+      - hw_data # introspection data
+
+    output:
+      host_cpus: <% $.get('host_cpus', '') %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_host_cpus:
+        action: tripleo.derive_params.get_host_cpus_list inspect_data=<% $.hw_data %>
+        publish:
+          host_cpus: <% task().result  %>
+        on-success:
+          - get_host_cpus_range_list: <% $.host_cpus %>
+          - set_status_failed_get_host_cpus: <% not $.host_cpus %>
+        on-error: set_status_failed_on_error_get_host_cpus
+
+      get_host_cpus_range_list:
+        action: tripleo.derive_params.convert_number_to_range_list
+        input:
+          num_list: <% $.host_cpus %>
+        publish:
+          host_cpus: <% task().result %>
+        on-error: set_status_failed_get_host_cpus_range_list
+
+      set_status_failed_get_host_cpus:
+        publish:
+          status: FAILED
+          message: 'Unable to determine host cpus'
+        on-success: fail
+
+      set_status_failed_on_error_get_host_cpus:
+        publish:
+          status: FAILED
+          message: <% task(get_host_cpus).result %>
+        on-success: fail
+
+      set_status_failed_get_host_cpus_range_list:
+        publish:
+          status: FAILED
+          message: <% task(get_host_cpus_range_list).result %>
         on-success: fail
 
 
@@ -242,7 +310,6 @@ workflows:
       - tripleo-common-managed
 
     tasks:
-
       get_cpus:
         publish:
           cpus: <% $.hw_data.numa_topology.cpus %>
@@ -253,11 +320,23 @@ workflows:
       get_role_derive_params:
         publish:
           role_derive_params: <% $.derived_parameters.get(concat($.role_name, 'Parameters'), {}) %>
+          # removing the role parameters (eg. ComputeParameters) in derived_parameters dictionary since already copied in role_derive_params.
+          derived_parameters: <% $.derived_parameters.delete(concat($.role_name, 'Parameters')) %>
+        on-success: get_host_cpus
+
+      get_host_cpus:
+        publish:
+          host_cpus: <% $.role_derive_params.get('OvsDpdkCoreList', '') or $.role_derive_params.get('SriovHostCpusList', '') %>
+          # SriovHostCpusList parameter is added temporarily for host_cpus and not needed in derived_parameters result.
+          # SriovHostCpusList parameter is deleted in derived_parameters list and adding the updated role parameters
+          # back in the derived_parameters.
+          derived_parameters: <% $.derived_parameters + dict(concat($.role_name, 'Parameters') => $.role_derive_params.delete('SriovHostCpusList')) %>
         on-success: get_host_dpdk_combined_cpus
 
       get_host_dpdk_combined_cpus:
         publish:
-          host_dpdk_combined_cpus: <% concat($.role_derive_params.get('OvsPmdCoreList', ''), ',', $.role_derive_params.get('OvsDpdkCoreList', '')) %>
+          host_dpdk_combined_cpus: <% let(pmd_cpus => $.role_derive_params.get('OvsPmdCoreList', '')) -> switch($pmd_cpus => concat($pmd_cpus, ',', $.host_cpus), not $pmd_cpus => $.host_cpus) %>
+          reserved_cpus: []
         on-success:
           - get_host_dpdk_combined_cpus_num_list: <% $.host_dpdk_combined_cpus %>
           - set_status_failed_get_host_dpdk_combined_cpus: <% not $.host_dpdk_combined_cpus %>
@@ -268,12 +347,13 @@ workflows:
           range_list: <% $.host_dpdk_combined_cpus %>
         publish:
           host_dpdk_combined_cpus: <% task().result %>
+          reserved_cpus: <% task().result.split(',') %>
         on-success: get_nova_cpus
         on-error: set_status_failed_get_host_dpdk_combined_cpus_num_list
 
       get_nova_cpus:
         publish:
-          nova_cpus: <% let(reserved_cpus => $.host_dpdk_combined_cpus.split(',')) -> $.cpus.select($.thread_siblings).flatten().where(not (str($) in $reserved_cpus)).join(',') %>
+          nova_cpus: <% let(reserved_cpus => $.reserved_cpus) -> $.cpus.select($.thread_siblings).flatten().where(not (str($) in $reserved_cpus)).join(',') %>
         on-success:
           - get_isol_cpus: <% $.nova_cpus %>
           - set_status_failed_get_nova_cpus: <% not $.nova_cpus %>
@@ -282,7 +362,7 @@ workflows:
       # example: concatinates '12-15,19' and 16-18' ranges '12-15,19,16-18'
       get_isol_cpus:
         publish:
-          isol_cpus: <% concat($.role_derive_params.get('OvsPmdCoreList',''), ',', $.nova_cpus) %>
+          isol_cpus: <% let(pmd_cpus => $.role_derive_params.get('OvsPmdCoreList','')) -> switch($pmd_cpus => concat($pmd_cpus, ',', $.nova_cpus), not $pmd_cpus => $.nova_cpus) %>
         on-success: get_isol_cpus_num_list
 
       # Gets the isol_cpus in the number list
