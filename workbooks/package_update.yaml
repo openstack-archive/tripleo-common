@@ -12,6 +12,7 @@ workflows:
     input:
       - container
       - container_registry
+      - ceph_ansible_playbook
       - timeout: 240
       - queue_name: tripleo
       - skip_deploy_identifier: False
@@ -29,11 +30,22 @@ workflows:
         on-error: set_update_failed
 
       update:
-        action: tripleo.package_update.update_stack container=<% $.container %> timeout=<% $.timeout %> container_registry=<% $.container_registry %>
+        action: tripleo.package_update.update_stack container=<% $.container %> timeout=<% $.timeout %> container_registry=<% $.container_registry %> ceph_ansible_playbook=<% $.ceph_ansible_playbook %>
         input:
           timeout: <% $.timeout %>
           container: <% $.container %>
           container_registry: <% $.container_registry %>
+          ceph_ansible_playbook: <% $.ceph_ansible_playbook %>
+        on-success: clean_plan
+        on-error: set_update_failed
+
+      clean_plan:
+        action: tripleo.plan.update_plan_environment
+        input:
+          container: <% $.container %>
+          parameter: CephAnsiblePlaybook
+          env_key: parameter_defaults
+          delete: true
         on-success: get_config
         on-error: set_update_failed
 

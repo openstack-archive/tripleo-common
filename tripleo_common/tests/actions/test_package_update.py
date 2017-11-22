@@ -97,7 +97,6 @@ class UpdateStackActionTest(base.TestCase):
 
         update_env = {'resource_registry':
                       {'OS::TripleO::DeploymentSteps': 'OS::Heat::None'}}
-
         mock_getenv.return_value = env
         fake_registry = {'parameter_defaults':
                          {'DockerKeystoneImage': '192.168.24.1:8787/'
@@ -109,7 +108,8 @@ class UpdateStackActionTest(base.TestCase):
         mock_object_client.return_value = mock_swift
 
         action = package_update.UpdateStackAction(self.timeout, fake_registry,
-                                                  container=self.container)
+                                                  container=self.container,
+                                                  ceph_ansible_playbook=None)
         action.run(mock_ctx)
         mock_updateinenv.assert_called_once_with(
             mock_swift, env, 'parameter_defaults',
