@@ -24,6 +24,10 @@
             files:
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
+      jobs:
+        - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
+            files:
+              - ^container-images/.*$
     gate:
       queue: tripleo
       jobs:
@@ -37,7 +41,6 @@
             files:
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
-    experimental:
       jobs:
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             files:
