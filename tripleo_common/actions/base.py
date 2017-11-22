@@ -36,16 +36,26 @@ class TripleOAction(actions.Action):
         super(TripleOAction, self).__init__()
 
     def get_object_client(self, context):
-        obj_ep = keystone_utils.get_endpoint_for_project(context, 'swift')
+        swift_endpoint = keystone_utils.get_endpoint_for_project(
+            context,
+            'swift'
+        )
+
+        session_and_auth = keystone_utils.get_session_and_auth(
+            context,
+            service_name='swift'
+        )
 
         kwargs = {
-            'preauthurl': obj_ep.url % {'tenant_id': context.project_id},
-            'preauthtoken': context.auth_token,
+            'preauthurl': swift_endpoint.url % {
+                'tenant_id': context.project_id
+            },
+            'session': session_and_auth['session'],
+            'insecure': context.insecure,
             'retries': 10,
             'starting_backoff': 3,
             'max_backoff': 120
         }
-
         return swift_client.Connection(**kwargs)
 
     def get_baremetal_client(self, context):
@@ -109,17 +119,23 @@ class TripleOAction(actions.Action):
     def get_messaging_client(self, context):
         zaqar_endpoint = keystone_utils.get_endpoint_for_project(
             context, service_type='messaging')
-        keystone_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'keystone')
+
+        session_and_auth = keystone_utils.get_session_and_auth(
+            context,
+            service_type='messaging'
+        )
+
+        auth_uri = context.auth_uri or \
+            keystone_utils.CONF.keystone_authtoken.auth_uri
 
         opts = {
             'os_auth_token': context.auth_token,
-            'os_auth_url': keystone_endpoint.url,
+            'os_auth_url': auth_uri,
             'os_project_id': context.project_id,
             'insecure': context.insecure,
         }
-        auth_opts = {'backend': 'keystone', 'options': opts}
-        conf = {'auth_opts': auth_opts}
+        auth_opts = {'backend': 'keystone', 'options': opts, }
+        conf = {'auth_opts': auth_opts, 'session': session_and_auth['session']}
 
         return zaqarclient.Client(zaqar_endpoint.url, conf=conf)
 
@@ -133,32 +149,13 @@ class TripleOAction(actions.Action):
         return mc
 
     def get_compute_client(self, context):
-        keystone_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'keystone')
-        nova_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'nova')
 
-        # TODO(apetrich) Change this auth to a keystone session
-        client = nova_client(
-            2,
-            username=None,
-            api_key=None,
-            service_type='compute',
-            auth_token=context.auth_token,
-            tenant_id=context.project_id,
-            region_name=keystone_endpoint.region,
-            auth_url=keystone_endpoint.url,
-            insecure=context.insecure,
-            project_domain_name="Default",
-            user_domain_name="Default"
+        conf = keystone_utils.get_session_and_auth(
+            context,
+            service_type='compute'
         )
 
-        client.client.management_url = keystone_utils.format_url(
-            nova_endpoint.url,
-            {'tenant_id': context.project_id}
-        )
-
-        return client
+        return nova_client(2, **conf)
 
     def _cache_key(self, plan_name, key_name):
         return "__cache_{}_{}".format(plan_name, key_name)
