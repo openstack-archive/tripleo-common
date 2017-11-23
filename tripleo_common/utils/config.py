@@ -126,12 +126,14 @@ class Config(object):
             if match:
                 step = match.group(1)
                 whenexpr = task.get('when', None)
-                if whenexpr:
+                if whenexpr is None:
+                    task.update({"when": "step|int == %s" % step})
+                else:
                     # Handle when: foo and a list of when conditionals
                     if not isinstance(whenexpr, list):
                         whenexpr = [whenexpr]
                     for w in whenexpr:
-                        when_exists = re.search('step|int == [0-9]', w)
+                        when_exists = re.search('step|int == [0-9]', "%s" % w)
                         if when_exists:
                             break
                     if when_exists:
@@ -140,8 +142,6 @@ class Config(object):
                         continue
                     whenexpr.append("step|int == %s" % step)
                     task['when'] = whenexpr
-                else:
-                    task.update({"when": "step|int == %s" % step})
 
     def _write_playbook_get_tasks(self, tasks, role, filepath):
         playbook = []
