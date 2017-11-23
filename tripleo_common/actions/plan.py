@@ -237,6 +237,10 @@ class UpdatePlanFromDirAction(base.TripleOAction):
                                              '')[1].splitlines()
             old_templates = swift.get_object(self.container,
                                              '')[1].splitlines()
+            exclude_user_data = [constants.PLAN_ENVIRONMENT,
+                                 constants.OVERCLOUD_J2_ROLES_NAME,
+                                 constants.OVERCLOUD_J2_NETWORKS_NAME,
+                                 constants.OVERCLOUD_J2_EXCLUDES]
             # Update the old container
             for new in new_templates:
                 # if doesn't exist, push it:
@@ -249,7 +253,7 @@ class UpdatePlanFromDirAction(base.TripleOAction):
                     content_new = swift.get_object(container_tmp, new)
                     content_old = swift.get_object(self.container, new)
                     if (not content_new == content_old and
-                       constants.PLAN_ENVIRONMENT not in new):
+                       new not in exclude_user_data):
                         swift.put_object(
                             self.container,
                             new,
