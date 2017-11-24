@@ -161,6 +161,36 @@ class RedfishDriverInfoTest(base.TestCase):
                              self.driver_info.unique_id_from_node(node))
 
 
+class oVirtDriverInfoTest(base.TestCase):
+    driver_info = nodes.oVirtDriverInfo()
+
+    def test_convert_key(self):
+        keys = {'pm_addr': 'ovirt_address',
+                'pm_user': 'ovirt_username',
+                'pm_password': 'ovirt_password',
+                'pm_vm_name': 'ovirt_vm_name',
+                'ovirt_insecure': 'ovirt_insecure'}
+        for key, expected in keys.items():
+            self.assertEqual(expected, self.driver_info.convert_key(key))
+
+        self.assertIsNone(self.driver_info.convert_key('unknown'))
+
+    def test_unique_id_from_fields(self):
+        fields = {'pm_addr': 'http://127.0.0.1',
+                  'pm_user': 'user',
+                  'pm_password': '123456',
+                  'pm_vm_name': 'My VM'}
+        self.assertEqual('http://127.0.0.1:My VM',
+                         self.driver_info.unique_id_from_fields(fields))
+
+    def test_unique_id_from_node(self):
+        node = mock.Mock(driver_info={
+            'ovirt_address': 'http://127.0.0.1',
+            'ovirt_vm_name': 'My VM'})
+        self.assertEqual('http://127.0.0.1:My VM',
+                         self.driver_info.unique_id_from_node(node))
+
+
 class iBootDriverInfoTest(base.TestCase):
     def setUp(self):
         super(iBootDriverInfoTest, self).setUp()
@@ -537,6 +567,17 @@ class NodesTest(base.TestCase):
         node.update({'pm_type': 'redfish',
                      'pm_system_id': '/path'})
         node_map['pm_addr']['foo.bar/path'] = ironic.node.get.return_value.uuid
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
+        ironic.node.update.assert_called_once_with(
+            ironic.node.get.return_value.uuid, mock.ANY)
+
+    def test_update_node_ironic_ovirt(self):
+        ironic = mock.MagicMock()
+        node_map = {'mac': {}, 'pm_addr': {}}
+        node = self._get_node()
+        node.update({'pm_type': 'staging-ovirt',
+                     'pm_vm_name': 'VM1'})
+        node_map['pm_addr']['foo.bar:VM1'] = ironic.node.get.return_value.uuid
         nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with(
             ironic.node.get.return_value.uuid, mock.ANY)
