@@ -130,16 +130,16 @@ class TestConfig(base.TestCase):
                                            'service':
                                            'name=fake state=stopped',
                                            'tags': 'step1',
-                                           'when': ['existingcondition',
-                                                    'step|int == 1']},
+                                           'when': ['step|int == 1',
+                                                    'existingcondition']},
                                           {'name': 'Stop nova-'
                                            'compute service',
                                            'service':
                                            'name=openstack-nova-'
                                            'compute state=stopped',
                                            'tags': 'step1',
-                                           'when': ['existing',
-                                                    'list', 'step|int == 1']}]}
+                                           'when': ['step|int == 1',
+                                                    'existing', 'list']}]}
         mock_get_role_data.return_value = fake_role
 
         for role in fake_role:
