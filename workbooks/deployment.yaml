@@ -28,6 +28,13 @@ workflows:
           name: <% $.config_name %>
           config: <% $.config %>
           group: <% $.group %>
+        publish:
+          stdout: <% task().result.deploy_stdout %>
+          stderr: <% task().result.deploy_stderr %>
+          status_code: <% task().result.status_code %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
 
       send_message:
         action: zaqar.queue_post
@@ -38,12 +45,14 @@ workflows:
             body:
               type: tripleo.deployment.v1.deploy_on_server
               payload:
+                status: <% $.get("status", "SUCCESS") %>
+                message: <% $.get("message", "") %>
                 server_uuid: <% $.server_uuid %>
                 server_name: <% $.server_name %>
                 config_name: <% $.config_name %>
-                status_code: <% task(deploy_config).result.deploy_status_code %>
-                stdout: <% task(deploy_config).result.deploy_stdout %>
-                stderr: <% task(deploy_config).result.deploy_stderr %>
+                status_code: <% $.get("status_code", "") %>
+                stdout: <% $.get("stdout", "") %>
+                stderr: <% $.get("stderr", "") %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
