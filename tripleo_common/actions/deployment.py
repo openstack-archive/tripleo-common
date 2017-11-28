@@ -122,6 +122,9 @@ class OrchestrationDeployAction(base.TripleOAction):
             if body_json['deploy_status_code'] != 0:
                 error = "Heat deployment failed for '%s'" % self.name
 
+        if error:
+            LOG.error(error)
+
         return actions.Result(data=body_json, error=error)
 
 
