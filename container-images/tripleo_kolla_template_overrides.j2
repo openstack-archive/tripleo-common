@@ -44,21 +44,33 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% block mistral_api_footer %}
 RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
-    && echo "if [[ \$USER == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_mistral_extend_start
+    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_mistral_extend_start
 {% endblock %}
 
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
+# NOTE(mandre) Apache cleanup done below in swift_proxy_server_footer block
 {% set swift_proxy_server_packages_append = ['openstack-ceilometer-common', 'httpd', 'mod_ssl'] %}
 
 # NOTE (jaosorior): glance-api with TLS everywhere needs these packages.
+# NOTE(mandre) Apache cleanup done below in glance_api_footer block
 {% set glance_api_packages_append = ['httpd', 'mod_ssl'] %}
 
 # NOTE (ratailor): ec2-api with TLS needs these packages.
 {% set ec2_api_packages_append = ['httpd', 'mod_ssl'] %}
+{% block ec2_api_footer %}
+RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
+    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
+    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
+{% endblock %}
 
 # NOTE (jaosorior): neutron-server with TLS everywhere needs these packages.
 {% set neutron_server_packages_append = ['httpd', 'mod_ssl'] %}
+{% block neutron_server_footer %}
+RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
+    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
+    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_neutron_extend_start
+{% endblock %}
 
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
 # redis resource-agent requires pidof
@@ -160,7 +172,10 @@ RUN mkdir -p /openstack && \
 {% block glance_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/glance-api /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
+    chmod a+rx /openstack/healthcheck && \
+    sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && \
+    sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf && \
+    echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_glance_extend_start
 {% endblock %}
 
 {% block heat_api_footer %}
@@ -365,7 +380,10 @@ RUN mkdir -p /openstack && \
 {% block swift_proxy_server_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-proxy /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
+    chmod a+rx /openstack/healthcheck && \
+    sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && \
+    sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf && \
+    echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
 {% endblock %}
 
 {% block ovn_northd_footer %}
