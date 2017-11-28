@@ -117,43 +117,13 @@ workflows:
         publish:
           sock_mem: <% task().result %>
         on-success:
-          - get_memory_slot_info: <% $.sock_mem %>
+          - get_dpdk_parameters: <% $.sock_mem %>
           - set_status_failed_get_sock_mem: <% not $.sock_mem %>
         on-error: set_status_failed_on_error_get_sock_mem
 
-      get_memory_slot_info:
-        publish:
-          memory_slot_info: <% $.hw_data.extra.memory.values().select($.get("slot")).where($) %>
-        on-success:
-          - remove_slots_prefix_string: <% $.memory_slot_info %>
-          - set_status_failed_get_memory_slot_info: <% not $.memory_slot_info %>
-
-      # Memory channels are identified by the number of memory slots to the NUMA node
-      # Memory slots will be off different formats in the introspection data, like P1-DIMMA1, DIMM_A1, etc
-      # This task removes the prefix string format like 'P1-DIMM' or 'DIMM_' and provides the list with only slot names like 'A1'
-      remove_slots_prefix_string:
-        publish:
-          updated_mem_slot_info: <% $.memory_slot_info.select($.replaceBy(regex("[A-Z0-9]*[-_]*DIMM{1}[-_]*"), '')) %>
-        on-success: remove_slots_suffix_number
-
-      # In the above list of slot names, this task removes the suffix number like '1' in 'A1' and provide the list with slot name as 'A'
-      remove_slots_suffix_number:
-        publish:
-          updated_mem_slot_info: <% $.updated_mem_slot_info.select($.replaceBy(regex("[0-9]"), '')) %>
-        on-success: get_memory_channels_per_node
-
-      # The total memory slot names list will have both NUMA nodes slot.
-      # Average out the length of slot name list with number of NUMA nodes to get the final value
-      get_memory_channels_per_node:
-        publish:
-          mem_channel: <% $.updated_mem_slot_info.distinct().len() / $.numa_nodes.len() %>
-        on-success:
-          - get_dpdk_parameters: <% $.mem_channel %>
-          - set_status_failed_get_memory_channels_per_node: <% not $.mem_channel %>
-
       get_dpdk_parameters:
         publish:
-          dpdk_parameters: <% dict(concat($.role_name, 'Parameters') => dict('OvsPmdCoreList' => $.get('pmd_cpus', ''), 'OvsDpdkCoreList' => $.get('host_cpus', ''), 'OvsDpdkSocketMemory' => $.get('sock_mem', ''), 'OvsDpdkMemoryChannels' => $.get('mem_channel', ''))) %>
+          dpdk_parameters: <% dict(concat($.role_name, 'Parameters') => dict('OvsPmdCoreList' => $.get('pmd_cpus', ''), 'OvsDpdkCoreList' => $.get('host_cpus', ''), 'OvsDpdkSocketMemory' => $.get('sock_mem', ''))) %>
 
       set_status_failed_get_network_config:
         publish:
@@ -231,18 +201,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(get_sock_mem).result %>
-        on-success: fail
-
-      set_status_failed_get_memory_slot_info:
-        publish:
-          status: FAILED
-          message: 'Unable to determine memory slot name on NUMA nodes'
-        on-success: fail
-
-      set_status_failed_get_memory_channels_per_node:
-        publish:
-          status: FAILED
-          message: 'Unable to determine OvsDpdkMemoryChannels parameter'
         on-success: fail
 
 
