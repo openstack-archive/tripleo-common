@@ -383,6 +383,13 @@ class ProcessTemplatesAction(base.TripleOAction):
                 temp_files.append(env_temp_file)
                 env_paths.append(env_temp_file)
 
+            registry = plan_env.get('resource_registry', {})
+            if registry:
+                env_temp_file = _create_temp_file(
+                    {'resource_registry': registry})
+                temp_files.append(env_temp_file)
+                env_paths.append(env_temp_file)
+
             def _env_path_is_object(env_path):
                 retval = env_path.startswith(swift.url)
                 LOG.debug('_env_path_is_object %s: %s' % (env_path, retval))
