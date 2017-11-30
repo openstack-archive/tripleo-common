@@ -364,9 +364,23 @@ workflows:
           reproduce_command: true
         publish:
           log_path: <% task(run_ansible).result.get('log_path') %>
-        on-success: send_message
+        on-success:
+          - ansible_passed: <% task().result.returncode = 0 %>
+          - ansible_failed: <% task().result.returncode != 0 %>
         on-error: send_message
         publish-on-error:
+          status: FAILED
+          message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
+
+      ansible_passed:
+        on-success: send_message
+        publish:
+          status: SUCCESS
+          message: Ansible passed.
+
+      ansible_failed:
+        on-success: send_message
+        publish:
           status: FAILED
           message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
 
