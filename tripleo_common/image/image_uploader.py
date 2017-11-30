@@ -159,7 +159,10 @@ class DockerImageUploader(ImageUploader):
     def discover_image_tag(self, image, tag_from_label=None):
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
 
-        image_name, colon, tag = image.partition(':')
+        image_name, colon, tag = image.rpartition(':')
+        if not image_name:
+            image_name = tag
+            tag = None
         if not tag:
             tag = 'latest'
         image = '%s:%s' % (image_name, tag)
