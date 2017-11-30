@@ -217,11 +217,11 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         container_images = yaml_builder.load_config_files(
             yaml_builder.CONTAINER_IMAGES)
         # remove odl related image references from overcloud_containers.yaml
-        container_images.remove({'imagename': 'tripleoupstream/centos-binary'
+        container_images.remove({'imagename': 'tripleopike/centos-binary'
                                               '-neutron-server-opendaylight:'
-                                              'latest'})
-        container_images.remove({'imagename': 'tripleoupstream/centos-binary'
-                                              '-opendaylight:latest'})
+                                              'current-tripleo'})
+        container_images.remove({'imagename': 'tripleopike/centos-binary'
+                                              '-opendaylight:current-tripleo'})
         self.assertSequenceEqual(container_images, result)
 
     def test_container_images_yaml_in_sync_for_odl(self):
@@ -251,6 +251,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         container_images = yaml_builder.load_config_files(
             yaml_builder.CONTAINER_IMAGES)
         # remove neutron-server image reference from overcloud_containers.yaml
-        container_images.remove({'imagename': 'tripleoupstream/centos-binary'
-                                              '-neutron-server:latest'})
+        container_images.remove({'imagename': 'tripleopike/centos-binary'
+                                              '-neutron-server:'
+                                              'current-tripleo'})
         self.assertSequenceEqual(container_images, result)

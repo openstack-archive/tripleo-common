@@ -28,7 +28,7 @@ from tripleo_common.tests.image import fakes
 
 filedata = six.u(
     """container_images:
-    - imagename: tripleoupstream/heat-docker-agents-centos:latest
+    - imagename: tripleopike/heat-docker-agents-centos:current-tripleo
       push_destination: localhost:8787
     - imagename: tripleoupstream/centos-binary-nova-compute:liberty
       uploader: docker
@@ -43,7 +43,7 @@ filedata = six.u(
 
 legacy_filedata = six.u(
     """uploads:
-    - imagename: tripleoupstream/heat-docker-agents-centos:latest
+    - imagename: tripleopike/heat-docker-agents-centos:current-tripleo
       push_destination: localhost:8787
     - imagename: tripleoupstream/centos-binary-nova-compute:liberty
       uploader: docker

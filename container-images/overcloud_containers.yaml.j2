@@ -1,4 +1,4 @@
-{% set namespace=namespace or "tripleoupstream" %}
+{% set namespace=namespace or "tripleopike" %}
 
 {% set ceph_namespace=ceph_namespace or "docker.io/ceph" %}
 {% set ceph_image=ceph_image or "daemon" %}
@@ -16,7 +16,7 @@
 {% set name_suffix=name_suffix or "" %}
 {% endif %}
 
-{% set tag=tag or "latest" %}
+{% set tag=tag or "current-tripleo" %}
 {% set neutron_driver=neutron_driver or "None" %}
 container_images_template:
 
