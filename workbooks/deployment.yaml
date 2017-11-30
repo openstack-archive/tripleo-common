@@ -243,6 +243,7 @@ workflows:
             body:
               type: tripleo.deployment.v1.get_horizon_url
               payload:
+                horizon_url: <% $.get('horizon_url', '') %>
                 status: <% $.get('status', 'SUCCESS') %>
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
