@@ -196,6 +196,23 @@ class TestDockerImageUploader(base.TestCase):
         self.assertRaises(ImageUploaderException,
                           self.uploader.discover_image_tag, image, 'foo')
 
+    def test_discover_image_tag_with_port(self):
+        image = 'foo:5000/t/heat-docker-agents-centos:latest'
+        vimage = 'foo:5000/t/heat-docker-agents-centos:1.2.3'
+
+        dockerc = self.dockermock.return_value
+        dockerc.pull.return_value = ['{"status": "done"}']
+        dockerc.inspect_image.return_value = {
+            'Config': {'Labels': {'image-version': '1.2.3'}}
+        }
+        result = self.uploader.discover_image_tag(image, 'image-version')
+        self.assertEqual('1.2.3', result)
+
+        dockerc.pull.assert_has_calls([
+            mock.call(image, tag=None, stream=True),
+            mock.call(vimage, tag=None, stream=True),
+        ])
+
     @mock.patch('time.sleep')
     def test_pull_retry(self, sleep_mock):
         image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
