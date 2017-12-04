@@ -56,6 +56,7 @@ container_images:
 - imagename: docker.io/tripleoupstream/centos-binary-neutron-server:latest
 - imagename: docker.io/tripleoupstream/centos-binary-neutron-server-opendaylight:latest
 - imagename: docker.io/tripleoupstream/centos-binary-neutron-server-ovn:latest
+- imagename: docker.io/tripleoupstream/centos-binary-neutron-metadata-agent-ovn:latest
 - imagename: docker.io/tripleoupstream/centos-binary-nova-api:latest
 - imagename: docker.io/tripleoupstream/centos-binary-nova-compute-ironic:latest
 - imagename: docker.io/tripleoupstream/centos-binary-nova-compute:latest

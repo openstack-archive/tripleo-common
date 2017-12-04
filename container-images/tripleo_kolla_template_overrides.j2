@@ -402,6 +402,12 @@ RUN mkdir -p /openstack && \
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 {% endblock %}
 
+{% block ovn_metadata_agent_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-metadata /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block base_footer %}
 # workaround LP1696283
 RUN mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_hosts
