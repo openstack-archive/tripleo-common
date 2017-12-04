@@ -1,0 +1,9 @@
+---
+
+# List of packages that are requred to bootstrap TripleO.
+# The list is used by `yum` Ansible module, so it takes
+# a comma separated list of packages or (as of 2.0) a list
+# of packages.
+packages_bootstrap:
+  - openstack-heat-agents
+  - jq

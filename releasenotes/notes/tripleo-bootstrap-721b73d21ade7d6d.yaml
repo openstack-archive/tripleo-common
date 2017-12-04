@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Introduce a new Ansible role, called tripleo-bootstrap which will take
+    care of prepare an environment so we can deploy TripleO.

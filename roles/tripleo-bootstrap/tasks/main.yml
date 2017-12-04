@@ -1,0 +1,6 @@
+---
+
+- name: Deploy required packages to bootstrap TripleO
+  yum:
+    name: "{{ packages_bootstrap }}"
+  become: true
