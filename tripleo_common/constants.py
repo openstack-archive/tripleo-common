@@ -149,10 +149,9 @@ LEGACY_API_NETWORK = 'Internal'
 # Default nested depth when recursing Heat stacks
 NESTED_DEPTH = 7
 
-# Default string format for server resource types
-SERVER_RESOURCE_TYPES = 'OS::TripleO::%sServer'
-
 # Resource name for deployment resources when using config download
 TRIPLEO_DEPLOYMENT_RESOURCE = 'TripleODeployment'
+
+HOST_NETWORK = 'ctlplane'
 
 EXTERNAL_TASKS = ['external_deploy_tasks']
