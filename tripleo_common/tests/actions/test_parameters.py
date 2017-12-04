@@ -26,6 +26,7 @@ from tripleo_common.utils import passwords as password_utils
 _EXISTING_PASSWORDS = {
     'MistralPassword': 'VFJeqBKbatYhQm9jja67hufft',
     'BarbicanPassword': 'MGGQBtgKT7FnywvkcdMwE9nhx',
+    'BarbicanSimpleCryptoKek': 'dGhpcnR5X3R3b19ieXRlX2tleWJsYWhibGFoYmxhaGg=',
     'AdminPassword': 'jFmY8FTpvtF2e4d4ReXvmUP8k',
     'CeilometerMeteringSecret': 'CbHTGK4md4Cc8P8ZyzTns6wry',
     'ZaqarPassword': 'bbFgCTFbAH8vf9n3xvZCP8aMR',

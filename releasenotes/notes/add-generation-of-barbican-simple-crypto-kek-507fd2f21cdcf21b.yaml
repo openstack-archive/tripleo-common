@@ -1,0 +1,4 @@
+---
+features:
+  - Add generation of the key encryption key for the Barbican simple
+    crypto backend.
