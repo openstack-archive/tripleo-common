@@ -47,11 +47,12 @@ workflows:
           mds_ips: <% env().get('service_ips', {}).get('ceph_mds_ctlplane_node_ips', []) %>
           rgw_ips: <% env().get('service_ips', {}).get('ceph_rgw_ctlplane_node_ips', []) %>
           nfs_ips: <% env().get('service_ips', {}).get('ceph_nfs_ctlplane_node_ips', []) %>
+          rbdmirror_ips: <% env().get('service_ips', {}).get('ceph_rbdmirror_ctlplane_node_ips', []) %>
           client_ips: <% env().get('service_ips', {}).get('ceph_client_ctlplane_node_ips', []) %>
         on-success: set_fork_count
       set_fork_count:
         publish: # unique list of all IPs: make each list a set, take unions and count
-          fork_count: <% min($.mon_ips.toSet().union($.mgr_ips.toSet()).union($.osd_ips.toSet()).union($.mds_ips.toSet()).union($.rgw_ips.toSet()).union($.nfs_ips.toSet()).union($.client_ips.toSet()).count(), 100) %> # don't use >100 forks
+          fork_count: <% min($.mon_ips.toSet().union($.mgr_ips.toSet()).union($.osd_ips.toSet()).union($.mds_ips.toSet()).union($.rgw_ips.toSet()).union($.nfs_ips.toSet()).union($.client_ips.toSet()).union($.rbdmirror_ips.toSet()).count(), 100) %> # don't use >100 forks
         on-success: make_fetch_directory
       make_fetch_directory:
         action: tripleo.files.make_temp_dir
@@ -67,12 +68,13 @@ workflows:
           mds_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_mds_ansible_vars', {})).aggregate($1 + $2) %>
           rgw_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_rgw_ansible_vars', {})).aggregate($1 + $2) %>
           nfs_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_nfs_ansible_vars', {})).aggregate($1 + $2) %>
+          rbdmirror_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_rbdmirror_ansible_vars', {})).aggregate($1 + $2) %>
           client_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_client_ansible_vars', {})).aggregate($1 + $2) %>
         on-success: build_extra_vars
       build_extra_vars:
         publish:
           # NOTE(gfidente): merge vars from all ansible roles
-          extra_vars: <% {'fetch_directory'=> $.fetch_directory} + $.mgr_vars + $.mon_vars + $.osd_vars + $.mds_vars + $.rgw_vars + $.nfs_vars + $.client_vars + $.ceph_ansible_extra_vars %>
+          extra_vars: <% {'fetch_directory'=> $.fetch_directory} + $.mgr_vars + $.mon_vars + $.osd_vars + $.mds_vars + $.rgw_vars + $.nfs_vars + $.client_vars + $.rbdmirror_vars + $.ceph_ansible_extra_vars %>
         on-success: ceph_install
       ceph_install:
         action: tripleo.ansible-playbook
@@ -90,6 +92,8 @@ workflows:
               hosts: <% $.rgw_ips.toDict($, {}) %>
             nfss:
               hosts: <% $.nfs_ips.toDict($, {}) %>
+            rbdmirrors:
+              hosts: <% $.rbdmirror_ips.toDict($, {}) %>
             clients:
               hosts: <% $.client_ips.toDict($, {}) %>
           playbook: <% $.ceph_ansible_playbook %>
