@@ -665,12 +665,16 @@ container_images_template:
   - OS::TripleO::Services::SwiftRingBuilder
   - OS::TripleO::Services::SwiftStorage
 
-- imagename: "{{namespace}}/{{name_prefix}}tacker{{name_suffix}}:{{tag}}"
-  params:
-  - DockerTackerConfigImage
-  - DockerTackerImage
-  services:
-  - OS::TripleO::Services::Tacker
+# The kolla tacker image was split into base, conductor and server images in
+# kolla review https://review.openstack.org/#/c/477494/
+# Uncomment when TripleO has caught up with the change.
+# https://bugs.launchpad.net/tripleo/+bug/1714270
+# - imagename: "{{namespace}}/{{name_prefix}}tacker{{name_suffix}}:{{tag}}"
+#   params:
+#   - DockerTackerConfigImage
+#   - DockerTackerImage
+#   services:
+#   - OS::TripleO::Services::Tacker
 
 - imagename: "{{namespace}}/{{name_prefix}}zaqar{{name_suffix}}:{{tag}}"
   params:
