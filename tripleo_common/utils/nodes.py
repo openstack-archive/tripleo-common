@@ -182,6 +182,34 @@ class RedfishDriverInfo(DriverInfo):
             return
 
 
+class oVirtDriverInfo(DriverInfo):
+    def __init__(self):
+        mapping = {
+            'pm_addr': 'ovirt_address',
+            'pm_user': 'ovirt_username',
+            'pm_password': 'ovirt_password',
+            'pm_vm_name': 'ovirt_vm_name'
+        }
+
+        super(oVirtDriverInfo, self).__init__(
+            'ovirt', mapping,
+            mandatory_fields=list(mapping),
+        )
+
+    def unique_id_from_fields(self, fields):
+        try:
+            return '%s:%s' % (fields['pm_addr'], fields['pm_vm_name'])
+        except KeyError:
+            return
+
+    def unique_id_from_node(self, node):
+        try:
+            return '%s:%s' % (node.driver_info['ovirt_address'],
+                              node.driver_info['ovirt_vm_name'])
+        except KeyError:
+            return
+
+
 class SshDriverInfo(DriverInfo):
     DEFAULTS = {'ssh_virt_type': 'virsh'}
 
@@ -244,6 +272,7 @@ DRIVER_INFO = {
     '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True),
     'redfish': RedfishDriverInfo(),
     # test drivers
+    'staging\-ovirt': oVirtDriverInfo(),
     '.*_iboot': iBootDriverInfo(),
     '.*_wol': DriverInfo(
         'wol',
