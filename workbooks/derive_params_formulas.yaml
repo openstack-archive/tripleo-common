@@ -58,14 +58,22 @@ workflows:
         publish:
           numa_nodes: <% $.hw_data.numa_topology.ram.select($.numa_node).orderBy($) %>
         on-success:
-          - get_num_cores_per_numa_nodes: <% $.numa_nodes %>
+          - get_num_phy_cores_per_numa_for_pmd: <% $.numa_nodes %>
           - set_status_failed_get_numa_nodes: <% not $.numa_nodes %>
+
+      get_num_phy_cores_per_numa_for_pmd:
+        publish:
+          num_phy_cores_per_numa_node_for_pmd: <% $.user_inputs.get('num_phy_cores_per_numa_node_for_pmd', 0) %>
+        on-success:
+          - get_num_cores_per_numa_nodes: <% isInteger($.num_phy_cores_per_numa_node_for_pmd) and $.num_phy_cores_per_numa_node_for_pmd > 0 %>
+          - set_status_failed_get_num_phy_cores_per_numa_for_pmd_invalid: <% not isInteger($.num_phy_cores_per_numa_node_for_pmd) %>
+          - set_status_failed_get_num_phy_cores_per_numa_for_pmd_not_provided: <% $.num_phy_cores_per_numa_node_for_pmd = 0 %>
 
       # For NUMA node with DPDK nic, number of cores should be used from user input (defaults to 2)
       # For NUMA node without DPDK nic, number of cores should be 1
       get_num_cores_per_numa_nodes:
         publish:
-          num_cores_per_numa_nodes: <% let(dpdk_nics_nodes => $.dpdk_nics_numa_nodes, cores => $.user_inputs.get('num_phy_cores_per_numa_node_for_pmd', 2)) -> $.numa_nodes.select(switch($ in $dpdk_nics_nodes => $cores, not $ in $dpdk_nics_nodes => 1)) %>
+          num_cores_per_numa_nodes: <% let(dpdk_nics_nodes => $.dpdk_nics_numa_nodes, cores => $.num_phy_cores_per_numa_node_for_pmd) -> $.numa_nodes.select(switch($ in $dpdk_nics_nodes => $cores, not $ in $dpdk_nics_nodes => 1)) %>
         on-success: get_pmd_cpus
 
       get_pmd_cpus:
@@ -153,6 +161,18 @@ workflows:
         publish:
           status: FAILED
           message: 'Unable to determine available NUMA nodes'
+        on-success: fail
+
+      set_status_failed_get_num_phy_cores_per_numa_for_pmd_invalid:
+        publish:
+          status: FAILED
+          message: <% "num_phy_cores_per_numa_node_for_pmd user input '{0}' is invalid".format($.num_phy_cores_per_numa_node_for_pmd) %>
+        on-success: fail
+
+      set_status_failed_get_num_phy_cores_per_numa_for_pmd_not_provided:
+        publish:
+          status: FAILED
+          message: 'num_phy_cores_per_numa_node_for_pmd user input is not provided'
         on-success: fail
 
       set_status_failed_get_pmd_cpus:
@@ -312,12 +332,20 @@ workflows:
         publish:
           total_memory: <% $.hw_data.get('inventory', {}).get('memory', {}).get('physical_mb', 0) %>
         on-success:
-          - get_hugepages: <% $.total_memory %>
+          - get_hugepage_allocation_percentage: <% $.total_memory %>
           - set_status_failed_get_total_memory: <% not $.total_memory %>
+
+      get_hugepage_allocation_percentage:
+        publish:
+          huge_page_allocation_percentage: <% $.user_inputs.get('huge_page_allocation_percentage', 0) %>
+        on-success:
+          - get_hugepages: <% isInteger($.huge_page_allocation_percentage) and $.huge_page_allocation_percentage > 0 %>
+          - set_status_failed_get_hugepage_allocation_percentage_invalid: <% not isInteger($.huge_page_allocation_percentage) %>
+          - set_status_failed_get_hugepage_allocation_percentage_not_provided: <% $.huge_page_allocation_percentage = 0 %>
 
       get_hugepages:
         publish:
-          hugepages: <% let(huge_page_perc => float($.user_inputs.get('huge_page_allocation_percentage', 90))/100)-> int((($.total_memory/1024)-4) * $huge_page_perc) %>
+          hugepages: <% let(huge_page_perc => float($.huge_page_allocation_percentage)/100)-> int((($.total_memory/1024)-4) * $huge_page_perc) %>
         on-success:
           - get_cpu_model: <% $.hugepages %>
           - set_status_failed_get_hugepages: <% not $.hugepages %>
@@ -393,6 +421,18 @@ workflows:
         publish:
           status: FAILED
           message: 'Unable to determine total memory'
+        on-success: fail
+
+      set_status_failed_get_hugepage_allocation_percentage_invalid:
+        publish:
+          status: FAILED
+          message: <% "huge_page_allocation_percentage user input '{0}' is invalid".format($.huge_page_allocation_percentage) %>
+        on-success: fail
+
+      set_status_failed_get_hugepage_allocation_percentage_not_provided:
+        publish:
+          status: FAILED
+          message: 'huge_page_allocation_percentage user input is not provided'
         on-success: fail
 
       set_status_failed_get_hugepages:
