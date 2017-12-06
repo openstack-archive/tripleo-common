@@ -35,7 +35,7 @@ QUERY_NODE=""
 HOSTNAME=""
 IP_ADDR=""
 INVENTORY=""
-
+ANSIBLE_OPTS="" # e.g. "--skip-tags validation"
 function show_options {
     echo "Usage: $SCRIPT_NAME"
     echo
@@ -45,11 +45,14 @@ function show_options {
     echo "                                to upgrade"
     echo "  -q|--query <nova node>     -- check if the node is ACTIVE and tail"
     echo "                                yum.log for any package update info"
+    echo "  -I|--inventory <path>      -- use the specified tripleo ansible "
+    echo "                                inventory "
+    echo "  -O|--ansible-opts \"opts\"   -- specify extra options to be passed "
+    echo "                                to ansible-playbook e.g. \"-vvv\" or "
+    echo "                                \"-vvv --skip-tags validation\""
     echo "  -U|--overcloud-user <name> -- the user with which to ssh to the"
     echo "                                target upgrade node - defaults to"
     echo "                                $UPGRADE_NODE_USER_DEFAULT"
-    echo "  -I|--inventory <path>      -- use the specified tripleo ansible "
-    echo "                                inventory "
     echo
     echo "Invoke the /root/tripleo_upgrade_node.sh script on roles that have"
     echo "the 'disable_upgrade_deployment' flag set true and then download and"
@@ -75,6 +78,9 @@ function show_options {
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.15 "
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.16 \ "
     echo "                              -I /home/stack/tripleo-ansible-inventory"
+    echo "    upgrade-non-controller.sh -U stack -u 192.168.24.16 \ "
+    echo "                              -I /home/stack/tripleo-ansible-inventory \ "
+    echo "                              -O \"-vvv --skip-tags validation\" "
     echo
     echo "You can run on multiple nodes in parallel: "
 
@@ -86,7 +92,7 @@ function show_options {
     exit $1
 }
 
-TEMP=`getopt -o h,u:,q:,U:,I: -l help,upgrade:,query:,overcloud-user:,inventory: -n $SCRIPT_NAME -- "$@"`
+TEMP=`getopt -o h,u:,q:,U:,I:,O: -l help,upgrade:,query:,overcloud-user:,inventory:,ansible-opts: -n $SCRIPT_NAME -- "$@"`
 
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
@@ -103,6 +109,7 @@ while true ; do
         -q | --query ) QUERY_NODE="$2" ; shift 2 ;;
         -U | --overcloud-user ) UPGRADE_NODE_USER="$2"; shift 2;;
         -I | --inventory ) INVENTORY="$2"; shift 2;;
+        -O | --ansible-opts ) ANSIBLE_OPTS="$2"; shift 2;;
         -- ) shift ; break ;;
         * ) echo "Error: unsupported option $1." ; exit 1 ;;
     esac
@@ -173,6 +180,13 @@ function get_static_inventory {
   fi
 }
 
+function run_ansible_playbook {
+    local playbook=$UPGRADE_NODE/$1
+    full_args=" -b --limit $HOSTNAME --inventory $INVENTORY $ANSIBLE_OPTS $playbook"
+    log "Running ansible-playbook with $full_args"
+    ansible-playbook $full_args 2>&1 | tee -a  $LOGFILE
+}
+
 if [ -n "$UPGRADE_NODE" ]; then
   find_node_by_name_id_or_ip $UPGRADE_NODE
   log "Executing $UPGRADE_SCRIPT on $IP_ADDR"
@@ -185,10 +199,9 @@ if [ -n "$UPGRADE_NODE" ]; then
     get_static_inventory $UPGRADE_NODE/$config_dir
     INVENTORY=$UPGRADE_NODE/$config_dir/tripleo-ansible-inventory
   fi
-  log "Starting the upgrade steps playbook run for $HOSTNAME from $UPGRADE_NODE/$config_dir/"
-  ansible-playbook -b -i $INVENTORY $UPGRADE_NODE/$config_dir/upgrade_steps_playbook.yaml --limit $HOSTNAME
-  log "Starting the deploy-steps-playbook run for $HOSTNAME from $UPGRADE_NODE/$config_dir/"
-  ansible-playbook -b -i $INVENTORY $UPGRADE_NODE/$config_dir/deploy_steps_playbook.yaml --limit $HOSTNAME
+  for book in upgrade_steps_playbook.yaml deploy_steps_playbook.yaml ; do
+    run_ansible_playbook $config_dir/$book
+  done
 fi
 
 if [ -n "$QUERY_NODE" ]; then
