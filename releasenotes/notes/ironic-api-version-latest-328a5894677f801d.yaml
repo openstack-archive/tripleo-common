@@ -1,0 +1,8 @@
+---
+upgrade:
+  - |
+    The environment variables ``IRONIC_API_VERSION`` and
+    ``OS_BAREMETAL_API_VERSION`` are no longer set in ``overcloudrc``.
+    Starting with python-ironicclient 2.0.0 this will result in the latest
+    supported API version to be used. Scripts that rely on a particular API
+    version behavior must set these versions explicitly.
