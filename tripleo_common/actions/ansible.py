@@ -264,6 +264,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self.execution_id = self._kwargs_for_run.pop('execution_id', None)
         self._work_dir = self._kwargs_for_run.pop(
             'work_dir', None)
+        self.max_message_size = self._kwargs_for_run.pop(
+            'max_message_size', 1048576)
 
     @property
     def work_dir(self):
@@ -346,13 +348,31 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self._ssh_private_key = path
         return path
 
-    def format_message(self, lines):
+    def format_message(self, message):
         return {
             'body': {
                 'payload': {
-                    'message': ''.join(lines),
+                    'message': message,
                     'status': 'RUNNING',
                     'execution': {'id': self.execution_id}}}}
+
+    def post_message(self, queue, message):
+        """Posts message to queue
+
+        Breaks the message up it up by maximum message size if needed.
+        """
+
+        start = 0
+        # We use 90% of the max message size to account for any overhead,
+        # plus the wrapped dict structure from format_message
+        message_size = int(self.max_message_size * 0.9)
+        while True:
+            end = start + message_size
+            message_part = message[start:end]
+            start = end
+            if not message_part:
+                return
+            queue.post(self.format_message(message_part))
 
     def run(self, context):
         if 0 < self.verbosity < 6:
@@ -463,10 +483,10 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     lines.append(line)
                     stdout.append(line)
                     if time.time() - start > 30:
-                        queue.post(self.format_message(lines))
+                        self.post_message(queue, ''.join(lines))
                         lines = []
                         start = time.time()
-                queue.post(self.format_message(lines))
+                self.post_message(queue, ''.join(lines))
                 process.stdout.close()
                 returncode = process.wait()
                 # TODO(d0ugal): This bit isn't ideal - as we redirect stderr to

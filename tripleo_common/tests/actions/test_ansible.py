@@ -16,7 +16,9 @@
 import json
 import mock
 import os
+import random
 from six.moves import configparser
+import string
 import tempfile
 
 from oslo_concurrency import processutils
@@ -78,6 +80,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
         self.extra_vars = {"var1": True, "var2": 0}
         self.verbosity = 1
         self.ctx = mock.MagicMock()
+        self.max_message_size = 1024
 
     @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
     @mock.patch("oslo_concurrency.processutils.execute")
@@ -107,6 +110,62 @@ class AnsiblePlaybookActionTest(base.TestCase):
             '--extra-vars', json.dumps(self.extra_vars),
             env_variables=env, cwd=action.work_dir,
             log_errors=processutils.LogErrors.ALL)
+
+    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch("oslo_concurrency.processutils.execute")
+    def test_post_message(self, mock_execute, mock_write_cfg):
+
+        action = ansible.AnsiblePlaybookAction(
+            playbook=self.playbook, limit_hosts=self.limit_hosts,
+            remote_user=self.remote_user, become=self.become,
+            become_user=self.become_user, extra_vars=self.extra_vars,
+            verbosity=self.verbosity,
+            max_message_size=self.max_message_size)
+        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
+        mock_write_cfg.return_value = ansible_config_path
+
+        message_size = int(self.max_message_size * 0.9)
+
+        # Message equal to max_message_size
+        queue = mock.Mock()
+        message = ''.join([string.ascii_letters[int(random.random() * 26)]
+                          for x in range(1024)])
+        action.post_message(queue, message)
+        self.assertEqual(queue.post.call_count, 2)
+        self.assertEqual(
+            queue.post.call_args_list[0],
+            mock.call(action.format_message(message[:message_size])))
+        self.assertEqual(
+            queue.post.call_args_list[1],
+            mock.call(action.format_message(message[message_size:])))
+
+        # Message less than max_message_size
+        queue = mock.Mock()
+        message = ''.join([string.ascii_letters[int(random.random() * 26)]
+                           for x in range(512)])
+        action.post_message(queue, message)
+        self.assertEqual(queue.post.call_count, 1)
+        self.assertEqual(
+            queue.post.call_args_list[0],
+            mock.call(action.format_message(message)))
+
+        # Message double max_message_size
+        queue = mock.Mock()
+        message = ''.join([string.ascii_letters[int(random.random() * 26)]
+                           for x in range(2048)])
+        action.post_message(queue, message)
+        self.assertEqual(queue.post.call_count, 3)
+        self.assertEqual(
+            queue.post.call_args_list[0],
+            mock.call(action.format_message(message[:message_size])))
+        self.assertEqual(
+            queue.post.call_args_list[1],
+            mock.call(action.format_message(
+                      message[message_size:message_size * 2])))
+        self.assertEqual(
+            queue.post.call_args_list[2],
+            mock.call(action.format_message(
+                      message[message_size * 2:2048])))
 
 
 class CopyConfigFileTest(base.TestCase):

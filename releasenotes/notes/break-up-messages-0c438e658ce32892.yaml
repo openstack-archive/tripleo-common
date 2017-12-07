@@ -1,0 +1,6 @@
+---
+fixes:
+  - Messages posted back to a zaqar queue by the ansible-playbook action could
+    easily exceed the max message size for the queue. Instead of posting a
+    single message each time, break it up based on the max message size and
+    post a separate message for each.
