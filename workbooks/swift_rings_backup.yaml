@@ -72,7 +72,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: FAILED
-          message: <% task(create_container_failed).result %>
+          message: <% task(create_container).result %>
 
       notify_zaqar:
         action: zaqar.queue_post
