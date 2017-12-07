@@ -261,7 +261,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self.queue_name = self._kwargs_for_run.pop('queue_name', None)
         self.reproduce_command = self._kwargs_for_run.pop(
             'reproduce_command', True)
-
+        self.execution_id = self._kwargs_for_run.pop('execution_id', None)
         self._work_dir = self._kwargs_for_run.pop(
             'work_dir', None)
 
@@ -352,7 +352,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 'payload': {
                     'message': ''.join(lines),
                     'status': 'RUNNING',
-                    'execution': {'id': None}}}}
+                    'execution': {'id': self.execution_id}}}}
 
     def run(self, context):
         if 0 < self.verbosity < 6:
