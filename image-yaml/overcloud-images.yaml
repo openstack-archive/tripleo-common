@@ -28,12 +28,7 @@ disk_images:
       - sos
       - ntp
       - device-mapper-multipath
-      - python-heat-agent-puppet
-      - python-heat-agent-hiera
-      - python-heat-agent-apply-config
-      - python-heat-agent-ansible
-      - python-heat-agent-docker-cmd
-      - python-heat-agent-json-file
+      - openstack-heat-agents
     options:
       - "--min-tmpfs 5"
     environment:
