@@ -23,6 +23,7 @@ import sys
 import yaml
 
 from tripleo_common.image import base
+from tripleo_common.image import image_uploader
 
 
 CONTAINER_IMAGES_DEFAULTS = {
@@ -36,6 +37,77 @@ CONTAINER_IMAGES_DEFAULTS = {
     'neutron_driver': None,
     'logging': 'files'
 }
+
+
+DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
+                                     'container-images',
+                                     'overcloud_containers.yaml.j2')
+
+
+def container_images_prepare_defaults():
+    return KollaImageBuilder.container_images_template_inputs()
+
+
+def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
+                             excludes=None, service_filter=None,
+                             pull_source=None, push_destination=None,
+                             mapping_args=None, output_env_file=None,
+                             output_images_file=None):
+
+    if mapping_args is None:
+        mapping_args = {}
+
+    def ffunc(entry):
+        imagename = entry.get('imagename', '')
+        if excludes:
+            for p in excludes:
+                if re.search(p, imagename):
+                    return None
+        if service_filter is not None:
+            # check the entry is for a service being deployed
+            image_services = set(entry.get('services', []))
+            if not image_services.intersection(service_filter):
+                return None
+        if pull_source:
+            entry['pull_source'] = pull_source
+        if push_destination:
+            entry['push_destination'] = push_destination
+        return entry
+
+    builder = KollaImageBuilder([template_file])
+    result = builder.container_images_from_template(
+        filter=ffunc, **mapping_args)
+
+    params = {}
+    for entry in result:
+        imagename = entry.get('imagename', '')
+        if 'params' in entry:
+            for p in entry.pop('params'):
+                params[p] = imagename
+        if 'services' in entry:
+            del(entry['services'])
+
+    params.update(
+        detect_insecure_registries(params))
+
+    return_data = {}
+    if output_env_file:
+        return_data[output_env_file] = params
+    if output_images_file:
+        return_data[output_images_file] = result
+    return return_data
+
+
+def detect_insecure_registries(params):
+    insecure = set()
+    uploader = image_uploader.ImageUploadManager().uploader('docker')
+    for image in params.values():
+        host = image.split('/')[0]
+        if uploader.is_insecure_registry(host):
+            insecure.add(host)
+    if not insecure:
+        return {}
+    return {'DockerInsecureRegistryAddress': sorted(insecure)}
 
 
 class KollaImageBuilder(base.BaseImageManager):
@@ -63,7 +135,8 @@ class KollaImageBuilder(base.BaseImageManager):
         # what results should be acceptable as a regex to build one image
         return imagename
 
-    def container_images_template_inputs(self, **kwargs):
+    @staticmethod
+    def container_images_template_inputs(**kwargs):
         '''Build the template mapping from defaults and keyword arguments.
 
         Defaults in CONTAINER_IMAGES_DEFAULTS are combined with keyword

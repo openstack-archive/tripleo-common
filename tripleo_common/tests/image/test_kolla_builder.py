@@ -16,14 +16,21 @@
 
 import mock
 import os
+import requests
 import six
 import subprocess
 import sys
 import tempfile
 import yaml
 
+from tripleo_common import constants
 from tripleo_common.image import kolla_builder as kb
 from tripleo_common.tests import base
+
+
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__),
+                             '..', '..', '..', 'container-images',
+                             'overcloud_containers.yaml.j2')
 
 
 filedata = six.u("""container_images:
@@ -348,3 +355,203 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                           '-neutron-metadata-agent-ovn:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images, logging='stdout')
+
+
+class TestPrepare(base.TestCase):
+
+    def setUp(self):
+        super(TestPrepare, self).setUp()
+        with tempfile.NamedTemporaryFile(delete=False) as imagefile:
+            self.addCleanup(os.remove, imagefile.name)
+            self.filelist = [imagefile.name]
+            with open(imagefile.name, 'w') as f:
+                f.write(template_filedata)
+
+    @mock.patch('requests.get')
+    def test_detect_insecure_registry(self, mock_get):
+        self.assertEqual(
+            {},
+            kb.detect_insecure_registries(
+                {'foo': 'docker.io/tripleo'}))
+        self.assertEqual(
+            {},
+            kb.detect_insecure_registries(
+                {'foo': 'tripleo'}))
+
+        mock_get.side_effect = requests.exceptions.ReadTimeout('ouch')
+        self.assertEqual(
+            {},
+            kb.detect_insecure_registries(
+                {'foo': '192.0.2.0:8787/tripleo'}))
+
+        mock_get.side_effect = requests.exceptions.SSLError('ouch')
+        self.assertEqual(
+            {'DockerInsecureRegistryAddress': ['192.0.2.0:8787']},
+            kb.detect_insecure_registries(
+                {'foo': '192.0.2.0:8787/tripleo'}))
+
+        self.assertEqual(
+            {'DockerInsecureRegistryAddress': [
+                '192.0.2.0:8787',
+                '192.0.2.1:8787']},
+            kb.detect_insecure_registries({
+                'foo': '192.0.2.0:8787/tripleo/foo',
+                'bar': '192.0.2.0:8787/tripleo/bar',
+                'baz': '192.0.2.1:8787/tripleo/baz',
+            }))
+
+    @mock.patch('requests.get')
+    def test_prepare_noargs(self, mock_get):
+        self.assertEqual(
+            {},
+            kb.container_images_prepare(template_file=TEMPLATE_PATH)
+        )
+
+    @mock.patch('requests.get')
+    def test_prepare_simple(self, mock_get):
+        self.assertEqual({
+            'container_images.yaml': [
+                {'imagename': '192.0.2.0:8787/t/p-nova-compute:l'}
+            ],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNovaComputeImage': '192.0.2.0:8787/t/p-nova-compute:l',
+                'DockerNovaLibvirtConfigImage': '192.0.2.0:8787/t/'
+                                                'p-nova-compute:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                service_filter=['OS::TripleO::Services::NovaLibvirt'],
+                excludes=['libvirt'],
+                mapping_args={
+                    'namespace': '192.0.2.0:8787/t',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
+    def test_prepare_push_dest(self, mock_get):
+        self.assertEqual({
+            'container_images.yaml': [{
+                'imagename': 'docker.io/t/p-nova-api:l',
+                'push_destination': '192.0.2.0:8787',
+            }],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNovaApiImage': 'docker.io/t/p-nova-api:l',
+                'DockerNovaConfigImage': 'docker.io/t/p-nova-api:l',
+                'DockerNovaMetadataImage': 'docker.io/t/p-nova-api:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                service_filter=['OS::TripleO::Services::NovaApi'],
+                push_destination='192.0.2.0:8787',
+                mapping_args={
+                    'namespace': 'docker.io/t',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
+    def test_prepare_ceph(self, mock_get):
+        self.assertEqual({
+            'container_images.yaml': [{
+                'imagename': '192.0.2.0:8787/t/ceph:l',
+            }],
+            'environments/containers-default-parameters.yaml': {
+                'DockerCephDaemonImage': '192.0.2.0:8787/t/ceph:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                service_filter=['OS::TripleO::Services::CephMon'],
+                mapping_args={
+                    'ceph_namespace': '192.0.2.0:8787/t',
+                    'ceph_image': 'ceph',
+                    'ceph_tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
+    def test_prepare_neutron_driver_default(self, mock_get):
+        self.assertEqual({
+            'container_images.yaml': [
+                {'imagename': 't/p-neutron-server:l'}
+            ],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNeutronApiImage': 't/p-neutron-server:l',
+                'DockerNeutronConfigImage': 't/p-neutron-server:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                service_filter=['OS::TripleO::Services::NeutronServer'],
+                mapping_args={
+                    'namespace': 't',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
+    def test_prepare_neutron_driver_ovn(self, mock_get):
+        self.assertEqual({
+            'container_images.yaml': [
+                {'imagename': 't/p-neutron-server-ovn:l'}
+            ],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNeutronApiImage': 't/p-neutron-server-ovn:l',
+                'DockerNeutronConfigImage': 't/p-neutron-server-ovn:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                service_filter=['OS::TripleO::Services::NeutronServer'],
+                mapping_args={
+                    'neutron_driver': 'ovn',
+                    'namespace': 't',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
+    def test_prepare_neutron_driver_odl(self, mock_get):
+        self.assertEqual({
+            'container_images.yaml': [
+                {'imagename': 't/p-neutron-server-opendaylight:l'}
+            ],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNeutronApiImage': 't/p-neutron-server-opendaylight:l',
+                'DockerNeutronConfigImage': 't/p-neutron-server-opendaylight:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                service_filter=['OS::TripleO::Services::NeutronServer'],
+                mapping_args={
+                    'neutron_driver': 'odl',
+                    'namespace': 't',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
