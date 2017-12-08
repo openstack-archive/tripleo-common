@@ -64,6 +64,7 @@ PASSWORD_PARAMETER_NAMES = (
     'AdminToken',
     'AodhPassword',
     'BarbicanPassword',
+    'BarbicanSimpleCryptoKek',
     'CeilometerMeteringSecret',
     'CeilometerPassword',
     'CephAdminKey',

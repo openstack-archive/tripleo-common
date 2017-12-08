@@ -45,6 +45,7 @@ class TestPasswords(base.TestCase):
                 uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False),
+                uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False)]
 
         snmpd_password = uuidutils.generate_uuid(dashed=False)
@@ -65,6 +66,7 @@ class TestPasswords(base.TestCase):
         self.assertIn(value['KeystoneCredential1'], keys)
         self.assertIn(value['KeystoneFernetKey0'], keys)
         self.assertIn(value['KeystoneFernetKey1'], keys)
+        self.assertIn(value['BarbicanSimpleCryptoKek'], keys)
 
         self.assertNotEqual(value['KeystoneFernetKey0'],
                             value['KeystoneFernetKey1'])
