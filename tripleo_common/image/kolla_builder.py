@@ -27,13 +27,13 @@ from tripleo_common.image import image_uploader
 
 
 CONTAINER_IMAGES_DEFAULTS = {
-    'namespace': 'docker.io/tripleoupstream',
+    'namespace': 'docker.io/tripleomaster',
     'ceph_namespace': 'docker.io/ceph',
     'ceph_image': 'daemon',
     'ceph_tag': 'tag-stable-3.0-luminous-centos-7',
     'name_prefix': 'centos-binary-',
     'name_suffix': '',
-    'tag': 'latest',
+    'tag': 'current-tripleo',
     'neutron_driver': None,
     'logging': 'files'
 }

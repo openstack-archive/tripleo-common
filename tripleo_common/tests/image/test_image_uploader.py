@@ -27,12 +27,12 @@ from tripleo_common.tests.image import fakes
 
 filedata = six.u(
     """container_images:
-    - imagename: docker.io/tripleoupstream/heat-docker-agents-centos:latest
+    - imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
       push_destination: localhost:8787
-    - imagename: docker.io/tripleoupstream/centos-binary-nova-compute:liberty
+    - imagename: docker.io/tripleomaster/centos-binary-nova-compute:liberty
       push_destination: localhost:8787
-    - imagename: docker.io/tripleoupstream/centos-binary-nova-libvirt:liberty
-    - imagename: docker.io/tripleoupstream/image-with-missing-tag
+    - imagename: docker.io/tripleomaster/centos-binary-nova-libvirt:liberty
+    - imagename: docker.io/tripleomaster/image-with-missing-tag
       push_destination: localhost:8787
 """)
 
@@ -70,22 +70,22 @@ class TestImageUploadManager(base.TestCase):
 
         dockerc = mockdocker.return_value
         dockerc.remove_image.assert_has_calls([
-            mock.call('docker.io/tripleoupstream'
+            mock.call('docker.io/tripleomaster'
                       '/centos-binary-nova-compute:liberty'),
-            mock.call('docker.io/tripleoupstream'
+            mock.call('docker.io/tripleomaster'
                       '/centos-binary-nova-libvirt:liberty'),
-            mock.call('docker.io/tripleoupstream'
+            mock.call('docker.io/tripleomaster'
                       '/heat-docker-agents-centos:latest'),
-            mock.call('docker.io/tripleoupstream'
+            mock.call('docker.io/tripleomaster'
                       '/image-with-missing-tag:latest'),
 
-            mock.call('localhost:8787/tripleoupstream'
+            mock.call('localhost:8787/tripleomaster'
                       '/centos-binary-nova-compute:liberty'),
-            mock.call('localhost:8787/tripleoupstream'
+            mock.call('localhost:8787/tripleomaster'
                       '/centos-binary-nova-libvirt:liberty'),
-            mock.call('localhost:8787/tripleoupstream'
+            mock.call('localhost:8787/tripleomaster'
                       '/heat-docker-agents-centos:latest'),
-            mock.call('localhost:8787/tripleoupstream/'
+            mock.call('localhost:8787/tripleomaster/'
                       'image-with-missing-tag:latest'),
         ])
 
@@ -134,10 +134,10 @@ class TestDockerImageUploader(base.TestCase):
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
 
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
-        push_image = 'localhost:8787/tripleoupstream/heat-docker-agents-centos'
+        push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
 
         self.uploader.upload_image(image + ':' + tag,
                                    None,
@@ -159,10 +159,10 @@ class TestDockerImageUploader(base.TestCase):
 
     @mock.patch('subprocess.Popen')
     def test_upload_image_missing_tag(self, mock_popen):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
         expected_tag = 'latest'
         push_destination = 'localhost:8787'
-        push_image = 'localhost:8787/tripleoupstream/heat-docker-agents-centos'
+        push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
 
         self.uploader.upload_image(image,
                                    None,
@@ -191,7 +191,7 @@ class TestDockerImageUploader(base.TestCase):
         mock_process.communicate.return_value = (json.dumps(result), '')
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
 
@@ -390,7 +390,7 @@ class TestDockerImageUploader(base.TestCase):
 
     @mock.patch('time.sleep')
     def test_pull_retry(self, sleep_mock):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
         dockerc.pull.side_effect = [
@@ -409,7 +409,7 @@ class TestDockerImageUploader(base.TestCase):
 
     @mock.patch('time.sleep')
     def test_pull_retry_failure(self, sleep_mock):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
         dockerc.pull.side_effect = [
