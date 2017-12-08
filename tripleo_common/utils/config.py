@@ -31,36 +31,22 @@ class Config(object):
     def __init__(self, orchestration_client):
         self.log = logging.getLogger(__name__ + ".Config")
         self.client = orchestration_client
-        self.__server_id_data = None
+        self.stack_outputs = {}
 
-    def get_role_data(self, stack):
-        role_data = {}
-        for output in stack.to_dict().get('outputs', {}):
-            if output['output_key'] == 'RoleData':
-                for role in output['output_value']:
-                    role_data[role] = output['output_value'][role]
-        return role_data
-
-    def get_role_config(self, stack):
-        role_data = {}
-        for output in stack.to_dict().get('outputs', {}):
-            if output['output_key'] == 'RoleConfig':
-                for role in output['output_value']:
-                    role_data[role] = output['output_value'][role]
-        return role_data
-
-    def get_server_data(self, stack, role_names,
-                        nested_depth=constants.NESTED_DEPTH):
-        servers = []
-        server_resource_types = [constants.SERVER_RESOURCE_TYPES % r
-                                 for r in role_names]
-
-        for server_resource_type in server_resource_types:
-            servers += self.client.resources.list(
-                stack,
-                nested_depth=nested_depth,
-                filters=dict(type=server_resource_type),
-                with_detail=True)
+    def get_server_names(self):
+        servers = {}
+        role_node_id_map = self.stack_outputs.get('ServerIdData', {})
+        role_net_hostname_map = self.stack_outputs.get(
+            'RoleNetHostnameMap', {})
+        for role, hostnames in role_net_hostname_map.items():
+            if hostnames:
+                names = hostnames.get(constants.HOST_NETWORK) or []
+                shortnames = [n.split(".%s." % constants.HOST_NETWORK)[0]
+                              for n in names]
+                for idx, name in enumerate(shortnames):
+                    if 'server_ids' in role_node_id_map:
+                        server_id = role_node_id_map['server_ids'][role][idx]
+                        servers[server_id] = name
         return servers
 
     def get_deployment_data(self, stack,
@@ -74,16 +60,11 @@ class Config(object):
         deployments = sorted(deployments, key=lambda d: d.creation_time)
         return deployments
 
-    def get_server_id_data(self, stack):
-        for output in stack.to_dict().get('outputs', {}):
-            if output['output_key'] == 'ServerIdData':
-                return output['output_value']['server_ids']
-
     def get_role_from_server_id(self, stack, server_id):
-        if self.__server_id_data is None:
-            self.__server_id_data = self.get_server_id_data(stack)
+        server_id_data = self.stack_outputs.get('ServerIdData', {}
+                                                ).get('server_ids', {})
 
-        for k, v in self.__server_id_data.items():
+        for k, v in server_id_data.items():
             if server_id in v:
                 return k
 
@@ -166,6 +147,9 @@ class Config(object):
     def download_config(self, name, config_dir, config_type=None):
         # Get the stack object
         stack = self.client.stacks.get(name)
+        self.stack_outputs = {i['output_key']: i['output_value']
+                              for i in stack.outputs}
+
         # Create config directory
         self._mkdir(config_dir)
         tmp_path = tempfile.mkdtemp(prefix='tripleo-',
@@ -175,7 +159,7 @@ class Config(object):
                       "%s" % tmp_path)
 
         # Get role data:
-        role_data = self.get_role_data(stack)
+        role_data = self.stack_outputs.get('RoleData', {})
         for role_name, role in six.iteritems(role_data):
             role_path = os.path.join(tmp_path, role_name)
             self._mkdir(role_path)
@@ -205,7 +189,7 @@ class Config(object):
                         yaml.safe_dump(data,
                                        conf_file,
                                        default_flow_style=False)
-        role_config = self.get_role_config(stack)
+        role_config = self.stack_outputs.get('RoleConfig', {})
         for config_name, config in six.iteritems(role_config):
             conf_path = os.path.join(tmp_path, config_name + ".yaml")
             with self._open_file(conf_path) as conf_file:
@@ -215,16 +199,15 @@ class Config(object):
                     conf_file.write(config)
 
         # Get deployment data
-        self.log.info("Getting server data from Heat...")
-        server_data = self.get_server_data(name, role_data.keys())
         self.log.info("Getting deployment data from Heat...")
         deployments_data = self.get_deployment_data(name)
 
         # server_deployments is a dict of server name to a list of deployments
         # (dicts) associated with that server
         server_deployments = {}
-        # server_ids is a dict of server_name to server_id for easier lookup
-        server_ids = {}
+        # server_names is a dict of server id to server_name for easier lookup
+        server_names = self.get_server_names()
+        server_ids = dict([(v, k) for (k, v) in server_names.items()])
         # role_deployment_names is a dict of role names to deployment names for
         # that role. The deployment names are futher separated in their own
         # dict with keys of pre_deployment/post_deployment.
@@ -232,10 +215,6 @@ class Config(object):
 
         for deployment in deployments_data:
             server_id = deployment.attributes['value']['server']
-            server = [s for s in server_data
-                      if s.physical_resource_id == server_id or
-                      s.attributes.get('OS::stack_id') == server_id].pop()
-            server_ids.setdefault(server.attributes['name'], server_id)
             config_dict = self.get_config_dict(deployment)
 
             # deployment_name should be set via the name property on the
@@ -252,9 +231,8 @@ class Config(object):
                 [i for i in config_dict['inputs']
                  if i['name'] == 'deploy_server_id'].pop()
             deploy_server_id_input['value'] = server_id
-
             server_deployments.setdefault(
-                server.attributes['name'],
+                server_names[server_id],
                 []).append(config_dict)
 
             role = self.get_role_from_server_id(stack, server_id)
