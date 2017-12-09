@@ -1,0 +1,5 @@
+---
+fixes:
+  - Use the openstack-heat-agents package to install all of the
+    python-heat-agent packages in the image, instead of having to specify each
+    individually.
