@@ -14,13 +14,20 @@ workflows:
     tags:
       - tripleo-common-managed
     tasks:
+
+      swift_rings_container:
+        publish:
+          swift_rings_container: "<% $.container %>-swift-rings"
+          swift_rings_tar: "swift-rings.tar.gz"
+        on-complete: check_container
+
       check_container:
-        action: swift.head_container container=<% $.container %>
+        action: swift.head_container container=<% $.swift_rings_container %>
         on-success: get_tempurl
         on-error: create_container
 
       create_container:
-        action: tripleo.plan.create_container container="<% $.container %>-swift-rings"
+        action: tripleo.plan.create_container container=<% $.swift_rings_container %>
         on-error: set_create_container_failed
         on-success: get_tempurl
 
@@ -28,8 +35,8 @@ workflows:
         action: tripleo.swift.tempurl
         on-success: set_get_tempurl
         input:
-          container: "<% $.container %>-swift-rings"
-          obj: "swift-rings.tar.gz"
+          container: <% $.swift_rings_container %>
+          obj: <% $.swift_rings_tar %>
 
       set_get_tempurl:
         action: tripleo.parameters.update
@@ -43,8 +50,8 @@ workflows:
         action: tripleo.swift.tempurl
         on-success: set_put_tempurl
         input:
-          container: "<% $.container %>-swift-rings"
-          obj: "swift-rings.tar.gz"
+          container: <% $.swift_rings_container %>
+          obj: <% $.swift_rings_tar %>
           method: "PUT"
 
       set_put_tempurl:
