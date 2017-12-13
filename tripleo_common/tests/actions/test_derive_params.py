@@ -423,6 +423,21 @@ class GetDpdkSocketMemoryActionTest(base.TestCase):
         result = action.run(mock_ctx)
         self.assertEqual(result, expected_result)
 
+    def test_run_valid_roundup_mtu(self):
+        dpdk_nics_numa_info = [{"name": "ens802f1", "numa_node": 1,
+                                "mtu": 1200}]
+        numa_nodes = [0, 1]
+        overhead = 800
+        packet_size_in_buffer = (4096 * 64)
+
+        expected_result = "1024,2048"
+        mock_ctx = mock.MagicMock()
+        action = derive_params.GetDpdkSocketMemoryAction(
+            dpdk_nics_numa_info, numa_nodes, overhead,
+            packet_size_in_buffer)
+        result = action.run(mock_ctx)
+        self.assertEqual(result, expected_result)
+
 
 class ConvertNumberToRangeListActionTest(base.TestCase):
 
