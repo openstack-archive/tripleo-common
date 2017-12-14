@@ -4,3 +4,9 @@
   yum:
     name: "{{ packages_bootstrap }}"
   become: true
+
+- name: Create /var/lib/heat-config/tripleo-config-download directory for deployment data
+  file:
+    path: /var/lib/heat-config/tripleo-config-download
+    state: directory
+  become: true

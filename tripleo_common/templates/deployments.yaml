@@ -1,9 +1,3 @@
-- name: Create /var/lib/heat-config/tripleo-config-download directory for deployment data
-  file:
-    path: /var/lib/heat-config/tripleo-config-download
-    state: directory
-  become: true
-
 - name: "Render deployment file for {{ item }}"
   template:
     src: ../templates/heat-config.j2
