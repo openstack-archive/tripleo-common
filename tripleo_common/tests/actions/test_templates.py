@@ -16,6 +16,7 @@ import jinja2
 import mock
 import yaml
 
+from heatclient import exc as heat_exc
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import templates
@@ -503,50 +504,41 @@ class ProcessTemplatesActionTest(base.TestCase):
     def test_heat_resource_exists(self, client_mock):
         mock_ctx = mock.MagicMock()
         heat_client = mock.MagicMock()
-        heat_client.stacks.list.return_value = [
-            mock.MagicMock(stack_name='overcloud')
-        ]
-        heat_client.resources.list.return_value = [
-            mock.MagicMock(
-                links=[{'rel': 'stack',
-                        'href': 'http://192.0.2.1:8004/v1/'
-                                'a959ac7d6a4a475daf2428df315c41ef/'
-                                'stacks/overcloud/123'}],
-                logical_resource_id='logical_id',
-                physical_resource_id='resource_id',
-                resource_type='OS::Heat::ResourceGroup',
-                resource_name='InternalNetwork'
-            ),
-        ]
+        heat_client.stacks.get.return_value = mock.MagicMock(
+            stack_name='overcloud')
+        heat_client.resources.get.return_value = mock.MagicMock(
+            links=[{'rel': 'stack',
+                    'href': 'http://192.0.2.1:8004/v1/'
+                            'a959ac7d6a4a475daf2428df315c41ef/'
+                            'stacks/overcloud/123'}],
+            logical_resource_id='logical_id',
+            physical_resource_id='resource_id',
+            resource_type='OS::Heat::ResourceGroup',
+            resource_name='InternalApiNetwork'
+        )
         client_mock.return_value = heat_client
         action = templates.ProcessTemplatesAction()
-        self.assertTrue(action._heat_resource_exists('InternalNetwork',
-                                                     mock_ctx))
+        self.assertTrue(
+            action._heat_resource_exists(
+                'Networks', 'InternalNetwork', mock_ctx))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     def test_no_heat_resource_exists(self, client_mock):
         mock_ctx = mock.MagicMock()
         heat_client = mock.MagicMock()
-        heat_client.stacks.list.return_value = [
-            mock.MagicMock(stack_name='overcloud')
-        ]
-        heat_client.resources.list.return_value = [
-            mock.MagicMock(
-                links=[{'rel': 'stack',
-                        'href': 'http://192.0.2.1:8004/v1/'
-                                'a959ac7d6a4a475daf2428df315c41ef/'
-                                'stacks/overcloud/123'}],
-                logical_resource_id='logical_id',
-                physical_resource_id='resource_id',
-                resource_type='OS::Heat::ResourceGroup',
-                resource_name='InternalApiNetwork'
-            ),
-        ]
+        heat_client.stacks.get.return_value = mock.MagicMock(
+            stack_name='overcloud')
+
+        def return_not_found(*args):
+            raise heat_exc.HTTPNotFound()
+
+        heat_client.resources.get.side_effect = return_not_found
         client_mock.return_value = heat_client
         action = templates.ProcessTemplatesAction()
-        self.assertFalse(action._heat_resource_exists('InternalNetwork',
-                                                      mock_ctx))
+        self.assertFalse(
+            action._heat_resource_exists(
+                'Networks', 'InternalNetwork', mock_ctx))
 
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._heat_resource_exists')
