@@ -410,6 +410,12 @@ container_images_template:
   - OS::TripleO::Services::NeutronApi
   - OS::TripleO::Services::NeutronServer
 
+- imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent-ovn{{name_suffix}}:{{tag}}"
+  params:
+  - DockerOvnMetadataImage
+  services:
+  - OS::TripleO::Services::OVNMetadataAgent
+
 {% else %}
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server{{name_suffix}}:{{tag}}"
   params:

@@ -282,6 +282,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'sb-db-server:latest'},
             {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-neutron-metadata-agent-ovn:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
@@ -303,6 +305,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                           'nb-db-server:latest'},
             {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'sb-db-server:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-neutron-metadata-agent-ovn:latest'},
             {'imagename': 'docker.io/tripleoupstream/centos-binary'
                           '-rsyslog-base:latest'}]
         self._test_container_images_yaml_in_sync_helper(
@@ -339,6 +343,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
                           'nb-db-server:latest'},
             {'imagename': 'docker.io/tripleoupstream/centos-binary-ovn-'
-                          'sb-db-server:latest'}]
+                          'sb-db-server:latest'},
+            {'imagename': 'docker.io/tripleoupstream/centos-binary'
+                          '-neutron-metadata-agent-ovn:latest'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images, logging='stdout')
