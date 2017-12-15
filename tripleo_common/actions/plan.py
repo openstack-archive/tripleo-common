@@ -434,3 +434,32 @@ class UpdateRolesAction(base.TripleOAction):
         save_roles = sorted(role_data_to_save, key=itemgetter('name'),
                             reverse=True)
         return actions.Result(data={'roles': save_roles})
+
+
+class GatherRolesAction(actions.Action):
+    """Gather role definitions
+
+    Check each role name from the input, check if it exists in
+    roles_data.yaml, if yes, use that role definition, if not, get the
+    role definition from roles directory. Return the gathered role
+    definitions.
+    """
+
+    def __init__(self, role_names, current_roles, available_roles):
+        super(GatherRolesAction, self).__init__()
+        self.role_names = role_names
+        self.current_roles = current_roles
+        self.available_roles = available_roles
+
+    def run(self, context):
+        err_msgs = []
+        # merge the two lists of dicts in the proper order.  last in wins, so
+        # a current role shall be favored over an available role.
+        gathered_roles = [role for role in {
+            x['name']: x for x in self.available_roles + self.current_roles
+        }.values() if role['name'] in self.role_names]
+
+        if err_msgs:
+            return actions.Result(error="/n".join(err_msgs))
+
+        return actions.Result(data={'gathered_roles': gathered_roles})
