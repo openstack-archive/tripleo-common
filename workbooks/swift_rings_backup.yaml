@@ -22,14 +22,11 @@ workflows:
         on-complete: check_container
 
       check_container:
-        action: swift.head_container container=<% $.swift_rings_container %>
+        workflow: tripleo.swift.v1.container_exists container=<% $.swift_rings_container %>
+        input:
+          create_container: true
         on-success: get_tempurl
-        on-error: create_container
-
-      create_container:
-        action: swift.put_container container=<% $.swift_rings_container %>
         on-error: set_create_container_failed
-        on-success: get_tempurl
 
       get_tempurl:
         action: tripleo.swift.tempurl

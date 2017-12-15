@@ -65,17 +65,22 @@ workflows:
           - create_plan: <% $.use_default_templates = false and $.source_url = null %>
 
       verify_container_doesnt_exist:
-        action: swift.head_container container=<% $.container %>
-        on-success: send_message
-        on-error: create_container
+        workflow: tripleo.swift.v1.container_exists
+        input:
+          container: <% $.container %>
         publish:
           status: FAILED
           message: "Unable to create plan. The Swift container already exists"
+        on-success: send_message
+        on-error: create_container
 
       create_container:
         action: tripleo.plan.create_container container=<% $.container %>
         on-success: templates_source_check
-        on-error: create_container_set_status_failed
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: send_message
 
       cleanup_temporary_files:
         action: tripleo.git.clean container=<% $.container %>
@@ -140,12 +145,6 @@ workflows:
         publish:
           status: SUCCESS
           message: 'Plan created.'
-
-      create_container_set_status_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(create_container).result %>
 
       clone_git_repo_set_status_failed:
         on-success: send_message
@@ -359,9 +358,12 @@ workflows:
     tasks:
 
       verify_container_exists:
-        action: swift.head_container container=<% $.container %>
+        workflow: tripleo.swift.v1.container_exists container=<% $.container %>
         on-success: get_environment_passwords
-        on-error: verify_container_set_status_failed
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: send_message
 
       get_environment_passwords:
         action: tripleo.parameters.get_passwords container=<% $.container %>
@@ -379,12 +381,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(get_environment_passwords).result %>
-
-      verify_container_set_status_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(verify_container_exists).result %>
 
       send_message:
         workflow: tripleo.messaging.v1.send

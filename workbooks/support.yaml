@@ -137,23 +137,14 @@ workflows:
 
     tasks:
       check_container:
-        action: swift.head_container container=<% $.container %>
-        on-success: send_message
-        on-error: create_container
-
-      create_container:
-        action: swift.put_container
+        workflow: tripleo.swift.v1.container_exists
         input:
           container: <% $.container %>
+          create_container: true
           headers:
             x-container-meta-usage-tripleo: support
-        on-success: send_message
-        on-error: set_create_container_failed
-
-      set_create_container_failed:
-        on-complete:
-          - send_message
-        publish:
+        on-complete: send_message
+        publish-on-error:
           type: tripleo.support.v1.create_container.create_container
           status: FAILED
           message: <% task(create_container).result %>
@@ -184,16 +175,13 @@ workflows:
     tasks:
       # actions
       check_container:
-        action: swift.head_container container=<% $.container %>
+        workflow: tripleo.swift.v1.container_exists container=<% $.container %>
         on-success: list_objects
-        on-error: set_check_container_failure
-
-      set_check_container_failure:
-        on-complete: send_message
-        publish:
+        publish-on-error:
           status: FAILED
           type: tripleo.support.v1.delete_container.check_container
-          message: <% task(check_container).result %>
+          message: <% task().result %>
+        on-error: send_message
 
       list_objects:
         action: swift.get_container container=<% $.container %>

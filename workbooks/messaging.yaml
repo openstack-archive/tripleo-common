@@ -103,16 +103,9 @@ workflows:
         on-success: check_status
 
       verify_container_exists:
-        action: swift.head_container container=<% $.container %>
-        on-error:
-          - create_container
-        on-success:
-          - wait_for_swift: <% not bool($.deployment_status) %>
-          - persist_to_swift_plan_latest: <% bool($.deployment_status) %>
-          - persist_to_swift
-
-      create_container:
-        action: swift.put_container container=<% $.container %>
+        workflow: tripleo.swift.v1.container_exists container=<% $.container %>
+        input:
+          create_container: true
         on-success:
           - wait_for_swift: <% not bool($.deployment_status) %>
           - persist_to_swift_plan_latest: <% bool($.deployment_status) %>
@@ -136,7 +129,7 @@ workflows:
 
       wait_for_swift:
         # We want persist_to_swift and either persist_to_swift_plan_latest or
-        # create_container to join here. Two of the three tasks.
+        # verify_container_exists to join here. Two of the three tasks.
         join: 2
         on-success: complete_swift
 
