@@ -19,7 +19,11 @@ import json
 import logging
 import multiprocessing
 import netifaces
+import os
+import requests
 import six
+from six.moves import urllib
+import subprocess
 import time
 
 import docker
@@ -34,15 +38,22 @@ from tripleo_common.image.exception import ImageUploaderException
 LOG = logging.getLogger(__name__)
 
 
+SECURE_REGISTRIES = (
+    'trunk.registry.rdoproject.org',
+    'docker.io',
+)
+
+
 class ImageUploadManager(BaseImageManager):
     """Manage the uploading of image files
 
        Manage the uploading of images from a config file specified in YAML
        syntax. Multiple config files can be specified. They will be merged.
        """
-    logger = logging.getLogger(__name__ + '.ImageUploadManager')
 
-    def __init__(self, config_files, verbose=False, debug=False):
+    def __init__(self, config_files=None, verbose=False, debug=False):
+        if config_files is None:
+            config_files = []
         super(ImageUploadManager, self).__init__(config_files)
         self.uploaders = {}
 
@@ -123,12 +134,19 @@ class ImageUploader(object):
         """Remove unused images or temporary files from upload"""
         pass
 
+    @abc.abstractmethod
+    def is_insecure_registry(self, registry_host):
+        """Detect whether a registry host is not configured with TLS"""
+        pass
+
 
 class DockerImageUploader(ImageUploader):
     """Upload images using docker push"""
 
     def __init__(self):
         self.upload_tasks = []
+        self.secure_registries = set()
+        self.insecure_registries = set()
 
     @staticmethod
     def upload_image(image_name, pull_source, push_destination):
@@ -188,20 +206,34 @@ class DockerImageUploader(ImageUploader):
                 time.sleep(3)
                 LOG.warning('retrying pulling image: %s' % image)
 
-    def discover_image_tag(self, image, tag_from_label=None):
-        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
+    @staticmethod
+    def _inspect(image, insecure=False):
 
-        image_name, colon, tag = image.rpartition(':')
-        if not image_name:
-            image_name = tag
-            tag = None
-        if not tag:
-            tag = 'latest'
-        image = '%s:%s' % (image_name, tag)
+        cmd = ['skopeo', 'inspect']
 
-        DockerImageUploader._pull_retry(dockerc, image)
-        i = dockerc.inspect_image(image)
-        labels = i['Config']['Labels']
+        if insecure:
+            cmd.append('--tls-verify=false')
+        cmd.append(image)
+
+        LOG.info('Running %s' % ' '.join(cmd))
+        env = os.environ.copy()
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+
+        out, err = process.communicate()
+        if process.returncode != 0:
+            raise ImageUploaderException('Error inspecting image: %s\n%s' %
+                                         (image, err))
+        return json.loads(out)
+
+    @staticmethod
+    def _image_to_url(image):
+        if '://' not in image:
+            image = 'docker://' + image
+        return urllib.parse.urlparse(image)
+
+    @staticmethod
+    def _discover_tag_from_inspect(i, image, tag_from_label=None):
+        labels = i.get('Labels', {})
 
         label_keys = ', '.join(labels.keys())
 
@@ -217,11 +249,20 @@ class DockerImageUploader(ImageUploader):
                 (image, tag_from_label, label_keys)
             )
 
-        # confirm the tag exists by pulling it, which should be fast
-        # because that image has just been pulled
-        versioned_image = '%s:%s' % (image_name, tag_label)
-        DockerImageUploader._pull_retry(dockerc, versioned_image)
+        # confirm the tag exists by checking for an entry in RepoTags
+        repo_tags = i.get('RepoTags', [])
+        if tag_label not in repo_tags:
+            raise ImageUploaderException(
+                'Image %s has no tag %s.\nAvailable tags: %s' %
+                (image, tag_label, ', '.join(repo_tags))
+            )
         return tag_label
+
+    def discover_image_tag(self, image, tag_from_label=None):
+        image_url = self._image_to_url(image)
+        insecure = self.is_insecure_registry(image_url.netloc)
+        i = self._inspect(image_url.geturl(), insecure)
+        return self._discover_tag_from_inspect(i, image, tag_from_label)
 
     def cleanup(self, local_images):
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
@@ -260,6 +301,24 @@ class DockerImageUploader(ImageUploader):
         # Do cleanup after all the uploads so common layers don't get deleted
         # repeatedly
         self.cleanup(local_images)
+
+    def is_insecure_registry(self, registry_host):
+        if registry_host in self.secure_registries:
+            return False
+        if registry_host in self.insecure_registries:
+            return True
+        try:
+            requests.get('https://%s/' % registry_host)
+        except requests.exceptions.SSLError:
+            self.insecure_registries.add(registry_host)
+            return True
+        except Exception:
+            # for any other error assume it is a secure registry, because:
+            # - it is secure registry
+            # - the host is not accessible
+            pass
+        self.secure_registries.add(registry_host)
+        return False
 
 
 def docker_upload(args):
