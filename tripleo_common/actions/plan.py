@@ -262,9 +262,11 @@ class UpdatePlanFromDirAction(base.TripleOAction):
                             swift.get_object(container_tmp, new)[1])
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
+            LOG.exception(msg)
             return actions.Result(error=msg)
         except Exception as err:
             msg = "Error while updating plan: %s" % err
+            LOG.exception(msg)
             return actions.Result(error=msg)
 
 
