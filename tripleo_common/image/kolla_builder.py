@@ -68,10 +68,6 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
             image_services = set(entry.get('services', []))
             if not image_services.intersection(service_filter):
                 return None
-        if pull_source:
-            entry['pull_source'] = pull_source
-        if push_destination:
-            entry['push_destination'] = push_destination
         return entry
 
     builder = KollaImageBuilder([template_file])
@@ -81,6 +77,14 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     params = {}
     for entry in result:
         imagename = entry.get('imagename', '')
+        if pull_source:
+            entry['pull_source'] = pull_source
+        if push_destination:
+            entry['push_destination'] = push_destination
+            # replace the host portion of the imagename with the
+            # push_destination, since that is where they will be uploaded to
+            image = imagename.partition('/')[2]
+            imagename = '/'.join((push_destination, image))
         if 'params' in entry:
             for p in entry.pop('params'):
                 params[p] = imagename
