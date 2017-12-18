@@ -197,6 +197,44 @@ class iBootDriverInfoTest(base.TestCase):
                          self.driver_info.unique_id_from_node(node))
 
 
+class UcsDriverInfoTest(base.TestCase):
+    driver_info = nodes.UcsDriverInfo()
+
+    def test_convert_key(self):
+        keys = {
+            'pm_addr': 'ucs_address',
+            'pm_user': 'ucs_username',
+            'pm_password': 'ucs_password',
+            'pm_service_profile': 'ucs_service_profile'
+        }
+        for key, expected in keys.items():
+            self.assertEqual(expected, self.driver_info.convert_key(key))
+
+        self.assertIsNone(self.driver_info.convert_key('unknown'))
+
+    def test_unique_id_from_fields(self):
+        fields = {
+            'pm_addr': '127.0.0.1',
+            'pm_user': 'user',
+            'pm_password': '123456',
+            "pm_service_profile": 'org-root/org-CPC/ls-CPC-test'
+        }
+        self.assertEqual('127.0.0.1:org-root/org-CPC/ls-CPC-test',
+                         self.driver_info.unique_id_from_fields(fields))
+
+    def test_unique_id_from_node(self):
+        node = mock.Mock(
+            driver_info={
+                'ucs_address': '127.0.0.1',
+                'ucs_username': 'user',
+                'ucs_password': '123456',
+                "ucs_service_profile": 'org-root/org-CPC/ls-CPC-test'
+            }
+        )
+        self.assertEqual('127.0.0.1:org-root/org-CPC/ls-CPC-test',
+                         self.driver_info.unique_id_from_node(node))
+
+
 class FindNodeHandlerTest(base.TestCase):
     def test_found(self):
         test = [('fake', 'fake'),

@@ -234,17 +234,43 @@ class iBootDriverInfo(PrefixedDriverInfo):
         return result
 
 
+class UcsDriverInfo(DriverInfo):
+    def __init__(self):
+        mapping = {
+            'pm_addr': 'ucs_address',
+            'pm_user': 'ucs_username',
+            'pm_password': 'ucs_password',
+            'pm_service_profile': 'ucs_service_profile'
+        }
+        mandatory_fields = list(mapping)
+
+        super(UcsDriverInfo, self).__init__(
+            'ucs', mapping,
+            mandatory_fields=mandatory_fields
+        )
+
+    def unique_id_from_fields(self, fields):
+        try:
+            return '%s:%s' % (fields['pm_addr'], fields['pm_service_profile'])
+
+        except KeyError:
+            return
+
+    def unique_id_from_node(self, node):
+        try:
+            return '%s:%s' % (node.driver_info['ucs_address'],
+                              node.driver_info['ucs_service_profile'])
+        except KeyError:
+            return
+
+
 DRIVER_INFO = {
     # production drivers
     '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True,
                                              default_port=623),
     '.*_drac': PrefixedDriverInfo('drac', has_port=True),
     '.*_ilo': PrefixedDriverInfo('ilo'),
-    '.*_ucs': PrefixedDriverInfo(
-        'ucs',
-        deprecated_mapping={
-            'pm_service_profile': 'ucs_service_profile'
-        }),
+    '.*_ucs': UcsDriverInfo(),
     '.*_irmc': PrefixedDriverInfo(
         'irmc', has_port=True,
         deprecated_mapping={

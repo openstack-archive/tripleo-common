@@ -1,0 +1,11 @@
+---
+deprecations:
+  - |
+    Un-deprecated `pm_service_profile` option support at the UCS ironic
+    driver.
+fixes:
+  - |
+    Previously, ironic nodes that only differ in `pm_service_profile`
+    or `ucs_service_profile` would override one another ultimately leaving
+    just one of them in ironic configuration. This fix un-deprecates
+    `pm_service_profile` option support at the UCS ironic driver.
