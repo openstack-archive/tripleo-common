@@ -20,6 +20,7 @@ workflows:
           ANSIBLE_HOST_KEY_CHECKING: 'False'
       - ceph_ansible_extra_vars: {}
       - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
+      - node_data_lookup: '{}'
     tags:
       - tripleo-common-managed
     tasks:
@@ -49,15 +50,54 @@ workflows:
           nfs_ips: <% env().get('service_ips', {}).get('ceph_nfs_ctlplane_node_ips', []) %>
           rbdmirror_ips: <% env().get('service_ips', {}).get('ceph_rbdmirror_ctlplane_node_ips', []) %>
           client_ips: <% env().get('service_ips', {}).get('ceph_client_ctlplane_node_ips', []) %>
+        on-success: merge_ip_lists
+      merge_ip_lists:
+        publish:
+          ips_list: <% ($.mgr_ips + $.mon_ips + $.osd_ips + $.mds_ips + $.rgw_ips + $.nfs_ips + $.rbdmirror_ips + $.client_ips).toSet() %>
         on-success: set_fork_count
       set_fork_count:
-        publish: # unique list of all IPs: make each list a set, take unions and count
-          fork_count: <% min($.mon_ips.toSet().union($.mgr_ips.toSet()).union($.osd_ips.toSet()).union($.mds_ips.toSet()).union($.rgw_ips.toSet()).union($.nfs_ips.toSet()).union($.client_ips.toSet()).union($.rbdmirror_ips.toSet()).count(), 100) %> # don't use >100 forks
+        publish:
+          fork_count: <% min($.ips_list.count(), 100) %> # don't use >100 forks
         on-success: make_fetch_directory
       make_fetch_directory:
         action: tripleo.files.make_temp_dir
         publish:
           fetch_directory: <% task().result.path %>
+        on-success: collect_nodes_uuid
+      collect_nodes_uuid:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            overcloud:
+              hosts: <% $.ips_list.toDict($, {}) %>
+          remote_user: tripleo-admin
+          become: true
+          become_user: root
+          verbosity: 0
+          ssh_private_key: <% $.private_key %>
+          extra_env_variables:
+            ANSIBLE_HOST_KEY_CHECKING: 'False'
+            ANSIBLE_STDOUT_CALLBACK: 'json'
+          playbook:
+            - hosts: overcloud
+              gather_facts: no
+              tasks:
+                - name: collect machine id
+                  command: dmidecode -s system-uuid
+        publish:
+          ansible_output: <% json_parse(task().result.stderr) %>
+        on-success: set_ip_uuids
+      set_ip_uuids:
+        publish:
+          ip_uuids: <% let(root => $.ansible_output.get('plays')[0].get('tasks')[0].get('hosts')) -> $.ips_list.toDict($, $root.get($).get('stdout')) %>
+        on-success: parse_node_data_lookup
+      parse_node_data_lookup:
+        publish:
+          json_node_data_lookup: <% json_parse($.node_data_lookup) %>
+        on-success: map_node_data_lookup
+      map_node_data_lookup:
+        publish:
+          ips_data: <% let(uuids => $.ip_uuids, root => $) -> $.ips_list.toDict($, $root.json_node_data_lookup.get($uuids.get($, "NO-UUID-FOUND"), {})) %>
         on-success: set_role_vars
       set_role_vars:
         publish:
@@ -81,21 +121,23 @@ workflows:
         input:
           inventory:
             mgrs:
-              hosts: <% $.mgr_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.mgr_ips.toDict($, $root.ips_data.get($, {})) %>
             mons:
-              hosts: <% $.mon_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.mon_ips.toDict($, $root.ips_data.get($, {})) %>
             osds:
-              hosts: <% $.osd_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.osd_ips.toDict($, $root.ips_data.get($, {})) %>
             mdss:
-              hosts: <% $.mds_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.mds_ips.toDict($, $root.ips_data.get($, {})) %>
             rgws:
-              hosts: <% $.rgw_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.rgw_ips.toDict($, $root.ips_data.get($, {})) %>
             nfss:
-              hosts: <% $.nfs_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.nfs_ips.toDict($, $root.ips_data.get($, {})) %>
             rbdmirrors:
-              hosts: <% $.rbdmirror_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.rbdmirror_ips.toDict($, $root.ips_data.get($, {})) %>
             clients:
-              hosts: <% $.client_ips.toDict($, {}) %>
+              hosts: <% let(root => $) -> $.client_ips.toDict($, $root.ips_data.get($, {})) %>
+            all:
+              vars: <% $.extra_vars %>
           playbook: <% $.ceph_ansible_playbook %>
           remote_user: tripleo-admin
           become: true
@@ -105,7 +147,6 @@ workflows:
           ssh_private_key: <% $.private_key %>
           skip_tags: <% $.ansible_skip_tags %>
           extra_env_variables: <% $.ansible_extra_env_variables %>
-          extra_vars: <% $.extra_vars %>
         publish:
           output: <% task().result %>
         on-complete: purge_fetch_directory
