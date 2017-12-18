@@ -263,6 +263,37 @@ class iBootDriverInfo(PrefixedDriverInfo):
         return result
 
 
+class UcsDriverInfo(DriverInfo):
+    def __init__(self):
+        mapping = {
+            'pm_addr': 'ucs_address',
+            'pm_user': 'ucs_username',
+            'pm_password': 'ucs_password',
+            'pm_service_profile': 'ucs_service_profile'
+        }
+        mandatory_fields = list(mapping)
+
+        super(UcsDriverInfo, self).__init__(
+            'ucs', mapping,
+            mandatory_fields=mandatory_fields,
+            hardware_type='cisco-ucs-managed',
+        )
+
+    def unique_id_from_fields(self, fields):
+        try:
+            return '%s:%s' % (fields['pm_addr'], fields['pm_service_profile'])
+
+        except KeyError:
+            return
+
+    def unique_id_from_node(self, node):
+        try:
+            return '%s:%s' % (node.driver_info['ucs_address'],
+                              node.driver_info['ucs_service_profile'])
+        except KeyError:
+            return
+
+
 DRIVER_INFO = {
     # production drivers
     '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True,
@@ -272,8 +303,7 @@ DRIVER_INFO = {
                                           hardware_type='idrac'),
     '(ilo|.*_ilo)': PrefixedDriverInfo('ilo', has_port=True,
                                        hardware_type='ilo'),
-    '(cisco\-ucs\-managed|.*_ucs)': PrefixedDriverInfo(
-        'ucs', hardware_type='cisco-ucs-managed'),
+    '(cisco\-ucs\-managed|.*_ucs)': UcsDriverInfo(),
     '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True,
                                          hardware_type='irmc'),
     'redfish': RedfishDriverInfo(),
