@@ -72,11 +72,28 @@ class StackOutputs(object):
 
 
 class TripleoInventory(object):
-    def __init__(self, configs, session, hclient):
-        self.configs = configs
+    def __init__(self, configs=None, session=None, hclient=None,
+                 plan_name=None, auth_url=None, project_name=None,
+                 cacert=None, username=None, ansible_ssh_user=None):
         self.session = session
         self.hclient = hclient
-        self.stack_outputs = StackOutputs(self.configs.plan, self.hclient)
+        if configs is not None:
+            # FIXME(shardy) backwards compatibility until we switch
+            # tripleo-validations to pass the individual values
+            self.auth_url = configs.auth_url
+            self.cacert = configs.cacert
+            self.project_name = configs.project_name
+            self.username = configs.username
+            self.ansible_ssh_user = configs.ansible_ssh_user
+            self.plan_name = configs.plan
+        else:
+            self.auth_url = auth_url
+            self.cacert = cacert
+            self.project_name = project_name
+            self.username = username
+            self.ansible_ssh_user = ansible_ssh_user
+            self.plan_name = plan_name
+        self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
 
     @staticmethod
     def get_roles_by_service(enabled_services):
@@ -96,7 +113,7 @@ class TripleoInventory(object):
 
     def get_overcloud_environment(self):
         try:
-            environment = self.hclient.stacks.environment(self.configs.plan)
+            environment = self.hclient.stacks.environment(self.plan_name)
             return environment
         except HTTPNotFound:
             return {}
@@ -119,12 +136,12 @@ class TripleoInventory(object):
                 'hosts': ['localhost'],
                 'vars': {
                     'ansible_connection': 'local',
-                    'auth_url': self.configs.auth_url,
-                    'cacert': self.configs.cacert,
+                    'auth_url': self.auth_url,
+                    'cacert': self.cacert,
                     'os_auth_token': self.session.get_token(),
-                    'plan': self.configs.plan,
-                    'project_name': self.configs.project_name,
-                    'username': self.configs.username,
+                    'plan': self.plan_name,
+                    'project_name': self.project_name,
+                    'username': self.username,
                 },
             }
         })
@@ -184,7 +201,7 @@ class TripleoInventory(object):
                 ret[role] = {
                     'children': sorted(shortnames),
                     'vars': {
-                        'ansible_ssh_user': self.configs.ansible_ssh_user,
+                        'ansible_ssh_user': self.ansible_ssh_user,
                         'bootstrap_server_id': role_node_id_map.get(
                             'bootstrap_server_id'),
                         'role_name': role,
@@ -211,7 +228,7 @@ class TripleoInventory(object):
                 ret[service.lower()] = {
                     'children': service_children,
                     'vars': {
-                        'ansible_ssh_user': self.configs.ansible_ssh_user
+                        'ansible_ssh_user': self.ansible_ssh_user
                     }
                 }
 

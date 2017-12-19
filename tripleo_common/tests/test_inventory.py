@@ -99,21 +99,20 @@ class TestInventory(base.TestCase):
         self.mock_stack.outputs = self.outputs_data['outputs']
         self.hclient.stacks.get.return_value = self.mock_stack
 
-        self.configs = MagicMock()
-        self.configs.plan = self.plan_name
-        self.configs.auth_url = 'xyz://keystone.local'
-        self.configs.cacert = 'acacert'
-        self.configs.project_name = 'admin'
-        self.configs.username = 'admin'
-        self.configs.ansible_ssh_user = 'heat-admin'
-
         self.session = MagicMock()
         self.session.get_token.return_value = 'atoken'
         self.session.get_endpoint.return_value = 'anendpoint'
 
         self.outputs = StackOutputs('overcloud', self.hclient)
         self.inventory = TripleoInventory(
-            self.configs, self.session, self.hclient)
+            session=self.session,
+            hclient=self.hclient,
+            plan_name=self.plan_name,
+            auth_url='xyz://keystone.local',
+            cacert='acacert',
+            project_name='admin',
+            username='admin',
+            ansible_ssh_user='heat-admin')
         self.inventory.stack_outputs = self.outputs
 
     def test_get_roles_by_service(self):
@@ -160,6 +159,23 @@ class TestInventory(base.TestCase):
             set([o for o in self.outputs]))
 
     def test_inventory_list(self):
+        self._inventory_list(self.inventory)
+
+    def test_inventory_list_backwards_compat_configs(self):
+        # FIXME(shardy) backwards compatibility until we switch
+        # tripleo-validations to pass the individual values
+        configs = MagicMock()
+        configs.plan = self.plan_name
+        configs.auth_url = 'xyz://keystone.local'
+        configs.cacert = 'acacert'
+        configs.project_name = 'admin'
+        configs.username = 'admin'
+        configs.ansible_ssh_user = 'heat-admin'
+        inventory = TripleoInventory(
+            configs, self.session, self.hclient)
+        self._inventory_list(inventory)
+
+    def _inventory_list(self, inventory):
         expected = {'c-0': {'hosts': ['x.x.x.1'],
                             'vars': {'deploy_server_id': 'a',
                                      'ctlplane_ip': 'x.x.x.1',
@@ -219,14 +235,22 @@ class TestInventory(base.TestCase):
                                      'openstack-mistral-engine'],
                                  'undercloud_swift_url': 'anendpoint',
                                  'username': 'admin'}}}
-        inv_list = self.inventory.list()
+        inv_list = inventory.list()
         for k in expected:
             self.assertEqual(expected[k], inv_list[k])
 
     def test_ansible_ssh_user(self):
-        self.configs.ansible_ssh_user = 'my-custom-admin'
+
         self.inventory = TripleoInventory(
-            self.configs, self.session, self.hclient)
+            session=self.session,
+            hclient=self.hclient,
+            plan_name=self.plan_name,
+            auth_url='xyz://keystone.local',
+            project_name='admin',
+            username='admin',
+            cacert='acacert',
+            ansible_ssh_user='my-custom-admin')
+
         self.inventory.stack_outputs = self.outputs
 
         expected = {'c-0': {'hosts': ['x.x.x.1'],
