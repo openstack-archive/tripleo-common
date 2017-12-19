@@ -138,7 +138,8 @@ class TripleoInventory(object):
                     'ansible_connection': 'local',
                     'auth_url': self.auth_url,
                     'cacert': self.cacert,
-                    'os_auth_token': self.session.get_token(),
+                    'os_auth_token':
+                    self.session.get_token() if self.session else None,
                     'plan': self.plan_name,
                     'project_name': self.project_name,
                     'username': self.username,
@@ -146,10 +147,11 @@ class TripleoInventory(object):
             }
         })
 
-        swift_url = self.session.get_endpoint(service_type='object-store',
-                                              interface='public')
-        if swift_url:
-            ret['undercloud']['vars']['undercloud_swift_url'] = swift_url
+        swift_url = None
+        if self.session:
+            swift_url = self.session.get_endpoint(service_type='object-store',
+                                                  interface='public')
+        ret['undercloud']['vars']['undercloud_swift_url'] = swift_url
 
         keystone_url = self.stack_outputs.get('KeystoneURL')
         if keystone_url:

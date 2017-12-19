@@ -240,16 +240,25 @@ class TestInventory(base.TestCase):
             self.assertEqual(expected[k], inv_list[k])
 
     def test_ansible_ssh_user(self):
+        self._try_alternative_args(
+            ansible_ssh_user='my-custom-admin',
+            session=self.session,)
 
+    def test_no_session(self):
+        self._try_alternative_args(
+            ansible_ssh_user='my-custom-admin',
+            session=None)
+
+    def _try_alternative_args(self, ansible_ssh_user, session):
         self.inventory = TripleoInventory(
-            session=self.session,
+            session=session,
             hclient=self.hclient,
             plan_name=self.plan_name,
             auth_url='xyz://keystone.local',
             project_name='admin',
             username='admin',
             cacert='acacert',
-            ansible_ssh_user='my-custom-admin')
+            ansible_ssh_user=ansible_ssh_user)
 
         self.inventory.stack_outputs = self.outputs
 
@@ -267,12 +276,12 @@ class TestInventory(base.TestCase):
                                      'enabled_networks': ['ctlplane']}},
                     'Compute': {
                         'children': ['cp-0'],
-                        'vars': {'ansible_ssh_user': 'my-custom-admin',
+                        'vars': {'ansible_ssh_user': ansible_ssh_user,
                                  'bootstrap_server_id': 'a',
                                  'role_name': 'Compute'}},
                     'Controller': {
                         'children': ['c-0', 'c-1', 'c-2'],
-                        'vars': {'ansible_ssh_user': 'my-custom-admin',
+                        'vars': {'ansible_ssh_user': ansible_ssh_user,
                                  'bootstrap_server_id': 'a',
                                  'role_name': 'Controller'}},
                     'cp-0': {'hosts': ['y.y.y.1'],
@@ -285,7 +294,7 @@ class TestInventory(base.TestCase):
                                       'enabled_networks': ['ctlplane']}},
                     'CustomRole': {
                         'children': ['cs-0'],
-                        'vars': {'ansible_ssh_user': 'my-custom-admin',
+                        'vars': {'ansible_ssh_user': ansible_ssh_user,
                                  'bootstrap_server_id': 'a',
                                  'role_name': 'CustomRole'}},
                     'overcloud': {
@@ -298,7 +307,8 @@ class TestInventory(base.TestCase):
                         'vars': {'ansible_connection': 'local',
                                  'auth_url': 'xyz://keystone.local',
                                  'cacert': 'acacert',
-                                 'os_auth_token': 'atoken',
+                                 'os_auth_token':
+                                 'atoken' if session else None,
                                  'overcloud_keystone_url': 'xyz://keystone',
                                  'overcloud_admin_password': 'theadminpw',
                                  'plan': 'overcloud',
@@ -310,7 +320,8 @@ class TestInventory(base.TestCase):
                                      'openstack-swift-container',
                                      'openstack-swift-object',
                                      'openstack-mistral-engine'],
-                                 'undercloud_swift_url': 'anendpoint',
+                                 'undercloud_swift_url':
+                                 'anendpoint' if session else None,
                                  'username': 'admin'}}}
 
         inv_list = self.inventory.list()
