@@ -52,7 +52,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              excludes=None, service_filter=None,
                              pull_source=None, push_destination=None,
                              mapping_args=None, output_env_file=None,
-                             output_images_file=None):
+                             output_images_file=None, tag_from_label=None):
 
     if mapping_args is None:
         mapping_args = {}
@@ -73,6 +73,18 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     builder = KollaImageBuilder([template_file])
     result = builder.container_images_from_template(
         filter=ffunc, **mapping_args)
+
+    if tag_from_label:
+        uploader = image_uploader.ImageUploadManager().uploader('docker')
+        images = [i.get('imagename', '') for i in result]
+        image_version_tags = uploader.discover_image_tags(
+            images, tag_from_label)
+        for entry in result:
+            imagename = entry.get('imagename', '')
+            if imagename in image_version_tags:
+                image_no_tag = imagename.rpartition(':')[0]
+                entry['imagename'] = '%s:%s' % (image_no_tag,
+                                                image_version_tags[imagename])
 
     params = {}
     for entry in result:

@@ -258,6 +258,25 @@ class DockerImageUploader(ImageUploader):
             )
         return tag_label
 
+    def discover_image_tags(self, images, tag_from_label=None):
+        image_urls = [self._image_to_url(i) for i in images]
+
+        # prime self.insecure_registries by testing every image
+        for url in image_urls:
+            self.is_insecure_registry(url.netloc)
+
+        discover_args = []
+        for image in images:
+            discover_args.append((image, tag_from_label,
+                                  self.insecure_registries))
+        p = multiprocessing.Pool(16)
+
+        versioned_images = {}
+        for image, versioned_image in p.map(discover_tag_from_inspect,
+                                            discover_args):
+            versioned_images[image] = versioned_image
+        return versioned_images
+
     def discover_image_tag(self, image, tag_from_label=None):
         image_url = self._image_to_url(image)
         insecure = self.is_insecure_registry(image_url.netloc)
@@ -323,3 +342,12 @@ class DockerImageUploader(ImageUploader):
 
 def docker_upload(args):
     return DockerImageUploader.upload_image(*args)
+
+
+def discover_tag_from_inspect(args):
+    image, tag_from_label, insecure_registries = args
+    image_url = DockerImageUploader._image_to_url(image)
+    insecure = image_url.netloc in insecure_registries
+    i = DockerImageUploader._inspect(image_url.geturl(), insecure)
+    return image, DockerImageUploader._discover_tag_from_inspect(
+        i, image, tag_from_label)
