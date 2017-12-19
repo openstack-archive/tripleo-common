@@ -15,9 +15,6 @@
 
 - name: "Run deployment {{ item }}"
   shell: |
-    # TODO(emilien) deploying jq this way is a workaround until we figure where to do it
-    # properly. jq is required by this task.
-    yum install -y jq
     /usr/libexec/os-refresh-config/configure.d/55-heat-config
     exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ vars[item].id }}.notify.json)
   become: true
