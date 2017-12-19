@@ -12,6 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import fixtures
+import os
+import yaml
+
 from heatclient.exc import HTTPNotFound
 from mock import MagicMock
 
@@ -54,9 +58,9 @@ class TestInventory(base.TestCase):
         self.outputs_data = {'outputs': [
             {'output_key': 'EnabledServices',
              'output_value': {
-                 'Controller': ['a', 'b', 'c'],
-                 'Compute': ['d', 'e', 'f'],
-                 'CustomRole': ['g', 'h', 'i']}},
+                 'Controller': ['sa', 'sb'],
+                 'Compute': ['sd', 'se'],
+                 'CustomRole': ['sg', 'sh']}},
             {'output_key': 'KeystoneURL',
              'output_value': 'xyz://keystone'},
             {'output_key': 'ServerIdData',
@@ -327,3 +331,80 @@ class TestInventory(base.TestCase):
         inv_list = self.inventory.list()
         for k in expected:
             self.assertEqual(expected[k], inv_list[k])
+
+    def test_inventory_write_static(self):
+        tmp_dir = self.useFixture(fixtures.TempDir()).path
+        inv_path = os.path.join(tmp_dir, "inventory.yaml")
+        self.inventory.write_static_inventory(inv_path)
+        expected = {
+            'Compute': {'children': {'cp-0': {}},
+                        'vars': {'ansible_ssh_user': 'heat-admin',
+                                 'bootstrap_server_id': 'a',
+                                 'role_name': 'Compute'}},
+            'Controller': {'children': {'c-0': {}, 'c-1': {}, 'c-2': {}},
+                           'vars': {'ansible_ssh_user': 'heat-admin',
+                                    'bootstrap_server_id': 'a',
+                                    'role_name': 'Controller'}},
+            'CustomRole': {'children': {'cs-0': {}},
+                           'vars': {'ansible_ssh_user': 'heat-admin',
+                                    'bootstrap_server_id': 'a',
+                                    'role_name': 'CustomRole'}},
+            '_meta': {'hostvars': {}},
+            'c-0': {'hosts': {'x.x.x.1': {}},
+                    'vars': {'ctlplane_ip': 'x.x.x.1',
+                             'deploy_server_id': 'a',
+                             'enabled_networks': ['ctlplane']}},
+            'c-1': {'hosts': {'x.x.x.2': {}},
+                    'vars': {'ctlplane_ip': 'x.x.x.2',
+                             'deploy_server_id': 'b',
+                             'enabled_networks': ['ctlplane']}},
+            'c-2': {'hosts': {'x.x.x.3': {}},
+                    'vars': {'ctlplane_ip': 'x.x.x.3',
+                             'deploy_server_id': 'c',
+                             'enabled_networks': ['ctlplane']}},
+            'cp-0': {'hosts': {'y.y.y.1': {}},
+                     'vars': {'ctlplane_ip': 'y.y.y.1',
+                              'deploy_server_id': 'd',
+                              'enabled_networks': ['ctlplane']}},
+            'cs-0': {'hosts': {'z.z.z.1': {}},
+                     'vars': {'ctlplane_ip': 'z.z.z.1',
+                              'deploy_server_id': 'e',
+                              'enabled_networks': ['ctlplane']}},
+            'overcloud': {'children': {'Compute': {},
+                                       'Controller': {},
+                                       'CustomRole': {}},
+                          'vars': {'ctlplane_vip': 'x.x.x.4',
+                                   'redis_vip': 'x.x.x.6'}},
+            'sa': {'children': {'Controller': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sb': {'children': {'Controller': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sd': {'children': {'Compute': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'se': {'children': {'Compute': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sg': {'children': {'CustomRole': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sh': {'children': {'CustomRole': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'undercloud': {'hosts': {'localhost': {}},
+                           'vars': {'ansible_connection': 'local',
+                                    'auth_url': 'xyz://keystone.local',
+                                    'cacert': 'acacert',
+                                    'os_auth_token': 'atoken',
+                                    'overcloud_admin_password': 'theadminpw',
+                                    'overcloud_keystone_url': 'xyz://keystone',
+                                    'plan': 'overcloud',
+                                    'project_name': 'admin',
+                                    'undercloud_service_list': [
+                                        'openstack-nova-compute',
+                                        'openstack-heat-engine',
+                                        'openstack-ironic-conductor',
+                                        'openstack-swift-container',
+                                        'openstack-swift-object',
+                                        'openstack-mistral-engine'],
+                                    'undercloud_swift_url': 'anendpoint',
+                                    'username': 'admin'}}}
+        with open(inv_path, 'r') as f:
+            loaded_inv = yaml.safe_load(f)
+        self.assertEqual(expected, loaded_inv)

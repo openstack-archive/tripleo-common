@@ -16,10 +16,21 @@
 # under the License.
 
 from collections import OrderedDict
+import os.path
+import yaml
 
 from heatclient.exc import HTTPNotFound
 
 HOST_NETWORK = 'ctlplane'
+
+
+class TemplateDumper(yaml.SafeDumper):
+    def represent_ordered_dict(self, data):
+        return self.represent_dict(data.items())
+
+
+TemplateDumper.add_representer(OrderedDict,
+                               TemplateDumper.represent_ordered_dict)
 
 
 class StackOutputs(object):
@@ -77,6 +88,7 @@ class TripleoInventory(object):
                  cacert=None, username=None, ansible_ssh_user=None):
         self.session = session
         self.hclient = hclient
+        self.hosts_format_dict = False
         if configs is not None:
             # FIXME(shardy) backwards compatibility until we switch
             # tripleo-validations to pass the individual values
@@ -130,10 +142,17 @@ class TripleoInventory(object):
         """
         return self.UNDERCLOUD_SERVICES
 
+    def _hosts(self, alist):
+        """Static yaml inventories reqire a different hosts format?!"""
+        if self.hosts_format_dict:
+            return {x: {} for x in alist}
+        else:
+            return alist
+
     def list(self):
         ret = OrderedDict({
             'undercloud': {
-                'hosts': ['localhost'],
+                'hosts': self._hosts(['localhost']),
                 'vars': {
                     'ansible_connection': 'local',
                     'auth_url': self.auth_url,
@@ -185,7 +204,7 @@ class TripleoInventory(object):
                 # Create a group per hostname to map hostname to IP
                 ips = role_net_ip_map[role][HOST_NETWORK]
                 for idx, name in enumerate(shortnames):
-                    ret[name] = {'hosts': [ips[idx]]}
+                    ret[name] = {'hosts': self._hosts([ips[idx]])}
                     if 'server_ids' in role_node_id_map:
                         ret[name]['vars'] = {
                             'deploy_server_id': role_node_id_map[
@@ -201,7 +220,7 @@ class TripleoInventory(object):
 
                 children.append(role)
                 ret[role] = {
-                    'children': sorted(shortnames),
+                    'children': self._hosts(sorted(shortnames)),
                     'vars': {
                         'ansible_ssh_user': self.ansible_ssh_user,
                         'bootstrap_server_id': role_node_id_map.get(
@@ -216,7 +235,7 @@ class TripleoInventory(object):
                     for vip_name, vip in vip_map.items()
                     if vip and (vip_name in networks or vip_name == 'redis')}
             ret['overcloud'] = {
-                'children': sorted(children),
+                'children': self._hosts(sorted(children)),
                 'vars': vips
             }
 
@@ -228,7 +247,7 @@ class TripleoInventory(object):
                                 if ret.get(role) is not None]
             if service_children:
                 ret[service.lower()] = {
-                    'children': service_children,
+                    'children': self._hosts(service_children),
                     'vars': {
                         'ansible_ssh_user': self.ansible_ssh_user
                     }
@@ -245,3 +264,19 @@ class TripleoInventory(object):
         # provide detailed info for hosts:
         # http://docs.ansible.com/ansible/developing_inventory.html
         return {}
+
+    def write_static_inventory(self, inventory_file_path):
+        """Convert inventory list to static yaml format in a file."""
+        allowed_extensions = ('.yaml', '.yml', '.json')
+        if not os.path.splitext(inventory_file_path)[1] in allowed_extensions:
+            raise ValueError("Path %s does not end with one of %s extensions"
+                             % (inventory_file_path,
+                                ",".join(allowed_extensions)))
+
+        # For some reason the json/yaml format needed for static and
+        # dynamic inventories is different for the hosts/children?!
+        self.hosts_format_dict = True
+        inventory = self.list()
+
+        with open(inventory_file_path, 'w') as inventory_file:
+            yaml.dump(inventory, inventory_file, TemplateDumper)
