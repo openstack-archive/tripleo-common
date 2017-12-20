@@ -218,10 +218,13 @@ workflows:
           # Establish an empty dictionary of derived_parameters prior to
           # invoking the individual "feature" algorithms
           derived_parameters: <% dict() %>
+        on-success: handle_dpdk_feature
+        on-error: set_status_failed_get_introspection_data
+
+      handle_dpdk_feature:
         on-success:
           - get_dpdk_derive_params: <% $.role_features.contains('DPDK') %>
-          - get_hci_derive_params: <% not $.role_features.contains('DPDK') and $.role_features.contains('HCI') %>
-        on-error: set_status_failed_get_introspection_data
+          - handle_sriov_feature: <% not $.role_features.contains('DPDK') %>
 
       get_dpdk_derive_params:
         workflow: tripleo.derive_params_formulas.v1.dpdk_derive_params
@@ -232,8 +235,29 @@ workflows:
           user_inputs: <% $.user_inputs %>
         publish:
           derived_parameters: <% task().result.get('derived_parameters', {}) %>
-        on-success: get_host_derive_params
+        on-success: handle_sriov_feature
         on-error: set_status_failed_get_dpdk_derive_params
+
+      handle_sriov_feature:
+        on-success:
+          - get_sriov_derive_params: <% $.role_features.contains('SRIOV') %>
+          - handle_host_feature: <% not $.role_features.contains('SRIOV') %>
+
+      get_sriov_derive_params:
+        workflow: tripleo.derive_params_formulas.v1.sriov_derive_params
+        input:
+          role_name: <% $.role_name %>
+          hw_data: <% $.hw_data %>
+          derived_parameters: <% $.derived_parameters %>
+        publish:
+          derived_parameters: <% task().result.get('derived_parameters', {}) %>
+        on-success: handle_host_feature
+        on-error: set_status_failed_get_sriov_derive_params
+
+      handle_host_feature:
+        on-success:
+          - get_host_derive_params: <% $.role_features.contains('HOST') %>
+          - handle_hci_feature: <% not $.role_features.contains('HOST') %>
 
       get_host_derive_params:
         workflow: tripleo.derive_params_formulas.v1.host_derive_params
@@ -244,9 +268,12 @@ workflows:
           derived_parameters: <% $.derived_parameters %>
         publish:
           derived_parameters: <% task().result.get('derived_parameters', {}) %>
+        on-success: handle_hci_feature
+        on-error: set_status_failed_get_host_derive_params
+
+      handle_hci_feature:
         on-success:
           - get_hci_derive_params: <% $.role_features.contains('HCI') %>
-        on-error: set_status_failed_get_host_derive_params
 
       get_hci_derive_params:
         workflow: tripleo.derive_params_formulas.v1.hci_derive_params
@@ -309,6 +336,13 @@ workflows:
           role_name: <% $.role_name %>
           status: FAILED
           message: <% task(get_dpdk_derive_params).result %>
+        on-success: fail
+
+      set_status_failed_get_sriov_derive_params:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_sriov_derive_params).result %>
         on-success: fail
 
       set_status_failed_get_host_derive_params:
@@ -376,13 +410,16 @@ workflows:
           # The role supports the DPDK feature in ODL if the OvsEnableDpdk parameter value is true in role parameters.
           odl_dpdk: <% let(role => $.role_name) -> $.heat_resource_tree.parameters.get(concat($role, 'Parameters'), {}).get('default', {}).get('OvsEnableDpdk', false) %>
 
+          # The role supports the SRIOV feature if it includes NeutronSriovAgent services.
+          sriov: <% $.role_services.any($.get('type', '').endsWith('::NeutronSriovAgent')) %>
+
           # The role supports the HCI feature if it includes both NovaCompute and CephOSD services.
           hci: <% $.role_services.any($.get('type', '').endsWith('::NovaCompute')) and $.role_services.any($.get('type', '').endsWith('::CephOSD')) %>
 
       build_feature_dict:
         on-success: filter_features
         publish:
-          feature_dict: <% dict(DPDK => ($.dpdk or $.odl_dpdk), HCI => $.hci) %>
+          feature_dict: <% dict(DPDK => ($.dpdk or $.odl_dpdk), SRIOV => $.sriov, HOST => ($.dpdk or $.odl_dpdk or $.sriov), HCI => $.hci) %>
 
       filter_features:
         publish:
