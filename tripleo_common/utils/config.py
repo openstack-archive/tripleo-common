@@ -101,34 +101,24 @@ class Config(object):
                                  os.O_WRONLY | os.O_CREAT, 0o600),
                          'w')
 
-    def _step_tags_to_when(self, sorted_tasks):
-        for task in sorted_tasks:
-            tag = task.get('tags', '')
-            match = re.search('step([0-9]+)', tag)
-            if match:
-                step = match.group(1)
-                whenexpr = task.get('when', None)
-                if whenexpr is None:
-                    task.update({"when": "step|int == %s" % step})
-                else:
-                    # Handle when: foo and a list of when conditionals
-                    if not isinstance(whenexpr, list):
-                        whenexpr = [whenexpr]
-                    for w in whenexpr:
-                        when_exists = re.search('step|int == [0-9]', "%s" % w)
-                        if when_exists:
-                            break
-                    if when_exists:
-                        # Skip to the next task,
-                        # there is an existing 'step|int == N'
-                        continue
-                    whenexpr.insert(0, "step|int == %s" % step)
-                    task['when'] = whenexpr
-
     def _write_playbook_get_tasks(self, tasks, role, filepath):
         playbook = []
-        sorted_tasks = sorted(tasks, key=lambda x: x.get('tags', None))
-        self._step_tags_to_when(sorted_tasks)
+
+        def get_key(task):
+            whenexpr = task.get('when', None)
+            if whenexpr is None:
+                return ''
+            if not isinstance(whenexpr, list):
+                whenexpr = [whenexpr]
+            for w in whenexpr:
+                # make \|int optional incase forgotten; use only step digit:
+                match = re.search('step(\|int)? == ([0-9]+)', "%s" % w)
+                if match:
+                    matches = len(match.groups())
+                    return match.group(matches)
+            return ''
+
+        sorted_tasks = sorted(tasks, key=get_key)
         playbook.append({'name': '%s playbook' % role,
                          'hosts': role,
                          'tasks': sorted_tasks})
