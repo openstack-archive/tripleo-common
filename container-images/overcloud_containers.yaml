@@ -92,7 +92,6 @@ container_images:
 - imagename: docker.io/tripleoupstream/centos-binary-swift-container:latest
 - imagename: docker.io/tripleoupstream/centos-binary-swift-object:latest
 - imagename: docker.io/tripleoupstream/centos-binary-swift-proxy-server:latest
-- imagename: docker.io/tripleoupstream/centos-binary-tacker:latest
 - imagename: docker.io/tripleoupstream/centos-binary-zaqar:latest
 - imagename: docker.io/ceph/daemon:tag-stable-3.0-luminous-centos-7
 - imagename: docker.io/tripleoupstream/centos-binary-rsyslog-base:latest
