@@ -82,8 +82,10 @@ PASSWORD_PARAMETER_NAMES = (
     'GlancePassword',
     'GnocchiPassword',
     'HAProxyStatsPassword',
+    'HeatAuthEncryptionKey',
     'HeatPassword',
     'HeatStackDomainAdminPassword',
+    'HorizonSecret',
     'IronicPassword',
     'LibvirtTLSPassword',
     'KeystoneCredential0',
@@ -94,6 +96,7 @@ PASSWORD_PARAMETER_NAMES = (
     'ManilaPassword',
     'MistralPassword',
     'MysqlClustercheckPassword',
+    'MysqlRootPassword',
     'NeutronMetadataProxySharedSecret',
     'NeutronPassword',
     'NovaPassword',
@@ -103,6 +106,8 @@ PASSWORD_PARAMETER_NAMES = (
     'OctaviaPassword',
     'PacemakerRemoteAuthkey',
     'PankoPassword',
+    'PcsdPassword',
+    'RabbitCookie',
     'RabbitPassword',
     'RedisPassword',
     'SaharaPassword',
@@ -112,6 +117,14 @@ PASSWORD_PARAMETER_NAMES = (
     'TackerPassword',
     'TrovePassword',
     'ZaqarPassword',
+)
+# List of legacy resource names from overcloud.yaml
+LEGACY_HEAT_PASSWORD_RESOURCE_NAMES = (
+    'HeatAuthEncryptionKey',
+    'HorizonSecret',
+    'MysqlRootPassword',
+    'PcsdPassword',
+    'RabbitCookie',
 )
 
 PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'

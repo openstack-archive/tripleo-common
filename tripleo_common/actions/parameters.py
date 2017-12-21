@@ -202,6 +202,18 @@ class GeneratePasswordsAction(base.TripleOAction):
         try:
             stack_env = heat.stacks.environment(
                 stack_id=self.container)
+
+            # legacy heat resource names from overcloud.yaml
+            # We don't modify these to avoid changing defaults
+            for pw_res in constants.LEGACY_HEAT_PASSWORD_RESOURCE_NAMES:
+                try:
+                    res = heat.resources.get(self.container, pw_res)
+                    param_defaults = stack_env.get('parameter_defaults', {})
+                    param_defaults[pw_res] = res.attributes['value']
+                except heat_exc.HTTPNotFound:
+                    LOG.debug('Heat resouce not found: %s' % pw_res)
+                    pass
+
         except heat_exc.HTTPNotFound:
             stack_env = None
 

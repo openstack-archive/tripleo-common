@@ -75,6 +75,21 @@ def generate_passwords(mistralclient=None, stack_env=None):
             passwords[name] = create_ssh_keypair()
         elif name == 'BarbicanSimpleCryptoKek':
             passwords[name] = create_keystone_credential()
+        elif name.startswith("MysqlRootPassword"):
+            passwords[name] = passutils.generate_password(
+                size=10)
+        elif name.startswith("RabbitCookie"):
+            passwords[name] = passutils.generate_password(
+                size=20)
+        elif name.startswith("PcsdPassword"):
+            passwords[name] = passutils.generate_password(
+                size=16)
+        elif name.startswith("HorizonSecret"):
+            passwords[name] = passutils.generate_password(
+                size=10)
+        elif name.startswith("HeatAuthEncryptionKey"):
+            passwords[name] = passutils.generate_password(
+                size=32)
         else:
             passwords[name] = passutils.generate_password(
                 size=_MIN_PASSWORD_SIZE)

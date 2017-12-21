@@ -31,6 +31,11 @@ _EXISTING_PASSWORDS = {
     'CeilometerMeteringSecret': 'CbHTGK4md4Cc8P8ZyzTns6wry',
     'ZaqarPassword': 'bbFgCTFbAH8vf9n3xvZCP8aMR',
     'NovaPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
+    'MysqlRootPassword': 'VqJYpEdKks',
+    'RabbitCookie': 'BqJYpEdKksAqJYpEdKks',
+    'HeatAuthEncryptionKey': '9xZXehsKc2HbmFFMKjuqxTJHn',
+    'PcsdPassword': 'KjEzeitus8eu751a',
+    'HorizonSecret': 'mjEzeitus8eu751B',
     'NovajoinPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
     'IronicPassword': '4hFDgn9ANeVfuqk84pHpD4ksa',
     'RedisPassword': 'xjj3QZDcUQmU6Q7NzWBHRUhGd',
@@ -419,6 +424,11 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {}
         }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'value': 'existing_value'
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
         mock_get_orchestration_client.return_value = mock_orchestration
 
         action = parameters.GeneratePasswordsAction()
@@ -427,6 +437,14 @@ class GeneratePasswordsActionTest(base.TestCase):
         for password_param_name in constants.PASSWORD_PARAMETER_NAMES:
             self.assertTrue(password_param_name in result,
                             "%s is not in %s" % (password_param_name, result))
+
+            if password_param_name in \
+                    constants.LEGACY_HEAT_PASSWORD_RESOURCE_NAMES:
+                self.assertEqual(result[password_param_name], 'existing_value')
+            else:
+                self.assertNotEqual(result[password_param_name],
+                                    'existing_value')
+
         mock_cache.assert_called_once_with(
             mock_ctx,
             "overcloud",
