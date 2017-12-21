@@ -9,13 +9,8 @@
     base_directory: "/var/lib/config-data/puppet-generated/swift/"
     rebalance_is_safe: False
   environment:
-    # TODO (cschwede): Remove v3 suffix once
-    # https://review.openstack.org/#/c/473740/ is included in image
-    OS_AUTH_URL: "{{ lookup('env','OS_AUTH_URL') }}v3"
-    OS_USERNAME: "{{ lookup('env','OS_USERNAME') }}"
-    OS_PROJECT_NAME: "{{ lookup('env','OS_PROJECT_NAME') }}"
-    OS_PASSWORD: "{{ lookup('env','OS_PASSWORD') }}"
-    OS_IDENTITY_API_VERSION: "{{ lookup('env','OS_IDENTITY_API_VERSION') }}"
+    OS_STORAGE_URL: "{{ hostvars.localhost.undercloud_swift_url }}"
+    OS_AUTH_TOKEN: "{{ hostvars.localhost.os_auth_token }}"
   tasks:
     - name: Get reference ring checksum
       run_once: true
