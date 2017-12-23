@@ -50,8 +50,13 @@ def empty_container(swiftclient, name):
 
 
 def delete_container(swiftclient, name):
-    empty_container(swiftclient, name)
-    swiftclient.delete_container(name)
+    try:
+        empty_container(swiftclient, name)
+        swiftclient.delete_container(name)
+    except ValueError as e:
+        # ValueError is raised when we can't find the container, which means
+        # that it's already deleted.
+        LOG.info(e.message)
 
 
 def download_container(swiftclient, container, dest):
