@@ -333,9 +333,16 @@ class TestInventory(base.TestCase):
             self.assertEqual(expected[k], inv_list[k])
 
     def test_inventory_write_static(self):
+        self._inventory_write_static()
+
+    def test_inventory_write_static_extra_vars(self):
+        extra_vars = {'undercloud': {'anextravar': 123}}
+        self._inventory_write_static(extra_vars=extra_vars)
+
+    def _inventory_write_static(self, extra_vars=None):
         tmp_dir = self.useFixture(fixtures.TempDir()).path
         inv_path = os.path.join(tmp_dir, "inventory.yaml")
-        self.inventory.write_static_inventory(inv_path)
+        self.inventory.write_static_inventory(inv_path, extra_vars)
         expected = {
             'Compute': {'children': {'cp-0': {}},
                         'vars': {'ansible_ssh_user': 'heat-admin',
@@ -405,6 +412,9 @@ class TestInventory(base.TestCase):
                                         'openstack-mistral-engine'],
                                     'undercloud_swift_url': 'anendpoint',
                                     'username': 'admin'}}}
+        if extra_vars:
+            expected['undercloud']['vars']['anextravar'] = 123
+
         with open(inv_path, 'r') as f:
             loaded_inv = yaml.safe_load(f)
         self.assertEqual(expected, loaded_inv)

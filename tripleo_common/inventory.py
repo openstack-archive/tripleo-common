@@ -265,7 +265,7 @@ class TripleoInventory(object):
         # http://docs.ansible.com/ansible/developing_inventory.html
         return {}
 
-    def write_static_inventory(self, inventory_file_path):
+    def write_static_inventory(self, inventory_file_path, extra_vars=None):
         """Convert inventory list to static yaml format in a file."""
         allowed_extensions = ('.yaml', '.yml', '.json')
         if not os.path.splitext(inventory_file_path)[1] in allowed_extensions:
@@ -277,6 +277,11 @@ class TripleoInventory(object):
         # dynamic inventories is different for the hosts/children?!
         self.hosts_format_dict = True
         inventory = self.list()
+
+        if extra_vars:
+            for var, value in extra_vars.items():
+                if var in inventory:
+                    inventory[var]['vars'].update(value)
 
         with open(inventory_file_path, 'w') as inventory_file:
             yaml.dump(inventory, inventory_file, TemplateDumper)
