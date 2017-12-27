@@ -113,7 +113,11 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'percona-xtrabackup',
     'pv'
 ] %}
+{% set sensu_client_packages_remove = [
+    'MariaDB-client',
+] %}
 {% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
+{% set sensu_client_packages_append = ['mariadb-server', 'mariadb-server-galera'] %}
 
 # Required for nova migration
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
