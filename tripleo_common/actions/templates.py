@@ -22,6 +22,7 @@ import tempfile as tf
 import yaml
 
 from heatclient.common import template_utils
+from heatclient import exc as heat_exc
 from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
@@ -157,25 +158,32 @@ class ProcessTemplatesAction(base.TripleOAction):
                      "the J2 excludes list to: %s" % j2_excl_data)
         return j2_excl_data
 
-    def _heat_resource_exists(self, resource_name, context):
+    def _heat_resource_exists(self, nested_stack_name, resource_name, context):
         heatclient = self.get_orchestration_client(context)
-        stack_exists = False
-        for stack in heatclient.stacks.list():
-            if self.container == str(stack.stack_name):
-                stack_exists = True
-                break
-        if not stack_exists:
+        try:
+            stack = heatclient.stacks.get(self.container)
+        except heat_exc.HTTPNotFound:
             LOG.debug("Resource does not exist because stack does not exist")
             return False
 
-        resources = heatclient.resources.list(self.container, nested_depth=6)
-        for resource in resources:
-            if str(resource.resource_name) == resource_name:
-                LOG.debug("Resource exists: {}".format(resource_name))
-                return True
+        try:
+            nested_stack = heatclient.resources.get(stack.id,
+                                                    nested_stack_name)
+        except heat_exc.HTTPNotFound:
+            LOG.debug(
+                "Resource does not exist because {} stack does "
+                "not exist".format(nested_stack_name))
+            return False
 
-        LOG.debug("Resource does not exist: {}".format(resource_name))
-        return False
+        try:
+            heatclient.resources.get(nested_stack.physical_resource_id,
+                                     resource_name)
+        except heat_exc.HTTPNotFound:
+            LOG.debug("Resource does not exist: {}".format(resource_name))
+            return False
+        else:
+            LOG.debug("Resource exists: {}".format(resource_name))
+            return True
 
     def _process_custom_roles(self, context):
         swift = self.get_object_client(context)
@@ -228,7 +236,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                 # Check to see if legacy named API network exists
                 # and if so we need to set compat_name
                 api_net = "{}Network".format(constants.LEGACY_API_NETWORK)
-                if self._heat_resource_exists(api_net, context):
+                if self._heat_resource_exists('Networks', api_net, context):
                     n['compat_name'] = 'Internal'
                     LOG.info("Upgrade compatibility enabled for legacy "
                              "network resource Internal.")
