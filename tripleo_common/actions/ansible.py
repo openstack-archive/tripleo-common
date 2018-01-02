@@ -207,10 +207,10 @@ class AnsibleAction(actions.Action):
 
             if self.use_openstack_credentials:
                 env_variables.update({
-                    'OS_AUTH_URL': context.auth_uri,
-                    'OS_USERNAME': context.user_name,
-                    'OS_AUTH_TOKEN': context.auth_token,
-                    'OS_PROJECT_NAME': context.project_name})
+                    'OS_AUTH_URL': context.security.auth_uri,
+                    'OS_USERNAME': context.security.user_name,
+                    'OS_AUTH_TOKEN': context.security.auth_token,
+                    'OS_PROJECT_NAME': context.security.project_name})
 
             stderr, stdout = processutils.execute(
                 *command, cwd=self.work_dir,
@@ -536,10 +536,10 @@ class AnsibleGenerateInventoryAction(actions.Action):
 
         env_variables = {
             'HOME': self.work_dir,
-            'OS_AUTH_URL': context.auth_uri,
-            'OS_USERNAME': context.user_name,
-            'OS_AUTH_TOKEN': context.auth_token,
-            'OS_PROJECT_NAME': context.project_name}
+            'OS_AUTH_URL': context.security.auth_uri,
+            'OS_USERNAME': context.security.user_name,
+            'OS_AUTH_TOKEN': context.security.auth_token,
+            'OS_PROJECT_NAME': context.security.project_name}
 
         if self.ansible_ssh_user:
             command.append('--ansible_ssh_user')

@@ -125,14 +125,14 @@ class TripleOAction(actions.Action):
             service_type='messaging'
         )
 
-        auth_uri = context.auth_uri or \
+        auth_uri = context.security.auth_uri or \
             keystone_utils.CONF.keystone_authtoken.auth_uri
 
         opts = {
-            'os_auth_token': context.auth_token,
+            'os_auth_token': context.security.auth_token,
             'os_auth_url': auth_uri,
-            'os_project_id': context.project_id,
-            'insecure': context.insecure,
+            'os_project_id': context.security.project_id,
+            'insecure': context.security.insecure,
         }
         auth_opts = {'backend': 'keystone', 'options': opts, }
         conf = {'auth_opts': auth_opts, 'session': session_and_auth['session']}
