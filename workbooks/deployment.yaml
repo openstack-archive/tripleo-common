@@ -267,6 +267,7 @@ workflows:
     input:
       - timeout: 240
       - queue_name: tripleo
+      - plan_name: overcloud
       - work_dir: /var/lib/mistral
 
     tags:
@@ -320,6 +321,7 @@ workflows:
         input:
           ansible_ssh_user: tripleo-admin
           work_dir: <% $.get('work_dir') %>/<% execution().id %>
+          plan_name: <% $.get('plan_name') %>
         publish:
           inventory: <% task().result %>
         on-success: send_msg_generate_inventory
