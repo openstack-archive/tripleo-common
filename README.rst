@@ -38,6 +38,26 @@ code to accomplish these tasks. ::
     # make sure the new actions got loaded
     mistral action-list | grep tripleo
 
+Workflow Development
+------------------
+
+
+When developing new workflows, you will need to reload the modified workflows,
+e.g the following will reload all the workflows from the default packaged
+location, or you can use a similar approach to replace only a single workbook
+while under development. ::
+
+    for workbook in $(openstack workbook list -f value -c Name | grep tripleo); do
+        openstack workbook delete $workbook
+    done
+    for workflow in $(openstack workflow list -f value -c Name | grep tripleo); do
+        openstack workflow delete $workflow
+    done
+    for workbook in $(ls /usr/share/openstack-tripleo-common/workbooks/*); do
+        openstack workbook create $workbook
+    done
+
+
 Validations
 -----------
 
