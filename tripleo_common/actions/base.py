@@ -35,22 +35,24 @@ class TripleOAction(actions.Action):
     def __init__(self):
         super(TripleOAction, self).__init__()
 
+    def get_session(self, context, service_name):
+        session_and_auth = keystone_utils.get_session_and_auth(
+            context,
+            service_name=service_name
+        )
+        return session_and_auth['session']
+
     def get_object_client(self, context):
         swift_endpoint = keystone_utils.get_endpoint_for_project(
             context,
             'swift'
         )
 
-        session_and_auth = keystone_utils.get_session_and_auth(
-            context,
-            service_name='swift'
-        )
-
         kwargs = {
             'preauthurl': swift_endpoint.url % {
                 'tenant_id': context.project_id
             },
-            'session': session_and_auth['session'],
+            'session': self.get_session(context, 'swift'),
             'insecure': context.insecure,
             'retries': 10,
             'starting_backoff': 3,
@@ -120,11 +122,6 @@ class TripleOAction(actions.Action):
         zaqar_endpoint = keystone_utils.get_endpoint_for_project(
             context, service_type='messaging')
 
-        session_and_auth = keystone_utils.get_session_and_auth(
-            context,
-            service_type='messaging'
-        )
-
         auth_uri = context.security.auth_uri or \
             keystone_utils.CONF.keystone_authtoken.auth_uri
 
@@ -135,7 +132,8 @@ class TripleOAction(actions.Action):
             'insecure': context.security.insecure,
         }
         auth_opts = {'backend': 'keystone', 'options': opts, }
-        conf = {'auth_opts': auth_opts, 'session': session_and_auth['session']}
+        conf = {'auth_opts': auth_opts,
+                'session': self.get_session(context, 'zaqar')}
 
         return zaqarclient.Client(zaqar_endpoint.url, conf=conf)
 
