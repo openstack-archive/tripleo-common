@@ -118,3 +118,14 @@ class RoleMetadataError(Exception):
 
 class UnauthorizedException(Exception):
     """Authorization failed"""
+
+
+class GroupOsApplyConfigException(Exception):
+    """group:os-apply-config not supported with config-download"""
+
+    def __init__(self, deployment_name):
+        self.deployment_name = deployment_name
+        message = (
+            "Deployment %s with group:os-apply-config not supported with "
+            "config-download." % self.deployment_name)
+        super(GroupOsApplyConfigException, self).__init__(message)
