@@ -149,7 +149,8 @@ class DockerImageUploader(ImageUploader):
         self.insecure_registries = set()
 
     @staticmethod
-    def upload_image(image_name, pull_source, push_destination):
+    def upload_image(image_name, pull_source, push_destination,
+                     insecure_registries):
         LOG.info('imagename: %s' % image_name)
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
         if ':' in image_name:
@@ -163,12 +164,16 @@ class DockerImageUploader(ImageUploader):
         else:
             repo = image
 
-        DockerImageUploader._pull_retry(dockerc, repo, tag=tag)
-
         full_image = repo + ':' + tag
-
         new_repo = push_destination + '/' + repo.partition('/')[2]
         full_new_repo = new_repo + ':' + tag
+
+        if DockerImageUploader._images_match(full_image, full_new_repo,
+                                             insecure_registries):
+            LOG.info('Skipping upload for image %s' % image_name)
+            return []
+
+        DockerImageUploader._pull_retry(dockerc, repo, tag=tag)
 
         response = dockerc.tag(image=full_image, repository=new_repo,
                                tag=tag, force=True)
@@ -178,7 +183,7 @@ class DockerImageUploader(ImageUploader):
                     tag=tag, stream=True)]
         LOG.debug(response)
 
-        LOG.info('Completed upload for docker image %s' % image_name)
+        LOG.info('Completed upload for image %s' % image_name)
         return full_image, full_new_repo
 
     @staticmethod
@@ -207,6 +212,31 @@ class DockerImageUploader(ImageUploader):
                 LOG.warning('retrying pulling image: %s' % image)
 
     @staticmethod
+    def _images_match(image1, image2, insecure_registries):
+        try:
+            image1_digest = DockerImageUploader._image_digest(
+                image1, insecure_registries)
+        except Exception:
+            return False
+        try:
+            image2_digest = DockerImageUploader._image_digest(
+                image2, insecure_registries)
+        except Exception:
+            return False
+
+        # missing digest, no way to know if they match
+        if not image1_digest or not image2_digest:
+            return False
+        return image1_digest == image2_digest
+
+    @staticmethod
+    def _image_digest(image, insecure_registries):
+        image_url = DockerImageUploader._image_to_url(image)
+        insecure = image_url.netloc in insecure_registries
+        i = DockerImageUploader._inspect(image_url.geturl(), insecure)
+        return i.get('Digest')
+
+    @staticmethod
     def _inspect(image, insecure=False):
 
         cmd = ['skopeo', 'inspect']
@@ -217,7 +247,8 @@ class DockerImageUploader(ImageUploader):
 
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
 
         out, err = process.communicate()
         if process.returncode != 0:
@@ -298,7 +329,14 @@ class DockerImageUploader(ImageUploader):
                     LOG.warning(e)
 
     def add_upload_task(self, image_name, pull_source, push_destination):
-        self.upload_tasks.append((image_name, pull_source, push_destination))
+        # prime self.insecure_registries
+        if pull_source:
+            self.is_insecure_registry(self._image_to_url(pull_source).netloc)
+        else:
+            self.is_insecure_registry(self._image_to_url(image_name).netloc)
+        self.is_insecure_registry(self._image_to_url(push_destination).netloc)
+        self.upload_tasks.append((image_name, pull_source, push_destination,
+                                  self.insecure_registries))
 
     def run_tasks(self):
         if not self.upload_tasks:

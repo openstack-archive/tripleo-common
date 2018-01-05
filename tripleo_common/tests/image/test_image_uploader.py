@@ -46,11 +46,17 @@ class TestImageUploadManager(base.TestCase):
 
     @mock.patch('tripleo_common.image.base.open',
                 mock.mock_open(read_data=filedata), create=True)
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'DockerImageUploader.is_insecure_registry',
+                return_value=True)
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'DockerImageUploader._images_match',
+                return_value=False)
     @mock.patch('os.path.isfile', return_value=True)
     @mock.patch('fcntl.ioctl', side_effect=Exception)
     @mock.patch('tripleo_common.image.image_uploader.Client')
-    def test_file_parsing(self, mockdocker, mockioctl, mockpath):
-        print(filedata)
+    def test_file_parsing(self, mockdocker, mockioctl, mockpath,
+                          mock_images_match, mock_is_insecure):
         manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()
         mockpath(self.filelist[0])
@@ -111,7 +117,23 @@ class TestDockerImageUploader(base.TestCase):
         super(TestDockerImageUploader, self).tearDown()
         self.patcher.stop()
 
-    def test_upload_image(self):
+    @mock.patch('subprocess.Popen')
+    def test_upload_image(self, mock_popen):
+        result1 = {
+            'Digest': 'a'
+        }
+        result2 = {
+            'Digest': 'b'
+        }
+        mock_process = mock.Mock()
+        mock_process.communicate.side_effect = [
+            (json.dumps(result1), ''),
+            (json.dumps(result2), ''),
+        ]
+
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+
         image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
@@ -119,7 +141,8 @@ class TestDockerImageUploader(base.TestCase):
 
         self.uploader.upload_image(image + ':' + tag,
                                    None,
-                                   push_destination)
+                                   push_destination,
+                                   set())
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -130,11 +153,12 @@ class TestDockerImageUploader(base.TestCase):
             image=image + ':' + tag,
             repository=push_image,
             tag=tag, force=True)
-        self.dockermock.return_value.push(
+        self.dockermock.return_value.push.assert_called_once_with(
             push_image,
             tag=tag, stream=True)
 
-    def test_upload_image_missing_tag(self):
+    @mock.patch('subprocess.Popen')
+    def test_upload_image_missing_tag(self, mock_popen):
         image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
         expected_tag = 'latest'
         push_destination = 'localhost:8787'
@@ -142,7 +166,8 @@ class TestDockerImageUploader(base.TestCase):
 
         self.uploader.upload_image(image,
                                    None,
-                                   push_destination)
+                                   push_destination,
+                                   set())
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -153,9 +178,35 @@ class TestDockerImageUploader(base.TestCase):
             image=image + ':' + expected_tag,
             repository=push_image,
             tag=expected_tag, force=True)
-        self.dockermock.return_value.push(
+        self.dockermock.return_value.push.assert_called_once_with(
             push_image,
             tag=expected_tag, stream=True)
+
+    @mock.patch('subprocess.Popen')
+    def test_upload_image_existing(self, mock_popen):
+        result = {
+            'Digest': 'a'
+        }
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = (json.dumps(result), '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+        tag = 'latest'
+        push_destination = 'localhost:8787'
+
+        self.uploader.upload_image(image + ':' + tag,
+                                   None,
+                                   push_destination,
+                                   set())
+
+        self.dockermock.assert_called_once_with(
+            base_url='unix://var/run/docker.sock', version='auto')
+
+        # both digests are the same, no pull/push
+        self.dockermock.return_value.pull.assert_not_called()
+        self.dockermock.return_value.tag.assert_not_called()
+        self.dockermock.return_value.push.assert_not_called()
 
     @mock.patch('requests.get')
     def test_is_insecure_registry_known(self, mock_get):
@@ -351,3 +402,24 @@ class TestDockerImageUploader(base.TestCase):
         dockerc.pull.assert_has_calls([
             mock.call(image, tag=None, stream=True)
         ])
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'DockerImageUploader._inspect')
+    def test_images_match(self, mock_inspect):
+        mock_inspect.side_effect = [{'Digest': 'a'}, {'Digest': 'b'}]
+        self.assertFalse(self.uploader._images_match('foo', 'bar', set()))
+
+        mock_inspect.side_effect = [{'Digest': 'a'}, {'Digest': 'a'}]
+        self.assertTrue(self.uploader._images_match('foo', 'bar', set()))
+
+        mock_inspect.side_effect = [{}, {'Digest': 'b'}]
+        self.assertFalse(self.uploader._images_match('foo', 'bar', set()))
+
+        mock_inspect.side_effect = [{'Digest': 'a'}, {}]
+        self.assertFalse(self.uploader._images_match('foo', 'bar', set()))
+
+        mock_inspect.side_effect = [None, None]
+        self.assertFalse(self.uploader._images_match('foo', 'bar', set()))
+
+        mock_inspect.side_effect = ImageUploaderException()
+        self.assertFalse(self.uploader._images_match('foo', 'bar', set()))
