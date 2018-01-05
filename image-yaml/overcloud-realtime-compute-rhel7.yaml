@@ -1,0 +1,5 @@
+disk_images:
+  -
+    imagename: overcloud-realtime-compute
+    type: qcow2
+    distro: rhel7
