@@ -528,10 +528,10 @@ class AnsibleGenerateInventoryAction(actions.Action):
     def run(self, context):
 
         inventory_path = os.path.join(
-            self.work_dir, 'tripleo-ansible-inventory')
+            self.work_dir, 'tripleo-ansible-inventory.yaml')
         command = []
         command.append('/usr/bin/tripleo-ansible-inventory')
-        command.append('--static-inventory')
+        command.append('--static-yaml-inventory')
         command.append(inventory_path)
 
         env_variables = {

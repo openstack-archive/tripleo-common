@@ -46,7 +46,7 @@ function show_options {
     echo "  -q|--query <nova node>     -- check if the node is ACTIVE and tail"
     echo "                                yum.log for any package update info"
     echo "  -I|--inventory <path>      -- use the specified tripleo ansible "
-    echo "                                inventory "
+    echo "                                inventory (yaml format)"
     echo "  -O|--ansible-opts \"opts\"   -- specify extra options to be passed "
     echo "                                to ansible-playbook e.g. \"-vvv\" or "
     echo "                                \"-vvv --skip-tags validation\""
@@ -77,9 +77,9 @@ function show_options {
     echo "    upgrade-non-controller.sh -u 192.168.24.15 "
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.15 "
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.16 \ "
-    echo "                              -I /home/stack/tripleo-ansible-inventory"
+    echo "                              -I /home/stack/tripleo-ansible-inventory.yaml"
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.16 \ "
-    echo "                              -I /home/stack/tripleo-ansible-inventory \ "
+    echo "                              -I /home/stack/tripleo-ansible-inventory.yaml \ "
     echo "                              -O \"-vvv --skip-tags validation\" "
     echo
     echo "You can run on multiple nodes in parallel: "
@@ -168,7 +168,7 @@ function find_node_by_name_id_or_ip {
 function get_static_inventory {
   local config_dir=$1
   if [ -d "$config_dir" ] ;then
-    local inventory_args=" --static-inventory $config_dir/tripleo-ansible-inventory"
+    local inventory_args=" --static-yaml-inventory $config_dir/tripleo-ansible-inventory.yaml"
     if [[ $UPGRADE_NODE_USER != $UPGRADE_NODE_USER_DEFAULT ]]; then
       inventory_args+=" --ansible_ssh_user $UPGRADE_NODE_USER"
     fi
@@ -197,7 +197,7 @@ if [ -n "$UPGRADE_NODE" ]; then
   config_dir=$(ls -1 $UPGRADE_NODE)
   if [ -z "$INVENTORY" ]; then
     get_static_inventory $UPGRADE_NODE/$config_dir
-    INVENTORY=$UPGRADE_NODE/$config_dir/tripleo-ansible-inventory
+    INVENTORY="$UPGRADE_NODE/$config_dir/tripleo-ansible-inventory.yaml"
   fi
   for book in upgrade_steps_playbook.yaml deploy_steps_playbook.yaml ; do
     run_ansible_playbook $config_dir/$book
