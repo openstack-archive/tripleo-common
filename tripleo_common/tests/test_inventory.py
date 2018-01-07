@@ -93,7 +93,12 @@ class TestInventory(base.TestCase):
             {'output_key': 'VipMap',
              'output_value': {
                  'ctlplane': 'x.x.x.4',
-                 'redis': 'x.x.x.6'}}]}
+                 'redis': 'x.x.x.6'}},
+            {'output_key': 'RoleData',
+             'output_value': {
+                 'Controller': {'config_settings': 'foo1'},
+                 'Compute': {'config_settings': 'foo2'},
+                 'CustomRole': {'config_settings': 'foo3'}}}]}
         self.plan_name = 'overcloud'
 
         self.hclient = MagicMock()
@@ -159,7 +164,8 @@ class TestInventory(base.TestCase):
     def test_outputs_iterating_returns_list_of_output_keys(self):
         self.assertEqual(
             {'EnabledServices', 'KeystoneURL', 'ServerIdData',
-             'RoleNetHostnameMap', 'RoleNetIpMap', 'VipMap'},
+             'RoleNetHostnameMap', 'RoleNetIpMap', 'VipMap',
+             'RoleData'},
             set([o for o in self.outputs]))
 
     def test_inventory_list(self):
@@ -196,11 +202,13 @@ class TestInventory(base.TestCase):
                         'children': ['cp-0'],
                         'vars': {'ansible_ssh_user': 'heat-admin',
                                  'bootstrap_server_id': 'a',
+                                 'role_data_config_settings': 'foo2',
                                  'role_name': 'Compute'}},
                     'Controller': {
                         'children': ['c-0', 'c-1', 'c-2'],
                         'vars': {'ansible_ssh_user': 'heat-admin',
                                  'bootstrap_server_id': 'a',
+                                 'role_data_config_settings': 'foo1',
                                  'role_name': 'Controller'}},
                     'cp-0': {'hosts': ['y.y.y.1'],
                              'vars': {'deploy_server_id': 'd',
@@ -214,6 +222,7 @@ class TestInventory(base.TestCase):
                         'children': ['cs-0'],
                         'vars': {'ansible_ssh_user': 'heat-admin',
                                  'bootstrap_server_id': 'a',
+                                 'role_data_config_settings': 'foo3',
                                  'role_name': 'CustomRole'}},
                     'overcloud': {
                         'children': ['Compute', 'Controller', 'CustomRole'],
@@ -282,11 +291,13 @@ class TestInventory(base.TestCase):
                         'children': ['cp-0'],
                         'vars': {'ansible_ssh_user': ansible_ssh_user,
                                  'bootstrap_server_id': 'a',
+                                 'role_data_config_settings': 'foo2',
                                  'role_name': 'Compute'}},
                     'Controller': {
                         'children': ['c-0', 'c-1', 'c-2'],
                         'vars': {'ansible_ssh_user': ansible_ssh_user,
                                  'bootstrap_server_id': 'a',
+                                 'role_data_config_settings': 'foo1',
                                  'role_name': 'Controller'}},
                     'cp-0': {'hosts': ['y.y.y.1'],
                              'vars': {'deploy_server_id': 'd',
@@ -300,6 +311,7 @@ class TestInventory(base.TestCase):
                         'children': ['cs-0'],
                         'vars': {'ansible_ssh_user': ansible_ssh_user,
                                  'bootstrap_server_id': 'a',
+                                 'role_data_config_settings': 'foo3',
                                  'role_name': 'CustomRole'}},
                     'overcloud': {
                         'children': ['Compute', 'Controller', 'CustomRole'],
@@ -347,14 +359,17 @@ class TestInventory(base.TestCase):
             'Compute': {'children': {'cp-0': {}},
                         'vars': {'ansible_ssh_user': 'heat-admin',
                                  'bootstrap_server_id': 'a',
+                                 'role_data_config_settings': 'foo2',
                                  'role_name': 'Compute'}},
             'Controller': {'children': {'c-0': {}, 'c-1': {}, 'c-2': {}},
                            'vars': {'ansible_ssh_user': 'heat-admin',
                                     'bootstrap_server_id': 'a',
+                                    'role_data_config_settings': 'foo1',
                                     'role_name': 'Controller'}},
             'CustomRole': {'children': {'cs-0': {}},
                            'vars': {'ansible_ssh_user': 'heat-admin',
                                     'bootstrap_server_id': 'a',
+                                    'role_data_config_settings': 'foo3',
                                     'role_name': 'CustomRole'}},
             '_meta': {'hostvars': {}},
             'c-0': {'hosts': {'x.x.x.1': {}},

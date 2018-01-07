@@ -194,6 +194,7 @@ class TripleoInventory(object):
         role_net_ip_map = self.stack_outputs.get('RoleNetIpMap', {})
         role_node_id_map = self.stack_outputs.get('ServerIdData', {})
         networks = set()
+        role_data = self.stack_outputs.get('RoleData', {})
         role_net_hostname_map = self.stack_outputs.get(
             'RoleNetHostnameMap', {})
         children = []
@@ -228,6 +229,16 @@ class TripleoInventory(object):
                         'role_name': role,
                     }
                 }
+                # Note we add each individual key from role_data, because if
+                # any template sections define inline ansible with j2 variables
+                # ansible silently treats those inventory variables as
+                # undefined
+                # This at least means we can consume those keys which don't
+                # have this problem (in general we don't need the nested
+                # ansible *tasks because these are available via config
+                # download already)
+                for k in role_data[role]:
+                    ret[role]['vars']["role_data_%s" % k] = role_data[role][k]
 
         if children:
             vip_map = self.stack_outputs.get('VipMap', {})
