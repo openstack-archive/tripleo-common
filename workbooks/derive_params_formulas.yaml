@@ -69,7 +69,7 @@ workflows:
           - set_status_failed_get_num_phy_cores_per_numa_for_pmd_invalid: <% not isInteger($.num_phy_cores_per_numa_node_for_pmd) %>
           - set_status_failed_get_num_phy_cores_per_numa_for_pmd_not_provided: <% $.num_phy_cores_per_numa_node_for_pmd = 0 %>
 
-      # For NUMA node with DPDK nic, number of cores should be used from user input (defaults to 2)
+      # For NUMA node with DPDK nic, number of cores should be used from user input
       # For NUMA node without DPDK nic, number of cores should be 1
       get_num_cores_per_numa_nodes:
         publish:
