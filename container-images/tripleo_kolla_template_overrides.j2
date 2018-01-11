@@ -107,6 +107,13 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 ] %}
 {% set sensu_client_packages_remove = [
     'MariaDB-client',
+    'ceph-common',
+    'cyrus-sasl-devel',
+    'gcc-c++',
+    'make',
+    'ntp',
+    'python-pymongo',
+    'ruby-devel'
 ] %}
 {% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
 {% set sensu_client_packages_append = ['mariadb-server', 'mariadb-server-galera'] %}
@@ -369,6 +376,9 @@ RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/sahara-engine /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block sensu_clients_install %}
 {% endblock %}
 
 {% block sensu_client_footer %}
