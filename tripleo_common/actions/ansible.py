@@ -26,6 +26,7 @@ from mistral_lib import actions
 from oslo_concurrency import processutils
 
 from tripleo_common.actions import base
+from tripleo_common.inventory import TripleoInventory
 
 
 def write_default_ansible_cfg(work_dir,
@@ -508,7 +509,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 shutil.rmtree(self.work_dir)
 
 
-class AnsibleGenerateInventoryAction(actions.Action):
+class AnsibleGenerateInventoryAction(base.TripleOAction):
     """Executes tripleo-ansible-inventory to generate an inventory"""
 
     def __init__(self, **kwargs):
@@ -517,6 +518,8 @@ class AnsibleGenerateInventoryAction(actions.Action):
             'ansible_ssh_user', 'tripleo-admin')
         self._work_dir = self._kwargs_for_run.pop(
             'work_dir', None)
+        self.plan_name = self._kwargs_for_run.pop(
+            'plan_name', 'overcloud')
 
     @property
     def work_dir(self):
@@ -529,24 +532,16 @@ class AnsibleGenerateInventoryAction(actions.Action):
 
         inventory_path = os.path.join(
             self.work_dir, 'tripleo-ansible-inventory.yaml')
-        command = []
-        command.append('/usr/bin/tripleo-ansible-inventory')
-        command.append('--static-yaml-inventory')
-        command.append(inventory_path)
 
-        env_variables = {
-            'HOME': self.work_dir,
-            'OS_AUTH_URL': context.security.auth_uri,
-            'OS_USERNAME': context.security.user_name,
-            'OS_AUTH_TOKEN': context.security.auth_token,
-            'OS_PROJECT_NAME': context.security.project_name}
+        inventory = TripleoInventory(
+            session=self.get_session(context, 'heat'),
+            hclient=self.get_orchestration_client(context),
+            auth_url=context.security.auth_uri,
+            cacert=context.security.auth_cacert,
+            project_name=context.security.project_name,
+            username=context.security.user_name,
+            ansible_ssh_user=self.ansible_ssh_user,
+            plan_name=self.plan_name)
 
-        if self.ansible_ssh_user:
-            command.append('--ansible_ssh_user')
-            command.append(self.ansible_ssh_user)
-
-        stderr, stdout = processutils.execute(
-            *command, cwd=self.work_dir,
-            env_variables=env_variables,
-            log_errors=processutils.LogErrors.ALL)
+        inventory.write_static_inventory(inventory_path)
         return inventory_path
