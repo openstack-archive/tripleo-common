@@ -77,7 +77,6 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
    'python2-msgpack' # EPEL, RDO is python-msgpack
 #}
 {% set openstack_base_packages_remove = [
-    'Percona-Server-shared-56',
     'libtomcrypt',
     'libtommath',
     'python2-crypto',
@@ -91,13 +90,12 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'pv'                  # EPEL
 #}
 {% set mariadb_packages_remove = [
-    'MariaDB-Galera-server',
-    'MariaDB-client',
     'percona-xtrabackup',
     'pv'
 ] %}
+{% set mariadb_packages_append = ['xinetd', 'pacemaker', 'pacemaker-remote',
+    'pcs', 'libqb', 'resource-agents'] %}
 {% set sensu_client_packages_remove = [
-    'MariaDB-client',
     'ceph-common',
     'cyrus-sasl-devel',
     'gcc-c++',
@@ -106,9 +104,6 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'python-pymongo',
     'ruby-devel'
 ] %}
-{% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd',
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
-{% set sensu_client_packages_append = ['mariadb-server', 'mariadb-server-galera'] %}
 
 # Required for nova migration
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
