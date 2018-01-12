@@ -79,6 +79,7 @@ class ScaleDownActionTest(base.TestCase):
             )
         ]
         heatclient.stacks.get.return_value = mock_stack()
+        heatclient.stacks.validate.return_value = {}
         mock_get_heat_client.return_value = heatclient
 
         mock_ctx = mock.MagicMock()
@@ -89,11 +90,31 @@ class ScaleDownActionTest(base.TestCase):
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}]
         }, default_flow_style=False)
+        mock_roles = yaml.safe_dump([{"name": "foo"}])
+        mock_network = yaml.safe_dump([{'enabled': False}])
+        mock_exclude = yaml.safe_dump({"name": "foo"})
         swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
             ({}, mock_env),
             ({}, mock_env),
             swiftexceptions.ClientException('atest2')
         )
+
+        def return_container_files(*args):
+            return ('headers', [{'name': 'foo.role.j2.yaml'}])
+
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
         mock_get_object_client.return_value = swift
 
         env = {
@@ -111,6 +132,13 @@ class ScaleDownActionTest(base.TestCase):
             constants.STACK_TIMEOUT_DEFAULT, ['resource_id'], 'stack')
         action.run(mock_ctx)
 
+        heatclient.stacks.validate.assert_called_once_with(
+            environment=env,
+            files={},
+            show_nested=True,
+            template={'heat_template_version': '2016-04-30'}
+        )
+
         heatclient.stacks.update.assert_called_once_with(
             'stack',
             stack_name='stack',
@@ -120,7 +148,7 @@ class ScaleDownActionTest(base.TestCase):
             files={},
             timeout_mins=240)
 
-        mock_cache.assert_called_once_with(
+        mock_cache.assert_called_with(
             mock_ctx,
             "stack",
             "tripleo.parameters.get"

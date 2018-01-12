@@ -260,27 +260,100 @@ class ResetParametersActionTest(base.TestCase):
 
 class UpdateParametersActionTest(base.TestCase):
 
+    @mock.patch('tripleo_common.actions.parameters.uuid')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.'
+                'get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'cache_delete')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run(self, mock_get_object_client, mock_cache):
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_run(self, mock_get_orchestration_client_client,
+                 mock_get_object_client, mock_cache,
+                 mock_get_template_contents, mock_env_files,
+                 mock_uuid):
+
+        mock_env_files.return_value = ({}, {})
 
         mock_ctx = mock.MagicMock()
 
         swift = mock.MagicMock(url="http://test.com")
+
         mock_env = yaml.safe_dump({
             'name': constants.DEFAULT_CONTAINER_NAME,
             'temp_environment': 'temp_environment',
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
         }, default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
+
+        mock_roles = yaml.safe_dump([{"name": "foo"}])
+        mock_network = yaml.safe_dump([{'enabled': False}])
+        mock_exclude = yaml.safe_dump({"name": "foo"})
+
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
+
+        def return_container_files(*args):
+            return ('headers', [{'name': 'foo.role.j2.yaml'}])
+
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
+
         mock_get_object_client.return_value = swift
+
+        mock_heat = mock.MagicMock()
+        mock_get_orchestration_client_client.return_value = mock_heat
+
+        mock_heat.stacks.validate.return_value = {
+            "Type": "Foo",
+            "Description": "Le foo bar",
+            "Parameters": {"bar": {"foo": "bar barz"}},
+            "NestedParameters": {"Type": "foobar"}
+        }
+
+        mock_uuid.uuid4.return_value = "cheese"
+
+        expected_value = {
+            'environment_parameters': None,
+            'heat_resource_tree': {
+                'parameters': {'bar': {'foo': 'bar barz',
+                                       'name': 'bar'}},
+                'resources': {'cheese': {
+                    'id': 'cheese',
+                    'name': 'Root',
+                    'description': 'Le foo bar',
+                    'parameters': ['bar'],
+                    'resources': ['cheese'],
+                    'type': 'Foo'}
+                }
+            }
+        }
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
 
         # Test
         test_parameters = {'SomeTestParameter': 42}
         action = parameters.UpdateParametersAction(test_parameters)
-        action.run(mock_ctx)
+        return_value = action.run(mock_ctx)
 
         mock_env_updated = yaml.safe_dump({
             'name': constants.DEFAULT_CONTAINER_NAME,
@@ -290,21 +363,42 @@ class UpdateParametersActionTest(base.TestCase):
             'environments': [{u'path': u'environments/test.yaml'}]
         }, default_flow_style=False)
 
-        swift.put_object.assert_called_once_with(
+        swift.put_object.assert_any_call(
             constants.DEFAULT_CONTAINER_NAME,
             constants.PLAN_ENVIRONMENT,
             mock_env_updated
         )
+
+        mock_heat.stacks.validate.assert_called_once_with(
+            environment={},
+            files={},
+            show_nested=True,
+            template={'heat_template_version': '2016-04-30'},
+        )
+
         mock_cache.assert_called_once_with(
             mock_ctx,
             "overcloud",
-            "tripleo.parameters.get"
+            "tripleo.parameters.get",
+            expected_value
         )
+        self.assertEqual(return_value, expected_value)
 
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.'
+                'get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'cache_delete')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run_new_key(self, mock_get_object_client, mock_cache):
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_run_new_key(self, mock_get_orchestration_client_client,
+                         mock_get_object_client, mock_cache,
+                         mock_get_template_contents, mock_env_files):
+
+        mock_env_files.return_value = ({}, {})
 
         mock_ctx = mock.MagicMock()
 
@@ -315,8 +409,43 @@ class UpdateParametersActionTest(base.TestCase):
             'template': 'template',
             'environments': [{u'path': u'environments/test.yaml'}],
         }, default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
+
+        mock_roles = yaml.safe_dump([{"name": "foo"}])
+        mock_network = yaml.safe_dump([{'enabled': False}])
+        mock_exclude = yaml.safe_dump({"name": "foo"})
+
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
+
+        def return_container_files(*args):
+            return ('headers', [{'name': 'foo.role.j2.yaml'}])
+
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
+
         mock_get_object_client.return_value = swift
+
+        heat = mock.MagicMock()
+        heat.stacks.validate.return_value = {}
+        mock_get_orchestration_client_client.return_value = heat
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
 
         # Test
         test_parameters = {'SomeTestParameter': 42}
@@ -332,39 +461,94 @@ class UpdateParametersActionTest(base.TestCase):
             'environments': [{u'path': u'environments/test.yaml'}]
         }, default_flow_style=False)
 
-        swift.put_object.assert_called_once_with(
+        swift.put_object.assert_any_call(
             constants.DEFAULT_CONTAINER_NAME,
             constants.PLAN_ENVIRONMENT,
             mock_env_updated
         )
+
+        heat.stacks.validate.assert_called_once_with(
+            environment={},
+            files={},
+            show_nested=True,
+            template={'heat_template_version': '2016-04-30'},
+        )
+
         mock_cache.assert_called_once_with(
             mock_ctx,
             "overcloud",
-            "tripleo.parameters.get"
+            "tripleo.parameters.get",
+            {'environment_parameters': None, 'heat_resource_tree': {}}
         )
 
 
 class UpdateRoleParametersActionTest(base.TestCase):
 
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.'
+                'get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'cache_delete')
+                'cache_set')
     @mock.patch('tripleo_common.utils.parameters.set_count_and_flavor_params')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_baremetal_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_compute_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run(self, mock_get_object_client, mock_get_compute_client,
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_run(self, mock_get_orchestration_client_client,
+                 mock_get_object_client, mock_get_compute_client,
                  mock_get_baremetal_client, mock_set_count_and_flavor,
-                 mock_cache):
+                 mock_cache, mock_get_template_contents, mock_env_files):
+
+        mock_env_files.return_value = ({}, {})
 
         mock_ctx = mock.MagicMock()
 
         swift = mock.MagicMock(url="http://test.com")
-        mock_env = yaml.safe_dump({'name': 'overcast'},
-                                  default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
+        mock_env = yaml.safe_dump({
+            'name': 'overcast'
+        }, default_flow_style=False)
+
+        mock_roles = yaml.safe_dump([{"name": "foo"}])
+        mock_network = yaml.safe_dump([{'enabled': False}])
+        mock_exclude = yaml.safe_dump({"name": "foo"})
+
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_env),
+            ({}, mock_roles),
+            ({}, mock_network),
+            ({}, mock_exclude),
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
+
+        def return_container_files(*args):
+            return ('headers', [{'name': 'foo.yaml'}])
+
+        swift.get_container = mock.MagicMock(
+            side_effect=return_container_files)
+
         mock_get_object_client.return_value = swift
+
+        heat = mock.MagicMock()
+        heat.stacks.validate.return_value = {}
+        mock_get_orchestration_client_client.return_value = heat
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
 
         params = {'CephStorageCount': 1,
                   'OvercloudCephStorageFlavor': 'ceph-storage'}
@@ -376,18 +560,27 @@ class UpdateRoleParametersActionTest(base.TestCase):
 
         mock_env_updated = yaml.safe_dump({
             'name': 'overcast',
-            'parameter_defaults': params,
+            'parameter_defaults': params
         }, default_flow_style=False)
 
-        swift.put_object.assert_called_once_with(
+        swift.put_object.assert_any_call(
             'overcast',
             constants.PLAN_ENVIRONMENT,
             mock_env_updated
         )
+
+        heat.stacks.validate.assert_called_once_with(
+            environment={},
+            files={},
+            show_nested=True,
+            template={'heat_template_version': '2016-04-30'},
+        )
+
         mock_cache.assert_called_once_with(
             mock_ctx,
             "overcast",
-            "tripleo.parameters.get"
+            "tripleo.parameters.get",
+            {'environment_parameters': None, 'heat_resource_tree': {}}
         )
 
 
