@@ -1,0 +1,20 @@
+---
+  - name: create br-int interface file
+    become: true
+    become_user: root
+    template:
+      dest: "/etc/sysconfig/network-scripts/ifcfg-br-int"
+      src: "ifcfg-br-int.j2"
+      force: no
+  - name: create octavia management interface
+    become: true
+    become_user: root
+    template:
+      dest: "/etc/sysconfig/network-scripts/ifcfg-{{ mgmt_port_dev }}"
+      src: "ifcfg.j2"
+  - name: Bring the management port interface up
+    become: true
+    become_user: root
+    command: "ifup {{ mgmt_port_dev }}"
+    notify:
+      - octavia config updated

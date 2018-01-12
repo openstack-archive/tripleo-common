@@ -1,0 +1,15 @@
+---
+  - name: gathering controller host name
+    command: "hostname -f"
+    register: hostname
+    changed_when: False
+  - set_fact:
+      node_hostname: "{{ hostname.stdout }}"
+  - include_tasks: certificate.yml
+    when: generate_certs
+  - include_tasks: netport.yml
+  - include_tasks: netinterface.yml
+  - include_tasks: octavia.yml
+  - name: making sure octavia common configuration directory exists
+    file: path="{{ octavia_confd_prefix }}/etc/octavia/conf.d/common" state=directory
+    become: true

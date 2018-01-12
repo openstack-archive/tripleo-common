@@ -1,0 +1,5 @@
+---
+  - name: octavia config updated
+    set_fact:
+      octavia_config_updated: true
+

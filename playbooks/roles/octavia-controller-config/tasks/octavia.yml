@@ -1,0 +1,19 @@
+---
+  - name: making sure octavia worker configuration directory exists
+    file: path="{{ octavia_confd_prefix }}/etc/octavia/conf.d/octavia-worker" state=directory
+    become: true
+  - name: create octavia worker post deploy configuration file
+    become: true
+    become_user: root
+    template:
+      dest: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf"
+      src: "worker-post-deploy.conf.j2"
+  - name: making sure octavia worker configuration directory exists
+    file: path="{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager" state=directory
+    become: true
+  - name: create octavia health manager configuration file
+    become: true
+    become_user: root
+    template:
+      dest: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf"
+      src: "manager-post-deploy.conf.j2"

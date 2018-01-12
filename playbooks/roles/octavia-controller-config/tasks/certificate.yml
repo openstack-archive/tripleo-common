@@ -1,0 +1,15 @@
+---
+  - name: making sure octavia worker configuration directory exists
+    file: path="{{ octavia_confd_prefix }}{{ ca_private_key_path | dirname }}" state=directory
+    become: true
+  - name: Copying ca private key to octavia
+    become: true
+    copy: content="{{ private_key_content }}" dest="{{ octavia_confd_prefix }}{{ ca_private_key_path }}"
+  - name: copying ca certificate to octavia
+    become: true
+    copy: content="{{ ca_cert_content }}" dest="{{ octavia_confd_prefix }}{{ ca_cert_path }}"
+  - name: Create pem file with service private key & public certificate
+    become: true
+    copy: content="{{ service_pem_content }}" dest="{{ octavia_confd_prefix }}{{ client_cert_path }}"
+    notify:
+      - octavia config updated

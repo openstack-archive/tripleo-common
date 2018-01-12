@@ -54,3 +54,6 @@ ChangeLog
 
 # Files created by releasenotes build
 releasenotes/build
+
+# Playbook retry files
+*.retry

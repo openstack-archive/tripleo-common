@@ -1,0 +1,72 @@
+---
+  - name: delete temporary ssl directory
+    become: true
+    file: path={{ openssl_temp_dir }} state=absent
+  - name: create temporary ssl directories
+    become: true
+    file: path={{ openssl_temp_dir }}/private recurse=yes
+  - name: create temporary ssl newcerts directory
+    become: true
+    file: path={{ openssl_temp_dir }}/newcerts recurse=yes
+  - name: create index.txt
+    become: true
+    copy: content="" dest={{ openssl_temp_dir }}/index.txt force=no
+  - name: create serial file
+    become: true
+    copy: content="01" dest={{ openssl_temp_dir }}/serial
+  - name: create openssl configuration file from template
+    become: true
+    copy: src="/etc/pki/tls/openssl.cnf" dest="{{ openssl_temp_dir }}/openssl.cnf" remote_src=yes
+  - name: update openssl directory entry in the configuration file
+    become: true
+    ini_file: path="{{ openssl_temp_dir }}/openssl.cnf" section=" CA_default " option="dir" value="{{ openssl_temp_dir }}"
+  - name: update openssl ca certificate file in the configuration file
+    become: true
+    replace: path="{{ openssl_temp_dir }}/openssl.cnf" regexp="cacert.pem" replace="ca_01.pem"
+
+  - name: Generating certificate authority private key
+    become: true
+    shell: |
+      openssl genrsa -passout pass:{{ ca_passphrase }} -des3 -out {{ openssl_temp_dir }}/private/cakey.pem 2048
+  - name: Reading private key
+    become: true
+    shell: cat {{ openssl_temp_dir }}/private/cakey.pem
+    register: private_key_data
+  - name: Setting private key fact
+    set_fact:
+      private_key_content: "{{ private_key_data.stdout }}"
+
+  - name: Generating certificate authority certificate
+    become: true
+    shell: |
+      openssl req -x509 -passin pass:{{ ca_passphrase }} -new -nodes -key {{ openssl_temp_dir }}/private/cakey.pem \
+                  -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com" \
+                  -days 365 -config {{ openssl_temp_dir }}/openssl.cnf \
+                  -out {{ openssl_temp_dir }}/ca_01.pem
+  - name: Reading CA certificate
+    become: true
+    shell: cat {{ openssl_temp_dir }}/ca_01.pem
+    register: ca_cert_data
+  - name: Setting CA certificate fact
+    set_fact:
+      ca_cert_content: "{{ ca_cert_data.stdout }}"
+
+  - name: Generating service private key & certificate request
+    become: true
+    shell: |
+      openssl req  -newkey rsa:2048 -nodes -config {{ openssl_temp_dir }}/openssl.cnf -keyout {{ openssl_temp_dir }}/client.key \
+                   -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com" \
+                   -out {{ openssl_temp_dir }}/client.csr
+  - name: Signing service certificate request
+    become: true
+    shell: |
+      openssl ca -config {{ openssl_temp_dir }}/openssl.cnf -passin pass:{{ ca_passphrase }} -in {{ openssl_temp_dir }}/client.csr \
+                 -days 365 -out {{ openssl_temp_dir }}/client-.pem -batch
+  - name: Read service private key and public certifcate
+    become: true
+    shell: |
+      cat {{ openssl_temp_dir }}/client-.pem {{ openssl_temp_dir }}/client.key
+    register: service_key_data
+  - name: Set service key fact
+    set_fact:
+      service_pem_content: "{{ service_key_data.stdout }}"

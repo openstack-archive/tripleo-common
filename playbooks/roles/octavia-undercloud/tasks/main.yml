@@ -1,0 +1,15 @@
+---
+
+  - name: check if amphora image file exists
+    stat:
+      path: "{{ amp_image_filename }}"
+    register: amp_image_file_result
+  - name: upload image to glance
+    shell: |
+      if [[ $(openstack image show {{ amp_image_name }} > /dev/null; echo $?) -eq 1 ]]; then
+        glance image-create --name {{ amp_image_name }} --disk-format qcow2 \
+        --container-format bare --tags {{ amp_image_tag }} --file {{ amp_image_filename }}
+      fi
+    register: image_result
+    changed_when: "image_result.stdout != ''"
+    when: amp_image_file_result.stat.exists == True
