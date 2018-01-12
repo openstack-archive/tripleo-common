@@ -24,6 +24,7 @@ import yaml
 import jinja2
 
 from tripleo_common import constants
+from tripleo_common import exception
 
 
 class Config(object):
@@ -275,6 +276,10 @@ class Config(object):
                     d['scalar'] = False
                 else:
                     d['scalar'] = True
+
+                if d['group'] == 'os-apply-config':
+                    raise exception.GroupOsApplyConfigException(
+                        d['deployment_name'])
 
             with open(group_var_server_path, 'w') as f:
                 f.write(group_var_server_template.render(

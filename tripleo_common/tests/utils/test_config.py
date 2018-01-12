@@ -14,12 +14,14 @@ import datetime
 import fixtures
 import mock
 import os
+import uuid
 import yaml
 
 from mock import call
 from mock import patch
 
 from tripleo_common import constants
+from tripleo_common import exception
 from tripleo_common.tests import base
 from tripleo_common.tests.fake_config import fakes
 from tripleo_common.utils import config as ooo_config
@@ -279,3 +281,62 @@ class TestConfig(base.TestCase):
                 yaml.safe_load(
                     open(os.path.join(tmp_path, 'group_vars', f)).read()),
                 self._get_yaml_file(f))
+
+    @patch('tripleo_common.utils.config.Config.get_config_dict')
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    def test_config_download_os_apply_config(
+        self, mock_deployment_data, mock_config_dict):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+        stack = mock.MagicMock()
+        heat.stacks.get.return_value = stack
+
+        stack.outputs = [
+            {'output_key': 'RoleNetHostnameMap',
+             'output_value': {
+                 'Controller': {
+                     'ctlplane': [
+                         'overcloud-controller-0.ctlplane.localdomain']},
+                 'Compute': {
+                     'ctlplane': [
+                         'overcloud-novacompute-0.ctlplane.localdomain',
+                         'overcloud-novacompute-1.ctlplane.localdomain',
+                         'overcloud-novacompute-2.ctlplane.localdomain']}}},
+            {'output_key': 'ServerIdData',
+             'output_value': {
+                 'server_ids': {
+                     'Controller': [
+                         '00b3a5e1-5e8e-4b55-878b-2fa2271f15ad'],
+                     'Compute': [
+                         'a7db3010-a51f-4ae0-a791-2364d629d20d',
+                         '8b07cd31-3083-4b88-a433-955f72039e2c',
+                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}}]
+        deployment_data, configs = \
+            self._get_config_data('config_data.yaml')
+
+        # Add a group:os-apply-config config and deployment
+        config_uuid = str(uuid.uuid4())
+        configs[config_uuid] = dict(
+            id=config_uuid,
+            config=dict(a='a'),
+            group='os-apply-config',
+            outputs=[])
+
+        deployment_uuid = str(uuid.uuid4())
+        deployment_mock = mock.MagicMock()
+        deployment_mock.id = deployment_uuid
+        deployment_mock.attributes = dict(
+            value=dict(server='00b3a5e1-5e8e-4b55-878b-2fa2271f15ad',
+                       deployment=deployment_uuid,
+                       config=config_uuid,
+                       name='OsApplyConfigDeployment'))
+        deployment_data.append(deployment_mock)
+
+        self.configs = configs
+
+        mock_deployment_data.return_value = deployment_data
+        mock_config_dict.side_effect = self._get_config_dict
+
+        self.tmp_dir = self.useFixture(fixtures.TempDir()).path
+        self.assertRaises(exception.GroupOsApplyConfigException,
+                          self.config.download_config, stack, self.tmp_dir)
