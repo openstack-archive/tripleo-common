@@ -1,0 +1,9 @@
+---
+fixes:
+  - |
+    Recognizes the ``root_device`` property when enrolling nodes. We recommend
+    it to be set for multi-disk nodes, but the enrolling procedure does not
+    actually accept it.
+  - |
+    Node properties are no longer converted to strings on enrolling. This is
+    not required by the Bare Metal service and may yield incorrect results.

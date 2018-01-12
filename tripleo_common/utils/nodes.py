@@ -328,8 +328,9 @@ def register_ironic_node(node, client):
     mapping = {'cpus': 'cpu',
                'memory_mb': 'memory',
                'local_gb': 'disk',
-               'cpu_arch': 'arch'}
-    properties = {k: six.text_type(node.get(v))
+               'cpu_arch': 'arch',
+               'root_device': 'root_device'}
+    properties = {k: node[v]
                   for k, v in mapping.items()
                   if node.get(v) is not None}
 
@@ -413,6 +414,7 @@ _NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
                       'memory': '/properties/memory_mb',
                       'disk': '/properties/local_gb',
                       'arch': '/properties/cpu_arch',
+                      'root_device': '/properties/root_device',
                       'name': '/name',
                       'resource_class': '/resource_class',
                       'kernel_id': '/driver_info/deploy_kernel',
@@ -444,9 +446,8 @@ def _update_or_register_ironic_node(node, node_map, client):
         for key, value in patched.items():
             if key == 'uuid':
                 continue  # not needed during update
-            node_patch.append({'path': key,
-                               'value': six.text_type(value),
-                               'op': 'add'})
+            node_patch.append({'path': key, 'value': value, 'op': 'add'})
+
         ironic_node = client.node.update(node_uuid, node_patch)
     else:
         ironic_node = register_ironic_node(node, client)
@@ -554,6 +555,13 @@ def validate_nodes(nodes_list):
         except (ValueError, TypeError):
             failures.append(
                 (index, 'Invalid capabilities: %s' % node.get('capabilities')))
+
+        if node.get('root_device') is not None:
+            if not isinstance(node['root_device'], dict):
+                failures.append(
+                    (index,
+                     'Invalid root device: expected dict, got %s' %
+                     node['root_device']))
 
         for field in node:
             converted = handler.convert_key(field)

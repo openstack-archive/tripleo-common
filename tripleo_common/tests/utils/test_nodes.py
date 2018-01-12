@@ -293,11 +293,13 @@ class NodesTest(base.TestCase):
 
     def test_register_all_nodes(self):
         node_list = [self._get_node()]
+        node_list[0]['root_device'] = {"serial": "abcdef"}
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
                            "local_gb": "30",
                            "cpu_arch": "amd64",
-                           "capabilities": "num_nics:6"}
+                           "capabilities": "num_nics:6",
+                           "root_device": {"serial": "abcdef"}}
         ironic = mock.MagicMock()
         nodes.register_all_nodes(node_list, client=ironic)
         pxe_node_driver_info = {"ipmi_address": "foo.bar",
@@ -441,6 +443,7 @@ class NodesTest(base.TestCase):
 
         node = self._get_node()
         node.update(interfaces)
+        node['root_device'] = {'serial': 'abcdef'}
         ironic = mock.MagicMock()
         node_map = {'mac': {'aaa': 1}}
 
@@ -454,6 +457,8 @@ class NodesTest(base.TestCase):
                 {'path': '/properties/cpu_arch', 'value': 'amd64'},
                 {'path': '/properties/cpus', 'value': '1'},
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
+                {'path': '/properties/root_device',
+                 'value': {'serial': 'abcdef'}},
                 {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for iface, value in interfaces.items():
                 update_patch.append({'path': '/%s' % iface, 'value': value})
@@ -638,24 +643,6 @@ class NodesTest(base.TestCase):
         nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with('abcdef', mock.ANY)
 
-    def test_register_ironic_node_int_values(self):
-        node_properties = {"cpus": "1",
-                           "memory_mb": "2048",
-                           "local_gb": "30",
-                           "cpu_arch": "amd64",
-                           "capabilities": "num_nics:6"}
-        node = self._get_node()
-        node['cpu'] = 1
-        node['memory'] = 2048
-        node['disk'] = 30
-        client = mock.MagicMock()
-        nodes.register_ironic_node(node, client=client)
-        client.node.create.assert_called_once_with(driver=mock.ANY,
-                                                   name='node1',
-                                                   properties=node_properties,
-                                                   resource_class='baremetal',
-                                                   driver_info=mock.ANY)
-
     def test_register_ironic_node_fake_pxe(self):
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
@@ -794,35 +781,6 @@ class NodesTest(base.TestCase):
                          'redfish_username': 'test',
                          'redfish_system_id': '/redfish/v1/Systems/1'})
 
-    def test_register_ironic_node_update_int_values(self):
-        node = self._get_node()
-        ironic = mock.MagicMock()
-        node['cpu'] = 1
-        node['memory'] = 2048
-        node['disk'] = 30
-        node_map = {'mac': {'aaa': 1}}
-
-        def side_effect(*args, **kwargs):
-            update_patch = [
-                {'path': '/name', 'value': 'node1'},
-                {'path': '/driver_info/ipmi_password', 'value': 'random'},
-                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
-                {'path': '/properties/memory_mb', 'value': '2048'},
-                {'path': '/properties/local_gb', 'value': '30'},
-                {'path': '/properties/cpu_arch', 'value': 'amd64'},
-                {'path': '/properties/cpus', 'value': '1'},
-                {'path': '/properties/capabilities', 'value': 'num_nics:6'},
-                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
-            for key in update_patch:
-                key['op'] = 'add'
-            self.assertThat(update_patch,
-                            matchers.MatchesSetwise(*(map(matchers.Equals,
-                                                      args[1]))))
-            return mock.Mock(uuid='uuid1')
-
-        ironic.node.update.side_effect = side_effect
-        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
-
     def test_clean_up_extra_nodes_ironic(self):
         node = collections.namedtuple('node', ['uuid'])
         client = mock.MagicMock()
@@ -928,7 +886,8 @@ VALID_NODE_JSON = [
      'cpu': 2,
      'memory': 1024,
      'disk': 40,
-     'arch': 'x86_64'},
+     'arch': 'x86_64',
+     'root_device': {'foo': 'bar'}},
     {'pm_type': 'redfish',
      'pm_addr': '1.2.3.4',
      'pm_user': 'root',
@@ -1080,4 +1039,16 @@ class TestValidateNodes(base.TestCase):
 
         self.assertRaisesRegex(exception.InvalidNode,
                                'fields are missing: pm_system_id',
+                               nodes.validate_nodes, nodes_json)
+
+    def test_invalid_root_device(self):
+        nodes_json = [
+            {'pm_type': 'pxe_ipmitool',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'root_device': 42}
+        ]
+        self.assertRaisesRegex(exception.InvalidNode,
+                               'Invalid root device',
                                nodes.validate_nodes, nodes_json)
