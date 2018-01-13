@@ -76,7 +76,8 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
 # redis resource-agent requires pidof
-{% set redis_packages_append = ['stunnel', 'sysvinit-tools'] %}
+{% set redis_packages_append = ['stunnel', 'sysvinit-tools',
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 
 # Remove packages not present in repos
 #
@@ -108,7 +109,8 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set sensu_client_packages_remove = [
     'MariaDB-client',
 ] %}
-{% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
+{% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd',
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% set sensu_client_packages_append = ['mariadb-server', 'mariadb-server-galera'] %}
 
 # Required for nova migration
@@ -153,10 +155,10 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% set cinder_backup_packages_append = [
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block cinder_backup_footer %}
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
-
-RUN mkdir -p /openstack && \
+RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-backup /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
@@ -167,10 +169,10 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% set cinder_volume_packages_append = [
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block cinder_volume_footer %}
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
-
-RUN mkdir -p /openstack && \
+RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-volume /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
@@ -202,8 +204,10 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% set haproxy_packages_append = [
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block haproxy_footer %}
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN mkdir /etc/libqb
 {% endblock %}
 
 {% block ironic_api_footer %}
@@ -236,17 +240,17 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% set manila_share_packages_append = [
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block manila_share_footer %}
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN mkdir /etc/libqb
 {% endblock %}
 
 {% block mariadb_footer %}
 # We'll configure mariadb with galera.cnf
 RUN rm /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
 
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
-
-RUN mkdir -p /openstack && \
+RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/mariadb /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
@@ -353,16 +357,16 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% set rabbitmq_packages_append = [
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block rabbitmq_footer %}
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
-
-RUN mkdir -p /openstack && \
+RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/rabbitmq /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
 {% block redis_footer %}
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN mkdir /etc/libqb
 {% endblock %}
 
 {% block sahara_engine_footer %}
@@ -404,8 +408,10 @@ RUN mkdir -p /openstack && \
     echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
 {% endblock %}
 
+{% set ovn_northd_packages_append = [
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block ovn_northd_footer %}
-RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
+RUN mkdir /etc/libqb
 {% endblock %}
 
 {% block ovn_metadata_agent_footer %}
