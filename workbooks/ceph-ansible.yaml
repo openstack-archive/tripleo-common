@@ -32,27 +32,33 @@ workflows:
           hieradata: <% env().get('role_merged_configs', {}).values().select($.keys()).flatten().select(regex('^ceph::profile::params::osds$').search($)).where($ != null).toSet() %>
       check_hieradata:
         on-success:
-        - enable_ssh_admin: <% not bool($.hieradata) %>
+        - set_blacklisted_ips: <% not bool($.hieradata) %>
         - fail(msg=<% 'Ceph deployment stopped, puppet-ceph hieradata found. Convert it into ceph-ansible variables. {0}'.format($.hieradata) %>): <% bool($.hieradata) %>
-      enable_ssh_admin:
-        workflow: tripleo.access.v1.enable_ssh_admin
-        on-success: get_private_key
-      get_private_key:
-        action: tripleo.validations.get_privkey
+      set_blacklisted_ips:
         publish:
-          private_key: <% task(get_private_key).result %>
+          blacklisted_ips: <% env().get('blacklisted_ip_addresses', []) %>
         on-success: set_ip_lists
       set_ip_lists:
         publish:
-          mon_ips: <% env().get('service_ips', {}).get('ceph_mon_ctlplane_node_ips', []) %>
-          osd_ips: <% env().get('service_ips', {}).get('ceph_osd_ctlplane_node_ips', []) %>
-          mds_ips: <% env().get('service_ips', {}).get('ceph_mds_ctlplane_node_ips', []) %>
-          rgw_ips: <% env().get('service_ips', {}).get('ceph_rgw_ctlplane_node_ips', []) %>
-          client_ips: <% env().get('service_ips', {}).get('ceph_client_ctlplane_node_ips', []) %>
+          mon_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_mon_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          osd_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_osd_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          mds_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_mds_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          rgw_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_rgw_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          client_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_client_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
         on-success: merge_ip_lists
       merge_ip_lists:
         publish:
           ips_list: <% ($.mon_ips + $.osd_ips + $.mds_ips + $.rgw_ips + $.client_ips).toSet() %>
+        on-success: enable_ssh_admin
+      enable_ssh_admin:
+        workflow: tripleo.access.v1.enable_ssh_admin
+        input:
+          ssh_servers: <% $.ips_list %>
+        on-success: get_private_key
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task().result %>
         on-success: make_fetch_directory
       make_fetch_directory:
         action: tripleo.files.make_temp_dir
