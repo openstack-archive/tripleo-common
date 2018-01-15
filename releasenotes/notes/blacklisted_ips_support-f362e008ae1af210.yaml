@@ -1,0 +1,6 @@
+---
+security:
+  - |
+    The `enable_ssh_admin` workflow is now always expecting a list of
+    servers to operate on, passed via `ssh_servers` input which is
+    left empty when unset.

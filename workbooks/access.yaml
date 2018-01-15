@@ -73,6 +73,7 @@ workflows:
         workflow: tripleo.access.v1.create_admin_via_nova
         input:
           queue_name: <% $.queue_name %>
+          ssh_servers: <% $.ssh_servers %>
           tasks: <% $.create_admin_tasks %>
           overcloud_admin: <% $.overcloud_admin %>
 
@@ -89,6 +90,7 @@ workflows:
     input:
       - tasks
       - queue_name: tripleo
+      - ssh_servers: []
       - overcloud_admin: tripleo-admin
       - ansible_extra_env_variables:
             ANSIBLE_HOST_KEY_CHECKING: 'False'
@@ -99,7 +101,7 @@ workflows:
         action: nova.servers_list
         on-success: create_admin
         publish:
-          servers: <% task().result._info %>
+          servers: <% let(root => $) -> task().result._info.where($.addresses.ctlplane.addr.any($ in $root.ssh_servers)) %>
 
       create_admin:
         workflow: tripleo.deployment.v1.deploy_on_server
@@ -127,7 +129,7 @@ workflows:
         input:
           inventory:
             overcloud:
-              hosts: <% $.servers.addresses.ctlplane.addr.flatten().toDict($, {}) %>
+              hosts: <% $.ssh_servers.toDict($, {}) %>
           remote_user: <% $.overcloud_admin %>
           ssh_private_key: <% $.privkey %>
           extra_env_variables: <% $.ansible_extra_env_variables %>
