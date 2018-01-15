@@ -424,7 +424,7 @@ RUN mkdir -p /openstack && \
 RUN mkdir /etc/libqb
 {% endblock %}
 
-{% block ovn_metadata_agent_footer %}
+{% block neutron_metadata_agent_ovn_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-metadata /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
