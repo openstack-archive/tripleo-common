@@ -13,9 +13,10 @@
 #   under the License.
 #
 
-
+import json
 import mock
 import operator
+import requests
 import six
 
 from tripleo_common.image.exception import ImageUploaderException
@@ -157,82 +158,83 @@ class TestDockerImageUploader(base.TestCase):
             push_image,
             tag=expected_tag, stream=True)
 
-    def test_discover_image_tag(self):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
-        vimage = 'docker.io/tripleoupstream/heat-docker-agents-centos:1.2.3'
+    @mock.patch('requests.get')
+    def test_is_insecure_registry_known(self, mock_get):
+        self.assertFalse(
+            self.uploader.is_insecure_registry('docker.io'))
 
-        dockerc = self.dockermock.return_value
-        dockerc.pull.return_value = ['{"status": "done"}']
-        dockerc.inspect_image.return_value = {
-            'Config': {'Labels': {'image-version': '1.2.3'}}
+    @mock.patch('requests.get')
+    def test_is_insecure_registry_secure(self, mock_get):
+        self.assertFalse(
+            self.uploader.is_insecure_registry('192.0.2.0:8787'))
+        self.assertFalse(
+            self.uploader.is_insecure_registry('192.0.2.0:8787'))
+        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+
+    @mock.patch('requests.get')
+    def test_is_insecure_registry_timeout(self, mock_get):
+        mock_get.side_effect = requests.exceptions.ReadTimeout('ouch')
+        self.assertFalse(
+            self.uploader.is_insecure_registry('192.0.2.0:8787'))
+        self.assertFalse(
+            self.uploader.is_insecure_registry('192.0.2.0:8787'))
+        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+
+    @mock.patch('requests.get')
+    def test_is_insecure_registry_insecure(self, mock_get):
+        mock_get.side_effect = requests.exceptions.SSLError('ouch')
+        self.assertTrue(
+            self.uploader.is_insecure_registry('192.0.2.0:8787'))
+        self.assertTrue(
+            self.uploader.is_insecure_registry('192.0.2.0:8787'))
+        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+
+    @mock.patch('subprocess.Popen')
+    def test_discover_image_tag(self, mock_popen):
+        result = {
+            'Labels': {
+                'rdo_version': 'a',
+                'build_version': '4.0.0'
+            },
+            'RepoTags': ['a']
         }
-        result = self.uploader.discover_image_tag(image, 'image-version')
-        self.assertEqual('1.2.3', result)
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = (json.dumps(result), '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
 
-        self.dockermock.assert_called_once_with(
-            base_url='unix://var/run/docker.sock', version='auto')
+        self.assertEqual(
+            'a',
+            self.uploader.discover_image_tag('docker.io/t/foo', 'rdo_version')
+        )
 
-        dockerc.pull.assert_has_calls([
-            mock.call(image, tag=None, stream=True),
-            mock.call(vimage, tag=None, stream=True),
-        ])
+        # no tag_from_label specified
+        self.assertRaises(
+            ImageUploaderException,
+            self.uploader.discover_image_tag,
+            'docker.io/t/foo')
 
-    def test_discover_image_tag_no_latest(self):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
-        limage = image + ':latest'
-        vimage = image + ':1.2.3'
+        # missing RepoTags entry
+        self.assertRaises(
+            ImageUploaderException,
+            self.uploader.discover_image_tag,
+            'docker.io/t/foo',
+            'build_version')
 
-        dockerc = self.dockermock.return_value
-        dockerc.pull.return_value = ['{"status": "done"}']
-        dockerc.inspect_image.return_value = {
-            'Config': {'Labels': {'image-version': '1.2.3'}}
-        }
-        result = self.uploader.discover_image_tag(image, 'image-version')
-        self.assertEqual('1.2.3', result)
+        # missing Labels entry
+        self.assertRaises(
+            ImageUploaderException,
+            self.uploader.discover_image_tag,
+            'docker.io/t/foo',
+            'version')
 
-        dockerc.pull.assert_has_calls([
-            mock.call(limage, tag=None, stream=True),
-            mock.call(vimage, tag=None, stream=True),
-        ])
-
-    def test_discover_image_tag_no_tag_from_image(self):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
-
-        dockerc = self.dockermock.return_value
-        dockerc.pull.return_value = ['{"status": "done"}']
-        dockerc.inspect_image.return_value = {
-            'Config': {'Labels': {'image-version': '1.2.3'}}
-        }
-        self.assertRaises(ImageUploaderException,
-                          self.uploader.discover_image_tag, image)
-
-    def test_discover_image_tag_missing_label(self):
-        image = 'docker.io/tripleoupstream/heat-docker-agents-centos:latest'
-
-        dockerc = self.dockermock.return_value
-        dockerc.pull.return_value = ['{"status": "done"}']
-        dockerc.inspect_image.return_value = {
-            'Config': {'Labels': {'image-version': '1.2.3'}}
-        }
-        self.assertRaises(ImageUploaderException,
-                          self.uploader.discover_image_tag, image, 'foo')
-
-    def test_discover_image_tag_with_port(self):
-        image = 'foo:5000/t/heat-docker-agents-centos:latest'
-        vimage = 'foo:5000/t/heat-docker-agents-centos:1.2.3'
-
-        dockerc = self.dockermock.return_value
-        dockerc.pull.return_value = ['{"status": "done"}']
-        dockerc.inspect_image.return_value = {
-            'Config': {'Labels': {'image-version': '1.2.3'}}
-        }
-        result = self.uploader.discover_image_tag(image, 'image-version')
-        self.assertEqual('1.2.3', result)
-
-        dockerc.pull.assert_has_calls([
-            mock.call(image, tag=None, stream=True),
-            mock.call(vimage, tag=None, stream=True),
-        ])
+        # inspect call failed
+        mock_process.returncode = 1
+        self.assertRaises(
+            ImageUploaderException,
+            self.uploader.discover_image_tag,
+            'docker.io/t/foo',
+            'rdo_version')
 
     @mock.patch('time.sleep')
     def test_pull_retry(self, sleep_mock):
