@@ -169,16 +169,27 @@ workflows:
 
       get_heat_stack:
         action: heat.stacks_get stack_id=<% $.container %>
-        on-error: deploy
+        on-error: cell_v2_discover_hosts
         on-success:
           - set_stack_in_progress: <% "_IN_PROGRESS" in task().result.stack_status %>
-          - deploy: <% not "_IN_PROGRESS" in task().result.stack_status %>
+          - cell_v2_discover_hosts: <% not "_IN_PROGRESS" in task().result.stack_status %>
 
       set_stack_in_progress:
         on-success: send_message
         publish:
           status: FAILED
           message: The Heat stack is busy.
+
+      cell_v2_discover_hosts:
+        on-success: deploy
+        on-error: cell_v2_discover_hosts_failed
+        action: tripleo.baremetal.cell_v2_discover_hosts
+
+      cell_v2_discover_hosts_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(cell_v2_discover_hosts).result %>
 
       deploy:
         action: tripleo.deployment.deploy
