@@ -14,6 +14,7 @@
 # under the License.
 
 import logging
+import math
 import re
 
 from mistral_lib import actions
@@ -293,6 +294,12 @@ class GetDpdkSocketMemoryAction(base.TripleOAction):
         self.packet_size_in_buffer = packet_size_in_buffer
         self.minimum_socket_memory = minimum_socket_memory
 
+    # Computes round off MTU value in bytes
+    # example: MTU value 9000 into 9216 bytes
+    def roundup_mtu_bytes(self, mtu):
+        max_div_val = int(math.ceil(float(mtu) / float(1024)))
+        return (max_div_val * 1024)
+
     # Calculates socket memory for a NUMA node
     def calculate_node_socket_memory(
         self, numa_node, dpdk_nics_numa_info, overhead,
@@ -305,7 +312,8 @@ class GetDpdkSocketMemoryAction(base.TripleOAction):
             if (numa_node == nics_info['numa_node'] and
                     not nics_info['mtu'] in distinct_mtu_per_node):
                 distinct_mtu_per_node.append(nics_info['mtu'])
-                socket_memory += (((nics_info['mtu'] + overhead)
+                roundup_mtu = self.roundup_mtu_bytes(nics_info['mtu'])
+                socket_memory += (((roundup_mtu + overhead)
                                   * packet_size_in_buffer) /
                                   (1024 * 1024))
 
@@ -314,7 +322,7 @@ class GetDpdkSocketMemoryAction(base.TripleOAction):
             socket_memory = minimum_socket_memory
         # For DPDK numa node
         else:
-            socket_memory += 500
+            socket_memory += 512
 
         socket_memory_in_gb = int(socket_memory / 1024)
         if socket_memory % 1024 > 0:
