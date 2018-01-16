@@ -46,13 +46,9 @@ workflows:
           parameter: CephAnsiblePlaybook
           env_key: parameter_defaults
           delete: true
-        on-success: get_config
-        on-error: set_update_failed
-
-      get_config:
-        action: tripleo.config.get_overcloud_config
         on-success: send_message
         on-error: set_update_failed
+
 
       set_update_failed:
         on-success: send_message
@@ -72,7 +68,40 @@ workflows:
                 message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
-          - fail: <% $.get('get_config') = "FAILED" %>
+          - fail: <% $.get('status') = "FAILED" %>
+
+  get_config:
+    input:
+      - container
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_config:
+        action: tripleo.config.get_overcloud_config container=<% $.container %>
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: Init Minor update failed
+        on-complete: send_message
+
+      send_message:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.package_update.v1.package_update_plan
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
 
   update_nodes:
     description: Take a container and perform an update nodes by nodes
