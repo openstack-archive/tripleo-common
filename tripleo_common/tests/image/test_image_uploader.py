@@ -20,9 +20,7 @@ import requests
 import six
 
 from tripleo_common.image.exception import ImageUploaderException
-from tripleo_common.image.image_uploader import DockerImageUploader
-from tripleo_common.image.image_uploader import ImageUploader
-from tripleo_common.image.image_uploader import ImageUploadManager
+from tripleo_common.image import image_uploader
 from tripleo_common.tests import base
 from tripleo_common.tests.image import fakes
 
@@ -53,7 +51,7 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.Client')
     def test_file_parsing(self, mockdocker, mockioctl, mockpath):
         print(filedata)
-        manager = ImageUploadManager(self.filelist, debug=True)
+        manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()
         mockpath(self.filelist[0])
 
@@ -92,11 +90,12 @@ class TestImageUploader(base.TestCase):
         super(TestImageUploader, self).setUp()
 
     def test_get_uploader_docker(self):
-        uploader = ImageUploader.get_uploader('docker')
-        assert isinstance(uploader, DockerImageUploader)
+        uploader = image_uploader.ImageUploader.get_uploader('docker')
+        assert isinstance(uploader, image_uploader.DockerImageUploader)
 
     def test_get_builder_unknown(self):
-        self.assertRaises(ImageUploaderException, ImageUploader.get_uploader,
+        self.assertRaises(ImageUploaderException,
+                          image_uploader.ImageUploader.get_uploader,
                           'unknown')
 
 
@@ -104,7 +103,7 @@ class TestDockerImageUploader(base.TestCase):
 
     def setUp(self):
         super(TestDockerImageUploader, self).setUp()
-        self.uploader = DockerImageUploader()
+        self.uploader = image_uploader.DockerImageUploader()
         self.patcher = mock.patch('tripleo_common.image.image_uploader.Client')
         self.dockermock = self.patcher.start()
 
@@ -235,6 +234,84 @@ class TestDockerImageUploader(base.TestCase):
             self.uploader.discover_image_tag,
             'docker.io/t/foo',
             'rdo_version')
+
+    @mock.patch('subprocess.Popen')
+    def test_discover_tag_from_inspect(self, mock_popen):
+        result = {
+            'Labels': {
+                'rdo_version': 'a',
+                'build_version': '4.0.0'
+            },
+            'RepoTags': ['a']
+        }
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = (json.dumps(result), '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+
+        sr = image_uploader.SECURE_REGISTRIES
+        self.assertEqual(
+            ('docker.io/t/foo', 'a'),
+            image_uploader.discover_tag_from_inspect(
+                ('docker.io/t/foo', 'rdo_version', sr))
+        )
+
+        # no tag_from_label specified
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            ('docker.io/t/foo', None, sr)
+        )
+
+        # missing RepoTags entry
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            ('docker.io/t/foo', 'build_version', sr)
+        )
+
+        # missing Labels entry
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            ('docker.io/t/foo', 'version', sr)
+        )
+
+        # inspect call failed
+        mock_process.returncode = 1
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            ('docker.io/t/foo', 'rdo_version', sr)
+        )
+
+    @mock.patch('multiprocessing.Pool')
+    def test_discover_image_tags(self, mock_pool):
+        mock_pool.return_value.map.return_value = (
+            ('docker.io/t/foo', 'a'),
+            ('docker.io/t/bar', 'b'),
+            ('docker.io/t/baz', 'c')
+        )
+        images = [
+            'docker.io/t/foo',
+            'docker.io/t/bar',
+            'docker.io/t/baz'
+        ]
+        self.assertEqual(
+            {
+                'docker.io/t/foo': 'a',
+                'docker.io/t/bar': 'b',
+                'docker.io/t/baz': 'c'
+            },
+            self.uploader.discover_image_tags(images, 'rdo_release')
+        )
+        mock_pool.return_value.map.assert_called_once_with(
+            image_uploader.discover_tag_from_inspect,
+            [
+                ('docker.io/t/foo', 'rdo_release', set()),
+                ('docker.io/t/bar', 'rdo_release', set()),
+                ('docker.io/t/baz', 'rdo_release', set())
+            ])
 
     @mock.patch('time.sleep')
     def test_pull_retry(self, sleep_mock):
