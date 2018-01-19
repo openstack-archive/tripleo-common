@@ -303,23 +303,19 @@ workflows:
           deploy_kernel_name: <% $.deploy_kernel_name %>
           deploy_ramdisk_name: <% $.deploy_ramdisk_name %>
         on-success: send_message
-        on-error: fail_check_images
         publish:
           kernel_id: <% task().result.kernel_id %>
           ramdisk_id: <% task().result.ramdisk_id %>
           warnings: <% task().result.warnings %>
           errors: <% task().result.errors %>
+        on-error: send_message
         publish-on-error:
           kernel_id: <% task().result.kernel_id %>
           ramdisk_id: <% task().result.ramdisk_id %>
           warnings: <% task().result.warnings %>
           errors: <% task().result.errors %>
-
-      fail_check_images:
-        on-success: send_message
-        publish:
           status: FAILED
-          message: <% task(check_images).result %>
+          message: <% task().result %>
 
       send_message:
         action: zaqar.queue_post
@@ -364,21 +360,17 @@ workflows:
         input:
           roles_info: <% $.roles_info %>
         on-success: send_message
-        on-error: fail_check_flavors
         publish:
           flavors: <% task().result.flavors %>
           errors: <% task().result.errors %>
           warnings: <% task().result.warnings %>
+        on-error: send_message
         publish-on-error:
           flavors: {}
           errors: <% task().result.errors %>
           warnings: <% task().result.warnings %>
-
-      fail_check_flavors:
-        on-success: send_message
-        publish:
           status: FAILED
-          message: <% task(check_flavors).result %>
+          message: <% task().result %>
 
       send_message:
         action: zaqar.queue_post
@@ -419,20 +411,17 @@ workflows:
 
       get_ironic_nodes:
         action: ironic.node_list
-        on-success: check_node_boot_configuration
-        on-error: failed_get_ironic_nodes
         input:
           provision_state: available
           maintenance: false
           detail: true
+        on-success: check_node_boot_configuration
         publish:
           nodes: <% task().result %>
-
-      failed_get_ironic_nodes:
-        on-success: send_message
-        publish:
+        on-error: send_message
+        publish-on-error:
           status: FAILED
-          message: <% task(get_ironic_nodes).result %>
+          message: <% task().result %>
 
       check_node_boot_configuration:
         action: tripleo.validations.check_node_boot_configuration
@@ -442,19 +431,15 @@ workflows:
           ramdisk_id: <% $.ramdisk_id %>
         with-items: node in <% $.nodes %>
         on-success: send_message
-        on-error: fail_check_node_boot_configuration
         publish:
           errors: <% task().result.errors.flatten() %>
           warnings: <% task().result.warnings.flatten() %>
+        on-error: send_message
         publish-on-error:
           errors: <% task().result.errors.flatten() %>
           warnings: <% task().result.warnings.flatten() %>
-
-      fail_check_node_boot_configuration:
-        on-success: send_message
-        publish:
           status: FAILED
-          message: <% task(check_node_boot_configuration).result %>
+          message: <% task().result %>
 
       send_message:
         action: zaqar.queue_post
@@ -493,19 +478,16 @@ workflows:
 
       get_ironic_nodes:
         action: ironic.node_list
-        on-success: verify_profiles
-        on-error: failed_get_ironic_nodes
         input:
           maintenance: false
           detail: true
+        on-success: verify_profiles
         publish:
           nodes: <% task().result %>
-
-      failed_get_ironic_nodes:
-        on-success: send_message
-        publish:
+        on-error: send_message
+        publish-on-error:
           status: FAILED
-          message: <% task(get_ironic_nodes).result %>
+          message: <% task().result %>
 
       verify_profiles:
         action: tripleo.validations.verify_profiles
@@ -513,19 +495,15 @@ workflows:
           nodes: <% $.nodes %>
           flavors: <% $.flavors %>
         on-success: send_message
-        on-error: fail_verify_profiles
         publish:
           errors: <% task().result.errors %>
           warnings: <% task().result.warnings %>
+        on-error: send_message
         publish-on-error:
           errors: <% task().result.errors %>
           warnings: <% task().result.warnings %>
-
-      fail_verify_profiles:
-        on-success: send_message
-        publish:
-          status: Failed
-          message: <% task(verify_profiles).result %>
+          status: FAILED
+          message: <% task().result %>
 
       send_message:
         action: zaqar.queue_post
@@ -568,15 +546,12 @@ workflows:
       get_hypervisor_statistics:
         action: nova.hypervisors_statistics
         on-success: get_stack
-        on-error: fail_get_hypervisor_statistics
         publish:
           statistics: <% task().result %>
-
-      fail_get_hypervisor_statistics:
-        on-success: send_message
-        publish:
+        on-error: send_message
+        publish-on-error:
           status: FAILED
-          message: <% task(get_hypervisor_statistics).result %>
+          message: <% task().result %>
           errors: []
           warnings: []
           statistics: null
@@ -586,45 +561,39 @@ workflows:
         input:
           stack_id: <% $.stack_id %>
         on-success: get_associated_nodes
-        on-error: get_associated_nodes
         publish:
           stack: <% task().result %>
+        on-error: get_associated_nodes
         publish-on-error:
           stack: null
 
       get_associated_nodes:
         action: ironic.node_list
-        on-success: get_available_nodes
-        on-error: fail_get_associated_nodes
         input:
           associated: true
+        on-success: get_available_nodes
         publish:
           associated_nodes: <% task().result %>
-
-      fail_get_associated_nodes:
-        on-success: send_message
-        publish:
+        on-error: send_message
+        publish-on-error:
           status: FAILED
-          message: <% task(get_associated_nodes).result %>
+          message: <% task().result %>
           errors: []
           warnings: []
 
       get_available_nodes:
         action: ironic.node_list
-        on-success: check_nodes_count
-        on-error: fail_get_available_nodes
         input:
           provision_state: available
           associated: false
           maintenance: false
+        on-success: check_nodes_count
         publish:
           available_nodes: <% task().result %>
-
-      fail_get_available_nodes:
-        on-success: send_message
-        publish:
+        on-error: send_message
+        publish-on-error:
           status: FAILED
-          message: <% task(get_available_nodes).result %>
+          message: <% task().result %>
           errors: []
           warnings: []
 
@@ -638,19 +607,16 @@ workflows:
           parameters: <% $.parameters %>
           default_role_counts: <% $.default_role_counts %>
         on-success: send_message
-        on-error: fail_check_nodes_count
         publish:
           errors: <% task().result.errors %>
           warnings: <% task().result.warnings %>
-
-      fail_check_nodes_count:
-        on-success: send_message
-        publish:
+        on-error: send_message
+        publish-on-error:
           status: FAILED
-          message: <% task(check_nodes_count).result %>
+          message: <% task().result %>
           statistics: null
-          errors: <% task(check_nodes_count).result.errors %>
-          warnings: <% task(check_nodes_count).result.warnings %>
+          errors: <% task().result.errors %>
+          warnings: <% task().result.warnings %>
 
       send_message:
         action: zaqar.queue_post
@@ -705,15 +671,15 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
-          kernel_id: <% task().result.kernel_id %>
-          ramdisk_id: <% task().result.ramdisk_id %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
+          kernel_id: <% task().result.get('kernel_id') %>
+          ramdisk_id: <% task().result.get('ramdisk_id') %>
         publish-on-error:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
-          kernel_id: <% task().result.kernel_id %>
-          ramdisk_id: <% task().result.ramdisk_id %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
+          kernel_id: <% task().result.get('kernel_id') %>
+          ramdisk_id: <% task().result.get('ramdisk_id') %>
           status: FAILED
         on-success: collect_flavors
         on-error: collect_flavors
@@ -725,13 +691,13 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
-          flavors: <% task().result.flavors %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
+          flavors: <% task().result.get('flavors') %>
         publish-on-error:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
-          flavors: <% task().result.flavors %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
+          flavors: <% task().result.get('flavors') %>
           status: FAILED
         on-success: check_ironic_boot_configuration
         on-error: check_ironic_boot_configuration
@@ -744,11 +710,11 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
         publish-on-error:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
           status: FAILED
         on-success: verify_profiles
         on-error: verify_profiles
@@ -760,11 +726,11 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
         publish-on-error:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
           status: FAILED
         on-success: check_default_nodes_count
         on-error: check_default_nodes_count
@@ -780,13 +746,13 @@ workflows:
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
         publish:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
-          statistics: <% task().result.statistics %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
+          statistics: <% task().result.get('statistics') %>
         publish-on-error:
-          errors: <% $.errors + task().result.errors %>
-          warnings: <% $.warnings + task().result.warnings %>
-          statistics: <% task().result.statistics %>
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
+          statistics: <% task().result.get('statistics') %>
           status: FAILED
         on-success: send_message
         on-error: send_message
