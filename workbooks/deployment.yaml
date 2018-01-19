@@ -280,6 +280,7 @@ workflows:
       - queue_name: tripleo
       - plan_name: overcloud
       - work_dir: /var/lib/mistral
+      - verbosity: 1
 
     tags:
       - tripleo-common-managed
@@ -379,7 +380,7 @@ workflows:
           ssh_extra_args: '-o StrictHostKeyChecking=no'
           ssh_private_key: <% $.private_key %>
           use_openstack_credentials: true
-          verbosity: 1
+          verbosity: <% $.get('verbosity') %>
           become: true
           timeout: <% $.timeout %>
           work_dir: <% $.get('work_dir') %>/<% execution().id %>
