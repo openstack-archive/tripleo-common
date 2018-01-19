@@ -1,0 +1,139 @@
+---
+version: '2.0'
+name: tripleo.octavia_post.v1
+description: TripleO Octavia post deployment Workflows
+
+workflows:
+
+  octavia_post_deploy:
+    description: Octavia post deployment
+    input:
+      - amp_image_name
+      - amp_image_filename
+      - amp_image_tag
+      - lb_mgmt_net_name
+      - lb_mgmt_subnet_name
+      - lb_sec_group_name
+      - lb_mgmt_subnet_cidr
+      - lb_mgmt_subnet_gateway
+      - lb_mgmt_subnet_pool_start
+      - lb_mgmt_subnet_pool_end
+      - generate_certs
+      - octavia_ansible_playbook
+      - overcloud_admin
+      - ca_cert_path
+      - ca_private_key_path
+      - ca_passphrase
+      - client_cert_path
+      - mgmt_port_dev
+      - overcloud_password
+      - overcloud_project
+      - overcloud_pub_auth_uri
+      - ansible_extra_env_variables:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_SSH_RETRIES: '3'
+    tags:
+      - tripleo-common-managed
+    tasks:
+      enable_ssh_admin:
+        workflow: tripleo.access.v1.enable_ssh_admin
+        on-success: get_private_key
+
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task().result %>
+        on-success: get_overcloud_stack_details
+
+      get_overcloud_stack_details:
+        publish:
+          # TODO(beagles), we are making an assumption about the octavia heatlh manager and
+          # controller worker needing
+          #
+          octavia_controller_ips: <% env().get('service_ips', {}).get('octavia_worker_ctlplane_node_ips', []) %>
+        on-success: make_local_temp_directory
+
+      make_local_temp_directory:
+        action: tripleo.files.make_temp_dir
+        publish:
+          undercloud_local_dir: <% task().result.path %>
+        on-success: make_remote_temp_directory
+
+      make_remote_temp_directory:
+        action: tripleo.files.make_temp_dir
+        publish:
+          undercloud_remote_dir: <% task().result.path %>
+        on-success: build_local_connection_environment_vars
+
+      build_local_connection_environment_vars:
+        publish:
+          ansible_local_connection_variables: <% dict('ANSIBLE_REMOTE_TEMP' => $.undercloud_remote_dir, 'ANSIBLE_LOCAL_TEMP' => $.undercloud_local_dir) + $.ansible_extra_env_variables %>
+        on-success: upload_amphora
+
+      upload_amphora:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            undercloud:
+              hosts:
+                localhost:
+                  ansible_connection: local
+
+          playbook: <% $.octavia_ansible_playbook %>
+          remote_user: stack
+          extra_env_variables: <% $.ansible_local_connection_variables %>
+          extra_vars:
+            os_password: <% $.overcloud_password %>
+            os_username: <% $.overcloud_admin %>
+            os_project_name: <% $.overcloud_project %>
+            os_auth_url: <% $.overcloud_pub_auth_uri %>
+            os_auth_type: "password"
+            os_identity_api_version: "3"
+            amp_image_name: <% $.amp_image_name %>
+            amp_image_filename: <% $.amp_image_filename %>
+            amp_image_tag: <% $.amp_image_tag %>
+        on-success: config_octavia
+
+      config_octavia:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            octavia_nodes:
+              hosts: <% $.octavia_controller_ips.toDict($, {}) %>
+          verbosity: 0
+          playbook: <% $.octavia_ansible_playbook %>
+          remote_user: tripleo-admin
+          become: true
+          become_user: root
+          ssh_private_key: <% $.private_key %>
+          ssh_common_args: '-o StrictHostKeyChecking=no'
+          ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
+          extra_env_variables: <% $.ansible_extra_env_variables %>
+          extra_vars:
+            os_password: <% $.overcloud_password %>
+            os_username: <% $.overcloud_admin %>
+            os_project_name: <% $.overcloud_project %>
+            os_auth_url: <% $.overcloud_pub_auth_uri %>
+            os_auth_type: "password"
+            os_identity_api_version: "3"
+            amp_image_tag: <% $.amp_image_tag %>
+            lb_mgmt_net_name: <% $.lb_mgmt_net_name %>
+            lb_mgmt_subnet_name: <% $.lb_mgmt_subnet_name %>
+            lb_sec_group_name: <% $.lb_sec_group_name %>
+            lb_mgmt_subnet_cidr: <% $.lb_mgmt_subnet_cidr %>
+            lb_mgmt_subnet_gateway: <% $.lb_mgmt_subnet_gateway %>
+            lb_mgmt_subnet_pool_start: <% $.lb_mgmt_subnet_pool_start %>
+            lb_mgmt_subnet_pool_end: <% $.lb_mgmt_subnet_pool_end %>
+            ca_cert_path: <% $.ca_cert_path %>
+            ca_private_key_path: <% $.ca_private_key_path %>
+            ca_passphrase: <% $.ca_passphrase %>
+            client_cert_path: <% $.client_cert_path %>
+            generate_certs: <% $.generate_certs %>
+            mgmt_port_dev: <% $.mgmt_port_dev %>
+        on-complete: purge_local_temp_dir
+      purge_local_temp_dir:
+        action: tripleo.files.remove_temp_dir path=<% $.undercloud_local_dir %>
+        on-complete: purge_remote_temp_dir
+      purge_remote_temp_dir:
+        action: tripleo.files.remove_temp_dir path=<% $.undercloud_remote_dir %>
+
