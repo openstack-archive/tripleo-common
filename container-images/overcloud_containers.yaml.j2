@@ -115,12 +115,14 @@ container_images_template:
   - DockerCinderSchedulerImage
   services:
   - OS::TripleO::Services::CinderScheduler
+  - OS::TripleO::Services::UndercloudCinderScheduler
 
 - imagename: "{{namespace}}/{{name_prefix}}cinder-volume{{name_suffix}}:{{tag}}"
   params:
   - DockerCinderVolumeImage
   services:
   - OS::TripleO::Services::CinderVolume
+  - OS::TripleO::Services::UndercloudCinderVolume
 
 - imagename: "{{namespace}}/{{name_prefix}}collectd{{name_suffix}}:{{tag}}"
   params:
