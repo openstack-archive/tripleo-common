@@ -270,8 +270,25 @@ class Config(object):
             group_var_server_template = env.get_template('group_var_server.j2')
 
             for d in deployments:
-                if isinstance(d['config'], dict):
-                    d['config'] = json.dumps(d['config'])
+
+                # See if the config can be loaded as a JSON data structure
+                # In some cases, it may already be JSON (hiera), or it may just
+                # be a string (script). In those cases, just use the value
+                # as-is.
+                try:
+                    data = json.loads(d['config'])
+                except Exception:
+                    data = d['config']
+
+                # If the value is not a string already, pretty print it as a
+                # string so it's rendered in a readable format.
+                if not isinstance(data, six.text_type):
+                    data = json.dumps(data, indent=2)
+
+                d['config'] = data
+
+                # The hiera Heat hook expects an actual dict for the config
+                # value, not a scalar. All other hooks expect a scalar.
                 if d['group'] == 'hiera':
                     d['scalar'] = False
                 else:
