@@ -274,6 +274,13 @@ container_images_template:
   services:
   - OS::TripleO::Services::Iscsid
 
+- imagename: "{{namespace}}/{{name_prefix}}keepalived{{name_suffix}}:{{tag}}"
+  params:
+  - DockerKeepalivedConfigImage
+  - DockerKeepalivedImage
+  services:
+  - OS::TripleO::Services::Keepalived
+
 - imagename: "{{namespace}}/{{name_prefix}}keystone{{name_suffix}}:{{tag}}"
   params:
   - DockerKeystoneConfigImage

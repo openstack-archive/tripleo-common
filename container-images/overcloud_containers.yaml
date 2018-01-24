@@ -35,6 +35,7 @@ container_images:
 - imagename: docker.io/tripleoupstream/centos-binary-ironic-inspector:latest
 - imagename: docker.io/tripleoupstream/centos-binary-ironic-pxe:latest
 - imagename: docker.io/tripleoupstream/centos-binary-iscsid:latest
+- imagename: docker.io/tripleoupstream/centos-binary-keepalived:latest
 - imagename: docker.io/tripleoupstream/centos-binary-keystone:latest
 - imagename: docker.io/tripleoupstream/centos-binary-manila-api:latest
 - imagename: docker.io/tripleoupstream/centos-binary-manila-base:latest
