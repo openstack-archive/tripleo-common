@@ -37,7 +37,7 @@ disk_images:
       - python-heat-agent-json-file
       - screen
     options:
-      - "--min-tmpfs 5"
+      - "--min-tmpfs=7"
     environment:
       DIB_PYTHON_VERSION: '2'
       DIB_MODPROBE_BLACKLIST: 'usb-storage cramfs freevxfs jffs2 hfs hfsplus squashfs udf vfat bluetooth'
