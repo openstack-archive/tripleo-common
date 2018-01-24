@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Adds a workflow to delete a deployment plan so the tripleo.plan.delete does
+    not need to be called directly.
