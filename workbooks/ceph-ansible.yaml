@@ -150,6 +150,8 @@ workflows:
           ssh_private_key: <% $.private_key %>
           skip_tags: <% $.ansible_skip_tags %>
           extra_env_variables: <% $.ansible_extra_env_variables.mergeWith($.ansible_env_variables) %>
+          extra_vars:
+            ireallymeanit: 'yes'
         publish:
           output: <% task().result %>
         on-complete: purge_fetch_directory
