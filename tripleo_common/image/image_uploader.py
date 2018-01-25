@@ -273,12 +273,23 @@ class DockerImageUploader(ImageUploader):
                 'No label specified. Available labels: %s' % label_keys
             )
 
-        tag_label = labels.get(tag_from_label)
-        if tag_label is None:
-            raise ImageUploaderException(
-                'Image %s has no label %s. Available labels: %s' %
-                (image, tag_from_label, label_keys)
-            )
+        if "{" in tag_from_label:
+            try:
+                tag_label = tag_from_label.format(**labels)
+            except ValueError as e:
+                raise ImageUploaderException(e)
+            except KeyError as e:
+                raise ImageUploaderException(
+                    'Image %s %s. Available labels: %s' %
+                    (image, e, label_keys)
+                )
+        else:
+            tag_label = labels.get(tag_from_label)
+            if tag_label is None:
+                raise ImageUploaderException(
+                    'Image %s has no label %s. Available labels: %s' %
+                    (image, tag_from_label, label_keys)
+                )
 
         # confirm the tag exists by checking for an entry in RepoTags
         repo_tags = i.get('RepoTags', [])
