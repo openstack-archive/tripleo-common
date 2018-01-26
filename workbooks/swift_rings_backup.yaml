@@ -27,7 +27,7 @@ workflows:
         on-error: create_container
 
       create_container:
-        action: tripleo.plan.create_container container=<% $.swift_rings_container %>
+        action: swift.put_container container=<% $.swift_rings_container %>
         on-error: set_create_container_failed
         on-success: get_tempurl
 
