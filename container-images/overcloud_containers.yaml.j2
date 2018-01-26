@@ -356,13 +356,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::MistralEventEngine
 
-- imagename: "{{namespace}}/{{name_prefix}}mongodb{{name_suffix}}:{{tag}}"
-  params:
-  - DockerMongodbConfigImage
-  - DockerMongodbImage
-  services:
-  - OS::TripleO::Services::MongoDb
-
 - imagename: "{{namespace}}/{{name_prefix}}multipathd{{name_suffix}}:{{tag}}"
   params:
   - DockerMultipathdConfigImage
