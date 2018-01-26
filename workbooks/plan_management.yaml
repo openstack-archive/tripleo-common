@@ -808,6 +808,55 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  validate_network_files:
+    description: Validate network files exist
+    input:
+      - container: overcloud
+      - network_data
+      - queue_name: tripleo
+
+    output:
+      network_data: <% $.network_data %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_network_names:
+        publish:
+          network_names_lower: <% $.network_data.where($.containsKey('name_lower')).name_lower %>
+          network_names: <% $.network_data.where(not $.containsKey('name_lower')).name %>
+        on-success: validate_networks
+
+      validate_networks:
+        with-items: network in <% $.network_names_lower.concat($.network_names) %>
+        action: swift.head_object
+        input:
+          container: <% $.container %>
+          obj: network/<% $.network.toLower() %>.yaml
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+        on-success: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.validate_network_files
+              payload:
+                status: <% $.status %>
+                message: <% $.message %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   validate_networks:
     description: Validate network files were generated properly and exist
     input:
@@ -830,25 +879,19 @@ workflows:
           queue_name: <% $.queue_name %>
         publish:
           network_data: <% task().result.network_data %>
-        on-success: get_network_names
+        on-success: validate_networks
         publish-on-error:
           status: FAILED
           message: <% task().result %>
         on-error:
           notify_zaqar
 
-      get_network_names:
-        publish:
-          network_names_lower: <% $.network_data.where($.containsKey('name_lower')).name_lower %>
-          network_names: <% $.network_data.where(not $.containsKey('name_lower')).name %>
-        on-success: validate_networks
-
       validate_networks:
-        with-items: network in <% $.network_names_lower.concat($.network_names) %>
-        action: swift.head_object
+        workflow: validate_network_files
         input:
           container: <% $.container %>
-          obj: network/<% $.network.toLower() %>.yaml
+          network_data: <% $.network_data %>
+          queue_name: <% $.queue_name %>
         publish:
           status: SUCCESS
           message: <% task().result %>
@@ -856,6 +899,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
+        on-error: notify_zaqar
 
       notify_zaqar:
         action: zaqar.queue_post

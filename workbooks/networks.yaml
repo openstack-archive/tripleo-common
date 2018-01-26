@@ -1,0 +1,208 @@
+---
+version: '2.0'
+name: tripleo.networks.v1
+description: TripleO Overcloud Networks Workflows v1
+
+workflows:
+
+  validate_networks_input:
+    description: >
+      Validate that required fields are present.
+
+    input:
+      - networks
+      - queue_name: tripleo
+
+    output:
+      result: <% task(validate_network_names).result %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      validate_network_names:
+        publish:
+          network_name_present: <% $.networks.all($.containsKey('name')) %>
+        on-success:
+          - set_status_success: <% $.network_name_present = true %>
+          - set_status_error: <% $.network_name_present = false %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(validate_network_names).result %>
+
+      set_status_error:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: "One or more entries did not contain the required field 'name'"
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.networks.v1.validate_networks_input
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  update_networks:
+    description: >
+      Takes data in networks parameter in json format, validates its contents,
+      and persists them in network_data.yaml. After successful update,
+      templates are regenerated.
+
+    input:
+      - container: overcloud
+      - networks
+      - network_data_file: 'network_data.yaml'
+      - queue_name: tripleo
+
+    output:
+      network_data: <% $.network_data %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      validate_input:
+        description: >
+          validate the format of input (input includes required fields for
+          each network)
+        workflow: validate_networks_input
+        input:
+          networks: <% $.networks %>
+        on-success: validate_network_files
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      validate_network_files:
+        description: >
+          validate that Network names exist in Swift container
+        workflow: tripleo.plan_management.v1.validate_network_files
+        input:
+          container: <% $.container %>
+          network_data: <% $.networks %>
+          queue_name: <% $.queue_name %>
+        publish:
+          network_data: <% task().network_data %>
+        on-success: get_available_networks
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      get_available_networks:
+        workflow: tripleo.plan_management.v1.list_available_networks
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+        publish:
+          available_networks: <% task().result.available_networks %>
+        on-success: get_current_networks
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      get_current_networks:
+        workflow: tripleo.plan_management.v1.get_network_data
+        input:
+          container: <% $.container %>
+          network_data_file: <% $.network_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+          current_networks: <% task().result.network_data %>
+        on-success: update_network_data
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      update_network_data:
+        description: >
+          Combine (or replace) the network data
+        action: tripleo.plan.update_networks
+        input:
+          networks: <% $.available_networks %>
+          current_networks: <% $.current_networks %>
+          remove_all: false
+        publish:
+          new_network_data: <% task().result.network_data %>
+        on-success: update_network_data_in_swift
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      update_network_data_in_swift:
+        description: >
+          update network_data.yaml object in Swift with data from workflow input
+        action: swift.put_object
+        input:
+          container: <% $.container %>
+          obj: <% $.network_data_file %>
+          contents: <% yaml_dump($.new_network_data) %>
+        on-success: regenerate_templates
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      regenerate_templates:
+        action: tripleo.templates.process container=<% $.container %>
+        on-success: get_networks
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      get_networks:
+        description: >
+          run GetNetworksAction to get updated contents of network_data.yaml and
+          provide it as output
+        workflow: tripleo.plan_management.v1.get_network_data
+        input:
+          container: <% $.container %>
+          network_data_file: <% $.network_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+          network_data: <% task().network_data %>
+        on-success: set_status_success
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(get_networks).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.networks.v1.update_networks
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
