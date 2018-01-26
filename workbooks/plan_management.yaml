@@ -656,3 +656,318 @@ workflows:
                 tempurl: <% $.get('tempurl', '') %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  list_roles:
+    description: Retrieve the roles_data.yaml and return a usable object
+
+    input:
+      - container: overcloud
+      - roles_data_file: 'roles_data.yaml'
+      - queue_name: tripleo
+
+    output:
+      roles_data: <% $.roles_data %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_roles_data:
+        action: swift.get_object
+        input:
+          container: <% $.container %>
+          obj: <% $.roles_data_file %>
+        publish:
+          roles_data: <% yaml_parse(task().result.last()) %>
+          status: SUCCESS
+        on-success: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.list_roles
+              payload:
+                status: <% $.status %>
+                roles_data: <% $.get('roles_data', {}) %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  list_networks:
+    input:
+      - container: 'overcloud'
+      - network_data_file: 'network_data.yaml'
+      - queue_name: tripleo
+
+    output:
+      network_data: <% $.network_data %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_networks:
+        action: swift.get_object
+        input:
+          container: <% $.container %>
+          obj: <% $.network_data_file %>
+        on-success: notify_zaqar
+        publish:
+          network_data: <% yaml_parse(task().result.last()) %>
+          status: SUCCESS
+          message: <% task().result %>
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.list_networks
+              payload:
+                status: <% $.status %>
+                network_data: <% $.get('network_data', {}) %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  validate_networks:
+    description: Validate network files were generated properly and exist
+    input:
+      - container: 'overcloud'
+      - network_data_file: 'network_data.yaml'
+      - queue_name: tripleo
+
+    output:
+      network_data: <% $.network_data %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_network_data:
+        workflow: list_networks
+        input:
+          container: <% $.container %>
+          network_data_file: <% $.network_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+          network_data: <% task().result.network_data %>
+        on-success: get_network_names
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error:
+          notify_zaqar
+
+      get_network_names:
+        publish:
+          network_names_lower: <% $.network_data.where($.containsKey('name_lower')).name_lower %>
+          network_names: <% $.network_data.where(not $.containsKey('name_lower')).name %>
+        on-success: validate_networks
+
+      validate_networks:
+        with-items: network in <% $.network_names_lower.concat($.network_names) %>
+        action: swift.head_object
+        input:
+          container: <% $.container %>
+          obj: network/<% $.network.toLower() %>.yaml
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+        on-success: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.validate_networks
+              payload:
+                status: <% $.status %>
+                network_data: <% $.get('network_data', {}) %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  validate_roles:
+    description: Vaildate roles data exists and is parsable
+
+    input:
+      - container: overcloud
+      - roles_data_file: 'roles_data.yaml'
+      - queue_name: tripleo
+
+    output:
+      roles_data: <% $.roles_data %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_roles_data:
+        workflow: list_roles
+        input:
+          container: <% $.container %>
+          roles_data_file: <% $.roles_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+          roles_data: <% task().result.roles_data %>
+          status: SUCCESS
+        on-success: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error:
+          notify_zaqar
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.validate_networks
+              payload:
+                status: <% $.status %>
+                roles_data: <% $.get('roles_data', '') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  _validate_networks_from_roles:
+    description: Internal workflow for validating a network exists from a role
+
+    input:
+      - defined_networks
+      - networks_in_roles
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      validate_network_in_network_data:
+        publish:
+          networks_found: <% $.networks_in_roles.toSet().intersect($.defined_networks.toSet()) %>
+          networks_not_found: <% $.networks_in_roles.toSet().difference($.defined_networks.toSet()) %>
+        on-success:
+          - network_not_found: <% $.networks_not_found %>
+          - notify_zaqar: <% not $.networks_not_found %>
+
+      network_not_found:
+        publish:
+          message: <% "Some networks in roles are not defined, {0}".format($.networks_not_found.join(', ')) %>
+          status: FAILED
+        on-success: notify_zaqar
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1._validate_networks_from_role
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  validate_roles_and_networks:
+    description: Vaidate that roles and network data are valid
+
+    input:
+      - container: overcloud
+      - roles_data_file: 'roles_data.yaml'
+      - network_data_file: 'network_data.yaml'
+      - queue_name: tripleo
+
+    output:
+      roles_data: <% $.roles_data %>
+      network_data: <% $.network_data %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      validate_network_data:
+        workflow: validate_networks
+        input:
+          container: <% $.container %>
+          network_data_file: <% $.network_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+          network_data: <% task().result.network_data %>
+        on-success: validate_roles_data
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      validate_roles_data:
+        workflow: validate_roles
+        input:
+          container: <% $.container %>
+          roles_data_file: <% $.roles_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+          roles_data: <% task().result.roles_data %>
+          role_networks_data: <% task().result.roles_data.networks %>
+          networks_in_roles: <% task().result.roles_data.networks.flatten().distinct() %>
+        on-success: validate_roles_and_networks
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: notify_zaqar
+
+      validate_roles_and_networks:
+        workflow: _validate_networks_from_roles
+        input:
+          defined_networks: <% $.network_data.name %>
+          networks_in_roles: <% $.networks_in_roles %>
+          queue_name: <% $.queue_name %>
+        publish:
+          status: SUCCESS
+        on-success: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result.message %>
+        on-error: notify_zaqar
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.validate_roles_and_networks
+              payload:
+                status: <% $.status %>
+                roles_data: <% $.get('roles_data', {}) %>
+                network_data: <% $.get('network_data', {}) %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
