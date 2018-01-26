@@ -291,9 +291,11 @@ class TestDockerImageUploader(base.TestCase):
         result = {
             'Labels': {
                 'rdo_version': 'a',
-                'build_version': '4.0.0'
+                'build_version': '4.0.0',
+                'release': '1.0.0',
+                'version': '20180125'
             },
-            'RepoTags': ['a']
+            'RepoTags': ['a', '1.0.0-20180125']
         }
         mock_process = mock.Mock()
         mock_process.communicate.return_value = (json.dumps(result), '')
@@ -301,10 +303,32 @@ class TestDockerImageUploader(base.TestCase):
         mock_popen.return_value = mock_process
 
         sr = image_uploader.SECURE_REGISTRIES
+        # simple label -> tag
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
                 ('docker.io/t/foo', 'rdo_version', sr))
+        )
+
+        # templated labels -> tag
+        self.assertEqual(
+            ('docker.io/t/foo', '1.0.0-20180125'),
+            image_uploader.discover_tag_from_inspect(
+                ('docker.io/t/foo', '{release}-{version}', sr))
+        )
+
+        # Invalid template
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            ('docker.io/t/foo', '{release}-{version', sr)
+        )
+
+        # Missing label in template
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            ('docker.io/t/foo', '{releases}-{version}', sr)
         )
 
         # no tag_from_label specified
