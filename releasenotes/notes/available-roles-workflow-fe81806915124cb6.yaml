@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Adds a new workflow to list available roles for a given deployment plan.

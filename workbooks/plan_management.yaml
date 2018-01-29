@@ -1078,3 +1078,66 @@ workflows:
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  list_available_roles:
+    input:
+      - container: overcloud
+      - queue_name: tripleo
+
+    output:
+      available_roles: <% $.available_roles %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_role_file_names:
+        action: swift.get_container
+        input:
+          container: <% $.container %>
+        publish:
+          role_names: <% task().result[1].where($.name.startsWith('roles/')).where($.name.endsWith('.yaml')).name %>
+        on-success: get_role_files
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      get_role_files:
+        with-items: role_name in <% $.role_names %>
+        action: swift.get_object
+        on-success: transform_output
+        on-error: notify_zaqar
+        input:
+          container: <% $.container %>
+          obj: <% $.role_name %>
+        publish:
+          status: SUCCESS
+          available_yaml_roles: <% task().result.select($[1]) %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      transform_output:
+        publish:
+          status: SUCCESS
+          available_roles: <% yaml_parse($.available_yaml_roles.join("\n")) %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-complete: notify_zaqar
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.list_available_roles
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                available_roles: <% $.get('available_roles', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
