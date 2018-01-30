@@ -121,6 +121,7 @@ workflows:
           extra_vars: <% {'fetch_directory'=> $.fetch_directory} + $.mgr_vars + $.mon_vars + $.osd_vars + $.mds_vars + $.rgw_vars + $.nfs_vars + $.client_vars + $.rbdmirror_vars + $.ceph_ansible_extra_vars %>
         on-success: ceph_install
       ceph_install:
+        with-items: playbook in <% list($.ceph_ansible_playbook).flatten() %>
         action: tripleo.ansible-playbook
         input:
           inventory:
@@ -142,7 +143,7 @@ workflows:
               hosts: <% let(root => $) -> $.client_ips.toDict($, $root.ips_data.get($, {})) %>
             all:
               vars: <% $.extra_vars %>
-          playbook: <% $.ceph_ansible_playbook %>
+          playbook: <% $.playbook %>
           remote_user: tripleo-admin
           become: true
           become_user: root
