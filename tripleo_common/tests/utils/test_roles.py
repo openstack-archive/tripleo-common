@@ -112,10 +112,10 @@ class TestRolesUtils(base.TestCase):
         role = yaml.safe_load(SAMPLE_ROLE)
         del role[0]['name']
         self.assertRaises(RoleMetadataError, rolesutils.validate_role_yaml,
-                          yaml.dump(role))
+                          yaml.safe_dump(role))
 
     def test_validate_role_yaml_invalid_type(self):
         role = yaml.safe_load(SAMPLE_ROLE)
         role[0]['CountDefault'] = 'should not be a string'
         self.assertRaises(RoleMetadataError, rolesutils.validate_role_yaml,
-                          yaml.dump(role))
+                          yaml.safe_dump(role))

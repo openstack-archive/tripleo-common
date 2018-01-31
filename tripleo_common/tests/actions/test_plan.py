@@ -14,6 +14,7 @@
 # under the License.
 import mock
 
+
 from heatclient import exc as heatexceptions
 from mistral_lib import actions
 from oslo_concurrency import processutils
@@ -69,6 +70,77 @@ ROLES_DATA_YAML_CONTENTS = """
   ServicesDefault:
     - OS::TripleO::Services::Kernel
 """
+
+SAMPLE_ROLE = """
+###############################################################################
+# Role: sample                                                                #
+###############################################################################
+- name: sample
+  description: |
+    Sample!
+  networks:
+    - InternalApi
+  HostnameFormatDefault: '%stackname%-sample-%index%'
+  ServicesDefault:
+    - OS::TripleO::Services::Ntp
+"""
+
+SAMPLE_ROLE_OBJ = {
+    'HostnameFormatDefault': '%stackname%-sample-%index%',
+    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'description': 'Sample!\n',
+    'name': 'sample',
+    'networks': ['InternalApi']
+}
+
+
+SAMPLE_ROLE_2 = """
+###############################################################################
+# Role: sample2                                                               #
+###############################################################################
+- name: sample2
+  description: |
+    Sample2!
+  networks:
+    - InternalApi
+  HostnameFormatDefault: '%stackname%-sample-%index%'
+  ServicesDefault:
+    - OS::TripleO::Services::Ntp
+"""
+
+SAMPLE_ROLE_2_OBJ = {
+    'HostnameFormatDefault': '%stackname%-sample-%index%',
+    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'description': 'Sample2!\n',
+    'name': 'sample2',
+    'networks': ['InternalApi']
+}
+
+UPDATED_ROLE = """
+###############################################################################
+# Role: sample                                                                #
+###############################################################################
+- name: sample
+  description: |
+    Sample!
+  networks:
+    - InternalApi
+    - ExternalApi
+  tags:
+    - primary
+  HostnameFormatDefault: '%stackname%-sample-%index%'
+  ServicesDefault:
+    - OS::TripleO::Services::Ntp
+"""
+
+UPDATED_ROLE_OBJ = {
+    'HostnameFormatDefault': '%stackname%-sample-%index%',
+    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'description': 'Sample!\n',
+    'name': 'sample',
+    'networks': ['InternalApi', 'ExternalApi'],
+    'tags': ['primary']
+}
 
 
 class CreateContainerActionTest(base.TestCase):
@@ -446,3 +518,88 @@ class UpdateNetworksActionTest(base.TestCase):
             {'name': 'MyReplacementNetwork'}
         ]
         self.assertEqual({"network_data": expected}, result.data)
+
+
+class ValidateRolesDataActionTest(base.TestCase):
+
+    def setUp(self):
+        super(ValidateRolesDataActionTest, self).setUp()
+        self.container = 'overcloud'
+        self.ctx = mock.MagicMock()
+
+    def test_valid_roles(self):
+        current_roles = [SAMPLE_ROLE_OBJ]
+        requested_roles = [SAMPLE_ROLE_OBJ]
+        action = plan.ValidateRolesDataAction(requested_roles, current_roles)
+        result = action.run(self.ctx)
+        self.assertTrue(result.data)
+
+    def test_invalid_roles(self):
+        current_roles = [SAMPLE_ROLE_2_OBJ]
+        requested_roles = [SAMPLE_ROLE_OBJ, ]
+        action = plan.ValidateRolesDataAction(requested_roles, current_roles)
+        result = action.run(self.ctx)
+        self.assertTrue(result.error)
+
+    def test_validate_role_yaml_missing_name(self):
+        role = SAMPLE_ROLE_OBJ.copy()
+        del role['name']
+        current_roles = [SAMPLE_ROLE_OBJ]
+        requested_roles = [role, ]
+        action = plan.ValidateRolesDataAction(requested_roles, current_roles)
+        result = action.run(self.ctx)
+        self.assertTrue(result.error)
+
+    def test_validate_role_yaml_invalid_type(self):
+        role = SAMPLE_ROLE_OBJ.copy()
+        role['CountDefault'] = 'should not be a string'
+        current_roles = [SAMPLE_ROLE_OBJ]
+        requested_roles = [role, ]
+        action = plan.ValidateRolesDataAction(requested_roles, current_roles)
+        result = action.run(self.ctx)
+        self.assertTrue(result.error)
+
+
+class UpdateRolesActionTest(base.TestCase):
+
+    def setUp(self):
+        super(UpdateRolesActionTest, self).setUp()
+        self.container = 'overcloud'
+        self.ctx = mock.MagicMock()
+        self.current_roles = [SAMPLE_ROLE_OBJ, SAMPLE_ROLE_2_OBJ]
+
+    def test_no_primary_roles(self):
+        updated_role = UPDATED_ROLE_OBJ.copy()
+        del updated_role['tags']
+        action = plan.UpdateRolesAction([updated_role],
+                                        self.current_roles,
+                                        True, self.container)
+
+        self.assertRaises(exception.RoleMetadataError, action.run, self.ctx)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_update_some_roles(self, get_obj_client_mock):
+        # Setup
+        swift = mock.MagicMock()
+        get_obj_client_mock.return_value = swift
+
+        action = plan.UpdateRolesAction([UPDATED_ROLE_OBJ],
+                                        self.current_roles,
+                                        False, self.container)
+        result = action.run(self.ctx)
+
+        self.assertEqual(result.data,
+                         {'roles': [SAMPLE_ROLE_2_OBJ, UPDATED_ROLE_OBJ]})
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_update_replace_roles(self, get_obj_client_mock):
+        # Setup
+        swift = mock.MagicMock()
+        get_obj_client_mock.return_value = swift
+
+        action = plan.UpdateRolesAction([UPDATED_ROLE_OBJ],
+                                        self.current_roles,
+                                        True, self.container)
+        result = action.run(self.ctx)
+
+        self.assertEqual(result.data, {'roles': [UPDATED_ROLE_OBJ, ]})
