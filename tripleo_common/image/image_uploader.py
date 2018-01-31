@@ -31,6 +31,7 @@ try:
     from docker import APIClient as Client
 except ImportError:
     from docker import Client
+from oslo_concurrency import processutils
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageUploaderException
 
@@ -179,9 +180,7 @@ class DockerImageUploader(ImageUploader):
                                tag=tag, force=True)
         LOG.debug(response)
 
-        response = [line for line in dockerc.push(new_repo,
-                    tag=tag, stream=True)]
-        LOG.debug(response)
+        DockerImageUploader._push_retry(dockerc, new_repo, tag=tag)
 
         LOG.info('Completed upload for image %s' % image_name)
         return full_image, full_new_repo
@@ -210,6 +209,31 @@ class DockerImageUploader(ImageUploader):
             if retval != 0:
                 time.sleep(3)
                 LOG.warning('retrying pulling image: %s' % image)
+
+    @staticmethod
+    def _push(dockerc, image, tag=None):
+        LOG.debug('Pushing %s' % image)
+
+        for line in dockerc.push(image, tag=tag, stream=True):
+            status = json.loads(line)
+            if 'error' in status:
+                LOG.warning('docker push failed: %s' % status['error'])
+                return 1
+            LOG.debug(status.get('status'))
+        return 0
+
+    @staticmethod
+    def _push_retry(dockerc, image, tag=None):
+        retval = -1
+        count = 0
+        while retval != 0:
+            if count >= 5:
+                raise ImageUploaderException('Could not push image %s' % image)
+            count += 1
+            retval = DockerImageUploader._push(dockerc, image, tag)
+            if retval != 0:
+                time.sleep(3)
+                LOG.warning('retrying pushing image: %s' % image)
 
     @staticmethod
     def _images_match(image1, image2, insecure_registries):
@@ -360,7 +384,9 @@ class DockerImageUploader(ImageUploader):
         result = self.upload_image(*first)
         local_images.extend(result)
 
-        p = multiprocessing.Pool(4)
+        # workers will be half the CPU count, to a minimum of 2
+        workers = max(2, processutils.get_worker_count() // 2)
+        p = multiprocessing.Pool(workers)
 
         for result in p.map(docker_upload, self.upload_tasks):
             local_images.extend(result)
