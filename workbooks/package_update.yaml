@@ -116,6 +116,8 @@ workflows:
       - module_path: /usr/share/ansible-modules
       - ansible_extra_env_variables:
             ANSIBLE_HOST_KEY_CHECKING: 'False'
+      - verbosity: 1
+      - work_dir: /var/lib/mistral
 
     tags:
       - tripleo-common-managed
@@ -123,9 +125,9 @@ workflows:
     tasks:
       download_config:
         action: tripleo.config.download_config
+        input:
+          work_dir: <% $.work_dir %>/<% execution().id %>
         on-success: get_private_key
-        publish:
-          tmp_path: <% task().result %>
         on-error: node_update_failed
 
       get_private_key:
@@ -138,11 +140,11 @@ workflows:
         action: tripleo.ansible-playbook
         input:
           inventory: <% $.inventory_file %>
-          playbook: <% $.tmp_path %>/<% $.playbook %>
+          playbook: <% $.work_dir %>/<% execution().id %>/<% $.playbook %>
           remote_user: <% $.node_user %>
           become: true
           become_user: root
-          verbosity: 0
+          verbosity: <% $.verbosity %>
           ssh_private_key: <% $.private_key %>
           extra_env_variables: <% $.ansible_extra_env_variables %>
           limit_hosts: <% $.nodes %>
