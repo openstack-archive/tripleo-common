@@ -8,7 +8,7 @@ if grep "/httpd " /run_command ; then
     protocol=http
     path=
 else
-    bind_host=127.0.0.1
+    bind_host=$(ps -ef | grep -oe '--address \([0-9]\+\.\?\)\+' | awk '{print $2}')
     bind_port=69
     protocol=tftp
     path=map-file
