@@ -273,7 +273,6 @@ class DeletePlanActionTest(base.TestCase):
         swift = mock.MagicMock()
         swift.get_account.return_value = ({}, [
             {'name': self.container_name},
-            {'name': "%s-swift-rings" % self.container_name},
             {'name': 'test'},
         ])
         swift.get_container.return_value = (
@@ -305,39 +304,7 @@ class DeletePlanActionTest(base.TestCase):
         swift.delete_object.assert_has_calls(
             mock_calls, any_order=True)
 
-        mock_calls = [
-            mock.call(self.container_name),
-            mock.call("%s-swift-rings" % self.container_name)
-        ]
-        self.assertEqual(2, swift.delete_container.call_count)
-        swift.delete_container.assert_has_calls(mock_calls)
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch(
-        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
-    def test_run_no_containers(
-            self, get_orchestration_client, get_obj_client_mock):
-
-        # setup swift
-        swift = mock.MagicMock()
-        # There are no swift containers because they were either accidentally
-        # removed or not created.
-        swift.get_account.return_value = ({}, [])
-
-        get_obj_client_mock.return_value = swift
-
-        # setup heat
-        heat = mock.MagicMock()
-        heat.stacks.get = mock.Mock(
-            side_effect=heatexceptions.HTTPNotFound)
-        get_orchestration_client.return_value = heat
-
-        action = plan.DeletePlanAction(self.container_name)
-        action.run(self.ctx)
-
-        # The operation was successfully finished and we didn't try to remove
-        # nonexistent containers.
-        self.assertEqual(0, swift.delete_container.call_count)
+        swift.delete_container.assert_called_with(self.container_name)
 
 
 class ListRolesActionTest(base.TestCase):
@@ -603,3 +570,23 @@ class UpdateRolesActionTest(base.TestCase):
         result = action.run(self.ctx)
 
         self.assertEqual(result.data, {'roles': [UPDATED_ROLE_OBJ, ]})
+
+
+class GatherRolesActionTest(base.TestCase):
+
+    def setUp(self):
+        super(GatherRolesActionTest, self).setUp()
+        self.container = 'overcloud'
+        self.ctx = mock.MagicMock()
+        self.current_roles = [SAMPLE_ROLE_OBJ, SAMPLE_ROLE_2_OBJ]
+        self.available_role = SAMPLE_ROLE_OBJ.copy()
+        self.available_role['name'] = 'test'
+
+    def test_roles_gathered(self):
+        action = plan.GatherRolesAction(['sample', 'test'], self.current_roles,
+                                        [self.available_role])
+        result = action.run(self.ctx)
+
+        # assert that a role was loaded from self.current_roles
+        self.assertTrue(result.data['gathered_roles'],
+                        [SAMPLE_ROLE_OBJ, self.available_role])

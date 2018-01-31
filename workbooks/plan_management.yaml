@@ -1290,3 +1290,96 @@ workflows:
                 updated_roles: <% $.get('updated_roles', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  select_roles:
+    description: >
+      takes a list of role names as input and populates roles_data.yaml in
+      container in Swift with respective roles from 'roles directory'
+    input:
+      - container
+      - role_names
+      - roles_data_file: 'roles_data.yaml'
+      - replace_all: true
+      - queue_name: tripleo
+    tags:
+      - tripleo-common-managed
+    tasks:
+
+      get_available_roles:
+        workflow: list_available_roles
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+        publish:
+          available_roles: <% task().result.available_roles %>
+        on-success: get_current_roles
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      get_current_roles:
+        workflow: list_roles
+        input:
+          container: <% $.container %>
+          roles_data_file: <% $.roles_data_file %>
+          queue_name: <% $.queue_name %>
+        publish:
+          current_roles: <% task().result.roles_data %>
+        on-success: gather_roles
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      gather_roles:
+        description: >
+          for each role name from the input, check if it exists in
+          roles_data.yaml, if yes, use that role definition, if not, get the
+          role definition from roles directory. Use the gathered roles
+          definitions as input to updateRolesWorkflow - this ensures
+          configuration of the roles which are already in roles_data.yaml
+          will not get overridden by data from roles directory
+        action: tripleo.plan.gather_roles
+        input:
+          role_names: <% $.role_names %>
+          current_roles: <% $.current_roles %>
+          available_roles: <% $.available_roles %>
+        publish:
+          gathered_roles: <% task().result.gathered_roles %>
+        on-success: call_update_roles_workflow
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      call_update_roles_workflow:
+        workflow: update_roles
+        input:
+          container: <% $.container %>
+          roles: <% $.gathered_roles %>
+          roles_data_file: <% $.roles_data_file %>
+          replace_all: <% $.replace_all %>
+          queue_name: <% $.queue_name %>
+        on-complete: notify_zaqar
+        publish:
+          selected_roles: <% task().result.updated_roles %>
+          status: SUCCESS
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.select_roles
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                selected_roles: <% $.get('selected_roles', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
