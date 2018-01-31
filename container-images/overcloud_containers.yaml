@@ -47,7 +47,6 @@ container_images:
 - imagename: docker.io/tripleoupstream/centos-binary-mistral-engine:latest
 - imagename: docker.io/tripleoupstream/centos-binary-mistral-executor:latest
 - imagename: docker.io/tripleoupstream/centos-binary-mistral-event-engine:latest
-- imagename: docker.io/tripleoupstream/centos-binary-mongodb:latest
 - imagename: docker.io/tripleoupstream/centos-binary-multipathd:latest
 - imagename: docker.io/tripleoupstream/centos-binary-neutron-dhcp-agent:latest
 - imagename: docker.io/tripleoupstream/centos-binary-neutron-l3-agent:latest
