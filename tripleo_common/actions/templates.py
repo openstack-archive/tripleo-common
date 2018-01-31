@@ -265,6 +265,13 @@ class ProcessTemplatesAction(base.TripleOAction):
                          os.path.basename(f).replace('.role.j2.yaml',
                                                      '.yaml')])
                     out_f_path = os.path.join(os.path.dirname(f), out_f)
+                    if ('network/config' in os.path.dirname(f) and
+                            r_map[role].get('deprecated_nic_config_name')):
+                        d_name = r_map[role].get('deprecated_nic_config_name')
+                        out_f_path = os.path.join(os.path.dirname(f), d_name)
+                    elif ('network/config' in os.path.dirname(f)):
+                        d_name = "%s.yaml" % role.lower()
+                        out_f_path = os.path.join(os.path.dirname(f), d_name)
                     if not (out_f_path in excl_templates):
                         if '{{role.name}}' in j2_template:
                             j2_data = {'role': r_map[role],
