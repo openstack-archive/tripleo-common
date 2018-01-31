@@ -317,6 +317,20 @@ class TestDockerImageUploader(base.TestCase):
                 ('docker.io/t/foo', '{release}-{version}', sr))
         )
 
+        # simple label -> tag with fallback
+        self.assertEqual(
+            ('docker.io/t/foo', 'a'),
+            image_uploader.discover_tag_from_inspect(
+                ('docker.io/t/foo:a', 'bar', sr))
+        )
+
+        # templated labels -> tag with fallback
+        self.assertEqual(
+            ('docker.io/t/foo', 'a'),
+            image_uploader.discover_tag_from_inspect(
+                ('docker.io/t/foo:a', '{releases}-{versions}', sr))
+        )
+
         # Invalid template
         self.assertRaises(
             ImageUploaderException,

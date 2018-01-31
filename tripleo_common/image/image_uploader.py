@@ -263,7 +263,8 @@ class DockerImageUploader(ImageUploader):
         return urllib.parse.urlparse(image)
 
     @staticmethod
-    def _discover_tag_from_inspect(i, image, tag_from_label=None):
+    def _discover_tag_from_inspect(i, image, tag_from_label=None,
+                                   fallback_tag=None):
         labels = i.get('Labels', {})
 
         label_keys = ', '.join(labels.keys())
@@ -279,17 +280,23 @@ class DockerImageUploader(ImageUploader):
             except ValueError as e:
                 raise ImageUploaderException(e)
             except KeyError as e:
-                raise ImageUploaderException(
-                    'Image %s %s. Available labels: %s' %
-                    (image, e, label_keys)
-                )
+                if fallback_tag:
+                    tag_label = fallback_tag
+                else:
+                    raise ImageUploaderException(
+                        'Image %s %s. Available labels: %s' %
+                        (image, e, label_keys)
+                    )
         else:
             tag_label = labels.get(tag_from_label)
             if tag_label is None:
-                raise ImageUploaderException(
-                    'Image %s has no label %s. Available labels: %s' %
-                    (image, tag_from_label, label_keys)
-                )
+                if fallback_tag:
+                    tag_label = fallback_tag
+                else:
+                    raise ImageUploaderException(
+                        'Image %s has no label %s. Available labels: %s' %
+                        (image, tag_from_label, label_keys)
+                    )
 
         # confirm the tag exists by checking for an entry in RepoTags
         repo_tags = i.get('RepoTags', [])
@@ -319,11 +326,13 @@ class DockerImageUploader(ImageUploader):
             versioned_images[image] = versioned_image
         return versioned_images
 
-    def discover_image_tag(self, image, tag_from_label=None):
+    def discover_image_tag(self, image, tag_from_label=None,
+                           fallback_tag=None):
         image_url = self._image_to_url(image)
         insecure = self.is_insecure_registry(image_url.netloc)
         i = self._inspect(image_url.geturl(), insecure)
-        return self._discover_tag_from_inspect(i, image, tag_from_label)
+        return self._discover_tag_from_inspect(i, image, tag_from_label,
+                                               fallback_tag)
 
     def cleanup(self, local_images):
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
@@ -398,5 +407,12 @@ def discover_tag_from_inspect(args):
     image_url = DockerImageUploader._image_to_url(image)
     insecure = image_url.netloc in insecure_registries
     i = DockerImageUploader._inspect(image_url.geturl(), insecure)
+    if ':' in image_url.path:
+        # break out the tag from the url to be the fallback tag
+        path = image.rpartition(':')
+        fallback_tag = path[2]
+        image = path[0]
+    else:
+        fallback_tag = None
     return image, DockerImageUploader._discover_tag_from_inspect(
-        i, image, tag_from_label)
+        i, image, tag_from_label, fallback_tag)
