@@ -11,7 +11,6 @@ disk_images:
       - overcloud-compute
       - overcloud-ceph-storage
       - puppet-modules
-      - os-net-config
       - stable-interface-names
       - grub2
       - element-manifest
@@ -29,6 +28,7 @@ disk_images:
       - ntp
       - device-mapper-multipath
       - openstack-heat-agents
+      - os-net-config
     options:
       - "--min-tmpfs=7"
     environment:
