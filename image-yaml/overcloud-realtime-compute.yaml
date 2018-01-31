@@ -28,7 +28,7 @@ disk_images:
       - device-mapper-multipath
       - openstack-heat-agents
     options:
-      - "--min-tmpfs 5"
+      - "--min-tmpfs=7"
     environment:
       DIB_PYTHON_VERSION: '2'
       DIB_BAREMETAL_KERNEL_PATTERN: 'vmlinuz*.rt*'
