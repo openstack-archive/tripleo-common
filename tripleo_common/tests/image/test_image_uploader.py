@@ -427,6 +427,45 @@ class TestDockerImageUploader(base.TestCase):
             mock.call(image, tag=None, stream=True)
         ])
 
+    @mock.patch('time.sleep')
+    def test_push_retry(self, sleep_mock):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+
+        dockerc = self.dockermock.return_value
+        dockerc.push.side_effect = [
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"status": "done"}']
+        ]
+        self.uploader._push_retry(dockerc, image)
+
+        self.assertEqual(sleep_mock.call_count, 4)
+        dockerc.push.assert_has_calls([
+            mock.call(image, tag=None, stream=True)
+        ])
+
+    @mock.patch('time.sleep')
+    def test_push_retry_failure(self, sleep_mock):
+        image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
+
+        dockerc = self.dockermock.return_value
+        dockerc.push.side_effect = [
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+            ['{"error": "ouch"}'],
+        ]
+        self.assertRaises(ImageUploaderException,
+                          self.uploader._push_retry, dockerc, image)
+
+        self.assertEqual(sleep_mock.call_count, 5)
+        dockerc.push.assert_has_calls([
+            mock.call(image, tag=None, stream=True)
+        ])
+
     @mock.patch('tripleo_common.image.image_uploader.'
                 'DockerImageUploader._inspect')
     def test_images_match(self, mock_inspect):
