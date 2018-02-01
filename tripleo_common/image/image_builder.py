@@ -17,6 +17,7 @@
 import abc
 import logging
 import os
+import shlex
 import six
 import subprocess
 
@@ -67,7 +68,7 @@ class DibImageBuilder(ImageBuilder):
 
         if options:
             for option in options:
-                cmd.extend(option.split(' '))
+                cmd.extend(shlex.split(option))
 
         skip_base = extra_options.get('skip_base', False)
         if skip_base:

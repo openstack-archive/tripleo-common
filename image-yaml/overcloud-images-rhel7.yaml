@@ -6,6 +6,8 @@ disk_images:
     distro: rhel7
     environment:
       FS_TYPE: xfs
+    options:
+      - "--mkfs-options '-s size=4096'"
   -
     imagename: ironic-python-agent
     arch: amd64
