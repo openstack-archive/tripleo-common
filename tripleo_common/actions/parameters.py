@@ -27,7 +27,7 @@ from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import nodes
-from tripleo_common.utils import parameters
+from tripleo_common.utils import parameters as parameter_utils
 from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import plan as plan_utils
 
@@ -223,7 +223,7 @@ class UpdateRoleParametersAction(UpdateParametersAction):
     def run(self, context):
         baremetal_client = self.get_baremetal_client(context)
         compute_client = self.get_compute_client(context)
-        self.parameters = parameters.set_count_and_flavor_params(
+        self.parameters = parameter_utils.set_count_and_flavor_params(
             self.role, baremetal_client, compute_client)
         return super(UpdateRoleParametersAction, self).run(context)
 
@@ -514,8 +514,8 @@ class GetProfileOfFlavorAction(base.TripleOAction):
     def run(self, context):
         compute_client = self.get_compute_client(context)
         try:
-            return parameters.get_profile_of_flavor(self.flavor_name,
-                                                    compute_client)
+            return parameter_utils.get_profile_of_flavor(self.flavor_name,
+                                                         compute_client)
         except exception.DeriveParamsError as err:
             LOG.error('Derive Params Error: %s', err)
             return actions.Result(error=str(err))

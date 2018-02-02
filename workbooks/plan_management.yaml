@@ -503,6 +503,48 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  update_parameters:
+    description: >
+      Updates plan environment with parameters.
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - container: overcloud
+      - parameters
+      - key
+      - queue_name: tripleo
+
+    tasks:
+      update_parameters:
+        action: tripleo.parameters.update
+        input:
+          container: <% $.container %>
+          parameters: <% $.parameters %>
+          key: <% $.key %>
+        on-complete: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.update_parameters
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   publish_ui_logs_to_swift:
     description: >
       This workflow drains a zaqar queue, and publish its messages into a log
