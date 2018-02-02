@@ -27,6 +27,7 @@ disk_images:
       - ntp
       - device-mapper-multipath
       - openstack-heat-agents
+      - jq
     options:
       - "--min-tmpfs=7"
     environment:
