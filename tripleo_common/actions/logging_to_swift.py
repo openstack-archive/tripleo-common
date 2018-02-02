@@ -12,11 +12,11 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-from datetime import datetime
 import json
 import logging
 import shutil
 import tempfile
+import time
 
 from mistral_lib import actions
 from oslo_concurrency import processutils
@@ -51,7 +51,7 @@ class FormatMessagesAction(actions.Action):
 
             body = log_object.get('message', '')
             level = log_object.get('level', 'info')
-            timestamp = log_object.get('timestamp', datetime.utcnow())
+            timestamp = log_object.get('timestamp', time.time() * 1000)
 
             if isinstance(body, (dict, list,)):
                 body = json.dumps(body)
