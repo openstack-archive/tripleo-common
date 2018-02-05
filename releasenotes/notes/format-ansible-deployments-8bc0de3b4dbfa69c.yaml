@@ -1,0 +1,6 @@
+---
+fixes:
+  - The group:ansible deployments were not formatted as human readable in the
+    group_vars. It was all just one long line. This made manual review and
+    debugging more difficult. They are now formatted in a human readable
+    format.
