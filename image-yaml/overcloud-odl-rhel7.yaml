@@ -23,4 +23,5 @@ disk_images:
            - python-heat-agent-docker-cmd
            - python-heat-agent-json-file
            - os-net-config
+           - jq
          options:

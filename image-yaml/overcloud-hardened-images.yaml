@@ -36,6 +36,7 @@ disk_images:
       - python-heat-agent-json-file
       - screen
       - os-net-config
+      - jq
     options:
       - "--min-tmpfs=7"
     environment:
