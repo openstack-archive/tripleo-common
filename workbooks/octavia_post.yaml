@@ -35,22 +35,24 @@ workflows:
     tags:
       - tripleo-common-managed
     tasks:
-      enable_ssh_admin:
-        workflow: tripleo.access.v1.enable_ssh_admin
-        on-success: get_private_key
-
-      get_private_key:
-        action: tripleo.validations.get_privkey
-        publish:
-          private_key: <% task().result %>
-        on-success: get_overcloud_stack_details
-
       get_overcloud_stack_details:
         publish:
           # TODO(beagles), we are making an assumption about the octavia heatlh manager and
           # controller worker needing
           #
           octavia_controller_ips: <% env().get('service_ips', {}).get('octavia_worker_ctlplane_node_ips', []) %>
+        on-success: enable_ssh_admin
+
+      enable_ssh_admin:
+        workflow: tripleo.access.v1.enable_ssh_admin
+        input:
+          ssh_servers: <% $.octavia_controller_ips %>
+        on-success: get_private_key
+
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task().result %>
         on-success: make_local_temp_directory
 
       make_local_temp_directory:
