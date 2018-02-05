@@ -1,6 +1,7 @@
 TYPE=OVSIntPort
 OVS_BRIDGE=br-int
 DEVICETYPE=ovs
+ONBOOT=yes
 BOOTPROTO=static
 IPV6_AUTOCONF=no
 DEVICE={{ mgmt_port_dev }}
@@ -15,5 +16,4 @@ OVS_EXTRA="-- set Interface {{ mgmt_port_dev }} external-ids:iface-status=active
            -- set Interface {{ mgmt_port_dev }} external-ids:skip_cleanup=true \
            -- set Interface {{ mgmt_port_dev }} mac=\"{{ mgmt_port_mac }}\" \
            -- set Interface {{ mgmt_port_dev }} other-config:hwaddr={{ mgmt_port_mac }}"
-ONBOOT=yes
 
