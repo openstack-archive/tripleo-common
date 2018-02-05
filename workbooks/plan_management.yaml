@@ -218,6 +218,7 @@ workflows:
       - source_url: null
       - queue_name: tripleo
       - generate_passwords: true
+      - plan_environment: null
     tags:
       - tripleo-common-managed
     tasks:
@@ -268,6 +269,13 @@ workflows:
 
       process_templates:
         action: tripleo.templates.process container=<% $.container %>
+        on-success:
+          - set_status_success: <% $.plan_environment = null %>
+          - upload_plan_environment: <% $.plan_environment != null %>
+        on-error: process_templates_set_status_failed
+
+      upload_plan_environment:
+        action: tripleo.templates.upload_plan_environment container=<% $.container %> plan_environment=<% $.plan_environment %>
         on-success: set_status_success
         on-error: process_templates_set_status_failed
 

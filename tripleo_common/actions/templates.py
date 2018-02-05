@@ -94,6 +94,21 @@ class UploadTemplatesAction(base.TripleOAction):
                 self.container)
 
 
+class UploadPlanEnvironmentAction(base.TripleOAction):
+    """Upload the plan environment into swift"""
+    def __init__(self, plan_environment,
+                 container=constants.DEFAULT_CONTAINER_NAME):
+        super(UploadPlanEnvironmentAction, self).__init__()
+        self.container = container
+        self.plan_environment = plan_environment
+
+    def run(self, context):
+        # Get object client
+        swift = self.get_object_client(context)
+        # Push plan environment to the swift container
+        plan_utils.put_env(swift, self.plan_environment)
+
+
 class ProcessTemplatesAction(base.TripleOAction):
     """Process Templates and Environments
 
