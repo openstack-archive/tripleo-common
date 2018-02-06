@@ -518,50 +518,64 @@ workflows:
 
     tasks:
 
+      # We're using a NoOp action to start the workflow.  The recursive nature
+      # of the workflow means that Mistral will refuse to execute it because it
+      # doesn't know where to begin.
+      start:
+        on-success: get_messages
+
       get_messages:
-        action: zaqar.queue_messages
-        on-success: format_messages
-        on-error: get_messages_set_status_failed
+        action: zaqar.claim_messages
+        on-success:
+          - format_messages: <% task().result.len() > 0 %>
+          - notify_zaqar: <% task().result.len() = 0 %>
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
         input:
           queue_name: <% $.logging_queue_name %>
-
+          ttl: 60
+          grace: 60
         publish:
+          status: SUCCESS
           messages: <% task().result %>
+          message_ids: <% task().result.select($._id) %>
 
       format_messages:
         action: tripleo.logging_to_swift.format_messages
         on-success: upload_to_swift
         input:
           messages: <% $.messages %>
-
         publish:
-          messages: <% task().result %>
+          status: SUCCESS
+          formatted_messages: <% task().result %>
 
       upload_to_swift:
         action: tripleo.logging_to_swift.publish_ui_log_to_swift
-        on-success: set_status_success
-        on-error: upload_to_swift_set_status_failed
+        on-success: delete_messages
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
         input:
-          logging_data: <% $.messages %>
+          logging_data: <% $.formatted_messages %>
           logging_container: <% $.logging_container %>
-
-      set_status_success:
-        on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(upload_to_swift).result %>
 
-      upload_to_swift_set_status_failed:
-        on-success: notify_zaqar
-        publish:
+      delete_messages:
+        action: zaqar.delete_messages
+        on-success: get_messages
+        on-error: notify_zaqar
+        publish-on-error:
           status: FAILED
-          message: <% task(upload_to_swift).result %>
-
-      get_messages_set_status_failed:
-        on-success: notify_zaqar
+          message: <% task().result %>
+        input:
+          queue_name: <% $.logging_queue_name %>
+          messages: <% $.message_ids %>
         publish:
-          status: FAILED
-          message: <% task(get_messages).result %>
+          status: SUCCESS
 
       notify_zaqar:
         action: zaqar.queue_post
