@@ -577,6 +577,9 @@ class NodesTest(base.TestCase):
     def test_update_node_ironic_pxe_irmc(self):
         self._update_by_type('pxe_irmc')
 
+    def test_update_node_ironic_xclarity(self):
+        self._update_by_type('xclarity')
+
     def test_update_node_ironic_redfish(self):
         ironic = mock.MagicMock()
         node_map = {'mac': {}, 'pm_addr': {}}
@@ -890,6 +893,25 @@ class NodesTest(base.TestCase):
         node_map = {'mac': {'aaa': 'id'},
                     'pm_addr': {'foo.bar': 'id'}}
         self.assertEqual('id', nodes._get_node_id(node, handler, node_map))
+
+    def test_register_ironic_node_xclarity(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'xclarity'
+        node['pm_port'] = '4444'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='xclarity', name='node1', properties=node_properties,
+            resource_class='baremetal',
+            driver_info={'xclarity_password': 'random',
+                         'xclarity_address': 'foo.bar',
+                         'xclarity_username': 'test',
+                         'xclarity_port': '4444'})
 
 
 class TestPopulateNodeMapping(base.TestCase):
