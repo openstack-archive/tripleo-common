@@ -7,9 +7,9 @@
 
 # Enable ODL repo in ODL Dockerfile
 {% block opendaylight_header %}
-RUN echo $'[opendaylight-6-release]\n\
-name=CentOS CBS OpenDaylight Carbon repository\n\
-baseurl=http://cbs.centos.org/repos/nfv7-opendaylight-6-release/$basearch/os/\n\
+RUN echo $'[opendaylight-8-devel]\n\
+name=OpenDaylight Oxygen repository\n\
+baseurl=https://nexus.opendaylight.org/content/repositories/opendaylight-oxygen-epel-7-$basearch-devel/\n\
 enabled=1\n\
 gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% endblock %}
