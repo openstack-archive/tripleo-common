@@ -19,6 +19,8 @@ from glanceclient.v2 import client as glanceclient
 from heatclient.v1 import client as heatclient
 import ironic_inspector_client
 from ironicclient.v1 import client as ironicclient
+from keystoneauth1 import session as ks_session
+from keystoneauth1.token_endpoint import Token
 from mistral_lib import actions
 from mistralclient.api import client as mistral_client
 from novaclient.client import Client as nova_client
@@ -86,11 +88,12 @@ class TripleOAction(actions.Action):
         bmi_endpoint = keystone_utils.get_endpoint_for_project(
             context, 'ironic-inspector')
 
+        auth = Token(endpoint=bmi_endpoint.url, token=context.auth_token)
+
         return ironic_inspector_client.ClientV1(
             api_version='1.2',
-            inspector_url=bmi_endpoint.url,
             region_name=bmi_endpoint.region,
-            auth_token=context.auth_token
+            session=ks_session.Session(auth)
         )
 
     def get_image_client(self, context):
