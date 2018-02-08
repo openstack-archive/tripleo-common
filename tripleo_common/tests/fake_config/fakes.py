@@ -50,13 +50,15 @@ FAKE_STACK = {
                  'upgrade_batch_tasks': [],
                  'upgrade_tasks': [{'name': 'Stop fake service',
                                     'service': 'name=fake state=stopped',
-                                    'tags': 'step1',
-                                    'when': 'existingcondition'},
+                                    'when': ['nova_api_enabled.rc == 0',
+                                             'httpd_enabled.rc != 0',
+                                             'step|int == 1']},
                                    {'name': 'Stop nova-compute service',
                                     'service': 'name=openstack-nova-compute '
                                                'state=stopped',
-                                    'tags': 'step1',
-                                    'when': ['existing', 'list']}]
+                                    'when': ['nova_compute_enabled.rc == 0',
+                                             'step|int == 2', 'existing',
+                                             'list']}]
                  },
              'FakeController': {
                  'config_settings': {'tripleo::haproxy::user': 'admin'},
@@ -75,7 +77,7 @@ FAKE_STACK = {
                  'upgrade_batch_tasks': [],
                  'upgrade_tasks': [{'name': 'Stop fake service',
                                     'service': 'name=fake state=stopped',
-                                    'tags': 'step1'}]}}}]}
+                                    'when': 'step|int == 1'}]}}}]}
 
 
 def create_to_dict_mock(**kwargs):

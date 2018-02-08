@@ -124,22 +124,22 @@ class TestConfig(base.TestCase):
         expected_tasks = {'FakeController': [{'name': 'Stop fake service',
                                               'service': 'name=fake '
                                               'state=stopped',
-                                              'tags': 'step1',
                                               'when': 'step|int == 1'}],
                           'FakeCompute': [{'name': 'Stop fake service',
                                            'service':
                                            'name=fake state=stopped',
-                                           'tags': 'step1',
-                                           'when': ['step|int == 1',
-                                                    'existingcondition']},
+                                           'when': ['nova_api_enabled.rc == 0',
+                                                    'httpd_enabled.rc != 0',
+                                                    'step|int == 1']},
                                           {'name': 'Stop nova-'
                                            'compute service',
                                            'service':
                                            'name=openstack-nova-'
                                            'compute state=stopped',
-                                           'tags': 'step1',
-                                           'when': ['step|int == 1',
-                                                    'existing', 'list']}]}
+                                           'when': [
+                                               'nova_compute_enabled.rc == 0',
+                                               'step|int == 2', 'existing',
+                                               'list']}]}
         for role in fake_role:
             filedir = os.path.join(self.tmp_dir, role)
             os.makedirs(filedir)
