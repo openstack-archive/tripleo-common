@@ -160,25 +160,12 @@ workflows:
 
       create_swift_rings_backup_plan:
         workflow: tripleo.swift_rings_backup.v1.create_swift_rings_backup_container_plan
-        on-success: get_heat_stack
+        on-success: cell_v2_discover_hosts
         on-error: create_swift_rings_backup_plan_set_status_failed
         input:
           container: <% $.container %>
           queue_name: <% $.queue_name %>
           use_default_templates: true
-
-      get_heat_stack:
-        action: heat.stacks_get stack_id=<% $.container %>
-        on-error: cell_v2_discover_hosts
-        on-success:
-          - set_stack_in_progress: <% "_IN_PROGRESS" in task().result.stack_status %>
-          - cell_v2_discover_hosts: <% not "_IN_PROGRESS" in task().result.stack_status %>
-
-      set_stack_in_progress:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: The Heat stack is busy.
 
       cell_v2_discover_hosts:
         on-success: deploy
