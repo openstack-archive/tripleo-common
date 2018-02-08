@@ -287,7 +287,7 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa')
+                              address='aaa', physical_network='ctlplane')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -311,7 +311,7 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa')
+                              address='aaa', physical_network='ctlplane')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -341,7 +341,7 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa')
+                              address='aaa', physical_network='ctlplane')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -365,7 +365,7 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              uuid="abcdef")
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa')
+                              address='aaa', physical_network='ctlplane')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -390,7 +390,7 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa')
+                              address='aaa', physical_network='ctlplane')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -425,7 +425,7 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              **interfaces)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa')
+                              address='aaa', physical_network='ctlplane')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
