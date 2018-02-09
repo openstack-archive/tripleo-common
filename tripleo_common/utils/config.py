@@ -95,6 +95,11 @@ class Config(object):
         env.trim_blocks = True
         return env, templates_path
 
+    def get_role_config(self):
+        role_config = self.stack_outputs.get('RoleConfig', {})
+        # RoleConfig can exist as a stack output but have a value of None
+        return role_config or {}
+
     @staticmethod
     def _open_file(path):
         return os.fdopen(os.open(path,
@@ -180,7 +185,7 @@ class Config(object):
                         yaml.safe_dump(data,
                                        conf_file,
                                        default_flow_style=False)
-        role_config = self.stack_outputs.get('RoleConfig', {})
+        role_config = self.get_role_config()
         for config_name, config in six.iteritems(role_config):
             conf_path = os.path.join(tmp_path, config_name + ".yaml")
             with self._open_file(conf_path) as conf_file:

@@ -170,6 +170,13 @@ class TestConfig(base.TestCase):
         expected = {'2af0a373': 'c1', '8269f736': 'c0', 'c8479674': 'c2'}
         self.assertEqual(expected, server_names)
 
+    def test_get_role_config(self):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+        self.config.stack_outputs = {'RoleConfig': None}
+        role_config = self.config.get_role_config()
+        self.assertEqual({}, role_config)
+
     def test_get_deployment_data(self):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
