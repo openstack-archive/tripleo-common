@@ -21,35 +21,26 @@ workflows:
       rotate_keys:
         action: tripleo.parameters.rotate_fernet_keys container=<% $.container %>
         on-success: deploy_ssh_key
-        on-error: rotate_keys_set_status_failed
-
-      rotate_keys_set_status_failed:
-        on-success: notify_zaqar
-        publish:
+        on-error: notify_zaqar
+        publish-on-error:
           status: FAILED
-          message: <% task(rotate_keys).result %>
+          message: <% task().result %>
 
       deploy_ssh_key:
         workflow: tripleo.validations.v1.copy_ssh_key
         on-success: get_privkey
-        on-error: deploy_ssh_key_failed
-
-      deploy_ssh_key_failed:
-        on-success: notify_zaqar
-        publish:
+        on-error: notify_zaqar
+        publish-on-error:
           status: FAILED
-          message: <% task(deploy_ssh_key).result %>
+          message: <% task().result %>
 
       get_privkey:
         action: tripleo.validations.get_privkey
         on-success: deploy_keys
-        on-error: get_privkey_failed
-
-      get_privkey_failed:
-        on-success: notify_zaqar
-        publish:
+        on-error: notify_zaqar
+        publish-on-error:
           status: FAILED
-          message: <% task(get_privkey).result %>
+          message: <% task().result %>
 
       deploy_keys:
         action: tripleo.ansible-playbook
@@ -65,13 +56,14 @@ workflows:
             fernet_keys: <% task(rotate_keys).result %>
           use_openstack_credentials: true
           playbook: /usr/share/tripleo-common/playbooks/rotate-keys.yaml
-        on-success: rotate_keys_set_status_passed
-
-      rotate_keys_set_status_passed:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(deploy_keys).result %>
+          message: <% task().result %>
+        on-error: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
 
       notify_zaqar:
         action: zaqar.queue_post
@@ -79,7 +71,7 @@ workflows:
           queue_name: <% $.queue_name %>
           messages:
             body:
-              type: tripleo.plan_management.v1.get_passwords
+              type: tripleo.fernet_keys.v1.rotate_fernet_keys
               payload:
                 status: <% $.status %>
                 message: <% $.get('message', '') %>
