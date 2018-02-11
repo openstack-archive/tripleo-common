@@ -1,0 +1,5 @@
+---
+fixes:
+  - RoleConfig can exist as a stack output, but have a value of None. That case
+    is now handled with a default value of {} where the value was previously
+    None.
