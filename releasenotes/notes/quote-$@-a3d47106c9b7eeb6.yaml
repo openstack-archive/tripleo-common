@@ -1,0 +1,5 @@
+---
+fixes:
+  - The generated ansible-playbook-command.sh now has quotes around $@ so
+    that the value can be passed through to ansible-playbook with spaces or
+    other characters requiring quotes.
