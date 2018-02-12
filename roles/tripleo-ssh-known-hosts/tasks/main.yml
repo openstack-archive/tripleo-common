@@ -1,0 +1,8 @@
+---
+
+- name: Template /etc/ssh/ssh_known_hosts
+  template:
+    src: ssh_known_hosts.j2
+    dest: /etc/ssh/ssh_known_hosts
+  tags:
+    - tripleo_ssh_known_hosts

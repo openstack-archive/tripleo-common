@@ -1,0 +1,5 @@
+---
+fixes:
+  - Support for the SshKnownHostsDeployment resources has been fixed by adding
+    a new role that can be used to configure /etc/ssh/ssh_known_hosts
+    on each host.
