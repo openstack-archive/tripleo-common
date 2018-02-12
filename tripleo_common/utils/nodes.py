@@ -31,6 +31,8 @@ _KNOWN_INTERFACE_FIELDS = [
                                          'power', 'raid', 'storage', 'vendor')
 ]
 
+CTLPLANE_NETWORK = 'ctlplane'
+
 
 class DriverInfo(object):
     """Class encapsulating field conversion logic."""
@@ -355,7 +357,8 @@ def register_ironic_node(node, client):
     ironic_node = client.node.create(**create_map)
 
     for mac in node.get("mac", []):
-        client.port.create(address=mac, node_uuid=ironic_node.uuid)
+        client.port.create(address=mac, physical_network=CTLPLANE_NETWORK,
+                           node_uuid=ironic_node.uuid)
 
     validation = client.node.validate(ironic_node.uuid)
     if not validation.power['result']:
