@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Adds a workflow to generate the overcloudrc files in a given deployment
+    so the tripleo.deployment.overcloudrc action does not need to be called
+    directly.

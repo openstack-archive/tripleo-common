@@ -410,3 +410,42 @@ workflows:
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  create_overcloudrc:
+    description: >
+      Given the name of a container, generate the overcloudrc files
+      needed to access the overcloud via the CLI.
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - container: overcloud
+      - queue_name: tripleo
+
+    tasks:
+      generate_overcloud_rc:
+        action: tripleo.deployment.overcloudrc
+        input:
+          container: <% $.container %>
+        on-complete: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.deployment.v1.create_overcloudrc
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
