@@ -1,0 +1,9 @@
+---
+feature:
+  - |
+    Switch to tripleomaster registry be default for container images, where
+    push happens automatically on RDO promotion.
+deprecations:
+  - |
+    The tripleoupstream container registry is not used anymore and may be
+    retired in the future.
