@@ -1,0 +1,5 @@
+#!/bin/bash
+
+listen_addr=$(awk 'match($0, /-l +([0-9a-fA-F\.\:]+) /, a) {print a[1]}' /etc/sysconfig/memcached)
+echo "stats" | socat - TCP:$listen_addr:11211
+exit
