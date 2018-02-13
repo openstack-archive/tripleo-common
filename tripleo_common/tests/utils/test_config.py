@@ -15,13 +15,13 @@ import fixtures
 import mock
 import os
 import uuid
+import warnings
 import yaml
 
 from mock import call
 from mock import patch
 
 from tripleo_common import constants
-from tripleo_common import exception
 from tripleo_common.tests import base
 from tripleo_common.tests.fake_config import fakes
 from tripleo_common.utils import config as ooo_config
@@ -345,5 +345,8 @@ class TestConfig(base.TestCase):
         mock_config_dict.side_effect = self._get_config_dict
 
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
-        self.assertRaises(exception.GroupOsApplyConfigException,
-                          self.config.download_config, stack, self.tmp_dir)
+        with warnings.catch_warnings(record=True) as w:
+            self.config.download_config(stack, self.tmp_dir)
+            self.assertEqual(1, len(w))
+            assert issubclass(w[-1].category, DeprecationWarning)
+            assert "group:os-apply-config is deprecated" in str(w[-1].message)

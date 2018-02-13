@@ -19,12 +19,15 @@ import re
 import shutil
 import six
 import tempfile
+import warnings
 import yaml
 
 import jinja2
 
 from tripleo_common import constants
-from tripleo_common import exception
+
+
+warnings.filterwarnings('once')
 
 
 class Config(object):
@@ -290,8 +293,10 @@ class Config(object):
                     d['scalar'] = True
 
                 if d['group'] == 'os-apply-config':
-                    raise exception.GroupOsApplyConfigException(
-                        d['deployment_name'])
+                    message = ("group:os-apply-config is deprecated. "
+                               "Deployment %s will not be applied by "
+                               "config-download." % d['deployment_name'])
+                    warnings.warn(message, DeprecationWarning)
 
             with open(group_var_server_path, 'w') as f:
                 f.write(group_var_server_template.render(

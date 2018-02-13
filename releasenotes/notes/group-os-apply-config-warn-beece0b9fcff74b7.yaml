@@ -1,0 +1,4 @@
+---
+deprecations:
+  - group:os-apply-config deployments are deprecated for use with
+    config-download and they will not be applied.
