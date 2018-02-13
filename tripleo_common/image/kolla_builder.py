@@ -81,10 +81,10 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
             images, tag_from_label)
         for entry in result:
             imagename = entry.get('imagename', '')
-            if imagename in image_version_tags:
-                image_no_tag = imagename.rpartition(':')[0]
-                entry['imagename'] = '%s:%s' % (image_no_tag,
-                                                image_version_tags[imagename])
+            image_no_tag = imagename.rpartition(':')[0]
+            if image_no_tag in image_version_tags:
+                entry['imagename'] = '%s:%s' % (
+                    image_no_tag, image_version_tags[image_no_tag])
 
     params = {}
     for entry in result:
