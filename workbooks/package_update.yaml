@@ -22,15 +22,8 @@ workflows:
       - tripleo-common-managed
 
     tasks:
-      update_plan:
-        action: tripleo.plan.update_from_dir
-        input:
-          container: <% $.container %>
-        on-success: update
-        on-error: set_update_failed
-
       update:
-        action: tripleo.package_update.update_stack container=<% $.container %> timeout=<% $.timeout %> container_registry=<% $.container_registry %> ceph_ansible_playbook=<% $.ceph_ansible_playbook %>
+        action: tripleo.package_update.update_stack
         input:
           timeout: <% $.timeout %>
           container: <% $.container %>
