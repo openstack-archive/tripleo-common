@@ -134,24 +134,6 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% block barbican_api_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/barbican-api /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
-{% block barbican_keystone_listener_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/barbican-keystone-listener /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
-{% block barbican_worker_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/barbican-worker /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
 {% block ceilometer_central_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-central /openstack/healthcheck && \
