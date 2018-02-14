@@ -193,7 +193,7 @@ class ExportPlanAction(base.TripleOAction):
             swiftutils.download_container(swift, self.plan, tmp_dir)
             swiftutils.create_and_upload_tarball(
                 swift, tmp_dir, self.exports_container, tarball_name,
-                self.delete_after)
+                delete_after=self.delete_after)
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
             return actions.Result(error=msg)
