@@ -462,7 +462,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
                         f.write('%s="%s"\n' % (var, env_variables[var]))
                     f.write('\n')
                     f.write(' '.join(command))
-                    f.write(' $@')
+                    f.write(' "$@"')
                     f.write('\n')
 
                 os.chmod(command_path, 0o750)
