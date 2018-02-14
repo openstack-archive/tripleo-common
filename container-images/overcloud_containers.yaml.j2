@@ -145,6 +145,56 @@ container_images_template:
   services:
   - OS::TripleO::Services::ContainersLogrotateCrond
 
+- imagename: "{{namespace}}/{{name_prefix}}designate-api{{name_suffix}}:{{tag}}"
+  params:
+  - DockerDesignateApiImage
+  - DockerDesignateConfigImage
+  services:
+  - OS::TripleO::Services::DesignateApi
+  - OS::TripleO::Services::DesignateCentral
+  - OS::TripleO::Services::DesignateMDNS
+  - OS::TripleO::Services::DesignateSink
+  - OS::TripleO::Services::DesignateProducer
+  - OS::TripleO::Services::DesignateWorker
+
+- imagename: "{{namespace}}/{{name_prefix}}designate-backend-bind9{{name_suffix}}:{{tag}}"
+  params:
+  - DockerDesignateBackendBIND9Image
+  services:
+  - OS::TripleO::Services::DesignateWorker
+
+- imagename: "{{namespace}}/{{name_prefix}}designate-base{{name_suffix}}:{{tag}}"
+
+- imagename: "{{namespace}}/{{name_prefix}}designate-central{{name_suffix}}:{{tag}}"
+  params:
+  - DockerDesignateCentralImage
+  services:
+  - OS::TripleO::Services::DesignateCentral
+
+- imagename: "{{namespace}}/{{name_prefix}}designate-mdns{{name_suffix}}:{{tag}}"
+  params:
+  - DockerDesignateMDNSImage
+  services:
+  - OS::TripleO::Services::DesignateMDNS
+
+- imagename: "{{namespace}}/{{name_prefix}}designate-producer{{name_suffix}}:{{tag}}"
+  params:
+  - DockerDesignateProducerImage
+  services:
+  - OS::TripleO::Services::DesignateProducer
+
+- imagename: "{{namespace}}/{{name_prefix}}designate-sink{{name_suffix}}:{{tag}}"
+  params:
+  - DockerDesignateSinkImage
+  services:
+  - OS::TripleO::Services::DesignateSink
+
+- imagename: "{{namespace}}/{{name_prefix}}designate-worker{{name_suffix}}:{{tag}}"
+  params:
+  - DockerDesignateWorkerImage
+  services:
+  - OS::TripleO::Services::DesignateWorker
+
 - imagename: "{{namespace}}/{{name_prefix}}ec2-api{{name_suffix}}:{{tag}}"
   params:
   - DockerEc2ApiConfigImage
