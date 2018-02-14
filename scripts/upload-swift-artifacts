@@ -43,6 +43,35 @@ function show_options {
     exit $1
 }
 
+function check_file
+{
+  local FILE=$1
+  supported_files=(" RPM " "gzip compressed data")
+  array_length=${#supported_files[@]}
+
+  local test_type=`file $FILE`
+
+  local i=0
+  local matched=0
+
+  while [ $i -ne $array_length -a $matched -eq 0 ]
+  do
+    if [[ "$test_type" =~ ${supported_files[$i]} ]]
+    then
+      matched=1
+    fi
+    i=$((i+1))
+  done
+
+  if [ $matched -eq 0 ]
+  then
+    echo "Not a supported file type: $FILE"
+    exit 1
+  fi
+
+}
+
+
 TEMP=`getopt -o he:f:c:s: -l help,environment:,file:,container:,seconds: -n $SCRIPT_NAME -- "$@"`
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
@@ -144,5 +173,6 @@ function upload_file {
 }
 
 for FILE in ${FILES[@]}; do
+  check_file "$FILE"
   upload_file "$FILE"
 done
