@@ -16,6 +16,7 @@ import collections
 import mock
 import yaml
 
+from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import scale
@@ -130,7 +131,7 @@ class ScaleDownActionTest(base.TestCase):
         # Test
         action = scale.ScaleDownAction(
             constants.STACK_TIMEOUT_DEFAULT, ['resource_id'], 'stack')
-        action.run(mock_ctx)
+        result = action.run(mock_ctx)
 
         heatclient.stacks.validate.assert_called_once_with(
             environment=env,
@@ -151,3 +152,53 @@ class ScaleDownActionTest(base.TestCase):
             "stack",
             "tripleo.parameters.get"
         )
+
+        self.assertEqual(None, result)
+
+    @mock.patch('tripleo_common.actions.scale.ScaleDownAction.'
+                '_get_removal_params_from_heat')
+    @mock.patch('tripleo_common.actions.scale.ScaleDownAction._update_stack')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_run_bad_update(self, mock_get_heat_client,
+                            mock__update_stack,
+                            mock__get_removal_params_from_heat):
+
+        mock__update_stack.return_value = actions.Result(error='Update error')
+        mock__get_removal_params_from_heat.return_value = {}
+        heatclient = mock.MagicMock()
+        heatclient.resources.list.return_value = [
+            mock.MagicMock(
+                links=[{'rel': 'stack',
+                        'href': 'http://192.0.2.1:8004/v1/'
+                                'a959ac7d6a4a475daf2428df315c41ef/'
+                                'stacks/overcloud/123'}],
+                logical_resource_id='logical_id',
+                physical_resource_id='resource_id',
+                resource_type='OS::Heat::ResourceGroup',
+                resource_name='Compute'
+            ),
+            mock.MagicMock(
+                links=[{'rel': 'stack',
+                        'href': 'http://192.0.2.1:8004/v1/'
+                                'a959ac7d6a4a475daf2428df315c41ef/'
+                                'stacks/overcloud/124'}],
+                logical_resource_id='node0',
+                physical_resource_id='123',
+                resource_type='OS::TripleO::Compute',
+                parent_resource='Compute',
+                resource_name='node0',
+            )
+        ]
+        heatclient.stacks.get.return_value = mock_stack()
+        heatclient.stacks.validate.return_value = {}
+        mock_get_heat_client.return_value = heatclient
+
+        mock_ctx = mock.MagicMock()
+
+        # Test
+        action = scale.ScaleDownAction(
+            constants.STACK_TIMEOUT_DEFAULT, ['resource_id'], 'stack')
+        result = action.run(mock_ctx)
+
+        self.assertEqual(actions.Result(error='Update error'), result)
