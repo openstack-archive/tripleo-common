@@ -18,6 +18,7 @@ disk_images:
       - pip-and-virtualenv-override
       - dracut-regenerate
       - remove-machine-id
+      - remove-resolvconf
       - realtime-kernel
     packages:
       - python-psutil

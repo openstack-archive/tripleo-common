@@ -19,6 +19,7 @@ disk_images:
       - pip-and-virtualenv-override
       - dracut-regenerate
       - remove-machine-id
+      - remove-resolvconf
       - modprobe-blacklist
       - overcloud-secure
     packages:
