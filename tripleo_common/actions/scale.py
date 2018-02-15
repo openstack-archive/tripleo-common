@@ -83,6 +83,11 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         fields = processed_data.copy()
         fields['timeout_mins'] = timeout_mins
         fields['existing'] = True
+        # As we do a PATCH update when deleting nodes, parameters set for a
+        # stack before upgrade to newton (ex. ComputeRemovalPolicies),
+        # would still take precedence over the ones set in parameter_defaults
+        # after upgrade. Clear these parameters for backward compatibility.
+        fields['clear_parameters'] = list(parameters.keys())
 
         LOG.debug('stack update params: %s', fields)
         self.get_orchestration_client(context).stacks.update(self.container,
