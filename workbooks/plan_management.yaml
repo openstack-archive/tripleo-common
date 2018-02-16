@@ -462,6 +462,15 @@ workflows:
       - tripleo-common-managed
 
     tasks:
+      get_roles:
+        action: tripleo.role.list container=<% $.container %>
+        publish:
+          role_name_list: <% task().result %>
+        on-success:
+          - get_flatten_data: <% $.role_name_list %>
+          - set_status_failed_get_roles: <% not $.role_name_list %>
+        on-error: set_status_failed_on_error_get_roles
+
       get_flatten_data:
         action: tripleo.parameters.get_flatten container=<% $.container %>
         on-success: get_deprecated_params
@@ -470,6 +479,8 @@ workflows:
           user_params: <% task().result.environment_parameters %>
           plan_params: <% task().result.heat_resource_tree.parameters.keys() %>
           parameter_groups: <% task().result.heat_resource_tree.resources.values().where( $.get('parameter_groups') ).select($.parameter_groups).flatten() %>
+          params_role_specific_tag: <% task().result.heat_resource_tree.parameters.values().where( $.get('tags') and $.get('tags').contains('role_specific') ).select($.name).flatten() %>
+          valid_role_name_list: <% let(hr => task().result.heat_resource_tree.parameters) -> $.role_name_list.where(int($hr.get(concat($, 'Count'), {}).get('default', 0)) > 0) %>
 
       get_deprecated_params:
         on-success: check_if_user_param_has_deprecated
@@ -485,15 +496,45 @@ workflows:
       # It may be possible that the parameter will be used by a service, but the service is not part of the plan.
       # In such cases, the parameter will be reported as unused, care should be take to understand whether it is really unused or not.
       get_unused_params:
-        on-success: send_message
+        on-success: get_user_role_params
         publish:
           unused_params: <% let(plan_params => $.plan_params) ->  $.user_params.keys().where( not $plan_params.contains($) ) %>
+
+      get_user_role_params:
+        on-success: is_user_role_specific_input_provided
+        with-items: role_name in <% $.valid_role_name_list %>
+        concurrency: 1
+        action: std.echo output=<% "{}Parameters".format($.role_name) %>
+        publish:
+          user_provided_role_specific: <% let(param => task().result) -> $.user_params.items().where( $param.contains($[0]) ).select( $[1] ).flatten() %>
+
+      is_user_role_specific_input_provided:
+        on-success:
+          - find_invalid_role_specific_params: <% $.user_provided_role_specific %>
+          - send_message: <% not $.user_provided_role_specific %>
+
+      find_invalid_role_specific_params:
+        on-success: send_message
+        publish:
+          invalid_role_specific: <% let(role_spec => $.params_role_specific_tag) -> $.user_provided_role_specific.sum().keys().where( not $role_spec.contains($) ) %>
 
       set_status_failed_get_flatten_data:
         on-success: send_message
         publish:
           status: FAILED
           message: <% task(get_flatten_data).result %>
+
+      set_status_failed_get_roles:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: "Unable to determine the list of roles in the deployment plan"
+
+      set_status_failed_on_error_get_roles:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_roles).result %>
 
       send_message:
         action: zaqar.queue_post
@@ -508,6 +549,7 @@ workflows:
                 execution: <% execution() %>
                 deprecated: <% $.get('deprecated_result', []) %>
                 unused: <% $.get('unused_params', []) %>
+                invalid_role_specific: <% $.get('invalid_role_specific', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
