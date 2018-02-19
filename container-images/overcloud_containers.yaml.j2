@@ -207,6 +207,7 @@ container_images_template:
   - DockerHAProxyImage
   services:
   - OS::TripleO::Services::HAproxy
+  - OS::TripleO::Services::UndercloudHAProxy
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-all{{name_suffix}}:{{tag}}"
 
@@ -280,6 +281,7 @@ container_images_template:
   - DockerKeepalivedImage
   services:
   - OS::TripleO::Services::Keepalived
+  - OS::TripleO::Services::UndercloudKeepalived
 
 - imagename: "{{namespace}}/{{name_prefix}}keystone{{name_suffix}}:{{tag}}"
   params:
