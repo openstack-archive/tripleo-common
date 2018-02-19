@@ -28,6 +28,8 @@ SCRIPT_NAME=$(basename $0)
 #can make the upgrade script overridable (if a different target will be used)
 UPGRADE_SCRIPT=${UPGRADE_SCRIPT:-/root/tripleo_upgrade_node.sh}
 #allow override incase the ssh user is not 'heat-admin' - must be able to sudo
+STACK_NAME_DEFAULT="overcloud"
+STACK_NAME=${STACK_NAME:-$STACK_NAME_DEFAULT}
 UPGRADE_NODE_USER_DEFAULT="heat-admin"
 UPGRADE_NODE_USER=${UPGRADE_NODE_USER:-$UPGRADE_NODE_USER_DEFAULT}
 UPGRADE_NODE=""
@@ -40,19 +42,20 @@ function show_options {
     echo "Usage: $SCRIPT_NAME"
     echo
     echo "Options:"
-    echo "  -h|--help                  -- print this help."
-    echo "  -u|--upgrade <nova node>   -- nova node name or id or ctlplane IP"
-    echo "                                to upgrade"
-    echo "  -q|--query <nova node>     -- check if the node is ACTIVE and tail"
-    echo "                                yum.log for any package update info"
-    echo "  -I|--inventory <path>      -- use the specified tripleo ansible "
-    echo "                                inventory (yaml format)"
+    echo "  -h|--help                    -- print this help."
+    echo "  -u|--upgrade <nova node>     -- nova node name or id or ctlplane IP"
+    echo "                                  to upgrade."
+    echo "  -q|--query <nova node>       -- check if the node is ACTIVE and tail"
+    echo "                                  yum.log for any package update info."
+    echo "  -s|--stack-name <stack name> -- the stack name, defaults to $STACK_NAME_DEFAULT"
+    echo "  -I|--inventory <path>        -- use the specified tripleo ansible "
+    echo "                                  inventory (yaml format)."
     echo "  -O|--ansible-opts \"opts\"   -- specify extra options to be passed "
-    echo "                                to ansible-playbook e.g. \"-vvv\" or "
-    echo "                                \"-vvv --skip-tags validation\""
-    echo "  -U|--overcloud-user <name> -- the user with which to ssh to the"
-    echo "                                target upgrade node - defaults to"
-    echo "                                $UPGRADE_NODE_USER_DEFAULT"
+    echo "                                  to ansible-playbook e.g. \"-vvv\" or "
+    echo "                                  \"-vvv --skip-tags validation\"."
+    echo "  -U|--overcloud-user <name>   -- the user with which to ssh to the"
+    echo "                                  target upgrade node - defaults to"
+    echo "                                  $UPGRADE_NODE_USER_DEFAULT."
     echo
     echo "Invoke the /root/tripleo_upgrade_node.sh script on roles that have"
     echo "the 'disable_upgrade_deployment' flag set true and then download and"
@@ -75,7 +78,7 @@ function show_options {
     echo "    upgrade-non-controller.sh --upgrade overcloud-compute-0 "
     echo "    upgrade-non-controller.sh -u 734eea90-087b-4f12-9cd9-4807da83ea78 "
     echo "    upgrade-non-controller.sh -u 192.168.24.15 "
-    echo "    upgrade-non-controller.sh -U stack -u 192.168.24.15 "
+    echo "    upgrade-non-controller.sh -U stack -u 192.168.24.15 -s overcloud"
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.16 \ "
     echo "                              -I /home/stack/tripleo-ansible-inventory.yaml"
     echo "    upgrade-non-controller.sh -U stack -u 192.168.24.16 \ "
@@ -92,7 +95,7 @@ function show_options {
     exit $1
 }
 
-TEMP=`getopt -o h,u:,q:,U:,I:,O: -l help,upgrade:,query:,overcloud-user:,inventory:,ansible-opts: -n $SCRIPT_NAME -- "$@"`
+TEMP=`getopt -o h,u:,q:,s:,U:,I:,O: -l help,upgrade:,query:,stack-name:,overcloud-user:,inventory:,ansible-opts: -n $SCRIPT_NAME -- "$@"`
 
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
@@ -107,6 +110,7 @@ while true ; do
         -h | --help ) show_options 0 >&2;;
         -u | --upgrade ) UPGRADE_NODE="$2" ; shift 2 ;;
         -q | --query ) QUERY_NODE="$2" ; shift 2 ;;
+        -s | --stack-name ) STACK_NAME="$2" ; shift 2 ;;
         -U | --overcloud-user ) UPGRADE_NODE_USER="$2"; shift 2;;
         -I | --inventory ) INVENTORY="$2"; shift 2;;
         -O | --ansible-opts ) ANSIBLE_OPTS="$2"; shift 2;;
@@ -193,7 +197,7 @@ if [ -n "$UPGRADE_NODE" ]; then
   ssh $UPGRADE_NODE_USER@$IP_ADDR sudo $UPGRADE_SCRIPT 2>&1 | tee -a $LOGFILE
   log "Clearing any existing dir $UPGRADE_NODE and downloading config"
   rm -rf $UPGRADE_NODE
-  openstack overcloud config download --config-dir "$UPGRADE_NODE"
+  openstack overcloud config download --name "$STACK_NAME" --config-dir "$UPGRADE_NODE"
   config_dir=$(ls -1 $UPGRADE_NODE)
   if [ -z "$INVENTORY" ]; then
     get_static_inventory $UPGRADE_NODE/$config_dir
