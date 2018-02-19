@@ -101,7 +101,8 @@ class ValidationsKeyTest(base.TestCase):
         mock_open_context.assert_called_once_with('fd', 'w')
         mock_open_context().write.assert_called_once_with('private_key')
         mock_execute.assert_called_once_with(
-            '/usr/bin/sudo', '/usr/bin/chown', 'validations:', 'tmp_path')
+            '/usr/bin/sudo', '/usr/bin/chown', '-h', 'validations:',
+            'tmp_path')
 
     @mock.patch("oslo_concurrency.processutils.execute")
     def test_cleanup_identity_file(self, mock_execute):

@@ -97,8 +97,8 @@ def write_identity_file(key):
     LOG.debug('Writing SSH key to disk at %s', path)
     with os.fdopen(fd, 'w') as tmp:
         tmp.write(key)
-    processutils.execute('/usr/bin/sudo', '/usr/bin/chown', 'validations:',
-                         path)
+    processutils.execute('/usr/bin/sudo', '/usr/bin/chown', '-h',
+                         'validations:', path)
     return path
 
 
