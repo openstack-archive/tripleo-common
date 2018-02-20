@@ -336,6 +336,44 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  delete_deployment_plan:
+    description: >
+      Deletes a plan by deleting the container matching plan_name. It will
+      not delete the plan if a stack exists with the same name.
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - container: overcloud
+      - queue_name: tripleo
+
+    tasks:
+      delete_plan:
+        action: tripleo.plan.delete container=<% $.container %>
+        on-complete: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.delete_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+
   get_passwords:
     description: Retrieves passwords for a given plan
     input:
