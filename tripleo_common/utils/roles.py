@@ -111,6 +111,7 @@ def validate_role_yaml(role_data=None, role_path=None):
         'tags': {'type': list},
         'description': {'type': six.string_types},
         'networks': {'type': list},
+        'networks_skip_config': {'type': list},
     }
 
     if 'name' not in role:
