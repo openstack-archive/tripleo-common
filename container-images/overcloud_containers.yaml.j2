@@ -617,6 +617,7 @@ container_images_template:
   - DockerRedisImage
   services:
   - OS::TripleO::Services::Redis
+  - OS::TripleO::Services::UndercloudRedis
 
 - imagename: "{{namespace}}/{{name_prefix}}sahara-api{{name_suffix}}:{{tag}}"
   params:
