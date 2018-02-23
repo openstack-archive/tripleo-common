@@ -332,15 +332,6 @@ class VerifyProfilesAction(base.TripleOAction):
         bm_nodes = {node['uuid']: node for node in self.nodes
                     if node['provision_state'] in ('available', 'active')}
 
-        if not bm_nodes:
-            message = ('Error: There are no nodes in an available '
-                       'or active state and with maintenance mode off.')
-            return_value = {
-                'errors': [message],
-                'warnings': [],
-            }
-            return actions.Result(error=return_value)
-
         free_node_caps = {uu: self._node_get_capabilities(node)
                           for uu, node in bm_nodes.items()}
 
