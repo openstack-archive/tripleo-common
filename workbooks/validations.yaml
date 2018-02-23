@@ -716,22 +716,6 @@ workflows:
           errors: <% $.errors + task().result.get('errors', []) %>
           warnings: <% $.warnings + task().result.get('warnings', []) %>
           status: FAILED
-        on-success: verify_profiles
-        on-error: verify_profiles
-
-      verify_profiles:
-        workflow: verify_profiles
-        input:
-          flavors: <% $.flavors %>
-          run_validations: <% $.run_validations %>
-          queue_name: <% $.queue_name %>
-        publish:
-          errors: <% $.errors + task().result.get('errors', []) %>
-          warnings: <% $.warnings + task().result.get('warnings', []) %>
-        publish-on-error:
-          errors: <% $.errors + task().result.get('errors', []) %>
-          warnings: <% $.warnings + task().result.get('warnings', []) %>
-          status: FAILED
         on-success: check_default_nodes_count
         on-error: check_default_nodes_count
 
@@ -753,6 +737,25 @@ workflows:
           errors: <% $.errors + task().result.get('errors', []) %>
           warnings: <% $.warnings + task().result.get('warnings', []) %>
           statistics: <% task().result.get('statistics') %>
+          status: FAILED
+        on-success: verify_profiles
+        # Do not confuse user with info about profiles if the nodes
+        # count is off in the first place. Skip directly to
+        # send_message. (bug 1703942)
+        on-error: send_message
+
+      verify_profiles:
+        workflow: verify_profiles
+        input:
+          flavors: <% $.flavors %>
+          run_validations: <% $.run_validations %>
+          queue_name: <% $.queue_name %>
+        publish:
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
+        publish-on-error:
+          errors: <% $.errors + task().result.get('errors', []) %>
+          warnings: <% $.warnings + task().result.get('warnings', []) %>
           status: FAILED
         on-success: send_message
         on-error: send_message
