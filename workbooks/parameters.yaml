@@ -1,0 +1,61 @@
+---
+version: '2.0'
+name: tripleo.parameters.v1
+description: TripleO Parameter-related Workflows
+
+workflows:
+  generate_fencing_parameters:
+    description: >
+      This workflow will generate fencing parameters from the given inputs for
+      a deployment.
+    input:
+      - nodes_json
+      - os_auth
+      - fence_action
+      - delay
+      - ipmi_level
+      - ipmi_cipher
+      - ipmi_lanplus
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    output:
+      fencing_parameters: <% $.get('fencing_parameters', {}) %>
+
+    tasks:
+      generate_fencing_params:
+        action: tripleo.parameters.generate_fencing
+        input:
+          nodes_json: <% $.nodes_json %>
+          os_auth: <% $.os_auth %>
+          fence_action: <% $.fence_action %>
+          delay: <% $.delay %>
+          ipmi_level: <% $.ipmi_level %>
+          ipmi_cipher: <% $.ipmi_cipher %>
+          ipmi_lanplus: <% $.ipmi_lanplus %>
+        on-complete: notify_zaqar
+        publish:
+          fencing_parameters: <% task().result %>
+          status: SUCCESS
+          message: 'Fencing parameters successfully generated'
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.parameters.v1.generate_fencing_parameters
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                fencing_parameters: <% $.get('fencing_parameters', {}) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
