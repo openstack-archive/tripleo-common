@@ -85,6 +85,7 @@ class AnsibleAction(actions.Action):
             'use_openstack_credentials', False)
         self.extra_env_variables = self._kwargs_for_run.pop(
             'extra_env_variables', None)
+        self.gather_facts = self._kwargs_for_run.pop('gather_facts', False)
 
         self._work_dir = None
 
@@ -196,6 +197,9 @@ class AnsibleAction(actions.Action):
                 msg = "extra_env_variables must be a dict"
                 return actions.Result(error=msg)
 
+        if self.gather_facts:
+            command.extend(['--gather-facts', self.gather_facts])
+
         try:
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
@@ -267,6 +271,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
             'work_dir', None)
         self.max_message_size = self._kwargs_for_run.pop(
             'max_message_size', 1048576)
+        self.gather_facts = self._kwargs_for_run.pop('gather_facts', False)
 
     @property
     def work_dir(self):
@@ -432,6 +437,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
             if not isinstance(self.extra_env_variables, dict):
                 msg = "extra_env_variables must be a dict"
                 return actions.Result(error=msg)
+
+        if self.gather_facts:
+            command.extend(['--gather-facts', self.gather_facts])
 
         try:
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
