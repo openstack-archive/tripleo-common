@@ -31,3 +31,14 @@
   tags:
     - output
   failed_when: deployment_result.rc not in (0, 2)
+  when: not ansible_check_mode
+
+- name: "Check-mode for Run deployment {{ item }}"
+  shell: |
+    [[ -e /var/lib/heat-config/deployed/{{ vars[item].id }}.json ]]
+  become: true
+  register: deploy_exists
+  changed_when: deploy_exists.rc != 0
+  when: ansible_check_mode
+  check_mode: no
+  ignore_errors: yes
