@@ -18,6 +18,7 @@ import mock
 import operator
 import requests
 import six
+import urllib3
 
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image import image_uploader
@@ -402,47 +403,50 @@ class TestDockerImageUploader(base.TestCase):
                 ('docker.io/t/baz', 'rdo_release', set())
             ])
 
-    @mock.patch('time.sleep')
-    def test_pull_retry(self, sleep_mock):
+    @mock.patch('tenacity.wait.wait_random_exponential.__call__')
+    def test_pull_retry(self, mock_wait):
+        mock_wait.return_value = 0
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
         dockerc.pull.side_effect = [
-            ['{"error": "ouch"}'],
-            ['{"error": "ouch"}'],
+            urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
+            urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
             ['{"error": "ouch"}'],
             ['{"error": "ouch"}'],
             ['{"status": "done"}']
         ]
-        self.uploader._pull_retry(dockerc, image)
+        self.uploader._pull(dockerc, image)
 
-        self.assertEqual(sleep_mock.call_count, 4)
+        self.assertEqual(dockerc.pull.call_count, 5)
         dockerc.pull.assert_has_calls([
             mock.call(image, tag=None, stream=True)
         ])
 
-    @mock.patch('time.sleep')
-    def test_pull_retry_failure(self, sleep_mock):
+    @mock.patch('tenacity.wait.wait_random_exponential.__call__')
+    def test_pull_retry_failure(self, mock_wait):
+        mock_wait.return_value = 0
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
         dockerc.pull.side_effect = [
-            ['{"error": "ouch"}'],
-            ['{"error": "ouch"}'],
-            ['{"error": "ouch"}'],
-            ['{"error": "ouch"}'],
-            ['{"error": "ouch"}'],
+            urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
+            urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
+            urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
+            urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
+            urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
         ]
-        self.assertRaises(ImageUploaderException,
-                          self.uploader._pull_retry, dockerc, image)
+        self.assertRaises(urllib3.exceptions.ReadTimeoutError,
+                          self.uploader._pull, dockerc, image)
 
-        self.assertEqual(sleep_mock.call_count, 5)
+        self.assertEqual(dockerc.pull.call_count, 5)
         dockerc.pull.assert_has_calls([
             mock.call(image, tag=None, stream=True)
         ])
 
-    @mock.patch('time.sleep')
-    def test_push_retry(self, sleep_mock):
+    @mock.patch('tenacity.wait.wait_random_exponential.__call__')
+    def test_push_retry(self, mock_wait):
+        mock_wait.return_value = 0
         image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
@@ -453,15 +457,16 @@ class TestDockerImageUploader(base.TestCase):
             ['{"error": "ouch"}'],
             ['{"status": "done"}']
         ]
-        self.uploader._push_retry(dockerc, image)
+        self.uploader._push(dockerc, image)
 
-        self.assertEqual(sleep_mock.call_count, 4)
+        self.assertEqual(dockerc.push.call_count, 5)
         dockerc.push.assert_has_calls([
             mock.call(image, tag=None, stream=True)
         ])
 
-    @mock.patch('time.sleep')
-    def test_push_retry_failure(self, sleep_mock):
+    @mock.patch('tenacity.wait.wait_random_exponential.__call__')
+    def test_push_retry_failure(self, mock_wait):
+        mock_wait.return_value = 0
         image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
@@ -473,9 +478,9 @@ class TestDockerImageUploader(base.TestCase):
             ['{"error": "ouch"}'],
         ]
         self.assertRaises(ImageUploaderException,
-                          self.uploader._push_retry, dockerc, image)
+                          self.uploader._push, dockerc, image)
 
-        self.assertEqual(sleep_mock.call_count, 5)
+        self.assertEqual(dockerc.push.call_count, 5)
         dockerc.push.assert_has_calls([
             mock.call(image, tag=None, stream=True)
         ])

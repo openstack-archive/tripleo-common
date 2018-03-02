@@ -24,7 +24,7 @@ import requests
 import six
 from six.moves import urllib
 import subprocess
-import time
+import tenacity
 
 import docker
 try:
@@ -174,18 +174,23 @@ class DockerImageUploader(ImageUploader):
             LOG.info('Skipping upload for image %s' % image_name)
             return []
 
-        DockerImageUploader._pull_retry(dockerc, repo, tag=tag)
+        DockerImageUploader._pull(dockerc, repo, tag=tag)
 
         response = dockerc.tag(image=full_image, repository=new_repo,
                                tag=tag, force=True)
         LOG.debug(response)
 
-        DockerImageUploader._push_retry(dockerc, new_repo, tag=tag)
+        DockerImageUploader._push(dockerc, new_repo, tag=tag)
 
         LOG.info('Completed upload for image %s' % image_name)
         return full_image, full_new_repo
 
     @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def _pull(dockerc, image, tag=None):
         LOG.debug('Pulling %s' % image)
 
@@ -193,24 +198,14 @@ class DockerImageUploader(ImageUploader):
             status = json.loads(line)
             if 'error' in status:
                 LOG.warning('docker pull failed: %s' % status['error'])
-                return 1
-            LOG.debug(status.get('status'))
-        return 0
-
-    @staticmethod
-    def _pull_retry(dockerc, image, tag=None):
-        retval = -1
-        count = 0
-        while retval != 0:
-            if count >= 5:
                 raise ImageUploaderException('Could not pull image %s' % image)
-            count += 1
-            retval = DockerImageUploader._pull(dockerc, image, tag)
-            if retval != 0:
-                time.sleep(3)
-                LOG.warning('retrying pulling image: %s' % image)
 
     @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def _push(dockerc, image, tag=None):
         LOG.debug('Pushing %s' % image)
 
@@ -218,22 +213,7 @@ class DockerImageUploader(ImageUploader):
             status = json.loads(line)
             if 'error' in status:
                 LOG.warning('docker push failed: %s' % status['error'])
-                return 1
-            LOG.debug(status.get('status'))
-        return 0
-
-    @staticmethod
-    def _push_retry(dockerc, image, tag=None):
-        retval = -1
-        count = 0
-        while retval != 0:
-            if count >= 5:
                 raise ImageUploaderException('Could not push image %s' % image)
-            count += 1
-            retval = DockerImageUploader._push(dockerc, image, tag)
-            if retval != 0:
-                time.sleep(3)
-                LOG.warning('retrying pushing image: %s' % image)
 
     @staticmethod
     def _images_match(image1, image2, insecure_registries):
