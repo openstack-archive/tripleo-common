@@ -146,7 +146,7 @@ class DockerImageUploader(ImageUploader):
 
     def __init__(self):
         self.upload_tasks = []
-        self.secure_registries = set()
+        self.secure_registries = set(SECURE_REGISTRIES)
         self.insecure_registries = set()
 
     @staticmethod
