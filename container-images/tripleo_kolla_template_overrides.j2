@@ -64,6 +64,9 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_neutron_extend_start
 {% endblock %}
 
+{% set neutron_l3_agent_packages = ['docker'] %}
+{% set neutron_dhcp_agent_packages = ['docker'] %}
+
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
 # redis resource-agent requires pidof
 {% set redis_packages_append = ['stunnel', 'sysvinit-tools',
