@@ -710,8 +710,10 @@ container_images_template:
   - OS::TripleO::Services::CephRbdMirror
 
 - imagename: "{{namespace}}/{{name_prefix}}tempest{{name_suffix}}:{{tag}}"
-  params: None
-  services: None
+  params:
+  - DockerTempestImage
+  services:
+  - OS::TripleO::Services::Tempest
 
 {% if logging == "stdout" %}
 - imagename: "{{namespace}}/{{name_prefix}}rsyslog-base{{name_suffix}}:{{tag}}"
