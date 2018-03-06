@@ -336,19 +336,17 @@ class GenerateFencingParametersAction(base.TripleOAction):
 
     :param nodes_json: list of nodes & attributes in json format
     :param os_auth: dictionary of OS client auth data (if using pxe_ssh)
-    :param fence_action: action to take when fencing nodes
     :param delay: time to wait before taking fencing action
     :param ipmi_level: IPMI user level to use
     :param ipmi_cipher: IPMI cipher suite to use
     :param ipmi_lanplus: whether to use IPMIv2.0
     """
 
-    def __init__(self, nodes_json, os_auth, fence_action, delay,
+    def __init__(self, nodes_json, os_auth, delay,
                  ipmi_level, ipmi_cipher, ipmi_lanplus):
         super(GenerateFencingParametersAction, self).__init__()
         self.nodes_json = nodes_json
         self.os_auth = os_auth
-        self.fence_action = fence_action
         self.delay = delay
         self.ipmi_level = ipmi_level
         self.ipmi_cipher = ipmi_cipher
@@ -380,8 +378,6 @@ class GenerateFencingParametersAction(base.TripleOAction):
             if node["pm_type"] == "pxe_ssh":
                 # Ironic fencing driver
                 node_data["agent"] = "fence_ironic"
-                if self.fence_action:
-                    params["action"] = self.fence_action
                 params["auth_url"] = self.os_auth["auth_url"]
                 params["login"] = self.os_auth["login"]
                 params["passwd"] = self.os_auth["passwd"]
@@ -395,8 +391,6 @@ class GenerateFencingParametersAction(base.TripleOAction):
                   ("ipmitool", "ilo", "drac")):
                 # IPMI fencing driver
                 node_data["agent"] = "fence_ipmilan"
-                if self.fence_action:
-                    params["action"] = self.fence_action
                 params["ipaddr"] = node["pm_addr"]
                 params["passwd"] = node["pm_password"]
                 params["login"] = node["pm_user"]

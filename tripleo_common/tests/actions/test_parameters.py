@@ -916,7 +916,6 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
 
         action = parameters.GenerateFencingParametersAction(test_envjson,
                                                             test_osauth,
-                                                            "test_action",
                                                             28,
                                                             5,
                                                             0,
@@ -930,7 +929,6 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                          "agent": "fence_ipmilan",
                          "host_mac": "00:11:22:33:44:55",
                          "params": {
-                             "action": "test_action",
                              "delay": 28,
                              "ipaddr": "0.1.2.3",
                              "ipport": "0123",
@@ -947,7 +945,6 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                          "params": {
                              "auth_url": "test://auth.url",
                              "delay": 28,
-                             "action": "test_action",
                              "login": "test_os_username",
                              "passwd": "test_os_password",
                              "tenant_name": "test_os_tenant_name",
