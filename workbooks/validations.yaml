@@ -771,6 +771,8 @@ workflows:
 
       check_default_nodes_count:
         workflow: check_default_nodes_count
+        # ironic-nova sync happens once in two minutes
+        retry: count=12 delay=10
         input:
           stack_id: <% $.stack_id %>
           parameters: <% $.parameters %>
