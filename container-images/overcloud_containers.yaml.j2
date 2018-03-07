@@ -715,7 +715,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::Tempest
 
-{% if logging == "stdout" %}
 - imagename: "{{namespace}}/{{name_prefix}}rsyslog-base{{name_suffix}}:{{tag}}"
   params:
   - DockerRsyslogSidecarImage
@@ -724,4 +723,3 @@ container_images_template:
   - OS::TripleO::Services::HAproxy
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftStorage
-{% endif %}
