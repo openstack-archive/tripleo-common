@@ -37,11 +37,14 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
     """
 
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
-                 config_dir=tempfile.gettempdir(),
+                 config_dir=None,
                  container_config=constants.CONFIG_CONTAINER_NAME):
         super(GetOvercloudConfig, self).__init__(container)
         self.container = container
         self.config_dir = config_dir
+        if not self.config_dir:
+            self.config_dir = tempfile.mkdtemp(prefix='tripleo-',
+                                               suffix='-config')
         self.container_config = container_config
 
     def run(self, context):

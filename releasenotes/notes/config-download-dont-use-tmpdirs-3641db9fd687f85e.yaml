@@ -1,0 +1,9 @@
+---
+upgrade:
+  - |
+    ``openstack overcloud config download`` now writes directly to the
+    directory specified by ``--config-dir``. The directory contents will be
+    overwritten, preserving any contents not originating from the stack. A
+    ``--no-preserve-config`` option is provided which will cause the
+    ``--config-dir`` to be deleted and recreated if the``--config-dir``
+    location exists. Tmpdirs are no longer used.
