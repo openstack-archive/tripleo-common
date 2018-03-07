@@ -399,12 +399,6 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% block nova_metadata_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-metadata /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
 {% block nova_novncproxy_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-vnc-proxy /openstack/healthcheck && \
