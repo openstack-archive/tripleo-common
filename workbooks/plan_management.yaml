@@ -1443,3 +1443,45 @@ workflows:
                 selected_roles: <% $.get('selected_roles', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  list_plans:
+    description: >
+      This workflow lists all deployment plans residing in the undercloud.  A
+      deployment plan consists of a container marked with metadata
+      'x-container-meta-usage-tripleo'.
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - queue_name: tripleo
+
+    output:
+      plan_list: <% $.plans %>
+
+    tasks:
+      list_plans:
+        action: tripleo.plan.list
+        on-complete: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+          plans: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.list_plans
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                plans: <% $.get('plans', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
