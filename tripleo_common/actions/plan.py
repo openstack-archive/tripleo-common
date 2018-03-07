@@ -320,6 +320,9 @@ class UpdatePlanEnvironmentAction(base.TripleOAction):
                         pass
                 else:
                     plan_env[self.env_key].update({self.parameter: self.value})
+                plan_utils.update_in_env(swift, plan_env,
+                                         self.env_key,
+                                         value=plan_env[self.env_key])
             else:
                 msg = "The environment key doesn't exist: %s" % self.env_key
                 return actions.Result(error=msg)
