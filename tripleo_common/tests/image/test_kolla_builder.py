@@ -171,6 +171,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
                 'tag': 'current-tripleo',
+                'tag_from_label': 'rdo_version',
                 'neutron_driver': None
             },
             builder.container_images_template_inputs()
@@ -185,6 +186,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_prefix': 'prefix-',
                 'name_suffix': '-suffix',
                 'tag': 'master',
+                'tag_from_label': 'rdo_version',
                 'neutron_driver': 'ovn'
             },
             builder.container_images_template_inputs(

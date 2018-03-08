@@ -33,6 +33,7 @@ CONTAINER_IMAGES_DEFAULTS = {
     'ceph_tag': 'tag-stable-3.0-luminous-centos-7',
     'name_prefix': 'centos-binary-',
     'name_suffix': '',
+    'tag_from_label': 'rdo_version',
     'tag': 'current-tripleo',
     'neutron_driver': None,
 }
