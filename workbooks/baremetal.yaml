@@ -26,7 +26,7 @@ workflows:
         retry:
           delay: 3
           count: 400
-          continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
+          continue-on: <% task().result.provision_state != $.target_state %>
 
   set_power_state:
     input:
@@ -49,7 +49,7 @@ workflows:
         retry:
           delay: 6
           count: 20
-          continue-on: <% task(wait_for_power_state).result.power_state != $.target_state %>
+          continue-on: <% task().result.power_state != $.target_state %>
 
   manual_cleaning:
     input:
