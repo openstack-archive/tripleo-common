@@ -374,7 +374,7 @@ workflows:
           queue_name: <% $.queue_name %>
           reproduce_command: true
         publish:
-          log_path: <% task(run_ansible).result.get('log_path') %>
+          log_path: <% task().result.get('log_path') %>
         on-success:
           - ansible_passed: <% task().result.returncode = 0 %>
           - ansible_failed: <% task().result.returncode != 0 %>

@@ -49,7 +49,7 @@ workflows:
         publish:
             status: SUCCESS
             message: <% task().result %>
-            undercloud_db_password: <% task(get_database_credentials).result.variables.undercloud_db_password %>
+            undercloud_db_password: <% task().result.variables.undercloud_db_password %>
         on-success: create_database_backup
         on-error: send_message
         publish-on-error:
