@@ -61,7 +61,10 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% block neutron_server_footer %}
 RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
-    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_neutron_extend_start
+    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_neutron_extend_start; \
+    mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
 {% endblock %}
 
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
@@ -116,6 +119,12 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 
 ############################ service container footers #########################
 
+{% block aodh_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/aodh-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block aodh_evaluator_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/aodh-evaluator /openstack/healthcheck && \
@@ -134,6 +143,24 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block barbican_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/barbican-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block barbican_keystone_listener_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/barbican-keystone-listener /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block barbican_worker_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/barbican-worker /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block ceilometer_central_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-central /openstack/healthcheck && \
@@ -149,6 +176,12 @@ RUN mkdir -p /openstack && \
 {% block ceilometer_notification_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-notification /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block cinder_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-api /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
@@ -174,6 +207,18 @@ RUN mkdir -p /etc/libqb /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block collectd_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/collectd /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block etcd_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/etcd /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block glance_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/glance-api /openstack/healthcheck && \
@@ -181,6 +226,24 @@ RUN mkdir -p /openstack && \
     sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && \
     sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf && \
     echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_glance_extend_start
+{% endblock %}
+
+{% block gnocchi_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/gnocchi-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block gnocchi_metricd_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/gnocchi-metricd /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block gnocchi_statsd_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/gnocchi-statsd /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
 {% endblock %}
 
 {% block heat_api_footer %}
@@ -225,6 +288,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block iscsid_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/iscsid /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block keystone_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone-public /openstack/healthcheck && \
@@ -252,6 +321,18 @@ RUN mkdir -p /etc/libqb /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block memcached_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/memcached /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block mistral_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block mistral_engine_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-engine /openstack/healthcheck && \
@@ -261,6 +342,12 @@ RUN mkdir -p /openstack && \
 {% block mistral_executor_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-executor /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block multipathd_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/multipathd /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
@@ -336,6 +423,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block nova_placement_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-placement /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block octavia_health_manager_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/octavia-health-manager /openstack/healthcheck && \
@@ -360,6 +453,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block panko_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/panko-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% set rabbitmq_packages_append = [
     'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block rabbitmq_footer %}
@@ -369,7 +468,9 @@ RUN mkdir -p /etc/libqb /openstack && \
 {% endblock %}
 
 {% block redis_footer %}
-RUN mkdir /etc/libqb
+RUN mkdir /etc/libqb; mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/redis /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
 {% endblock %}
 
 {% block sahara_engine_footer %}
@@ -412,6 +513,12 @@ RUN mkdir -p /openstack && \
     sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && \
     sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf && \
     echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
+{% endblock %}
+
+{% block tacker_server_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/tacker /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
 {% endblock %}
 
 {% set ovn_northd_packages_append = [
