@@ -111,14 +111,12 @@ class ScaleDownActionTest(base.TestCase):
             constants.STACK_TIMEOUT_DEFAULT, ['resource_id'], 'stack')
         action.run(mock_ctx)
 
-        heatclient.stacks.update.assert_called_once_with(
-            'stack',
-            stack_name='stack',
-            template={'heat_template_version': '2016-04-30'},
-            environment=env,
-            existing=True,
-            files={},
-            timeout_mins=240)
+        clear_list = list(['ComputeCount', 'ComputeRemovalPolicies'])
+        _, kwargs = heatclient.stacks.update.call_args
+        self.assertEqual(set(kwargs['clear_parameters']), set(clear_list))
+        self.assertEqual(kwargs['environment'], env)
+        self.assertEqual(kwargs['existing'], True)
+        self.assertEqual(kwargs['files'], {})
 
         mock_cache.assert_called_once_with(
             mock_ctx,
