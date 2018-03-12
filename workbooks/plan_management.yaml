@@ -597,7 +597,6 @@ workflows:
       file in swift.  This workflow is called by cron trigger.
 
     input:
-      - queue_name: tripleo
       - logging_queue_name: tripleo-ui-logging
       - logging_container: tripleo-ui-logs
 
@@ -616,11 +615,6 @@ workflows:
         action: zaqar.claim_messages
         on-success:
           - format_messages: <% task().result.len() > 0 %>
-          - notify_zaqar: <% task().result.len() = 0 %>
-        on-error: notify_zaqar
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
         input:
           queue_name: <% $.logging_queue_name %>
           ttl: 60
@@ -642,10 +636,6 @@ workflows:
       upload_to_swift:
         action: tripleo.logging_to_swift.publish_ui_log_to_swift
         on-success: delete_messages
-        on-error: notify_zaqar
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
         input:
           logging_data: <% $.formatted_messages %>
           logging_container: <% $.logging_container %>
@@ -655,29 +645,11 @@ workflows:
       delete_messages:
         action: zaqar.delete_messages
         on-success: get_messages
-        on-error: notify_zaqar
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
         input:
           queue_name: <% $.logging_queue_name %>
           messages: <% $.message_ids %>
         publish:
           status: SUCCESS
-
-      notify_zaqar:
-        action: zaqar.queue_post
-        input:
-          queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.publish_ui_logs_to_swift
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   download_logs:
     description: Creates a tarball with logging data
