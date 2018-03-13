@@ -139,19 +139,13 @@ workflows:
           continue-on: <% task().result.provision_state != 'manageable' %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.manual_cleaning
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   validate_nodes:
     description: Validate nodes JSON
@@ -179,19 +173,13 @@ workflows:
           message: <% task(validate_nodes).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.validate_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   register_or_update:
     description: Take nodes JSON and create nodes in a "manageable" state
@@ -282,20 +270,14 @@ workflows:
           message: <% task(set_nodes_available).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.register_or_update
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                registered_nodes: <% $.registered_nodes or [] %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload: <% { registered_nodes => $.registered_nodes or [] } %>
 
   provide:
     description: Take a list of nodes and move them to "available"
@@ -365,19 +347,13 @@ workflows:
           message: <% task(try_power_off).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.provide
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   provide_manageable_nodes:
     description: Provide all nodes in a 'manageable' state.
@@ -413,19 +389,13 @@ workflows:
           status: SUCCESS
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.provide_manageable_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   manage:
     description: Set a list of nodes to 'manageable' state
@@ -460,19 +430,13 @@ workflows:
           message: <% task(set_nodes_manageable).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.manage
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   _introspect:
     description: >
@@ -531,19 +495,14 @@ workflows:
         on-success: send_message
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1._introspect
-              payload:
-                status: <% $.status %>
-                message: <% $.message %>
-                introspected_node: <% $.get('introspected_node') %>
-                node_uuid: <% $.node_uuid %>
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload: <% { introspected_node => $.get('introspected_node'), node_uuid => $.node_uuid } %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -675,19 +634,14 @@ workflows:
         on-complete: send_message
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.introspect
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                introspected_nodes: <% $.get('introspected_nodes', []) %>
-                failed_introspection: <% $.get('failed_introspection', []) %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload: <% { introspected_nodes => $.get('introspected_nodes', []), failed_introspection => $.get('failed_introspection', []) } %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -746,18 +700,14 @@ workflows:
           introspected_nodes: []
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.introspect_manageable_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                introspected_nodes: <% $.get('introspected_nodes', []) %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload: <% { introspected_nodes => $.get('introspected_nodes', []) } %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -807,19 +757,13 @@ workflows:
           message: <% task(configure_root_device).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.configure
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   configure_manageable_nodes:
     description: Update the boot configuration of all nodes in 'manageable' state.
@@ -874,19 +818,13 @@ workflows:
           message: <% task(get_manageable_nodes).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.configure_manageable_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   tag_node:
     description: Tag a node with a role
@@ -911,19 +849,13 @@ workflows:
           status: SUCCESS
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.tag_node
-              payload:
-                status: <% $.get('status', 'FAILED') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   tag_nodes:
     description: Runs the tag_node workflow in a loop
@@ -969,17 +901,13 @@ workflows:
           status: SUCCESS
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.tag_nodes
-              payload:
-                status: <% $.get('status', 'FAILED') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'FAILED') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1030,18 +958,14 @@ workflows:
           message: <% task(get_matching_nodes).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.nodes_with_profile
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                matching_nodes: <% $.matching_nodes or [] %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload: <% { matching_nodes => $.matching_nodes or [] } %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1095,19 +1019,13 @@ workflows:
           message: <% task(apply_configuration).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.create_raid_configuration
-              payload:
-                status: <% $.get('status', 'FAILED') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
 
   cellv2_discovery:
@@ -1146,19 +1064,13 @@ workflows:
           message: <% task(wait_for_nova_resources).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.cellv2_discovery
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
 
   discover_nodes:
@@ -1230,18 +1142,14 @@ workflows:
           message: <% task(probe_nodes).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.discover_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                nodes_json: <% $.get('nodes_json', []) %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload: <% { nodes_json => $.get('nodes_json', []) } %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1301,17 +1209,13 @@ workflows:
           message: <% task(enroll_nodes).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.discover_and_enroll_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                registered_nodes: <% $.get('registered_nodes', []) %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload: <% { registered_nodes => $.get('registered_nodes', []) } %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
