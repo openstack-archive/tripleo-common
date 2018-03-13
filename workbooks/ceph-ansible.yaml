@@ -79,7 +79,10 @@ workflows:
           become_user: root
           verbosity: 0
           ssh_private_key: <% $.private_key %>
+          #NOTE(gfidente): set ANSIBLE_CALLBACK_WHITELIST to empty string to avoid spurious output
+          #in the json output. The publish: directive will in fact parse the output.
           extra_env_variables:
+            ANSIBLE_CALLBACK_WHITELIST: ''
             ANSIBLE_HOST_KEY_CHECKING: 'False'
             ANSIBLE_STDOUT_CALLBACK: 'json'
           playbook:
