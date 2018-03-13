@@ -217,10 +217,10 @@ class Config(object):
             config_dict = self.get_config_dict(deployment)
 
             # deployment_name should be set via the name property on the
-            # Deployment resources in the templates, however, if it's None,
-            # default to the name of the parent_resource
+            # Deployment resources in the templates, however, if it's None
+            # or empty string, default to the name of the parent_resource.
             deployment_name = deployment.attributes['value'].get(
-                'name', deployment.parent_resource)
+                'name') or deployment.parent_resource
             config_dict['deployment_name'] = deployment_name
 
             # reset deploy_server_id to the actual server_id since we have to
