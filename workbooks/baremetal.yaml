@@ -10,6 +10,14 @@ workflows:
       - node_uuid
       - state_action
       - target_state
+      - error_states:
+          # The default includes all failure states, even unused by TripleO.
+          - 'error'
+          - 'adopt failed'
+          - 'clean failed'
+          - 'deploy failed'
+          - 'inspect failed'
+          - 'rescue failed'
 
     tags:
       - tripleo-common-managed
@@ -18,38 +26,83 @@ workflows:
 
       set_provision_state:
         on-success: wait_for_provision_state
+        on-error: set_provision_state_failed
         action: ironic.node_set_provision_state node_uuid=<% $.node_uuid %> state=<% $.state_action %>
 
+      set_provision_state_failed:
+        publish:
+          message: <% task(set_provision_state).result %>
+        on-complete: fail
+
       wait_for_provision_state:
-        action: ironic.node_get node_id=<% $.node_uuid %>
+        action: ironic.node_get
+        input:
+          node_id: <% $.node_uuid %>
+          fields: ['provision_state', 'last_error']
         timeout: 1200 #20 minutes
         retry:
           delay: 3
           count: 400
-          continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
+          continue-on: <% not task().result.provision_state in [$.target_state] + $.error_states %>
+        on-complete:
+          - state_not_reached: <% task().result.provision_state != $.target_state %>
+
+      state_not_reached:
+        publish:
+          message: >-
+            Node <% $.node_uuid %> did not reach state "<% $.target_state %>",
+            the state is "<% task(wait_for_provision_state).result.provision_state %>",
+            error: <% task(wait_for_provision_state).result.last_error %>
+        on-complete: fail
+
+    output-on-error:
+      result: <% $.message %>
 
   set_power_state:
     input:
       - node_uuid
       - state_action
       - target_state
+      - error_state: 'error'
 
     tags:
       - tripleo-common-managed
 
     tasks:
 
-      set_provision_state:
+      set_power_state:
         on-success: wait_for_power_state
+        on-error: set_power_state_failed
         action: ironic.node_set_power_state node_id=<% $.node_uuid %> state=<% $.state_action %>
 
+      set_power_state_failed:
+        publish:
+          message: <% task(set_power_state).result %>
+        on-complete: fail
+
       wait_for_power_state:
-        action: ironic.node_get node_id=<% $.node_uuid %>
+        action: ironic.node_get
+        input:
+          node_id: <% $.node_uuid %>
+          fields: ['power_state', 'last_error']
         timeout: 120 #2 minutes
         retry:
           delay: 6
           count: 20
-          continue-on: <% task(wait_for_power_state).result.power_state != $.target_state %>
+          continue-on: <% not task().result.power_state in [$.target_state, $.error_state] %>
+        on-complete:
+          - state_not_reached: <% task().result.power_state != $.target_state %>
+
+      state_not_reached:
+        publish:
+          message: >-
+            Node <% $.node_uuid %> did not reach power state "<% $.target_state %>",
+            the state is "<% task(wait_for_power_state).result.power_state %>",
+            error: <% task(wait_for_power_state).result.last_error %>
+        on-complete: fail
+
+    output-on-error:
+      result: <% $.message %>
 
   manual_cleaning:
     input:
@@ -395,6 +448,10 @@ workflows:
           node_uuid: <% $.uuid %>
           state_action: 'manage'
           target_state: 'manageable'
+          error_states:
+            # node going back to enroll designates power credentials failure
+            - 'enroll'
+            - 'error'
 
       set_status_failed_nodes_manageable:
         on-success: send_message
