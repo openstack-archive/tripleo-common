@@ -122,6 +122,7 @@ workflows:
         on-success: ceph_install
       ceph_install:
         with-items: playbook in <% list($.ceph_ansible_playbook).flatten() %>
+        concurrency: 1
         action: tripleo.ansible-playbook
         input:
           inventory:
