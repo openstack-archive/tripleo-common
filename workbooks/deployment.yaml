@@ -276,6 +276,8 @@ workflows:
 
       get_config:
         action: tripleo.config.get_overcloud_config
+        input:
+          container: <% $.get('plan_name') %>
         on-success: download_config
         on-error: send_message
         publish-on-error:
