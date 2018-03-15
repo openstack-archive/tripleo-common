@@ -52,6 +52,7 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
     def run(self, context):
         heat = self.get_orchestration_client(context)
         swift = self.get_object_client(context)
+        swiftservice = self.get_object_service(context)
 
         # Since the config-download directory is now a git repo, first download
         # the existing config container if it exists so we can reuse the
@@ -61,7 +62,7 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
                                           self.config_dir)
             # Delete the existing container before we re-upload, otherwise
             # files may not be fully overwritten.
-            swiftutils.delete_container(swift, self.container_config)
+            swiftutils.delete_container(swiftservice, self.container_config)
         except swiftexceptions.ClientException as err:
             if err.http_status != 404:
                 raise
