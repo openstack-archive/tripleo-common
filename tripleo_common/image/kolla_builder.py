@@ -30,14 +30,13 @@ CONTAINER_IMAGES_DEFAULTS = {
     'namespace': 'docker.io/tripleomaster',
     'ceph_namespace': 'docker.io/ceph',
     'ceph_image': 'daemon',
-    'ceph_tag': 'tag-stable-3.0-luminous-centos-7',
+    'ceph_tag': 'v3.0.1-stable-3.0-luminous-centos-7-x86_64',
     'name_prefix': 'centos-binary-',
     'name_suffix': '',
     'tag': 'current-tripleo',
     'neutron_driver': None,
     'logging': 'files'
 }
-
 
 DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                      'container-images',
