@@ -54,6 +54,9 @@ DEFAULT_TEMPLATES_PATH = '/usr/share/openstack-tripleo-heat-templates/'
 DEFAULT_VALIDATIONS_PATH = \
     '/usr/share/openstack-tripleo-validations/validations/'
 
+# The path to the local CA certificate installed on the undercloud
+LOCAL_CACERT_PATH = '/etc/pki/ca-trust/source/anchors/cm-local-ca.pem'
+
 # TRIPLEO_META_USAGE_KEY is inserted into metadata for containers created in
 # Swift via SwiftPlanStorageBackend to identify them from other containers
 TRIPLEO_META_USAGE_KEY = 'x-container-meta-usage-tripleo'
