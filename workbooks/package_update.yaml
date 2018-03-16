@@ -111,6 +111,7 @@ workflows:
             ANSIBLE_HOST_KEY_CHECKING: 'False'
       - verbosity: 1
       - work_dir: /var/lib/mistral
+      - skip_tags: ''
 
     tags:
       - tripleo-common-managed
@@ -144,6 +145,7 @@ workflows:
           module_path: <% $.module_path %>
           queue_name: <% $.ansible_queue_name %>
           execution_id: <% execution().id %>
+          skip_tags: <% $.skip_tags %>
         on-success:
           - node_update_passed: <% task().result.returncode = 0 %>
           - node_update_failed: <% task().result.returncode != 0 %>
