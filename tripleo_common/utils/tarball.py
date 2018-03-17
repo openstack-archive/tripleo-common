@@ -17,14 +17,18 @@ import logging
 from oslo_concurrency import processutils
 
 LOG = logging.getLogger(__name__)
+DEFAULT_TARBALL_EXCLUDES = ['.git', '.tox', '*.pyc', '*.pyo']
 
 
-def create_tarball(directory, filename, options='-czf'):
+def create_tarball(directory, filename, options='-czf',
+                   excludes=DEFAULT_TARBALL_EXCLUDES):
     """Create a tarball of a directory."""
     LOG.debug('Creating tarball of %s at location %s' % (directory, filename))
-    processutils.execute('/usr/bin/tar', '-C', directory, options, filename,
-                         '--exclude', '.git', '--exclude', '.tox',
-                         '--exclude', '*.pyc', '--exclude', '*.pyo', '.')
+    cmd = ['/usr/bin/tar', '-C', directory, options, filename]
+    for x in excludes:
+        cmd.extend(['--exclude', x])
+    cmd.extend(['.'])
+    processutils.execute(*cmd)
 
 
 def tarball_extract_to_swift_container(object_client, filename, container):
