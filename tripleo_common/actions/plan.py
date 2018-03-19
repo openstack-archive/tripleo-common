@@ -497,7 +497,7 @@ class RemoveNoopDeployStepAction(base.TripleOAction):
                     steps.append("OS::TripleO::Tasks::%sPostConfig" % role)
         # Remove noop Steps
         for step in steps:
-            if step in plan_env['resource_registry'].keys():
+            if step in plan_env.get('resource_registry', {}):
                 if plan_env['resource_registry'][step] == 'OS::Heat::None':
                     plan_env['resource_registry'].pop(step)
         # Push plan_env
