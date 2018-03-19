@@ -608,7 +608,7 @@ workflows:
       successful_introspection:
         publish:
           status: SUCCESS
-          message: 'Successfully introspected nodes.'
+          message: Successfully introspected <% $.introspected_nodes.len() %> node(s).
         on-complete: send_message
 
       unhandled_error:
@@ -648,7 +648,7 @@ workflows:
 
       get_manageable_nodes:
         action: ironic.node_list maintenance=False associated=False
-        on-success: introspect_manageable
+        on-success: validate_nodes
         on-error: set_status_failed_get_manageable_nodes
         publish:
           managed_nodes: <% task().result.where($.provision_state = 'manageable').uuid %>
@@ -658,6 +658,17 @@ workflows:
         publish:
           status: FAILED
           message: <% task(get_manageable_nodes).result %>
+
+      validate_nodes:
+        on-success:
+          - introspect_manageable: <% $.managed_nodes.len() > 0 %>
+          - set_status_failed_no_nodes: <% $.managed_nodes.len() = 0 %>
+
+      set_status_failed_no_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: No manageable nodes to introspect. Check node states and maintenance.
 
       introspect_manageable:
         on-success: send_message
@@ -669,7 +680,6 @@ workflows:
           queue_name: <% $.queue_name %>
         publish:
           introspected_nodes: <% task().result.introspected_nodes %>
-          message: 'Nodes introspected successfully.'
 
       set_status_introspect_manageable:
         on-success: send_message
