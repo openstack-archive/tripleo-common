@@ -1,0 +1,5 @@
+---
+fixes:
+  - When using config-download, previously failed server deployments will be
+    automatically retried on subsequent runs with ansible-playbook. Previously,
+    -e force=true would have to be passed to trigger this behavior.
