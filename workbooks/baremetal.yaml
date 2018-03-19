@@ -206,7 +206,7 @@ workflows:
           queue_name: <% $.queue_name %>
         publish:
           status: SUCCESS
-          message: Nodes set to managed.
+          message: <% $.new_nodes.len() %> node(s) successfully moved to the "manageable" state.
 
       set_status_failed_nodes_managed:
         on-success: send_message
@@ -220,7 +220,7 @@ workflows:
         workflow: tripleo.baremetal.v1.provide node_uuids=<% $.new_nodes.uuid %> queue_name=<% $.queue_name %>
         publish:
           status: SUCCESS
-          message: Nodes set to available.
+          message: <% $.new_nodes.len() %> node(s) successfully moved to the "available" state.
 
       set_status_failed_nodes_available:
         on-success: send_message
@@ -303,7 +303,7 @@ workflows:
           target_state: 'power off'
         publish:
           status: SUCCESS
-          message: 'Successfully set nodes state to available.'
+          message: <% $.node_uuids.len() %> node(s) successfully moved to the "available" state.
 
       power_off_failed:
         on-success: send_message
