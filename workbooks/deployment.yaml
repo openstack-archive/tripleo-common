@@ -113,6 +113,7 @@ workflows:
       - timeout: 240
       - skip_deploy_identifier: False
       - queue_name: tripleo
+      - config_download: False
 
     tags:
       - tripleo-common-managed
@@ -125,7 +126,7 @@ workflows:
           type: <% execution().name %>
           status: RUNNING
           deployment_status: DEPLOYING
-          message: "Workflow Started"
+          message: "Initializing <% $.container %> plan deployment"
           execution: <% execution() %>
           plan_name: <% $.container %>
         on-complete: add_validation_ssh_key
@@ -166,8 +167,20 @@ workflows:
         action: tripleo.baremetal.cell_v2_discover_hosts
         publish-on-error:
           message: <% task().result %>
-        on-success: deploy
+        on-success: send_stack_deployment_message
         on-error: set_deployment_failed
+
+      send_stack_deployment_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: RUNNING
+          deployment_status: DEPLOYING
+          message: "Creating <% $.container %> Heat stack"
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+        on-complete: deploy
 
       deploy:
         action: tripleo.deployment.deploy
@@ -175,6 +188,72 @@ workflows:
           timeout: <% $.timeout %>
           container: <% $.container %>
           skip_deploy_identifier: <% $.skip_deploy_identifier %>
+        publish-on-error:
+          message: <% task().result %>
+        on-success:
+          - wait_for_stack_complete: <% $.config_download %>
+          - set_deployment_success: <% not $.config_download %>
+        on-error: set_deployment_failed
+
+      wait_for_stack_complete:
+        workflow: tripleo.stack.v1.wait_for_stack_complete_or_failed stack=<% $.container %>
+        publish-on-error:
+          message: <% task().result %>
+        publish:
+          message: Stack status <% task().result.stack_status %>
+        on-error: set_deployment_failed
+        on-success:
+          - message_stack_complete: <% task().result.stack_status = "CREATE_COMPLETE" %>
+          - get_servers: <% task().result.stack_status = "CREATE_COMPLETE" %>
+          - set_deployment_failed: <% task().result.stack_status != "CREATE_COMPLETE" %>
+
+      message_stack_complete:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'RUNNING') %>
+          deployment_status: DEPLOYING
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get("message", "") %>
+
+      get_servers:
+        action: nova.servers_list
+        publish:
+          # FIXME(mandre) we want only the servers part of the plan
+          servers: <% task().result._info.select($.addresses.ctlplane.addr).flatten() %>
+        publish-on-error:
+          message: <% task().result %>
+        on-success: get_private_key
+        on-error: set_deployment_failed
+
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task().result %>
+        publish-on-error:
+          message: <% task().result %>
+        on-success: enable_ssh_admin
+        on-error: set_deployment_failed
+
+      enable_ssh_admin:
+        workflow: tripleo.access.v1.enable_ssh_admin
+        input:
+          ssh_servers: <% $.servers %>
+          ssh_private_key: <% $.private_key %>
+          # FIXME(mandre) this shouldn't be hardcoded
+          ssh_user: heat-admin
+        publish-on-error:
+          message: <% task().result %>
+        on-success: config_download_deploy
+        on-error: set_deployment_failed
+
+      config_download_deploy:
+        workflow: config_download_deploy
+        input:
+          plan_name: <% $.container %>
+          queue_name: <% $.queue_name %>
         publish-on-error:
           message: <% task().result %>
         on-success: set_deployment_success
@@ -284,6 +363,7 @@ workflows:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
           status: <% $.get('status', 'RUNNING') %>
+          deployment_status: DEPLOYING
           execution: <% execution() %>
           message: Config downloaded at <% $.get('work_dir') %>/<% execution().id %>
           plan_name: <% $.plan_name %>
@@ -319,6 +399,7 @@ workflows:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
           status: <% $.get('status', 'RUNNING') %>
+          deployment_status: DEPLOYING
           execution: <% execution() %>
           message: Inventory generated at <% $.get('inventory') %>
           plan_name: <% $.plan_name %>
@@ -330,6 +411,7 @@ workflows:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
           status: <% $.get('status', 'RUNNING') %>
+          deployment_status: DEPLOYING
           execution: <% execution() %>
           plan_name: <% $.plan_name %>
           message: >
