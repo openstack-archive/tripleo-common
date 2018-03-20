@@ -29,33 +29,28 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: <% task(validate_network_names).result %>
 
       set_status_error:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: "One or more entries did not contain the required field 'name'"
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.networks.v1.validate_networks_input
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
 
   update_networks:
     description: >
@@ -87,7 +82,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       validate_network_files:
         description: >
@@ -103,7 +98,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       get_available_networks:
         workflow: tripleo.plan_management.v1.list_available_networks
@@ -116,7 +111,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       get_current_networks:
         workflow: tripleo.plan_management.v1.get_network_data
@@ -130,7 +125,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       update_network_data:
         description: >
@@ -146,7 +141,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       update_network_data_in_swift:
         description: >
@@ -160,7 +155,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       regenerate_templates:
         action: tripleo.templates.process container=<% $.container %>
@@ -168,7 +163,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       get_networks:
         description: >
@@ -185,24 +180,20 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: <% task(get_networks).result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.networks.v1.update_networks
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
+          plan_name: <% $.container %>
