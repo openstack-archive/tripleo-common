@@ -100,7 +100,7 @@ workflows:
     description: Take a container and perform an update nodes by nodes
 
     input:
-      - node_user: heat-admin
+      - node_user: tripleo-admin
       - nodes
       - playbook
       - inventory_file
