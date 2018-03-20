@@ -64,30 +64,25 @@ workflows:
           use_default_templates: true
 
       set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: <% task(call_create_deployment_plan).result %>
 
       call_create_deployment_plan_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(call_create_deployment_plan).result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.create_default_deployment_plan
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
 
   create_deployment_plan:
     description: >
@@ -117,7 +112,7 @@ workflows:
 
       verify_container_doesnt_exist:
         action: swift.head_container container=<% $.container %>
-        on-success: notify_zaqar
+        on-success: send_message
         on-error: create_container
         publish:
           status: FAILED
@@ -172,7 +167,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       container_images_prepare:
         description: >
@@ -187,67 +182,62 @@ workflows:
         on-error: process_templates_set_status_failed
 
       set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: 'Plan created.'
 
       create_container_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(create_container).result %>
 
       clone_git_repo_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(clone_git_repo).result %>
 
       upload_templates_directory_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(upload_templates_directory).result %>
 
       upload_to_container_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(upload_default_templates).result %>
 
       ensure_passwords_exist_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(ensure_passwords_exist).result %>
 
       process_templates_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(process_templates).result %>
 
       container_images_prepare_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(container_images_prepare).result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.create_deployment_plan
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
 
   update_deployment_plan:
     input:
@@ -317,61 +307,56 @@ workflows:
         on-error: process_templates_set_status_failed
 
       set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: 'Plan updated.'
 
       create_swift_rings_backup_plan_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(create_swift_rings_backup_plan).result %>
 
       clone_git_repo_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(clone_git_repo).result %>
 
       upload_templates_directory_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(upload_templates_directory).result %>
 
       process_templates_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(process_templates).result %>
 
       ensure_passwords_exist_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(ensure_passwords_exist).result %>
 
       container_images_prepare_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(container_images_prepare).result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.update_deployment_plan
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
 
   delete_deployment_plan:
     description: >
@@ -388,7 +373,7 @@ workflows:
     tasks:
       delete_plan:
         action: tripleo.plan.delete container=<% $.container %>
-        on-complete: notify_zaqar
+        on-complete: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -396,19 +381,15 @@ workflows:
           status: SUCCESS
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.delete_deployment_plan
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
 
 
   get_passwords:
@@ -433,36 +414,32 @@ workflows:
         on-error: get_passwords_set_status_failed
 
       get_passwords_set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: <% task(get_environment_passwords).result %>
 
       get_passwords_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(get_environment_passwords).result %>
 
       verify_container_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(verify_container_exists).result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.get_passwords
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
 
   export_deployment_plan:
     description: Creates an export tarball for a given plan
@@ -494,38 +471,35 @@ workflows:
           valid: 3600
 
       set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: <% task(create_tempurl).result %>
           tempurl: <% task(create_tempurl).result %>
 
       export_plan_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(export_plan).result %>
 
       create_tempurl_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(create_tempurl).result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.export_deployment_plan
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                tempurl: <% $.get('tempurl', '') %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          message: <% $.get('message', '') %>
+          payload:
+            tempurl: <% $.get('tempurl', '') %>
 
   get_deprecated_parameters:
     description: Gets the list of deprecated parameters in the whole of the plan including nested stack
@@ -612,21 +586,18 @@ workflows:
           message: <% task(get_roles).result %>
 
       send_message:
-        action: zaqar.queue_post
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.get_deprecated_parameters
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                deprecated: <% $.get('deprecated_result', []) %>
-                unused: <% $.get('unused_params', []) %>
-                invalid_role_specific: <% $.get('invalid_role_specific', []) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            deprecated: <% $.get('deprecated_result', []) %>
+            unused: <% $.get('unused_params', []) %>
+            invalid_role_specific: <% $.get('invalid_role_specific', []) %>
 
   update_parameters:
     description: >
@@ -771,42 +742,40 @@ workflows:
           tempurl: <% task().result %>
 
       set_status_success:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: <% task(create_tempurl).result %>
           tempurl: <% task(create_tempurl).result %>
 
       publish_logs_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(publish_logs).result %>
 
       download_logs_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(prepare_log_download).result %>
 
       create_tempurl_set_status_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: <% task(create_tempurl).result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.download_logs
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                tempurl: <% $.get('tempurl', '') %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
+          payload:
+            tempurl: <% $.get('tempurl', '') %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -833,26 +802,23 @@ workflows:
         publish:
           roles_data: <% yaml_parse(task().result.last()) %>
           status: SUCCESS
-        on-success: notify_zaqar
+        on-success: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.list_roles
-              payload:
-                status: <% $.status %>
-                roles_data: <% $.get('roles_data', {}) %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            roles_data: <% $.get('roles_data', {}) %>
 
   list_available_networks:
     input:
@@ -873,7 +839,7 @@ workflows:
         publish:
           network_names: <% task().result[1].where($.name.startsWith('networks/')).where($.name.endsWith('.yaml')).name %>
         on-success: get_network_files
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -882,7 +848,7 @@ workflows:
         with-items: network_name in <% $.network_names %>
         action: swift.get_object
         on-success: transform_output
-        on-error: notify_zaqar
+        on-error: send_message
         input:
           container: <% $.container %>
           obj: <% $.network_name %>
@@ -900,22 +866,19 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-complete: notify_zaqar
+        on-complete: send_message
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.list_available_networks
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                available_networks: <% $.get('available_networks', []) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            available_networks: <% $.get('available_networks', []) %>
 
   list_networks:
     input:
@@ -935,31 +898,27 @@ workflows:
         input:
           container: <% $.container %>
           obj: <% $.network_data_file %>
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           network_data: <% yaml_parse(task().result.last()) %>
           status: SUCCESS
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.list_networks
-              payload:
-                status: <% $.status %>
-                network_data: <% $.get('network_data', {}) %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            network_data: <% $.get('network_data', {}) %>
 
   validate_network_files:
     description: Validate network files exist
@@ -990,25 +949,20 @@ workflows:
         publish:
           status: SUCCESS
           message: <% task().result %>
-        on-success: notify_zaqar
+        on-success: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.validate_network_files
-              payload:
-                status: <% $.status %>
-                message: <% $.message %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.message %>
 
   validate_networks:
     description: Validate network files were generated properly and exist
@@ -1037,7 +991,7 @@ workflows:
           status: FAILED
           message: <% task().result %>
         on-error:
-          notify_zaqar
+          send_message
 
       validate_networks:
         workflow: validate_network_files
@@ -1048,24 +1002,23 @@ workflows:
         publish:
           status: SUCCESS
           message: <% task().result %>
-        on-success: notify_zaqar
+        on-success: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.validate_networks
-              payload:
-                status: <% $.status %>
-                network_data: <% $.get('network_data', {}) %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            network_data: <% $.get('network_data', {}) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1093,25 +1046,24 @@ workflows:
         publish:
           roles_data: <% task().result.roles_data %>
           status: SUCCESS
-        on-success: notify_zaqar
+        on-success: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
         on-error:
-          notify_zaqar
+          send_message
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.validate_networks
-              payload:
-                status: <% $.status %>
-                roles_data: <% $.get('roles_data', '') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            roles_data: <% $.get('roles_data', '') %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1133,27 +1085,23 @@ workflows:
           networks_not_found: <% $.networks_in_roles.toSet().difference($.defined_networks.toSet()) %>
         on-success:
           - network_not_found: <% $.networks_not_found %>
-          - notify_zaqar: <% not $.networks_not_found %>
+          - send_message: <% not $.networks_not_found %>
 
       network_not_found:
         publish:
           message: <% "Some networks in roles are not defined, {0}".format($.networks_not_found.join(', ')) %>
           status: FAILED
-        on-success: notify_zaqar
+        on-success: send_message
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1._validate_networks_from_role
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
 
   validate_roles_and_networks:
     description: Vaidate that roles and network data are valid
@@ -1184,7 +1132,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       validate_roles_data:
         workflow: validate_roles
@@ -1200,7 +1148,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       validate_roles_and_networks:
         workflow: _validate_networks_from_roles
@@ -1210,25 +1158,24 @@ workflows:
           queue_name: <% $.queue_name %>
         publish:
           status: SUCCESS
-        on-success: notify_zaqar
+        on-success: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result.message %>
-        on-error: notify_zaqar
+        on-error: send_message
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.validate_roles_and_networks
-              payload:
-                status: <% $.status %>
-                roles_data: <% $.get('roles_data', {}) %>
-                network_data: <% $.get('network_data', {}) %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            roles_data: <% $.get('roles_data', {}) %>
+            network_data: <% $.get('network_data', {}) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1251,7 +1198,7 @@ workflows:
         publish:
           role_names: <% task().result[1].where($.name.startsWith('roles/')).where($.name.endsWith('.yaml')).name %>
         on-success: get_role_files
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1260,7 +1207,7 @@ workflows:
         with-items: role_name in <% $.role_names %>
         action: swift.get_object
         on-success: transform_output
-        on-error: notify_zaqar
+        on-error: send_message
         input:
           container: <% $.container %>
           obj: <% $.role_name %>
@@ -1278,20 +1225,19 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-complete: notify_zaqar
+        on-complete: send_message
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.list_available_roles
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                available_roles: <% $.get('available_roles', []) %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            available_roles: <% $.get('available_roles', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1313,7 +1259,7 @@ workflows:
         publish:
           available_roles: <% task().result.available_roles %>
         on-success: validate_input
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1329,7 +1275,7 @@ workflows:
           roles: <% $.roles %>
           available_roles: <% $.available_roles %>
         on-success: get_network_data
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1345,7 +1291,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       validate_network_names:
         description: >
@@ -1358,7 +1304,7 @@ workflows:
           networks_in_roles: <% $.roles.networks.flatten().distinct() %>
           queue_name: <% $.queue_name %>
         on-success: get_current_roles
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result.message %>
@@ -1372,7 +1318,7 @@ workflows:
         publish:
             current_roles: <% task().result.roles_data %>
         on-success: update_roles_data
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1389,7 +1335,7 @@ workflows:
         publish:
           updated_roles_data: <% task().result.roles %>
         on-success: update_roles_data_in_swift
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1406,12 +1352,12 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
 
       regenerate_templates:
         action: tripleo.templates.process container=<% $.container %>
         on-success: get_updated_roles
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1424,23 +1370,22 @@ workflows:
         publish:
             updated_roles: <% task().result.roles_data %>
             status: SUCCESS
-        on-complete: notify_zaqar
+        on-complete: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.roles.v1.update_roles
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                updated_roles: <% $.get('updated_roles', []) %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            updated_roles: <% $.get('updated_roles', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1466,7 +1411,7 @@ workflows:
         publish:
           available_roles: <% task().result.available_roles %>
         on-success: get_current_roles
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1480,7 +1425,7 @@ workflows:
         publish:
           current_roles: <% task().result.roles_data %>
         on-success: gather_roles
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1501,7 +1446,7 @@ workflows:
         publish:
           gathered_roles: <% task().result.gathered_roles %>
         on-success: call_update_roles_workflow
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -1514,7 +1459,7 @@ workflows:
           roles_data_file: <% $.roles_data_file %>
           replace_all: <% $.replace_all %>
           queue_name: <% $.queue_name %>
-        on-complete: notify_zaqar
+        on-complete: send_message
         publish:
           selected_roles: <% task().result.updated_roles %>
           status: SUCCESS
@@ -1522,18 +1467,17 @@ workflows:
           status: FAILED
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.select_roles
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                selected_roles: <% $.get('selected_roles', []) %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+          message: <% $.get('message', '') %>
+          payload:
+            selected_roles: <% $.get('selected_roles', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
@@ -1555,7 +1499,7 @@ workflows:
     tasks:
       list_plans:
         action: tripleo.plan.list
-        on-complete: notify_zaqar
+        on-complete: send_message
         publish:
           status: SUCCESS
           message: <% task().result %>
@@ -1564,17 +1508,15 @@ workflows:
           status: FAILED
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.list_plans
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                plans: <% $.get('plans', []) %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
+          payload:
+            plans: <% $.get('plans', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
