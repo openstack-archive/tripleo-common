@@ -21,7 +21,7 @@ workflows:
       rotate_keys:
         action: tripleo.parameters.rotate_fernet_keys container=<% $.container %>
         on-success: deploy_ssh_key
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -29,7 +29,7 @@ workflows:
       deploy_ssh_key:
         workflow: tripleo.validations.v1.copy_ssh_key
         on-success: get_privkey
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -37,7 +37,7 @@ workflows:
       get_privkey:
         action: tripleo.validations.get_privkey
         on-success: deploy_keys
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -56,25 +56,21 @@ workflows:
             fernet_keys: <% task(rotate_keys).result %>
           use_openstack_credentials: true
           playbook: /usr/share/tripleo-common/playbooks/rotate-keys.yaml
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: <% task().result %>
-        on-error: notify_zaqar
+        on-error: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.fernet_keys.v1.rotate_fernet_keys
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
