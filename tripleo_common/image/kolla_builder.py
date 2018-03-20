@@ -45,6 +45,12 @@ DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
 
 
 def container_images_prepare_defaults():
+    """Return default dict for prepare substitutions
+
+    This can be used as the mapping_args argument to the
+    container_images_prepare function to get the same result as not specifying
+    any mapping_args.
+    """
     return KollaImageBuilder.container_images_template_inputs()
 
 
@@ -53,6 +59,25 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              pull_source=None, push_destination=None,
                              mapping_args=None, output_env_file=None,
                              output_images_file=None, tag_from_label=None):
+    """Perform container image preparation
+
+    :param template_file: path to Jinja2 file containing all image entries
+    :param excludes: list of image name substrings to use for exclude filter
+    :param service_filter: set of heat resource types for containerized
+                           services to filter by
+    :param pull_source: DEPRECATED namespace for pulling during image uploads
+    :param push_destination: namespace for pushing during image uploads. When
+                             specified the image parameters will use this
+                             namespace too.
+    :param mapping_args: dict containing substitutions for template file. See
+                         CONTAINER_IMAGES_DEFAULTS for expected keys.
+    :param output_env_file: key to use for heat environment parameter data
+    :param output_images_file: key to use for image upload data
+    :param tag_from_label: string when set will trigger tag discovery on every
+                           image
+    :returns: dict with entries for the supplied output_env_file or
+              output_images_file
+    """
 
     if mapping_args is None:
         mapping_args = {}
@@ -115,6 +140,12 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
 
 def detect_insecure_registries(params):
+    """Detect insecure registries in image parameters
+
+    :param params: dict of container image parameters
+    :returns: dict containing DockerInsecureRegistryAddress parameter to be
+              merged into other parameters
+    """
     insecure = set()
     uploader = image_uploader.ImageUploadManager().uploader('docker')
     for image in params.values():
