@@ -46,6 +46,43 @@ DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                      'overcloud_containers.yaml.j2')
 
 
+def get_enabled_services(environment, roles_data):
+    """Build list of enabled services
+
+    :param environment: Heat environment for deployment
+    :param roles_data: Roles file data used to filter services
+    :returns: set of resource types representing enabled services
+    """
+    enabled_services = set()
+    parameter_defaults = environment.get('parameter_defaults', {})
+    for role in roles_data:
+        count = parameter_defaults.get('%sCount' % role['name'],
+                                       role.get('CountDefault', 0))
+        if count > 0:
+            enabled_services.update(
+                parameter_defaults.get('%sServices' % role['name'],
+                                       role.get('ServicesDefault', [])))
+    return enabled_services
+
+
+def build_service_filter(environment, roles_data):
+    """Build list of containerized services
+
+    :param environment: Heat environment for deployment
+    :param roles_data: Roles file data used to filter services
+    :returns: set of resource types representing containerized services
+    """
+    enabled_services = get_enabled_services(environment, roles_data)
+    containerized_services = set()
+    for service, env_path in environment.get('resource_registry', {}).items():
+        # Use the template path to determine if it represents a
+        # containerized service
+        if '/docker/services/' in env_path:
+            containerized_services.add(service)
+
+    return containerized_services.intersection(enabled_services)
+
+
 def container_images_prepare_defaults():
     """Return default dict for prepare substitutions
 
@@ -66,7 +103,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     :param template_file: path to Jinja2 file containing all image entries
     :param excludes: list of image name substrings to use for exclude filter
     :param service_filter: set of heat resource types for containerized
-                           services to filter by
+                           services to filter by. Disable by passing None.
     :param pull_source: DEPRECATED namespace for pulling during image uploads
     :param push_destination: namespace for pushing during image uploads. When
                              specified the image parameters will use this
@@ -83,6 +120,12 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
     if mapping_args is None:
         mapping_args = {}
+
+    if service_filter:
+        if 'OS::TripleO::Services::OpenDaylightApi' in service_filter:
+            mapping_args['neutron_driver'] = 'odl'
+        elif 'OS::TripleO::Services::OVNController' in service_filter:
+            mapping_args['neutron_driver'] = 'ovn'
 
     def ffunc(entry):
         imagename = entry.get('imagename', '')

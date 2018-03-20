@@ -478,19 +478,24 @@ class TestPrepare(base.TestCase):
     def test_prepare_neutron_driver_ovn(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': 't/p-neutron-server-ovn:l'}
+                {'imagename': 't/p-neutron-server-ovn:l'},
+                {'imagename': 't/p-ovn-controller:l'}
             ],
             'environments/containers-default-parameters.yaml': {
                 'DockerNeutronApiImage': 't/p-neutron-server-ovn:l',
-                'DockerNeutronConfigImage': 't/p-neutron-server-ovn:l'
+                'DockerNeutronConfigImage': 't/p-neutron-server-ovn:l',
+                'DockerOvnControllerConfigImage': 't/p-ovn-controller:l',
+                'DockerOvnControllerImage': 't/p-ovn-controller:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
                 output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
-                service_filter=['OS::TripleO::Services::NeutronServer'],
+                service_filter=[
+                    'OS::TripleO::Services::NeutronServer',
+                    'OS::TripleO::Services::OVNController'
+                ],
                 mapping_args={
-                    'neutron_driver': 'ovn',
                     'namespace': 't',
                     'name_prefix': 'p',
                     'name_suffix': '',
@@ -503,23 +508,144 @@ class TestPrepare(base.TestCase):
     def test_prepare_neutron_driver_odl(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': 't/p-neutron-server-opendaylight:l'}
+                {'imagename': 't/neutron-server-opendaylight:l'},
+                {'imagename': 't/opendaylight:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'DockerNeutronApiImage': 't/p-neutron-server-opendaylight:l',
-                'DockerNeutronConfigImage': 't/p-neutron-server-opendaylight:l'
+                'DockerNeutronApiImage': 't/neutron-server-opendaylight:l',
+                'DockerNeutronConfigImage': 't/neutron-server-opendaylight:l',
+                'DockerOpendaylightApiImage': 't/opendaylight:l',
+                'DockerOpendaylightConfigImage': 't/opendaylight:l',
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
                 output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
-                service_filter=['OS::TripleO::Services::NeutronServer'],
+                service_filter=[
+                    'OS::TripleO::Services::NeutronServer',
+                    'OS::TripleO::Services::OpenDaylightApi'
+                ],
                 mapping_args={
-                    'neutron_driver': 'odl',
                     'namespace': 't',
-                    'name_prefix': 'p',
+                    'name_prefix': '',
                     'name_suffix': '',
                     'tag': 'l',
                 }
             )
+        )
+
+    def test_get_enabled_services_empty(self):
+        self.assertEqual(
+            set([]),
+            kb.get_enabled_services({}, [])
+        )
+
+    def test_get_enabled_services_default_count(self):
+        self.assertEqual(
+            set([
+                'OS::TripleO::Services::NeutronApi',
+                'OS::TripleO::Services::NovaApi',
+                'OS::TripleO::Services::NovaCompute'
+            ]),
+            kb.get_enabled_services({
+                'parameter_defaults': {}
+            }, [
+                {
+                    'name': 'Controller',
+                    'CountDefault': 1,
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::NeutronApi',
+                        'OS::TripleO::Services::NovaApi'
+                    ]
+                }, {
+                    'name': 'Compute',
+                    'CountDefault': 1,
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::NovaCompute'
+                    ]
+                }, {
+                    'name': 'BlockStorage',
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::Ntp'
+                    ]
+                }
+            ])
+        )
+
+    def test_get_enabled_services(self):
+        self.assertEqual(
+            set([
+                'OS::TripleO::Services::NeutronApi',
+                'OS::TripleO::Services::NovaApi',
+                'OS::TripleO::Services::NovaCompute',
+                'OS::TripleO::Services::NovaLibvirt'
+            ]),
+            kb.get_enabled_services({
+                'parameter_defaults': {
+                    'ControllerCount': 1,
+                    'ComputeCount': 1,
+                    'BlockStorageCount': 0,
+                    'ComputeServices': [
+                        'OS::TripleO::Services::NovaCompute',
+                        'OS::TripleO::Services::NovaLibvirt'
+                    ]
+                }
+            }, [
+                {
+                    'name': 'Controller',
+                    'CountDefault': 0,
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::NeutronApi',
+                        'OS::TripleO::Services::NovaApi'
+                    ]
+                }, {
+                    'name': 'Compute',
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::NovaCompute'
+                    ]
+                }, {
+                    'name': 'BlockStorage',
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::Ntp'
+                    ]
+                }
+            ])
+        )
+
+    def test_build_service_filter(self):
+        self.assertEqual(
+            set([
+                'OS::TripleO::Services::NovaApi',
+                'OS::TripleO::Services::NovaCompute'
+            ]),
+            kb.build_service_filter({
+                'resource_registry': {
+                    'OS::TripleO::Services::NeutronApi':
+                    '/tht/puppet/services/foo.yaml',
+                    'OS::TripleO::Services::NovaApi':
+                    '/tht/docker/services/foo.yaml',
+                    'OS::TripleO::Services::NovaCompute':
+                    '/tht/docker/services/foo.yaml',
+                }
+            }, [
+                {
+                    'name': 'Controller',
+                    'CountDefault': 1,
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::NeutronApi',
+                        'OS::TripleO::Services::NovaApi'
+                    ]
+                }, {
+                    'name': 'Compute',
+                    'CountDefault': 1,
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::NovaCompute'
+                    ]
+                }, {
+                    'name': 'BlockStorage',
+                    'ServicesDefault': [
+                        'OS::TripleO::Services::Ntp'
+                    ]
+                }
+            ])
         )
