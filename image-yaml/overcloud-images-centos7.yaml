@@ -9,6 +9,8 @@ disk_images:
       FS_TYPE: xfs
     packages:
       - yum-plugin-priorities
+    options:
+      - "--mkfs-options '-s size=4096'"
   -
     imagename: ironic-python-agent
     type: qcow2
