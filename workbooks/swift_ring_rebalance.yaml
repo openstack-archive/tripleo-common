@@ -20,8 +20,6 @@ workflows:
           output: <% task().result %>
         input:
           ssh_private_key: <% task(get_private_key).result %>
-          ssh_common_args: '-o StrictHostKeyChecking=no'
-          ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
           verbosity: 1
           remote_user: heat-admin
           become: true

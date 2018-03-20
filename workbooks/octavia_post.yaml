@@ -108,8 +108,6 @@ workflows:
           become: true
           become_user: root
           ssh_private_key: <% $.private_key %>
-          ssh_common_args: '-o StrictHostKeyChecking=no'
-          ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
           extra_env_variables: <% $.ansible_extra_env_variables %>
           extra_vars:
             os_password: <% $.overcloud_password %>
