@@ -132,21 +132,16 @@ workflows:
           message: <% task(update_derive_parameters_in_plan).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.derive_params.v1.derive_parameters
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                result: <% $.get('result', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = 'FAILED' %>
-
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
+          plan_name: <% $.plan_name %>
+          payload:
+            result: <% $.get('result', '') %>
 
   _derive_parameters_per_role:
     description: >
