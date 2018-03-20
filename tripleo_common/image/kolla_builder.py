@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import yaml
 
 from tripleo_common.image import base
@@ -81,6 +82,57 @@ def build_service_filter(environment, roles_data):
             containerized_services.add(service)
 
     return containerized_services.intersection(enabled_services)
+
+
+def container_images_prepare_multi(environment, roles_data):
+    """Perform multiple container image prepares and merge result
+
+    Given the full heat environment and roles data, perform multiple image
+    prepare operations. The data to drive the multiple prepares is taken from
+    the ContainerImagePrepare parameter in the provided environment. If
+    push_destination is specified, uploads will be performed during the
+    preparation.
+
+    :param environment: Heat environment for deployment
+    :param roles_data: Roles file data used to filter services
+    :returns: dict containing merged container image parameters from all
+              prepare operations
+    """
+
+    pd = environment.get('parameter_defaults', {})
+    cip = pd.get('ContainerImagePrepare')
+    if not cip:
+        return
+
+    env_params = {}
+    service_filter = build_service_filter(environment, roles_data)
+
+    for cip_entry in cip:
+        mapping_args = cip_entry.get('set')
+        push_destination = cip_entry.get('push_destination')
+        pull_source = cip_entry.get('pull_source')
+
+        prepare_data = container_images_prepare(
+            excludes=cip_entry.get('excludes'),
+            service_filter=service_filter,
+            pull_source=pull_source,
+            push_destination=push_destination,
+            mapping_args=mapping_args,
+            output_env_file='image_params',
+            output_images_file='upload_data',
+            tag_from_label=cip_entry.get('tag_from_label'),
+        )
+        env_params.update(prepare_data['image_params'])
+
+        if push_destination or pull_source:
+            with tempfile.NamedTemporaryFile(mode='w') as f:
+                yaml.safe_dump({
+                    'container_images': prepare_data['upload_data']
+                }, f)
+                uploader = image_uploader.ImageUploadManager(
+                    [f.name], verbose=True)
+                uploader.upload()
+    return env_params
 
 
 def container_images_prepare_defaults():

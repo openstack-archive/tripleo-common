@@ -649,3 +649,88 @@ class TestPrepare(base.TestCase):
                 }
             ])
         )
+
+    @mock.patch('tripleo_common.image.kolla_builder.container_images_prepare')
+    @mock.patch('tripleo_common.image.image_uploader.ImageUploadManager',
+                autospec=True)
+    def test_container_images_prepare_multi(self, mock_im, mock_cip):
+        mapping_args = {
+            'namespace': 't',
+            'name_prefix': '',
+            'name_suffix': '',
+            'tag': 'l',
+        }
+        env = {
+            'parameter_defaults': {
+                'ContainerImagePrepare': [{
+                    'set': mapping_args,
+                    'tag_from_label': 'foo',
+                }, {
+                    'set': mapping_args,
+                    'tag_from_label': 'bar',
+                    'excludes': ['nova', 'neutron'],
+                    'push_destination': '192.0.2.1:8787'
+                }]
+            }
+        }
+        roles_data = []
+        mock_cip.side_effect = [
+            {
+                'image_params': {
+                    'FooImage': 't/foo:latest',
+                    'BarImage': 't/bar:latest',
+                    'BazImage': 't/baz:latest',
+                    'BinkImage': 't/bink:latest'
+                },
+                'upload_data': []
+            }, {
+                'image_params': {
+                    'BarImage': 't/bar:1.0',
+                    'BazImage': 't/baz:1.0'
+                },
+                'upload_data': [{
+                    'imagename': 't/bar:1.0',
+                    'push_destination': '192.0.2.1:8787'
+                }, {
+                    'imagename': 't/baz:1.0',
+                    'push_destination': '192.0.2.1:8787'
+                }]
+            },
+        ]
+
+        image_params = kb.container_images_prepare_multi(env, roles_data)
+
+        mock_cip.assert_has_calls([
+            mock.call(
+                excludes=None,
+                mapping_args=mapping_args,
+                output_env_file='image_params',
+                output_images_file='upload_data',
+                pull_source=None,
+                push_destination=None,
+                service_filter=set([]),
+                tag_from_label='foo'
+            ),
+            mock.call(
+                excludes=['nova', 'neutron'],
+                mapping_args=mapping_args,
+                output_env_file='image_params',
+                output_images_file='upload_data',
+                pull_source=None,
+                push_destination='192.0.2.1:8787',
+                service_filter=set([]),
+                tag_from_label='bar'
+            )
+        ])
+
+        mock_im.assert_called_once()
+
+        self.assertEqual(
+            {
+                'BarImage': 't/bar:1.0',
+                'BazImage': 't/baz:1.0',
+                'BinkImage': 't/bink:latest',
+                'FooImage': 't/foo:latest'
+            },
+            image_params
+        )
