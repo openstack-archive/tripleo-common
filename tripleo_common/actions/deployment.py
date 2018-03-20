@@ -164,6 +164,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
+        self.set_tls_parameters(parameters, env)
         try:
             plan_utils.update_in_env(swift, env, 'parameter_defaults',
                                      parameters)
@@ -200,6 +201,27 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         LOG.info("Performing Heat stack update")
         stack_args['existing'] = 'true'
         return heat.stacks.update(stack.id, **stack_args)
+
+    def set_tls_parameters(self, parameters, env,
+                           local_ca_path=constants.LOCAL_CACERT_PATH):
+        # Since the undercloud has TLS by default, we'll add the undercloud's
+        # CA to be trusted by the overcloud.
+        try:
+            with open(local_ca_path, 'r') as ca_file:
+                cacert = ca_file.read()
+                ca_map_entry = {
+                    'undercloud-ca': {
+                        'content': cacert
+                    }
+                }
+                parameters['CAMap'] = env['parameter_defaults'].get('CAMap',
+                                                                    {})
+                parameters['CAMap'].update(ca_map_entry)
+        except IOError:
+            # If the file wasn't found it means that the undercloud's TLS
+            # was explicitly disabled or another CA is being used. So we'll
+            # let the user handle this.
+            pass
 
 
 class OvercloudRcAction(base.TripleOAction):

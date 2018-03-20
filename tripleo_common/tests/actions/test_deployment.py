@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import mock
+import tempfile
 import yaml
 
 from heatclient import exc as heat_exc
@@ -360,6 +361,59 @@ class DeployStackActionTest(base.TestCase):
         swift.copy_object.assert_called_once_with(
             "overcloud-swift-rings", "swift-rings.tar.gz",
             "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
+
+    def test_set_tls_parameters_no_ca_found(self):
+        action = deployment.DeployStackAction(1, 'overcloud',
+                                              skip_deploy_identifier=True)
+        my_params = {}
+        my_env = {'parameter_defaults': {}}
+        action.set_tls_parameters(parameters=my_params, env=my_env,
+                                  local_ca_path='/tmp/my-unexistent-file.txt')
+        self.assertEqual(my_params, {})
+
+    def test_set_tls_parameters_ca_found_no_camap_provided(self):
+        action = deployment.DeployStackAction(1, 'overcloud',
+                                              skip_deploy_identifier=True)
+        my_params = {}
+        my_env = {'parameter_defaults': {}}
+        with tempfile.NamedTemporaryFile() as ca_file:
+            # Write test data
+            ca_file.write(b'FAKE CA CERT')
+            ca_file.flush()
+
+            # Test
+            action.set_tls_parameters(parameters=my_params, env=my_env,
+                                      local_ca_path=ca_file.name)
+            self.assertIn('CAMap', my_params)
+            self.assertIn('undercloud-ca', my_params['CAMap'])
+            self.assertIn('content', my_params['CAMap']['undercloud-ca'])
+            self.assertEqual('FAKE CA CERT',
+                             my_params['CAMap']['undercloud-ca']['content'])
+
+    def test_set_tls_parameters_ca_found_camap_provided(self):
+        action = deployment.DeployStackAction(1, 'overcloud',
+                                              skip_deploy_identifier=True)
+        my_params = {}
+        my_env = {
+            'parameter_defaults': {
+                'CAMap': {'overcloud-ca': {'content': 'ANOTER FAKE CERT'}}}}
+        with tempfile.NamedTemporaryFile() as ca_file:
+            # Write test data
+            ca_file.write(b'FAKE CA CERT')
+            ca_file.flush()
+
+            # Test
+            action.set_tls_parameters(parameters=my_params, env=my_env,
+                                      local_ca_path=ca_file.name)
+            self.assertIn('CAMap', my_params)
+            self.assertIn('undercloud-ca', my_params['CAMap'])
+            self.assertIn('content', my_params['CAMap']['undercloud-ca'])
+            self.assertEqual('FAKE CA CERT',
+                             my_params['CAMap']['undercloud-ca']['content'])
+            self.assertIn('overcloud-ca', my_params['CAMap'])
+            self.assertIn('content', my_params['CAMap']['overcloud-ca'])
+            self.assertEqual('ANOTER FAKE CERT',
+                             my_params['CAMap']['overcloud-ca']['content'])
 
 
 class OvercloudRcActionTestCase(base.TestCase):
