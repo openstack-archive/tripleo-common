@@ -213,7 +213,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         # Since the undercloud has TLS by default, we'll add the undercloud's
         # CA to be trusted by the overcloud.
         try:
-            with open(local_ca_path, 'r') as ca_file:
+            with open(local_ca_path, 'rb') as ca_file:
                 return ca_file.read()
         except IOError:
             # If the file wasn't found it means that the undercloud's TLS
