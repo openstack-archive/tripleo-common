@@ -5,6 +5,7 @@ disk_images:
     elements:
       - baremetal
       - dhcp-all-interfaces
+      - openvswitch
       - overcloud-agent
       - overcloud-full
       - overcloud-controller
