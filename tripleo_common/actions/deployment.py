@@ -204,24 +204,36 @@ class DeployStackAction(templates.ProcessTemplatesAction):
 
     def set_tls_parameters(self, parameters, env,
                            local_ca_path=constants.LOCAL_CACERT_PATH):
+        cacert_string = self._get_local_cacert(local_ca_path)
+        if cacert_string:
+            parameters['CAMap'] = self._get_updated_camap_entry(
+                'undercloud-ca', cacert_string, self._get_camap(env))
+
+    def _get_local_cacert(self, local_ca_path):
         # Since the undercloud has TLS by default, we'll add the undercloud's
         # CA to be trusted by the overcloud.
         try:
             with open(local_ca_path, 'r') as ca_file:
-                cacert = ca_file.read()
-                ca_map_entry = {
-                    'undercloud-ca': {
-                        'content': cacert
-                    }
-                }
-                parameters['CAMap'] = env['parameter_defaults'].get('CAMap',
-                                                                    {})
-                parameters['CAMap'].update(ca_map_entry)
+                return ca_file.read()
         except IOError:
             # If the file wasn't found it means that the undercloud's TLS
             # was explicitly disabled or another CA is being used. So we'll
             # let the user handle this.
-            pass
+            return None
+        except Exception:
+            raise
+
+    def _get_camap(self, env):
+        return env['parameter_defaults'].get('CAMap', {})
+
+    def _get_updated_camap_entry(self, entry_name, cacert, orig_camap):
+        ca_map_entry = {
+            entry_name: {
+                'content': cacert
+            }
+        }
+        orig_camap.update(ca_map_entry)
+        return orig_camap
 
 
 class OvercloudRcAction(base.TripleOAction):
