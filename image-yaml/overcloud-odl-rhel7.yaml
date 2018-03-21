@@ -8,6 +8,7 @@ disk_images:
            - sysctl
            - baremetal
            - dhcp-all-interfaces
+           - openvswitch
            - os-collect-config
            - puppet-modules
            - stable-interface-names
