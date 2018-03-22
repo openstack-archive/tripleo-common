@@ -98,10 +98,6 @@ mkdir -p /usr/libexec/os-refresh-config/post-configure.d
 ln -sf /usr/share/tripleo-image-elements/os-refresh-config/os-refresh-config/post-configure.d/99-refresh-completed \
     /usr/libexec/os-refresh-config/post-configure.d/
 
-mkdir -p /usr/libexec/os-apply-config/templates/etc/os-net-config/
-ln -sf /usr/share/tripleo-image-elements/os-net-config/os-apply-config/etc/os-net-config/config.json \
-    /usr/libexec/os-apply-config/templates/etc/os-net-config/
-
 # Remove unnecessary packages
 yum autoremove -y
 yum clean all
