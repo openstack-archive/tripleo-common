@@ -35,6 +35,12 @@ class TestConfigureBootAction(base.TestCase):
                              'value': 'r_id'},
                             {'op': 'add',
                              'path': '/driver_info/deploy_kernel',
+                             'value': 'k_id'},
+                            {'op': 'add',
+                             'path': '/driver_info/rescue_ramdisk',
+                             'value': 'r_id'},
+                            {'op': 'add',
+                             'path': '/driver_info/rescue_kernel',
                              'value': 'k_id'}]
 
         self.ironic = mock.MagicMock()
@@ -118,8 +124,18 @@ class TestConfigureBootAction(base.TestCase):
 
         self.assertIsNone(result)
 
-        self.node_update[1].update({'value': 'test_ramdisk_id'})
-        self.node_update[2].update({'value': 'test_kernel_id'})
+        self.node_update[1:] = [{'op': 'add',
+                                 'path': '/driver_info/deploy_ramdisk',
+                                 'value': 'test_ramdisk_id'},
+                                {'op': 'add',
+                                 'path': '/driver_info/deploy_kernel',
+                                 'value': 'test_kernel_id'},
+                                {'op': 'add',
+                                 'path': '/driver_info/rescue_ramdisk',
+                                 'value': 'test_ramdisk_id'},
+                                {'op': 'add',
+                                 'path': '/driver_info/rescue_kernel',
+                                 'value': 'test_kernel_id'}]
         self.ironic.node.update.assert_called_once_with(mock.ANY,
                                                         self.node_update)
 

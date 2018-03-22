@@ -334,7 +334,9 @@ class NodesTest(base.TestCase):
                                 "ipmi_username": "test",
                                 "ipmi_password": "random",
                                 "deploy_kernel": "kernel-123",
-                                "deploy_ramdisk": "ramdisk-999"}
+                                "deploy_ramdisk": "ramdisk-999",
+                                "rescue_kernel": "kernel-123",
+                                "rescue_ramdisk": "ramdisk-999"}
         pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
@@ -403,6 +405,7 @@ class NodesTest(base.TestCase):
                       'network_interface': 'neutron',
                       'power_interface': 'ipmitool',
                       'raid_interface': 'agent',
+                      'rescue_interface': 'agent',
                       'storage_interface': 'cinder',
                       'vendor_interface': 'ipmitool'}
 
@@ -438,6 +441,7 @@ class NodesTest(base.TestCase):
                       'network_interface': 'neutron',
                       'power_interface': 'ipmitool',
                       'raid_interface': 'agent',
+                      'rescue_interface': 'agent',
                       'storage_interface': 'cinder',
                       'vendor_interface': 'ipmitool'}
 
@@ -492,6 +496,8 @@ class NodesTest(base.TestCase):
                 {'path': '/properties/capabilities', 'value': 'num_nics:6'},
                 {'path': '/driver_info/deploy_kernel', 'value': 'image-k'},
                 {'path': '/driver_info/deploy_ramdisk', 'value': 'image-r'},
+                {'path': '/driver_info/rescue_kernel', 'value': 'image-k'},
+                {'path': '/driver_info/rescue_ramdisk', 'value': 'image-r'},
                 {'path': '/driver_info/ipmi_username', 'value': 'test'}]
             for key in update_patch:
                 key['op'] = 'add'

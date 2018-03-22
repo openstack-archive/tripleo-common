@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Sets ``rescue_kernel`` and ``rescue_ramdisk`` to the same values as
+    ``deploy_kernel`` and ``deploy_ramdisk`` on node enrollment or
+    configuration.
+  - |
+    Adds support for ``rescue_interface`` when enrolling nodes.

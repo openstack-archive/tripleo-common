@@ -28,7 +28,8 @@ LOG = logging.getLogger(__name__)
 _KNOWN_INTERFACE_FIELDS = [
     '%s_interface' % field for field in ('boot', 'console', 'deploy',
                                          'inspect', 'management', 'network',
-                                         'power', 'raid', 'storage', 'vendor')
+                                         'power', 'raid', 'rescue', 'storage',
+                                         'vendor')
 ]
 
 CTLPLANE_NETWORK = 'ctlplane'
@@ -312,8 +313,10 @@ def register_ironic_node(node, client):
 
     if "kernel_id" in node:
         driver_info["deploy_kernel"] = node["kernel_id"]
+        driver_info["rescue_kernel"] = node["kernel_id"]
     if "ramdisk_id" in node:
         driver_info["deploy_ramdisk"] = node["ramdisk_id"]
+        driver_info["rescue_ramdisk"] = node["ramdisk_id"]
 
     interface_fields = {field: node.pop(field)
                         for field in _KNOWN_INTERFACE_FIELDS
@@ -420,8 +423,10 @@ _NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
                       'root_device': '/properties/root_device',
                       'name': '/name',
                       'resource_class': '/resource_class',
-                      'kernel_id': '/driver_info/deploy_kernel',
-                      'ramdisk_id': '/driver_info/deploy_ramdisk',
+                      'kernel_id': ['/driver_info/deploy_kernel',
+                                    '/driver_info/rescue_kernel'],
+                      'ramdisk_id': ['/driver_info/deploy_ramdisk',
+                                     '/driver_info/rescue_ramdisk'],
                       'capabilities': '/properties/capabilities'}
 
 _NON_DRIVER_FIELDS.update({field: '/%s' % field
@@ -437,9 +442,14 @@ def _update_or_register_ironic_node(node, node_map, client):
                  node_uuid)
 
         patched = {}
-        for field, path in _NON_DRIVER_FIELDS.items():
+        for field, paths in _NON_DRIVER_FIELDS.items():
+            if isinstance(paths, six.string_types):
+                paths = [paths]
+
             if field in node:
-                patched[path] = node.pop(field)
+                value = node.pop(field)
+                for path in paths:
+                    patched[path] = value
 
         driver_info = handler.convert(node)
         for key, value in driver_info.items():

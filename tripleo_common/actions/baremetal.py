@@ -152,6 +152,16 @@ class ConfigureBootAction(base.TripleOAction):
                     'path': '/driver_info/deploy_kernel',
                     'value': image_ids['kernel'],
                 },
+                {
+                    'op': 'add',
+                    'path': '/driver_info/rescue_ramdisk',
+                    'value': image_ids['ramdisk'],
+                },
+                {
+                    'op': 'add',
+                    'path': '/driver_info/rescue_kernel',
+                    'value': image_ids['kernel'],
+                },
             ])
             LOG.debug("Configuring boot option for Node %s", self.node_uuid)
         except Exception as err:
