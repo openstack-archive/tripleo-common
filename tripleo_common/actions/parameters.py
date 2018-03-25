@@ -345,7 +345,7 @@ class GenerateFencingParametersAction(base.TripleOAction):
     def __init__(self, nodes_json, os_auth, delay,
                  ipmi_level, ipmi_cipher, ipmi_lanplus):
         super(GenerateFencingParametersAction, self).__init__()
-        self.nodes_json = nodes_json
+        self.nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
         self.os_auth = os_auth
         self.delay = delay
         self.ipmi_level = ipmi_level
@@ -362,10 +362,10 @@ class GenerateFencingParametersAction(base.TripleOAction):
         for node in self.nodes_json:
             node_data = {}
             params = {}
-            if "mac" in node:
+            if "ports" in node:
                 # Not all Ironic drivers present a MAC address, so we only
                 # capture it if it's present
-                mac_addr = node["mac"][0]
+                mac_addr = node['ports'][0]['address']
                 node_data["host_mac"] = mac_addr
 
                 # If the MAC isn't in the hostmap, this node hasn't been

@@ -46,7 +46,7 @@ class RegisterOrUpdateNodes(base.TripleOAction):
     def __init__(self, nodes_json, remove=False, kernel_name=None,
                  ramdisk_name=None, instance_boot_option='local'):
         super(RegisterOrUpdateNodes, self).__init__()
-        self.nodes_json = nodes_json
+        self.nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
         self.remove = remove
         self.instance_boot_option = instance_boot_option
         self.kernel_name = kernel_name
@@ -83,7 +83,7 @@ class ValidateNodes(base.TripleOAction):
 
     def __init__(self, nodes_json):
         super(ValidateNodes, self).__init__()
-        self.nodes_json = nodes_json
+        self.nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
 
     def run(self, context):
         try:

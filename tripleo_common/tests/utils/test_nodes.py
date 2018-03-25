@@ -258,9 +258,9 @@ class NodesTest(base.TestCase):
 
     def _get_node(self):
         return {'cpu': '1', 'memory': '2048', 'disk': '30', 'arch': 'amd64',
-                'mac': ['aaa'], 'pm_addr': 'foo.bar', 'pm_user': 'test',
-                'pm_password': 'random', 'pm_type': 'ipmi', 'name': 'node1',
-                'capabilities': 'num_nics:6'}
+                'ports': [{'address': 'aaa'}], 'pm_addr': 'foo.bar',
+                'pm_user': 'test', 'pm_password': 'random', 'pm_type': 'ipmi',
+                'name': 'node1', 'capabilities': 'num_nics:6'}
 
     def test_register_all_nodes_ironic_no_hw_stats(self):
         node_list = [self._get_node()]
@@ -287,7 +287,8 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa', physical_network='ctlplane')
+                              address='aaa', physical_network='ctlplane',
+                              local_link_connection=None)
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -311,7 +312,8 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa', physical_network='ctlplane')
+                              address='aaa', physical_network='ctlplane',
+                              local_link_connection=None)
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -341,7 +343,8 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa', physical_network='ctlplane')
+                              address='aaa', physical_network='ctlplane',
+                              local_link_connection=None)
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -365,7 +368,8 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              uuid="abcdef")
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa', physical_network='ctlplane')
+                              address='aaa', physical_network='ctlplane',
+                              local_link_connection=None)
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -390,7 +394,8 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              properties=node_properties)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa', physical_network='ctlplane')
+                              address='aaa', physical_network='ctlplane',
+                              local_link_connection=None)
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -425,7 +430,8 @@ class NodesTest(base.TestCase):
                              resource_class='baremetal',
                              **interfaces)
         port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
-                              address='aaa', physical_network='ctlplane')
+                              address='aaa', local_link_connection=None,
+                              physical_network='ctlplane')
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
@@ -589,7 +595,7 @@ class NodesTest(base.TestCase):
 
     def test_register_node_update(self):
         node = self._get_node()
-        node['mac'][0] = node['mac'][0].upper()
+        node['ports'][0]['address'] = node['ports'][0]['address'].upper()
         ironic = mock.MagicMock()
         node_map = {'mac': {'aaa': 1}}
 
@@ -781,6 +787,38 @@ class NodesTest(base.TestCase):
                          'redfish_username': 'test',
                          'redfish_system_id': '/redfish/v1/Systems/1'})
 
+    def test_register_ironic_node_with_physical_network(self):
+        node = self._get_node()
+        node['ports'] = [{'physical_network': 'subnet1', 'address': 'aaa'}]
+        ironic = mock.MagicMock()
+        nodes.register_ironic_node(node, client=ironic)
+        port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
+                              address='aaa', physical_network='subnet1',
+                              local_link_connection=None)
+        ironic.port.create.assert_has_calls([port_call])
+
+    def test_register_ironic_node_with_local_link_connection(self):
+        node = self._get_node()
+        node['ports'] = [
+            {
+                'local_link_connection': {
+                    "switch_info": "switch",
+                    "port_id": "port1",
+                    "switch_id": "bbb"
+                },
+                'physical_network': 'subnet1',
+                'address': 'aaa'
+            }
+        ]
+        ironic = mock.MagicMock()
+        nodes.register_ironic_node(node, client=ironic)
+        port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
+                              address='aaa', physical_network='subnet1',
+                              local_link_connection={"switch_info": "switch",
+                                                     "port_id": "port1",
+                                                     "switch_id": "bbb"})
+        ironic.port.create.assert_has_calls([port_call])
+
     def test_clean_up_extra_nodes_ironic(self):
         node = collections.namedtuple('node', ['uuid'])
         client = mock.MagicMock()
@@ -859,8 +897,10 @@ VALID_NODE_JSON = [
      'pm_password': 'p@$$w0rd',
      'pm_port': 1234,
      'ipmi_priv_level': 'USER',
-     'mac': ['aa:bb:cc:dd:ee:ff',
-             '11:22:33:44:55:66'],
+     'ports': [
+         {'address': 'aa:bb:cc:dd:ee:ff'},
+         {'address': '11:22:33:44:55:66'}
+     ],
      'name': 'foobar1',
      'capabilities': {'foo': 'bar'},
      'kernel_id': 'kernel1',
@@ -871,8 +911,10 @@ VALID_NODE_JSON = [
      'pm_password': 'p@$$w0rd',
      'pm_port': 1234,
      'ipmi_priv_level': 'USER',
-     'mac': ['dd:ee:ff:aa:bb:cc',
-             '44:55:66:11:22:33'],
+     'ports': [
+         {'address': 'dd:ee:ff:aa:bb:cc'},
+         {'address': '44:55:66:11:22:33'}
+     ],
      'name': 'foobar2',
      'capabilities': {'foo': 'bar'},
      'kernel_id': 'kernel1',
@@ -881,7 +923,9 @@ VALID_NODE_JSON = [
      'pm_addr': '1.2.3.4',
      'pm_user': 'root',
      'pm_password': 'p@$$w0rd',
-     'mac': ['22:22:22:22:22:22'],
+     'ports': [
+         {'address': '22:22:22:22:22:22'}
+     ],
      'capabilities': 'foo:bar,foo1:bar1',
      'cpu': 2,
      'memory': 1024,
@@ -932,7 +976,9 @@ class TestValidateNodes(base.TestCase):
              'pm_addr': '1.1.1.1',
              'pm_user': 'root',
              'pm_password': 'p@$$w0rd',
-             'mac': ['42']},
+             'ports': [
+                 {'address': '42'}]
+             },
         ]
         self.assertRaisesRegex(exception.InvalidNode,
                                'MAC address 42 is invalid',
@@ -944,12 +990,16 @@ class TestValidateNodes(base.TestCase):
              'pm_addr': '1.1.1.1',
              'pm_user': 'root',
              'pm_password': 'p@$$w0rd',
-             'mac': ['11:22:33:44:55:66']},
+             'ports': [
+                 {'address': '11:22:33:44:55:66'}
+             ]},
             {'pm_type': 'ipmi',
              'pm_addr': '1.2.1.1',
              'pm_user': 'user',
              'pm_password': 'p@$$w0rd',
-             'mac': ['11:22:33:44:55:66']},
+             'ports': [
+                 {'address': '11:22:33:44:55:66'}
+             ]},
         ]
         self.assertRaisesRegex(exception.InvalidNode,
                                'MAC 11:22:33:44:55:66 is not unique',
