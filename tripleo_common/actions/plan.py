@@ -463,3 +463,42 @@ class GatherRolesAction(actions.Action):
             return actions.Result(error="/n".join(err_msgs))
 
         return actions.Result(data={'gathered_roles': gathered_roles})
+
+
+class RemoveNoopDeployStepAction(base.TripleOAction):
+    """Remove all the pre, post and deploy step in the plan-environment.
+
+    :param container: name of the Swift container / plan name
+    """
+
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        super(RemoveNoopDeployStepAction, self).__init__()
+        self.container = container
+
+    def run(self, context):
+        # get the stack. Error if doesn't exist
+        heat = self.get_orchestration_client(context)
+        try:
+            stack = heat.stacks.get(self.container)
+        except heatexceptions.HTTPNotFound:
+            msg = "Error retrieving stack: %s" % self.container
+            LOG.exception(msg)
+            return actions.Result(error=msg)
+
+        swift = self.get_object_client(context)
+        plan_env = plan_utils.get_env(swift, self.container)
+
+        # Get output and check if DeployStep are None
+        steps = ['OS::TripleO::DeploymentSteps']
+        for output in stack.to_dict().get('outputs', {}):
+            if output['output_key'] == 'RoleData':
+                for role in output['output_value']:
+                    steps.append("OS::TripleO::Tasks::%sPreConfig" % role)
+                    steps.append("OS::TripleO::Tasks::%sPostConfig" % role)
+        # Remove noop Steps
+        for step in steps:
+            if step in plan_env['resource_registry'].keys():
+                if plan_env['resource_registry'][step] == 'OS::Heat::None':
+                    plan_env['resource_registry'].pop(step)
+        # Push plan_env
+        plan_utils.put_env(swift, plan_env)
