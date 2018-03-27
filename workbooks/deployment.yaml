@@ -366,7 +366,6 @@ workflows:
           inventory: <% $.inventory %>
           playbook: <% $.get('work_dir') %>/<% execution().id %>/deploy_steps_playbook.yaml
           remote_user: tripleo-admin
-          ssh_extra_args: '-o StrictHostKeyChecking=no'
           ssh_private_key: <% $.private_key %>
           use_openstack_credentials: true
           verbosity: <% $.get('verbosity') %>
