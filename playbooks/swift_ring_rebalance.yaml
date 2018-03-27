@@ -53,10 +53,12 @@
             src: /tmp/swift-rings.tar.gz
             dest: /{{ base_directory }}
             remote_src: yes
+            become: true
 
     - name: Get recon data
       command: cat /var/cache/swift/object.recon
       register: recon
+      become: true
 
     - name: Check if it is safe to continue rebalancing
       set_fact:
@@ -116,3 +118,4 @@
             src: /tmp/swift-rings.tar.gz
             dest: /{{ base_directory }}
             remote_src: yes
+            become: true
