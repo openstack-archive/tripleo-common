@@ -34,6 +34,7 @@ container_images:
 - imagename: docker.io/tripleomaster/centos-binary-ironic-conductor:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-ironic-inspector:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-ironic-pxe:current-tripleo
+- imagename: docker.io/tripleomaster/centos-binary-ironic-neutron-agent:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-iscsid:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-keepalived:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-keystone:current-tripleo
