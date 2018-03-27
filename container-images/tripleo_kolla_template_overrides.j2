@@ -56,8 +56,11 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
 {% endblock %}
 
-# NOTE (jaosorior): neutron-server with TLS everywhere needs these packages.
-{% set neutron_server_packages_append = ['httpd', 'mod_ssl'] %}
+# NOTE (jaosorior): neutron-server with TLS everywhere needs httpd and mod_ssl packages.
+# NOTE (hjensas): python2-networking-baremetal ML2 plug-in for ironic neutron integration.
+{% set neutron_server_packages_append = ['httpd',
+                                         'mod_ssl',
+                                         'python2-networking-baremetal'] %}
 {% block neutron_server_footer %}
 RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
