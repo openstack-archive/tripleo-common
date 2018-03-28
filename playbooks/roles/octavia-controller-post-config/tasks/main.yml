@@ -11,7 +11,7 @@
     become: true
     become_user: root
     shell: |
-      crudini --get "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf" health_manager controller_ip_port_list
+      crudini --get "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf" health_manager controller_ip_port_list
     register: config_contents
     failed_when: config_contents.rc != 0 and 'Parameter not found' not in config_contents.stderr
     changed_when: false
@@ -27,14 +27,14 @@
       octavia_config_updated: true
     when: current_ip_list != o_hm_ip_list
 
-  - name: update octavia health manager config file
+  - name: update octavia worker config file
     become: true
     become_user: root
     ini_file:
       section: "health_manager"
       option: "controller_ip_port_list"
       value: "{{ o_hm_ip_list }}"
-      path: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf"
+      path: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf"
     when: octavia_config_updated
 
   - name: restart octavia containers
