@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import json
+import logging
 import os
 import shutil
 import six
@@ -27,6 +28,8 @@ from oslo_concurrency import processutils
 
 from tripleo_common.actions import base
 from tripleo_common.inventory import TripleoInventory
+
+LOG = logging.getLogger(__name__)
 
 
 def write_default_ansible_cfg(work_dir,
@@ -216,6 +219,8 @@ class AnsibleAction(actions.Action):
                     'OS_USERNAME': context.security.user_name,
                     'OS_AUTH_TOKEN': context.security.auth_token,
                     'OS_PROJECT_NAME': context.security.project_name})
+
+            LOG.info('Running ansible command: %s', command)
 
             stderr, stdout = processutils.execute(
                 *command, cwd=self.work_dir,
@@ -504,6 +509,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 # to determine if there was an error.
                 return {"stdout": "".join(stdout), "returncode": returncode,
                         "stderr": ""}
+
+            LOG.info('Running ansible-playbook command: %s', command)
 
             stderr, stdout = processutils.execute(
                 *command, cwd=self.work_dir,
