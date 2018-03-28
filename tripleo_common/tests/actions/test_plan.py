@@ -403,16 +403,13 @@ class ExportPlanActionTest(base.TestCase):
         get_object_mock_calls = [
             mock.call(self.plan, tf) for tf in self.template_files
         ]
-        get_container_mock_calls = [
-            mock.call(self.plan),
-            mock.call('plan-exports')
-        ]
 
         action = plan.ExportPlanAction(self.plan, self.delete_after,
                                        self.exports_container)
         action.run(self.ctx)
 
-        self.swift.get_container.assert_has_calls(get_container_mock_calls)
+        self.swift.get_container.assert_called_once_with(self.plan)
+        self.swift.put_container.assert_called_once_with('plan-exports')
         self.swift.get_object.assert_has_calls(
             get_object_mock_calls, any_order=True)
         self.swift.put_object.assert_called_once()

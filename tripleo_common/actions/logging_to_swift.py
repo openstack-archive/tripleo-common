@@ -113,9 +113,10 @@ class PublishUILogToSwiftAction(base.TripleOAction):
         next_filename = '{}.{}'.format(
             constants.TRIPLEO_UI_LOG_FILENAME, next_suffix)
         try:
-            data = swift.get_object(self.logging_container,
-                                    constants.TRIPLEO_UI_LOG_FILENAME)[1]
-            swift.put_object(self.logging_container, next_filename, data)
+            swift.copy_object(
+                self.logging_container,
+                constants.TRIPLEO_UI_LOG_FILENAME,
+                "/%s/%s" % (self.logging_container, next_filename))
             swift.delete_object(self.logging_container,
                                 constants.TRIPLEO_UI_LOG_FILENAME)
         except swiftexceptions.ClientException as err:
@@ -124,14 +125,14 @@ class PublishUILogToSwiftAction(base.TripleOAction):
 
     def run(self, context):
         swift = self.get_object_client(context)
-        swiftutils.get_or_create_container(swift, self.logging_container)
+        swiftutils.create_container(swift, self.logging_container)
         self._rotate(swift)
 
         try:
             old_contents = swift.get_object(
                 self.logging_container,
                 constants.TRIPLEO_UI_LOG_FILENAME)[1]
-            new_contents = old_contents + '\n' + self.logging_data
+            new_contents = "%s\n%s" % (old_contents, self.logging_data)
         except swiftexceptions.ClientException:
             LOG.debug(
                 "There is no existing logging data, starting a new file.")

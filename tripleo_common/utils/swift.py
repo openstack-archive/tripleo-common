@@ -18,8 +18,6 @@ import logging
 import os
 import tempfile
 
-from swiftclient import exceptions as swiftexceptions
-
 from tripleo_common import constants
 from tripleo_common.utils import tarball
 
@@ -77,12 +75,10 @@ def download_container(swiftclient, container, dest):
             f.write(contents)
 
 
-def get_or_create_container(swiftclient, container):
-    try:
-        return swiftclient.get_container(container)
-    except swiftexceptions.ClientException:
-        LOG.debug("Container %s doesn't exist, creating...", container)
-        return swiftclient.put_container(container)
+def create_container(swiftclient, container):
+    # If the container already exists, it will return 202 and everything will
+    # work
+    swiftclient.put_container(container)
 
 
 def create_and_upload_tarball(swiftclient,
@@ -94,7 +90,7 @@ def create_and_upload_tarball(swiftclient,
     """Create a tarball containing the tmp_dir and upload it to Swift."""
     headers = {'X-Delete-After': delete_after}
 
-    get_or_create_container(swiftclient, container)
+    create_container(swiftclient, container)
 
     with tempfile.NamedTemporaryFile() as tmp_tarball:
         tarball.create_tarball(tmp_dir, tmp_tarball.name, tarball_options)
