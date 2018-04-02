@@ -355,6 +355,20 @@ class GetProfileAction(base.TripleOAction):
         return result
 
 
+class GetNodeHintAction(base.TripleOAction):
+    """Return the scheduler hint associated with the given node """
+
+    def __init__(self, node):
+        super(GetNodeHintAction, self).__init__()
+        self.node = node
+
+    def run(self, context):
+        result = {}
+        result['hint'] = nodes.get_node_hint(self.node)
+        result['uuid'] = self.node.get('uuid')
+        return result
+
+
 class GetCandidateNodes(base.TripleOAction):
     """Given IPs, ports and credentials, return potential new nodes."""
 

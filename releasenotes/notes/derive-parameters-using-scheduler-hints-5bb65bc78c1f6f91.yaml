@@ -1,0 +1,7 @@
+---
+fixes:
+  - Fix `bug 1760659 <https://bugs.launchpad.net/tripleo/+bug/1760659>`__ by
+    updating the derived parameters workflow to use scheduler hints associated
+    with a given role. The scheduler hints are used to identify overcloud
+    nodes associated with the role, and take precedence over nodes identified
+    by their profile/flavor.
