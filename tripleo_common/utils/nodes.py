@@ -629,3 +629,15 @@ def get_node_profile(node):
         return capabilities_dict['profile']
 
     return None
+
+
+def get_node_hint(node):
+    """Return the 'capabilities:node' hint associated with the node """
+
+    capabilities = node.get('properties').get('capabilities')
+    capabilities_dict = capabilities_to_dict(capabilities)
+
+    if 'node' in capabilities_dict:
+        return capabilities_dict['node']
+
+    return None

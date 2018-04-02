@@ -905,6 +905,58 @@ workflows:
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
 
+  nodes_with_hint:
+    description: Find nodes matching a hint regex
+    input:
+      - hint_regex
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_nodes:
+        with-items: provision_state in <% ['available', 'active'] %>
+        action: ironic.node_list maintenance=false provision_state=<% $.provision_state %> detail=true
+        on-success: get_matching_nodes
+        on-error: set_status_failed_get_nodes
+
+      get_matching_nodes:
+        with-items: node in <% task(get_nodes).result.flatten() %>
+        action: tripleo.baremetal.get_node_hint node=<% $.node %>
+        on-success: send_message
+        on-error: set_status_failed_get_matching_nodes
+        publish:
+          matching_nodes: <% let(hint_regex => $.hint_regex) -> task().result.where($.hint and $.hint.matches($hint_regex)).uuid %>
+
+      set_status_failed_get_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_nodes).result %>
+
+      set_status_failed_get_matching_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_matching_nodes).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.nodes_with_hint
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                matching_nodes: <% $.matching_nodes or [] %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   nodes_with_profile:
     description: Find nodes with a specific profile
     input:
