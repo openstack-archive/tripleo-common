@@ -404,8 +404,8 @@ workflows:
       check_features:
         on-success: build_feature_dict
         publish:
-          # The role supports the DPDK feature if the NeutronDatapathType parameter is present.
-          dpdk: <% $.role_services.any($.get('parameters', []).contains('NeutronDatapathType')) %>
+          # The role supports the DPDK feature if the NeutronDatapathType parameter is present
+          dpdk: <% let(resources => $.heat_resource_tree.resources) -> $.role_services.any($.get('parameters', []).contains('NeutronDatapathType') or $.get('resources', []).select($resources.get($)).any($.get('parameters', []).contains('NeutronDatapathType'))) %>
 
           # The role supports the DPDK feature in ODL if the OvsEnableDpdk parameter value is true in role parameters.
           odl_dpdk: <% let(role => $.role_name) -> $.heat_resource_tree.parameters.get(concat($role, 'Parameters'), {}).get('default', {}).get('OvsEnableDpdk', false) %>
