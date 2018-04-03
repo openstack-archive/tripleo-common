@@ -25,19 +25,21 @@ import yaml
 from tripleo_common.image import base
 from tripleo_common.image import image_uploader
 
-
-CONTAINER_IMAGES_DEFAULTS = {
-    'namespace': 'docker.io/tripleomaster',
-    'ceph_namespace': 'docker.io/ceph',
-    'ceph_image': 'daemon',
-    'ceph_tag': 'tag-stable-3.0-luminous-centos-7',
-    'name_prefix': 'centos-binary-',
-    'name_suffix': '',
+CONTAINER_IMAGE_PREPARE_PARAM = [{
     'tag_from_label': 'rdo_version',
-    'tag': 'current-tripleo',
-    'neutron_driver': None,
-}
+    'set': {
+        'namespace': 'docker.io/tripleomaster',
+        'ceph_namespace': 'docker.io/ceph',
+        'ceph_image': 'daemon',
+        'ceph_tag': 'tag-stable-3.0-luminous-centos-7',
+        'name_prefix': 'centos-binary-',
+        'name_suffix': '',
+        'tag': 'current-tripleo',
+        'neutron_driver': None,
+    }
+}]
 
+CONTAINER_IMAGES_DEFAULTS = CONTAINER_IMAGE_PREPARE_PARAM[0]['set']
 
 DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                      'container-images',
