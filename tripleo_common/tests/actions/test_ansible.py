@@ -58,12 +58,13 @@ class AnsibleActionTest(base.TestCase):
             'ANSIBLE_CONFIG': ansible_config_path
         }
 
+        mock_write_cfg.assert_called_once_with(action.work_dir,
+                                               self.remote_user, None)
+
         mock_execute.assert_called_once_with(
-            'ansible', self.hosts, '-vvvvv', '--module-name',
-            self.module, '--user', self.remote_user, '--become',
-            '--become-user', self.become_user,
-            env_variables=env, cwd=action.work_dir,
-            log_errors=processutils.LogErrors.ALL
+            'ansible', self.hosts, '-vvvvv', '--module-name', self.module,
+            '--become', '--become-user', self.become_user, env_variables=env,
+            cwd=action.work_dir, log_errors=processutils.LogErrors.ALL
         )
 
 
@@ -98,6 +99,9 @@ class AnsiblePlaybookActionTest(base.TestCase):
 
         action.run(self.ctx)
 
+        mock_write_cfg.assert_called_once_with(action.work_dir,
+                                               self.remote_user, None)
+
         pb = os.path.join(action.work_dir, 'playbook.yaml')
         env = {
             'HOME': action.work_dir,
@@ -105,9 +109,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
         }
 
         mock_execute.assert_called_once_with(
-            'ansible-playbook', '-v', pb, '--user',
-            self.remote_user, '--become', '--become-user', self.become_user,
-            '--extra-vars', json.dumps(self.extra_vars),
+            'ansible-playbook', '-v', pb, '--become', '--become-user',
+            self.become_user, '--extra-vars', json.dumps(self.extra_vars),
             env_variables=env, cwd=action.work_dir,
             log_errors=processutils.LogErrors.ALL)
 
@@ -180,7 +183,7 @@ class CopyConfigFileTest(base.TestCase):
             ansible_cfg_file.flush()
 
             resulting_ansible_config = ansible.write_default_ansible_cfg(
-                work_dir, base_ansible_cfg=ansible_cfg_path)
+                work_dir, None, None, base_ansible_cfg=ansible_cfg_path)
 
             self.assertEqual(resulting_ansible_config,
                              os.path.join(work_dir, 'ansible.cfg'))
