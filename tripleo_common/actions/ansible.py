@@ -30,8 +30,6 @@ from tripleo_common.inventory import TripleoInventory
 
 
 def write_default_ansible_cfg(work_dir,
-                              remote_user,
-                              ssh_private_key,
                               base_ansible_cfg='/etc/ansible/ansible.cfg'):
     ansible_config_path = os.path.join(work_dir, 'ansible.cfg')
     shutil.copy(base_ansible_cfg, ansible_config_path)
@@ -46,13 +44,6 @@ def write_default_ansible_cfg(work_dir,
     # mistral user has no home dir set, so no place to save a known hosts file
     config.set('ssh_connection', 'ssh_args',
                '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no')
-
-    # Set connection info in config file so that subsequent/nested ansible
-    # calls can re-use it
-    if remote_user:
-        config.set('defaults', 'remote_user', remote_user)
-    if ssh_private_key:
-        config.set('defaults', 'private_key_file', ssh_private_key)
 
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
@@ -171,6 +162,9 @@ class AnsibleAction(actions.Action):
         if self.limit_hosts:
             command.extend(['--limit', self.limit_hosts])
 
+        if self.remote_user:
+            command.extend(['--user', self.remote_user])
+
         if self.become:
             command.extend(['--become'])
 
@@ -195,6 +189,9 @@ class AnsibleAction(actions.Action):
         if self.inventory:
             command.extend(['--inventory-file', self.inventory])
 
+        if self.ssh_private_key:
+            command.extend(['--private-key', self.ssh_private_key])
+
         if self.extra_env_variables:
             if not isinstance(self.extra_env_variables, dict):
                 msg = "extra_env_variables must be a dict"
@@ -204,10 +201,7 @@ class AnsibleAction(actions.Action):
             command.extend(['--gather-facts', self.gather_facts])
 
         try:
-            ansible_config_path = write_default_ansible_cfg(
-                self.work_dir,
-                self.remote_user,
-                self.ssh_private_key)
+            ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
                 'HOME': self.work_dir,
                 'ANSIBLE_CONFIG': ansible_config_path
@@ -400,6 +394,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
         if self.module_path:
             command.extend(['--module-path', self.module_path])
 
+        if self.remote_user:
+            command.extend(['--user', self.remote_user])
+
         if self.become:
             command.extend(['--become'])
 
@@ -427,6 +424,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
         if self.inventory:
             command.extend(['--inventory-file', self.inventory])
 
+        if self.ssh_private_key:
+            command.extend(['--private-key', self.ssh_private_key])
+
         if self.tags:
             command.extend(['--tags', self.tags])
 
@@ -442,10 +442,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
             command.extend(['--gather-facts', self.gather_facts])
 
         try:
-            ansible_config_path = write_default_ansible_cfg(
-                self.work_dir,
-                self.remote_user,
-                self.ssh_private_key)
+            ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
                 'HOME': self.work_dir,
                 'ANSIBLE_CONFIG': ansible_config_path
