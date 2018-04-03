@@ -186,66 +186,76 @@ class TestInventory(base.TestCase):
         self._inventory_list(inventory)
 
     def _inventory_list(self, inventory):
-        expected = {'c-0': {'hosts': ['x.x.x.1'],
-                            'vars': {'deploy_server_id': 'a',
-                                     'ctlplane_ip': 'x.x.x.1',
-                                     'enabled_networks': ['ctlplane']}},
-                    'c-1': {'hosts': ['x.x.x.2'],
-                            'vars': {'deploy_server_id': 'b',
-                                     'ctlplane_ip': 'x.x.x.2',
-                                     'enabled_networks': ['ctlplane']}},
-                    'c-2': {'hosts': ['x.x.x.3'],
-                            'vars': {'deploy_server_id': 'c',
-                                     'ctlplane_ip': 'x.x.x.3',
-                                     'enabled_networks': ['ctlplane']}},
-                    'Compute': {
-                        'children': ['cp-0'],
-                        'vars': {'ansible_ssh_user': 'heat-admin',
-                                 'bootstrap_server_id': 'a',
-                                 'role_name': 'Compute'}},
-                    'Controller': {
-                        'children': ['c-0', 'c-1', 'c-2'],
-                        'vars': {'ansible_ssh_user': 'heat-admin',
-                                 'bootstrap_server_id': 'a',
-                                 'role_name': 'Controller'}},
-                    'cp-0': {'hosts': ['y.y.y.1'],
-                             'vars': {'deploy_server_id': 'd',
-                                      'ctlplane_ip': 'y.y.y.1',
-                                      'enabled_networks': ['ctlplane']}},
-                    'cs-0': {'hosts': ['z.z.z.1'],
-                             'vars': {'deploy_server_id': 'e',
-                                      'ctlplane_ip': 'z.z.z.1',
-                                      'enabled_networks': ['ctlplane']}},
-                    'CustomRole': {
-                        'children': ['cs-0'],
-                        'vars': {'ansible_ssh_user': 'heat-admin',
-                                 'bootstrap_server_id': 'a',
-                                 'role_name': 'CustomRole'}},
-                    'overcloud': {
-                        'children': ['Compute', 'Controller', 'CustomRole'],
-                        'vars': {
-                            'ctlplane_vip': 'x.x.x.4',
-                            'redis_vip': 'x.x.x.6'}},
+        ansible_ssh_user = 'heat-admin'
+        expected = {
+            'Compute': {
+                'hosts': {
+                    'cp-0': {
+                        'ansible_host': 'y.y.y.1',
+                        'ctlplane_ip': 'y.y.y.1',
+                        'deploy_server_id': 'd',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'Compute'}},
+            'Controller': {
+                'hosts': {
+                    'c-0': {
+                        'ansible_host': 'x.x.x.1',
+                        'ctlplane_ip': 'x.x.x.1',
+                        'deploy_server_id': 'a',
+                        'enabled_networks': ['ctlplane']},
+                    'c-1': {
+                        'ansible_host': 'x.x.x.2',
+                        'ctlplane_ip': 'x.x.x.2',
+                        'deploy_server_id': 'b',
+                        'enabled_networks': ['ctlplane']},
+                    'c-2': {
+                        'ansible_host': 'x.x.x.3',
+                        'ctlplane_ip': 'x.x.x.3',
+                        'deploy_server_id': 'c',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'Controller'}},
+            'CustomRole': {
+                'hosts': {
+                    'cs-0': {
+                        'ansible_host': 'z.z.z.1',
+                        'ctlplane_ip': 'z.z.z.1',
+                        'deploy_server_id': 'e',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'CustomRole'}},
+
+            'overcloud': {
+                'children': ['Compute', 'Controller', 'CustomRole'],
+                'vars': {
+                    'ctlplane_vip': 'x.x.x.4',
+                    'redis_vip': 'x.x.x.6'}},
+            'Undercloud': {
+                'hosts': {
                     'undercloud': {
-                        'hosts': ['localhost'],
-                        'vars': {'ansible_connection': 'local',
-                                 'ansible_remote_tmp': '/tmp/ansible-${USER}',
-                                 'auth_url': 'xyz://keystone.local',
-                                 'cacert': 'acacert',
-                                 'os_auth_token': 'atoken',
-                                 'overcloud_keystone_url': 'xyz://keystone',
-                                 'overcloud_admin_password': 'theadminpw',
-                                 'plan': 'overcloud',
-                                 'project_name': 'admin',
-                                 'undercloud_service_list': [
-                                     'openstack-nova-compute',
-                                     'openstack-heat-engine',
-                                     'openstack-ironic-conductor',
-                                     'openstack-swift-container',
-                                     'openstack-swift-object',
-                                     'openstack-mistral-engine'],
-                                 'undercloud_swift_url': 'anendpoint',
-                                 'username': 'admin'}}}
+                        'ansible_host': 'localhost'}},
+                'vars': {'ansible_connection': 'local',
+                         'ansible_remote_tmp': '/tmp/ansible-${USER}',
+                         'auth_url': 'xyz://keystone.local',
+                         'cacert': 'acacert',
+                         'os_auth_token': 'atoken',
+                         'overcloud_keystone_url': 'xyz://keystone',
+                         'overcloud_admin_password': 'theadminpw',
+                         'plan': 'overcloud',
+                         'project_name': 'admin',
+                         'undercloud_service_list': [
+                             'openstack-nova-compute',
+                             'openstack-heat-engine',
+                             'openstack-ironic-conductor',
+                             'openstack-swift-container',
+                             'openstack-swift-object',
+                             'openstack-mistral-engine'],
+                         'undercloud_swift_url': 'anendpoint',
+                         'username': 'admin'}}}
         inv_list = inventory.list()
         for k in expected:
             self.assertEqual(expected[k], inv_list[k])
@@ -273,68 +283,76 @@ class TestInventory(base.TestCase):
 
         self.inventory.stack_outputs = self.outputs
 
-        expected = {'c-0': {'hosts': ['x.x.x.1'],
-                            'vars': {'deploy_server_id': 'a',
-                                     'ctlplane_ip': 'x.x.x.1',
-                                     'enabled_networks': ['ctlplane']}},
-                    'c-1': {'hosts': ['x.x.x.2'],
-                            'vars': {'deploy_server_id': 'b',
-                                     'ctlplane_ip': 'x.x.x.2',
-                                     'enabled_networks': ['ctlplane']}},
-                    'c-2': {'hosts': ['x.x.x.3'],
-                            'vars': {'deploy_server_id': 'c',
-                                     'ctlplane_ip': 'x.x.x.3',
-                                     'enabled_networks': ['ctlplane']}},
-                    'Compute': {
-                        'children': ['cp-0'],
-                        'vars': {'ansible_ssh_user': ansible_ssh_user,
-                                 'bootstrap_server_id': 'a',
-                                 'role_name': 'Compute'}},
-                    'Controller': {
-                        'children': ['c-0', 'c-1', 'c-2'],
-                        'vars': {'ansible_ssh_user': ansible_ssh_user,
-                                 'bootstrap_server_id': 'a',
-                                 'role_name': 'Controller'}},
-                    'cp-0': {'hosts': ['y.y.y.1'],
-                             'vars': {'deploy_server_id': 'd',
-                                      'ctlplane_ip': 'y.y.y.1',
-                                      'enabled_networks': ['ctlplane']}},
-                    'cs-0': {'hosts': ['z.z.z.1'],
-                             'vars': {'deploy_server_id': 'e',
-                                      'ctlplane_ip': 'z.z.z.1',
-                                      'enabled_networks': ['ctlplane']}},
-                    'CustomRole': {
-                        'children': ['cs-0'],
-                        'vars': {'ansible_ssh_user': ansible_ssh_user,
-                                 'bootstrap_server_id': 'a',
-                                 'role_name': 'CustomRole'}},
-                    'overcloud': {
-                        'children': ['Compute', 'Controller', 'CustomRole'],
-                        'vars': {
-                            'ctlplane_vip': 'x.x.x.4',
-                            'redis_vip': 'x.x.x.6'}},
+        expected = {
+            'Compute': {
+                'hosts': {
+                    'cp-0': {
+                        'ansible_host': 'y.y.y.1',
+                        'ctlplane_ip': 'y.y.y.1',
+                        'deploy_server_id': 'd',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'Compute'}},
+            'Controller': {
+                'hosts': {
+                    'c-0': {
+                        'ansible_host': 'x.x.x.1',
+                        'ctlplane_ip': 'x.x.x.1',
+                        'deploy_server_id': 'a',
+                        'enabled_networks': ['ctlplane']},
+                    'c-1': {
+                        'ansible_host': 'x.x.x.2',
+                        'ctlplane_ip': 'x.x.x.2',
+                        'deploy_server_id': 'b',
+                        'enabled_networks': ['ctlplane']},
+                    'c-2': {
+                        'ansible_host': 'x.x.x.3',
+                        'ctlplane_ip': 'x.x.x.3',
+                        'deploy_server_id': 'c',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'Controller'}},
+            'CustomRole': {
+                'hosts': {
+                    'cs-0': {
+                        'ansible_host': 'z.z.z.1',
+                        'ctlplane_ip': 'z.z.z.1',
+                        'deploy_server_id': 'e',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'CustomRole'}},
+            'overcloud': {
+                'children': ['Compute', 'Controller', 'CustomRole'],
+                'vars': {
+                    'ctlplane_vip': 'x.x.x.4',
+                    'redis_vip': 'x.x.x.6'}},
+            'Undercloud': {
+                'hosts': {
                     'undercloud': {
-                        'hosts': ['localhost'],
-                        'vars': {'ansible_connection': 'local',
-                                 'ansible_remote_tmp': '/tmp/ansible-${USER}',
-                                 'auth_url': 'xyz://keystone.local',
-                                 'cacert': 'acacert',
-                                 'os_auth_token':
-                                 'atoken' if session else None,
-                                 'overcloud_keystone_url': 'xyz://keystone',
-                                 'overcloud_admin_password': 'theadminpw',
-                                 'plan': 'overcloud',
-                                 'project_name': 'admin',
-                                 'undercloud_service_list': [
-                                     'openstack-nova-compute',
-                                     'openstack-heat-engine',
-                                     'openstack-ironic-conductor',
-                                     'openstack-swift-container',
-                                     'openstack-swift-object',
-                                     'openstack-mistral-engine'],
-                                 'undercloud_swift_url':
-                                 'anendpoint' if session else None,
-                                 'username': 'admin'}}}
+                        'ansible_host': 'localhost'}},
+                'vars': {'ansible_connection': 'local',
+                         'ansible_remote_tmp': '/tmp/ansible-${USER}',
+                         'auth_url': 'xyz://keystone.local',
+                         'cacert': 'acacert',
+                         'os_auth_token':
+                         'atoken' if session else None,
+                         'overcloud_keystone_url': 'xyz://keystone',
+                         'overcloud_admin_password': 'theadminpw',
+                         'plan': 'overcloud',
+                         'project_name': 'admin',
+                         'undercloud_service_list': [
+                             'openstack-nova-compute',
+                             'openstack-heat-engine',
+                             'openstack-ironic-conductor',
+                             'openstack-swift-container',
+                             'openstack-swift-object',
+                             'openstack-mistral-engine'],
+                         'undercloud_swift_url':
+                         'anendpoint' if session else None,
+                         'username': 'admin'}}}
 
         inv_list = self.inventory.list()
         for k in expected:
@@ -344,47 +362,56 @@ class TestInventory(base.TestCase):
         self._inventory_write_static()
 
     def test_inventory_write_static_extra_vars(self):
-        extra_vars = {'undercloud': {'anextravar': 123}}
+        extra_vars = {'Undercloud': {'anextravar': 123}}
         self._inventory_write_static(extra_vars=extra_vars)
 
     def _inventory_write_static(self, extra_vars=None):
         tmp_dir = self.useFixture(fixtures.TempDir()).path
         inv_path = os.path.join(tmp_dir, "inventory.yaml")
         self.inventory.write_static_inventory(inv_path, extra_vars)
+        ansible_ssh_user = 'heat-admin'
         expected = {
-            'Compute': {'children': {'cp-0': {}},
-                        'vars': {'ansible_ssh_user': 'heat-admin',
-                                 'bootstrap_server_id': 'a',
-                                 'role_name': 'Compute'}},
-            'Controller': {'children': {'c-0': {}, 'c-1': {}, 'c-2': {}},
-                           'vars': {'ansible_ssh_user': 'heat-admin',
-                                    'bootstrap_server_id': 'a',
-                                    'role_name': 'Controller'}},
-            'CustomRole': {'children': {'cs-0': {}},
-                           'vars': {'ansible_ssh_user': 'heat-admin',
-                                    'bootstrap_server_id': 'a',
-                                    'role_name': 'CustomRole'}},
+            'Compute': {
+                'hosts': {
+                    'cp-0': {
+                        'ansible_host': 'y.y.y.1',
+                        'ctlplane_ip': 'y.y.y.1',
+                        'deploy_server_id': 'd',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'Compute'}},
+            'Controller': {
+                'hosts': {
+                    'c-0': {
+                        'ansible_host': 'x.x.x.1',
+                        'ctlplane_ip': 'x.x.x.1',
+                        'deploy_server_id': 'a',
+                        'enabled_networks': ['ctlplane']},
+                    'c-1': {
+                        'ansible_host': 'x.x.x.2',
+                        'ctlplane_ip': 'x.x.x.2',
+                        'deploy_server_id': 'b',
+                        'enabled_networks': ['ctlplane']},
+                    'c-2': {
+                        'ansible_host': 'x.x.x.3',
+                        'ctlplane_ip': 'x.x.x.3',
+                        'deploy_server_id': 'c',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'Controller'}},
+            'CustomRole': {
+                'hosts': {
+                    'cs-0': {
+                        'ansible_host': 'z.z.z.1',
+                        'ctlplane_ip': 'z.z.z.1',
+                        'deploy_server_id': 'e',
+                        'enabled_networks': ['ctlplane']}},
+                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                         'bootstrap_server_id': 'a',
+                         'role_name': 'CustomRole'}},
             '_meta': {'hostvars': {}},
-            'c-0': {'hosts': {'x.x.x.1': {}},
-                    'vars': {'ctlplane_ip': 'x.x.x.1',
-                             'deploy_server_id': 'a',
-                             'enabled_networks': ['ctlplane']}},
-            'c-1': {'hosts': {'x.x.x.2': {}},
-                    'vars': {'ctlplane_ip': 'x.x.x.2',
-                             'deploy_server_id': 'b',
-                             'enabled_networks': ['ctlplane']}},
-            'c-2': {'hosts': {'x.x.x.3': {}},
-                    'vars': {'ctlplane_ip': 'x.x.x.3',
-                             'deploy_server_id': 'c',
-                             'enabled_networks': ['ctlplane']}},
-            'cp-0': {'hosts': {'y.y.y.1': {}},
-                     'vars': {'ctlplane_ip': 'y.y.y.1',
-                              'deploy_server_id': 'd',
-                              'enabled_networks': ['ctlplane']}},
-            'cs-0': {'hosts': {'z.z.z.1': {}},
-                     'vars': {'ctlplane_ip': 'z.z.z.1',
-                              'deploy_server_id': 'e',
-                              'enabled_networks': ['ctlplane']}},
             'overcloud': {'children': {'Compute': {},
                                        'Controller': {},
                                        'CustomRole': {}},
@@ -402,7 +429,8 @@ class TestInventory(base.TestCase):
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
             'sh': {'children': {'CustomRole': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
-            'undercloud': {'hosts': {'localhost': {}},
+            'Undercloud': {'hosts': {'undercloud': {
+                                     'ansible_host': 'localhost'}},
                            'vars': {'ansible_connection': 'local',
                                     'ansible_remote_tmp':
                                         '/tmp/ansible-${USER}',
@@ -423,7 +451,7 @@ class TestInventory(base.TestCase):
                                     'undercloud_swift_url': 'anendpoint',
                                     'username': 'admin'}}}
         if extra_vars:
-            expected['undercloud']['vars']['anextravar'] = 123
+            expected['Undercloud']['vars']['anextravar'] = 123
 
         with open(inv_path, 'r') as f:
             loaded_inv = yaml.safe_load(f)

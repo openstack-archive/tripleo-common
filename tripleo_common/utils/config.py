@@ -297,6 +297,8 @@ class Config(object):
 
         group_vars_dir = os.path.join(tmp_path, 'group_vars')
         self._mkdir(group_vars_dir)
+        host_vars_dir = os.path.join(tmp_path, 'host_vars')
+        self._mkdir(host_vars_dir)
 
         for server, deployments in server_deployments.items():
             deployment_template = env.get_template('deployment.j2')

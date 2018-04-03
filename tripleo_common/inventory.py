@@ -151,8 +151,10 @@ class TripleoInventory(object):
 
     def list(self):
         ret = OrderedDict({
-            'undercloud': {
-                'hosts': self._hosts(['localhost']),
+            'Undercloud': {
+                'hosts': {
+                    'undercloud': {
+                        'ansible_host': 'localhost'}},
                 'vars': {
                     'ansible_connection': 'local',
                     # see https://github.com/ansible/ansible/issues/41808
@@ -172,25 +174,25 @@ class TripleoInventory(object):
         if self.session:
             swift_url = self.session.get_endpoint(service_type='object-store',
                                                   interface='public')
-        ret['undercloud']['vars']['undercloud_swift_url'] = swift_url
+        ret['Undercloud']['vars']['undercloud_swift_url'] = swift_url
 
         keystone_url = self.stack_outputs.get('KeystoneURL')
         if keystone_url:
-            ret['undercloud']['vars']['overcloud_keystone_url'] = keystone_url
+            ret['Undercloud']['vars']['overcloud_keystone_url'] = keystone_url
         admin_password = self.get_overcloud_environment().get(
             'parameter_defaults', {}).get('AdminPassword')
         if admin_password:
-            ret['undercloud']['vars']['overcloud_admin_password'] =\
+            ret['Undercloud']['vars']['overcloud_admin_password'] =\
                 admin_password
         endpoint_map = self.stack_outputs.get('EndpointMap')
 
-        ret['undercloud']['vars']['undercloud_service_list'] = \
+        ret['Undercloud']['vars']['undercloud_service_list'] = \
             self.get_undercloud_service_list()
 
         if endpoint_map:
             horizon_endpoint = endpoint_map.get('HorizonPublic', {}).get('uri')
             if horizon_endpoint:
-                ret['undercloud']['vars']['overcloud_horizon_url'] =\
+                ret['Undercloud']['vars']['overcloud_horizon_url'] =\
                     horizon_endpoint
 
         role_net_ip_map = self.stack_outputs.get('RoleNetIpMap', {})
@@ -206,24 +208,29 @@ class TripleoInventory(object):
                               for n in names]
                 # Create a group per hostname to map hostname to IP
                 ips = role_net_ip_map[role][HOST_NETWORK]
+                hosts = {}
                 for idx, name in enumerate(shortnames):
-                    ret[name] = {'hosts': self._hosts([ips[idx]])}
+                    hosts[name] = {}
+                    hosts[name].update({
+                        'ansible_host': ips[idx]})
                     if 'server_ids' in role_node_id_map:
-                        ret[name]['vars'] = {
+                        hosts[name].update({
                             'deploy_server_id': role_node_id_map[
-                                'server_ids'][role][idx]}
+                                'server_ids'][role][idx]})
                     # Add variable for listing enabled networks in the node
-                    ret[name]['vars']['enabled_networks'] = \
-                        [str(net) for net in role_net_ip_map[role]]
+                    hosts[name].update({
+                        'enabled_networks':
+                            [str(net) for net in role_net_ip_map[role]]})
                     # Add variable for IP on each network
                     for net in role_net_ip_map[role]:
-                        ret[name]['vars']["%s_ip" % net] = \
-                            role_net_ip_map[role][net][idx]
-                    networks.update(ret[name]['vars']['enabled_networks'])
+                        hosts[name].update({
+                            "%s_ip" % net:
+                                role_net_ip_map[role][net][idx]})
+                    networks.update(hosts[name]['enabled_networks'])
 
                 children.append(role)
                 ret[role] = {
-                    'children': self._hosts(sorted(shortnames)),
+                    'hosts': hosts,
                     'vars': {
                         'ansible_ssh_user': self.ansible_ssh_user,
                         'bootstrap_server_id': role_node_id_map.get(
