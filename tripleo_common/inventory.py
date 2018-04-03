@@ -85,10 +85,12 @@ class StackOutputs(object):
 class TripleoInventory(object):
     def __init__(self, configs=None, session=None, hclient=None,
                  plan_name=None, auth_url=None, project_name=None,
-                 cacert=None, username=None, ansible_ssh_user=None):
+                 cacert=None, username=None, ansible_ssh_user=None,
+                 host_network=None):
         self.session = session
         self.hclient = hclient
         self.hosts_format_dict = False
+        self.host_network = host_network or HOST_NETWORK
         if configs is not None:
             # FIXME(shardy) backwards compatibility until we switch
             # tripleo-validations to pass the individual values
@@ -203,11 +205,11 @@ class TripleoInventory(object):
         children = []
         for role, hostnames in role_net_hostname_map.items():
             if hostnames:
-                names = hostnames.get(HOST_NETWORK) or []
-                shortnames = [n.split(".%s." % HOST_NETWORK)[0].lower()
+                names = hostnames.get(self.host_network) or []
+                shortnames = [n.split(".%s." % self.host_network)[0].lower()
                               for n in names]
                 # Create a group per hostname to map hostname to IP
-                ips = role_net_ip_map[role][HOST_NETWORK]
+                ips = role_net_ip_map[role][self.host_network]
                 hosts = {}
                 for idx, name in enumerate(shortnames):
                     hosts[name] = {}
