@@ -437,6 +437,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
             if not isinstance(self.extra_env_variables, dict):
                 msg = "extra_env_variables must be a dict"
                 return actions.Result(error=msg)
+            else:
+                for key, value in self.extra_env_variables.items():
+                    self.extra_env_variables[key] = six.text_type(value)
 
         if self.gather_facts:
             command.extend(['--gather-facts', self.gather_facts])
