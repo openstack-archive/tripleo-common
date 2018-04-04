@@ -432,6 +432,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
             if not isinstance(self.extra_env_variables, dict):
                 msg = "extra_env_variables must be a dict"
                 return actions.Result(error=msg)
+            else:
+                for key, value in self.extra_env_variables.items():
+                    self.extra_env_variables[key] = six.text_type(value)
 
         try:
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
