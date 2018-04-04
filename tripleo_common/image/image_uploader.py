@@ -15,9 +15,9 @@
 
 
 import abc
+from concurrent import futures
 import json
 import logging
-import multiprocessing
 import netifaces
 import os
 import requests
@@ -323,7 +323,7 @@ class DockerImageUploader(ImageUploader):
         for image in images:
             discover_args.append((image, tag_from_label,
                                   self.insecure_registries))
-        p = multiprocessing.Pool(16)
+        p = futures.ThreadPoolExecutor(max_workers=16)
 
         versioned_images = {}
         for image, versioned_image in p.map(discover_tag_from_inspect,
@@ -376,7 +376,7 @@ class DockerImageUploader(ImageUploader):
 
         # workers will be half the CPU count, to a minimum of 2
         workers = max(2, processutils.get_worker_count() // 2)
-        p = multiprocessing.Pool(workers)
+        p = futures.ThreadPoolExecutor(max_workers=workers)
 
         for result in p.map(docker_upload, self.upload_tasks):
             local_images.extend(result)
