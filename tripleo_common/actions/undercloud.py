@@ -198,11 +198,10 @@ class UploadUndercloudBackupToSwift(tripleobase.TripleOAction):
     def run(self, context):
         try:
             LOG.info('Uploading backup to swift')
-            swift = self.get_object_client(context)
-
+            swift_service = self.get_object_service(context)
             # Create tarball without gzip and store it 24h
             swiftutils.create_and_upload_tarball(
-                swift, self.backup_path, self.container,
+                swift_service, self.backup_path, self.container,
                 self.tarball_name, '-cf', self.expire)
 
             msg = 'Backup uploaded to undercloud-backups succesfully'

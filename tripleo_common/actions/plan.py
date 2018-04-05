@@ -186,13 +186,15 @@ class ExportPlanAction(base.TripleOAction):
 
     def run(self, context):
         swift = self.get_object_client(context)
+        swift_service = self.get_object_service(context)
+
         tmp_dir = tempfile.mkdtemp()
         tarball_name = '%s.tar.gz' % self.plan
 
         try:
             swiftutils.download_container(swift, self.plan, tmp_dir)
             swiftutils.create_and_upload_tarball(
-                swift, tmp_dir, self.exports_container, tarball_name,
+                swift_service, tmp_dir, self.exports_container, tarball_name,
                 delete_after=self.delete_after)
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err

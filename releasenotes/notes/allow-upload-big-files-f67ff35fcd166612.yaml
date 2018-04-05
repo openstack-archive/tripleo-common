@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Allow uploading files bigger than 5GB to swift.
+    Currently we have support for uploading files
+    to swift using the swift client class, this class
+    does not allow to upload files bigger than 5GB.
+    This change enables the upload of files bigger than
+    5GB by using the swift service class and adjusting
+    the headers to allow this operations. This new helper
+    will be used for the Undercloud backup, to be able to
+    store files bigger than 5GB.
