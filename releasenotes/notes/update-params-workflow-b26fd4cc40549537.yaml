@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Adds a workflow to update the parameters in a given deployment plan so the
+    tripleo.parameters.update action does not need to be called directly.
