@@ -158,6 +158,8 @@ class PrepareLogDownloadAction(base.TripleOAction):
 
     def run(self, context):
         swift = self.get_object_client(context)
+        swift_service = self.get_object_service(context)
+
         tmp_dir = tempfile.mkdtemp()
         tarball_name = 'logs-%s.tar.gz' % timeutils.timestamp()
 
@@ -165,7 +167,7 @@ class PrepareLogDownloadAction(base.TripleOAction):
             swiftutils.download_container(
                 swift, self.logging_container, tmp_dir)
             swiftutils.create_and_upload_tarball(
-                swift, tmp_dir, self.downloads_container,
+                swift_service, tmp_dir, self.downloads_container,
                 tarball_name, self.delete_after)
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
