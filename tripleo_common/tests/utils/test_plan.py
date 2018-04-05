@@ -21,7 +21,7 @@ from tripleo_common.tests import base
 from tripleo_common.utils import plan as plan_utils
 
 
-YAML_CONTENTS = """
+PLAN_ENV_CONTENTS = """
 version: 1.0
 
 name: overcloud
@@ -37,13 +37,18 @@ passwords:
   ZaqarPassword: zzzz
 """
 
+USER_ENV_CONTENTS = """
+resource_registry:
+  OS::TripleO::Foo: bar.yaml
+"""
+
 
 class PlanTest(base.TestCase):
     def setUp(self):
         super(PlanTest, self).setUp()
         self.container = 'overcloud'
         self.swift = mock.MagicMock()
-        self.swift.get_object.return_value = ({}, YAML_CONTENTS)
+        self.swift.get_object.return_value = ({}, PLAN_ENV_CONTENTS)
 
     def test_get_env(self):
         env = plan_utils.get_env(self.swift, self.container)
@@ -56,6 +61,22 @@ class PlanTest(base.TestCase):
 
         self. assertRaises(Exception, plan_utils.get_env, self.swift,
                            self.container)
+
+    def test_get_user_env(self):
+        self.swift.get_object.return_value = ({}, USER_ENV_CONTENTS)
+        env = plan_utils.get_user_env(self.swift, self.container)
+
+        self.swift.get_object.assert_called_with(
+            self.container, 'user-environment.yaml')
+        self.assertEqual(
+            env['resource_registry']['OS::TripleO::Foo'], 'bar.yaml')
+
+    def test_put_user_env(self):
+        contents = {'a': 'b'}
+        plan_utils.put_user_env(self.swift, self.container, contents)
+
+        self.swift.put_object.assert_called_with(
+            self.container, 'user-environment.yaml', 'a: b\n')
 
     def test_update_in_env(self):
         env = plan_utils.get_env(self.swift, self.container)
