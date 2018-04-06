@@ -1,0 +1,18 @@
+deploy_server_id: a7db3010-a51f-4ae0-a791-2364d629d20d
+
+ComputeHostEntryDeployment:
+  config:
+    {"hiera_key1": "hiera_value1", "hiera_key2": "hiera_value2"}
+  creation_time: "None"
+  deployment_name: ComputeHostEntryDeployment
+  group: hiera
+  id: 26db1678-fe18-4acb-86db-19885fccae4c
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        a7db3010-a51f-4ae0-a791-2364d629d20d
+  name: None
+  options: None
+  outputs:

@@ -1,0 +1,22 @@
+deploy_server_id: 169b46f8-1965-4d90-a7de-f36fb4a830fe
+
+AnsibleDeployment:
+  id: 391263ba-3d06-43b6-a47e-481808aaff20
+  creation_time: "None"
+  deployment_name: AnsibleDeployment
+  name: None
+  options: None
+  group: ansible
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        169b46f8-1965-4d90-a7de-f36fb4a830fe
+  outputs:
+  config: |
+    tasks:
+      - name: An Ansible task
+        copy:
+          content: "{{ some_hostvar | to_json }}"
+          dest: /some/path
