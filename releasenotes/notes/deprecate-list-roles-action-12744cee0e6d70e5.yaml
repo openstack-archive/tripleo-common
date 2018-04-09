@@ -1,0 +1,6 @@
+---
+deprecations:
+  - |
+    The tripleo.roles.list action is deprecated.  Please use the
+    tripleo.plan_management.v1.list_roles workflow instead.  Calling actions
+    directly is no longer supported.
