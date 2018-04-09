@@ -45,6 +45,8 @@ _EXISTING_PASSWORDS = {
     'CongressPassword': 'DwcKvMqXMuNYYFU4zTCuG4234',
     'GlancePassword': 'VqJYNEdKKsGZtgnHct77XBtrV',
     'RabbitPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
+    'RpcPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
+    'NotifyPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
     'CephAdminKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
     'HAProxyStatsPassword': 'P8tbdK6n4YUkTaUyy8XgEVTe6',
     'TackerPassword': 'DwcKvMqXMuNYYFU4zTCuG4234',

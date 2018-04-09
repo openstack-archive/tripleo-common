@@ -277,6 +277,13 @@ class GeneratePasswordsAction(base.TripleOAction):
         if 'passwords' not in env:
             env['passwords'] = {}
 
+        # NOTE(ansmith): if rabbit password previously generated and
+        # stored, facilitate upgrade and use for oslo messaging in plan env
+        if 'RabbitPassword' in env['passwords']:
+            for i in ('RpcPassword', 'NotifyPassword'):
+                if i not in env['passwords']:
+                    env['passwords'][i] = env['passwords']['RabbitPassword']
+
         # ensure all generated passwords are present in plan env,
         # but respect any values previously generated and stored
         for name, password in passwords.items():
