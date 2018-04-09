@@ -52,6 +52,17 @@ healthcheck_socket () {
   lsof -Fc -Ua $socket | grep "c$process"
 }
 
+healthcheck_file_modification () {
+    file_path=$1
+    limit_seconds=$2
+
+    curr_time=$(date +%s)
+    last_mod=$(stat -c '%Y' $file_path)
+    limit_epoch=$(( curr_time-limit_seconds ))
+    if [ "$limit_epoch" -gt "$last_mod" ]; then
+      return 1
+    fi
+}
 
 get_config_val () {
   crudini --get "$1" "$2" "$3" 2> /dev/null || echo "$4"
