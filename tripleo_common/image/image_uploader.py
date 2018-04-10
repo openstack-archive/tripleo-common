@@ -45,6 +45,15 @@ SECURE_REGISTRIES = (
 )
 
 
+def get_undercloud_registry():
+    addr = 'localhost'
+    if 'br-ctlplane' in netifaces.interfaces():
+        addrs = netifaces.ifaddresses('br-ctlplane')
+        if netifaces.AF_INET in addrs and addrs[netifaces.AF_INET]:
+            addr = addrs[netifaces.AF_INET][0].get('addr', 'localhost')
+    return '%s:%s' % (addr, '8787')
+
+
 class ImageUploadManager(BaseImageManager):
     """Manage the uploading of image files
 
@@ -76,14 +85,14 @@ class ImageUploadManager(BaseImageManager):
         uploads = self.load_config_files(self.UPLOADS) or []
         container_images = self.load_config_files(self.CONTAINER_IMAGES) or []
         upload_images = uploads + container_images
-        default_push_destination = self.get_ctrl_plane_ip() + ':8787'
 
         for item in upload_images:
             image_name = item.get('imagename')
             uploader = item.get('uploader', 'docker')
             pull_source = item.get('pull_source')
-            push_destination = item.get('push_destination',
-                                        default_push_destination)
+            push_destination = item.get('push_destination')
+            if not push_destination:
+                push_destination = get_undercloud_registry()
 
             # This updates the parsed upload_images dict with real values
             item['push_destination'] = push_destination
@@ -95,14 +104,6 @@ class ImageUploadManager(BaseImageManager):
             uploader.run_tasks()
 
         return upload_images  # simply to make test validation easier
-
-    def get_ctrl_plane_ip(self):
-        addr = 'localhost'
-        if 'br-ctlplane' in netifaces.interfaces():
-            addrs = netifaces.ifaddresses('br-ctlplane')
-            if netifaces.AF_INET in addrs and addrs[netifaces.AF_INET]:
-                addr = addrs[netifaces.AF_INET][0].get('addr', 'localhost')
-        return addr
 
 
 @six.add_metaclass(abc.ABCMeta)

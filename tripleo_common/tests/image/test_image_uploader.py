@@ -56,8 +56,11 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('os.path.isfile', return_value=True)
     @mock.patch('fcntl.ioctl', side_effect=Exception)
     @mock.patch('tripleo_common.image.image_uploader.Client')
-    def test_file_parsing(self, mockdocker, mockioctl, mockpath,
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'get_undercloud_registry', return_value='192.0.2.0:8787')
+    def test_file_parsing(self, mock_gur, mockdocker, mockioctl, mockpath,
                           mock_images_match, mock_is_insecure):
+
         manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()
         mockpath(self.filelist[0])
@@ -71,6 +74,8 @@ class TestImageUploadManager(base.TestCase):
 
         dockerc = mockdocker.return_value
         dockerc.remove_image.assert_has_calls([
+            mock.call('192.0.2.0:8787/tripleomaster'
+                      '/centos-binary-nova-libvirt:liberty'),
             mock.call('docker.io/tripleomaster'
                       '/centos-binary-nova-compute:liberty'),
             mock.call('docker.io/tripleomaster'
@@ -83,12 +88,28 @@ class TestImageUploadManager(base.TestCase):
             mock.call('localhost:8787/tripleomaster'
                       '/centos-binary-nova-compute:liberty'),
             mock.call('localhost:8787/tripleomaster'
-                      '/centos-binary-nova-libvirt:liberty'),
-            mock.call('localhost:8787/tripleomaster'
                       '/heat-docker-agents-centos:latest'),
             mock.call('localhost:8787/tripleomaster/'
                       'image-with-missing-tag:latest'),
         ])
+
+    @mock.patch('netifaces.ifaddresses')
+    @mock.patch('netifaces.interfaces')
+    def test_get_undercloud_registry(self, mock_interfaces, mock_addresses):
+        mock_interfaces.return_value = ['lo', 'eth0']
+        self.assertEqual(
+            'localhost:8787',
+            image_uploader.get_undercloud_registry()
+        )
+
+        mock_interfaces.return_value = ['lo', 'eth0', 'br-ctlplane']
+        mock_addresses.return_value = {
+            2: [{'addr': '192.0.2.0'}]
+        }
+        self.assertEqual(
+            '192.0.2.0:8787',
+            image_uploader.get_undercloud_registry()
+        )
 
 
 class TestImageUploader(base.TestCase):
