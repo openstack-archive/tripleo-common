@@ -1,0 +1,97 @@
+---
+version: '2.0'
+name: tripleo.heat_environments.v1
+description: TripleO Heat Environments Workflows
+
+workflows:
+
+  update:
+
+    description: >
+      Update plan environment with selected environments.
+
+      Takes a list of environment files and depending on the value of the
+      enabled flag, adds or removes them from the plan environment.
+
+    input:
+      - environments
+      - container
+      - purge_missing: false
+      - sort_environments: false
+      - queue_name: tripleo
+
+    output:
+      plan_environment: <% $.result %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      update:
+        input:
+          environments: <% $.environments %>
+          container: <% $.container %>
+          purge_missing: <% $.purge_missing %>
+          sort_environments: <% $.sort_environments %>
+        action: tripleo.heat_capabilities.update
+        on-complete: send_message
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+          plan_environment: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS')
+          execution: <% execution() %>
+          messages: <% $.get('message', '') %>
+          payload:
+            plan_environment: <% $.get('plan_environment', []) %>
+
+  get:
+
+    description: >
+      Get list of available heat environments.
+
+      Parses the capabilities_map.yaml file in a given plan and
+      returns a list of environments.
+
+    input:
+      - container
+      - queue_name: tripleo
+
+    output:
+      capabilities: <% $.result %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get:
+        action: tripleo.heat_capabilities.get container=<% $.container %>
+        on-complete: send_message
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+          capabilities: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS')
+          execution: <% execution() %>
+          messages: <% $.get('message', '') %>
+          payload:
+            capabilities: <% $.get('capabilities', []) %>
