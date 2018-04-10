@@ -396,7 +396,7 @@ class TestDockerImageUploader(base.TestCase):
             ('docker.io/t/foo', 'rdo_version', sr)
         )
 
-    @mock.patch('multiprocessing.Pool')
+    @mock.patch('concurrent.futures.ThreadPoolExecutor')
     def test_discover_image_tags(self, mock_pool):
         mock_pool.return_value.map.return_value = (
             ('docker.io/t/foo', 'a'),
