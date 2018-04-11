@@ -11,4 +11,4 @@ else
   bind_port=$(awk -F "= *" '/^org.osgi.service.http.port.secure/ {print $2}' $file)
 fi
 
-healthcheck_curl http://$bind_host:$bind_port/index.html
+healthcheck_curl http://$bind_host:$bind_port/controller/nb/v2/neutron
