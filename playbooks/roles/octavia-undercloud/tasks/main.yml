@@ -13,3 +13,17 @@
     register: image_result
     changed_when: "image_result.stdout != ''"
     when: amp_image_file_result.stat.exists == True
+
+  - name: check if pub key file exists
+    stat: path="{{ amp_ssh_key_path }}"
+    register: ssh_pub_key_file_result
+
+  - name: upload pub key to overcloud
+    shell: |
+      openstack keypair show {{ amp_ssh_key_name }} || \
+        openstack keypair create --public-key {{ amp_ssh_key_path }} {{ amp_ssh_key_name }}
+    environment:
+      OS_USERNAME: {{ auth_username }}
+      OS_PASSWORD: {{ auth_password }}
+      OS_PROJECT_NAME: {{ auth_project_name }}
+    when: ssh_pub_key_file_result.stat.exists == True
