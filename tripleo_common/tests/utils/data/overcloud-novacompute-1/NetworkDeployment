@@ -1,0 +1,18 @@
+deploy_server_id: 8b07cd31-3083-4b88-a433-955f72039e2c
+
+NetworkDeployment:
+  config:
+    {"hiera_key3": "hiera_value3", "hiera_key4": {"hiera_key4_subkey1": "hiera_key4_subvalue1", "hiera_key4_subkey0": "hiera_key4_subvalue0"}}
+  creation_time: "None"
+  deployment_name: NetworkDeployment
+  group: hiera
+  id: d21aefd1-9d94-44c0-b73a-16c8d4bc605c
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        8b07cd31-3083-4b88-a433-955f72039e2c
+  name: None
+  options: None
+  outputs:

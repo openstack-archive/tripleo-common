@@ -1,0 +1,20 @@
+deploy_server_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+
+MyExtraConfigPost:
+  config: |
+    #!/bin/bash
+    echo "An ExtraConfigPost script"
+  creation_time: "None"
+  deployment_name: MyExtraConfigPost
+  group: script
+  id: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  name: None
+  options: None
+  outputs:
+

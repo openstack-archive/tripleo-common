@@ -1,6 +1,5 @@
 deploy_server_id: {{ server_id }}
 
-{% for deployment in deployments %}
 {{ deployment.get('deployment_name') }}:
 {% if deployment.get('scalar') %}
   config: |
@@ -27,6 +26,4 @@ deploy_server_id: {{ server_id }}
     - name: {{ output.get('name') }}
       description: {{ output.get('description') }}
       type: {{ output.get('type') }}
-{% endfor %}
-
 {% endfor %}

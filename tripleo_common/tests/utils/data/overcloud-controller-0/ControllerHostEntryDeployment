@@ -1,0 +1,19 @@
+deploy_server_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+
+ControllerHostEntryDeployment:
+  config: |
+    #!/bin/bash
+    echo "A script"
+  creation_time: "None"
+  deployment_name: ControllerHostEntryDeployment
+  group: script
+  id: 50fcb6ee-4ff2-4318-b734-d3a7b45a8d6d
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  name: None
+  options: None
+  outputs:
