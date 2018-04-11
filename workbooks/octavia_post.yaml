@@ -11,6 +11,11 @@ workflows:
       - amp_image_name
       - amp_image_filename
       - amp_image_tag
+      - amp_ssh_key_name
+      - amp_ssh_key_path
+      - auth_username
+      - auth_password
+      - auth_project_name
       - lb_mgmt_net_name
       - lb_mgmt_subnet_name
       - lb_sec_group_name
@@ -94,6 +99,11 @@ workflows:
             amp_image_name: <% $.amp_image_name %>
             amp_image_filename: <% $.amp_image_filename %>
             amp_image_tag: <% $.amp_image_tag %>
+            amp_ssh_key_name: <% $.amp_ssh_key_name %>
+            amp_ssh_key_path: <% $.amp_ssh_key_path %>
+            auth_username: <% $.auth_username %>
+            auth_password: <% $.auth_password %>
+            auth_project_name: <% $.auth_project_name %>
         on-success: config_octavia
 
       config_octavia:
