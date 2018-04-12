@@ -124,7 +124,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
         ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
         mock_write_cfg.return_value = ansible_config_path
 
-        message_size = int(self.max_message_size * 0.9)
+        message_size = int(self.max_message_size * 0.5)
 
         # Message equal to max_message_size
         queue = mock.Mock()
@@ -154,7 +154,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
         message = ''.join([string.ascii_letters[int(random.random() * 26)]
                            for x in range(2048)])
         action.post_message(queue, message)
-        self.assertEqual(queue.post.call_count, 3)
+        self.assertEqual(queue.post.call_count, 4)
         self.assertEqual(
             queue.post.call_args_list[0],
             mock.call(action.format_message(message[:message_size])))
@@ -165,7 +165,11 @@ class AnsiblePlaybookActionTest(base.TestCase):
         self.assertEqual(
             queue.post.call_args_list[2],
             mock.call(action.format_message(
-                      message[message_size * 2:2048])))
+                      message[message_size * 2:message_size * 3])))
+        self.assertEqual(
+            queue.post.call_args_list[3],
+            mock.call(action.format_message(
+                      message[message_size * 3:2048])))
 
 
 class CopyConfigFileTest(base.TestCase):

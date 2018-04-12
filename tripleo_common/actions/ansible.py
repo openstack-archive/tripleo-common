@@ -370,13 +370,14 @@ class AnsiblePlaybookAction(base.TripleOAction):
     def post_message(self, queue, message):
         """Posts message to queue
 
-        Breaks the message up it up by maximum message size if needed.
+        Breaks the message up by maximum message size if needed.
         """
 
         start = 0
-        # We use 90% of the max message size to account for any overhead,
-        # plus the wrapped dict structure from format_message
-        message_size = int(self.max_message_size * 0.9)
+        # We use 50% of the max message size to account for any overhead
+        # due to JSON encoding plus the wrapped dict structure from
+        # format_message.
+        message_size = int(self.max_message_size * 0.5)
         while True:
             end = start + message_size
             message_part = message[start:end]
