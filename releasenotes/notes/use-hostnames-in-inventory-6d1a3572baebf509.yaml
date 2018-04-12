@@ -1,0 +1,6 @@
+---
+other:
+  - The inventory code is updated to use hostnames as the host alias. Since the
+    hostname may not always be resolvable, ansible_host is added as a hostvar
+    and set to the host's IP address. Using hostnames produces a much more user
+    friendly result in the ansible output showing task result and play recap.
