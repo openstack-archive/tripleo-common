@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Modifies the healthcheck for OpenDaylight to a supported URL. See
+    https://bugs.launchpad.net/tripleo/+bug/1751857
