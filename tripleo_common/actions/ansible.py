@@ -246,6 +246,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
     def __init__(self, **kwargs):
         self._kwargs_for_run = kwargs
         self._playbook = self._kwargs_for_run.pop('playbook', None)
+        self.playbook_name = self._kwargs_for_run.pop('playbook_name',
+                                                      'playbook.yaml')
+        self.plan_name = self._kwargs_for_run.pop('plan_name', None)
         self.limit_hosts = self._kwargs_for_run.pop('limit_hosts', None)
         self.module_path = self._kwargs_for_run.pop('module_path', None)
         self.remote_user = self._kwargs_for_run.pop('remote_user', None)
@@ -328,7 +331,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
         elif not isinstance(self._playbook, six.string_types):
             self._playbook = yaml.safe_dump(self._playbook)
 
-        path = os.path.join(self.work_dir, 'playbook.yaml')
+        path = os.path.join(self.work_dir, self.playbook_name)
 
         # NOTE(flaper87):
         # We could probably catch parse errors here
@@ -366,10 +369,13 @@ class AnsiblePlaybookAction(base.TripleOAction):
         return path
 
     def format_message(self, message):
+        type_ = 'tripleo.ansible-playbook.{}'.format(self.playbook_name)
         return {
             'body': {
+                'type': type_,
                 'payload': {
                     'message': message,
+                    'plan_name': self.plan_name,
                     'status': 'RUNNING',
                     'execution': {'id': self.execution_id}}}}
 
