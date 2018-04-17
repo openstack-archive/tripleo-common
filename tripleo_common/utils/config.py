@@ -229,6 +229,29 @@ class Config(object):
                           "should be set via the name property on the " \
                           "Deployment resources in the templates."
                 raise ValueError(message)
+
+            try:
+                int(deployment_name)
+            except ValueError:
+                pass
+            else:
+                # We can't have an integer here, let's figure out the
+                # grandparent resource name
+                deployment_stack_id = \
+                    deployment.attributes['value']['deployment'].split('/')[-1]
+                deployment_stack = self.client.stacks.get(
+                    deployment_stack_id, resolve_outputs=False)
+                parent_stack = deployment_stack.parent
+                resources = self.client.resources.list(
+                    name,
+                    nested_depth=constants.NESTED_DEPTH,
+                    filters=dict(physical_resource_id=parent_stack))
+                if not resources:
+                    message = "The deployment resource grandparent name could" \
+                              "not be determined."
+                    raise ValueError(message)
+                deployment_name = resources[0].name
+
             config_dict['deployment_name'] = deployment_name
 
             # reset deploy_server_id to the actual server_id since we have to
