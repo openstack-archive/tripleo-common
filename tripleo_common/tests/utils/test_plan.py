@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import mock
+import os
 
 from swiftclient import exceptions as swiftexceptions
 
@@ -111,3 +113,137 @@ class PlanTest(base.TestCase):
 
         self.swift.get_object.assert_called()
         self.swift.put_object.assert_called()
+
+    def test_write_json_temp_file(self):
+        name = plan_utils.write_json_temp_file({'foo': 'bar'})
+        with open(name) as f:
+            self.assertEqual({'foo': 'bar'}, json.load(f))
+        os.remove(name)
+
+    @mock.patch('requests.request', autospec=True)
+    def test_object_request(self, request):
+        request.return_value.content = 'foo'
+
+        content = plan_utils.object_request('GET', '/foo/bar', 'asdf1234')
+
+        self.assertEqual('foo', content)
+        request.assert_called_once_with(
+            'GET', '/foo/bar', headers={'X-Auth-Token': 'asdf1234'})
+
+    @mock.patch('tripleo_common.utils.plan.object_request',
+                autospec=True)
+    def test_process_environments_and_files(self, object_request):
+        swift_url = 'https://192.0.2.1:8443/foo'
+        url = '%s/bar' % swift_url
+        object_request.return_value = 'parameter_defaults: {foo: bar}'
+        swift = mock.Mock()
+        swift.url = swift_url
+        swift.token = 'asdf1234'
+
+        result = plan_utils.process_environments_and_files(swift, [url])
+
+        self.assertEqual(
+            {'parameter_defaults': {'foo': 'bar'}},
+            result[1]
+        )
+        object_request.assert_called_once_with(
+            'GET',
+            'https://192.0.2.1:8443/foo/bar',
+            'asdf1234'
+        )
+
+    @mock.patch('tripleo_common.utils.plan.object_request',
+                autospec=True)
+    def test_get_template_contents(self, object_request):
+        swift_url = 'https://192.0.2.1:8443/foo'
+        url = '%s/bar' % swift_url
+        object_request.return_value = 'heat_template_version: 2016-04-30'
+        swift = mock.Mock()
+        swift.url = swift_url
+        swift.token = 'asdf1234'
+
+        result = plan_utils.get_template_contents(swift, url)
+
+        self.assertEqual(
+            {'heat_template_version': '2016-04-30'},
+            result[1]
+        )
+        object_request.assert_called_once_with(
+            'GET',
+            'https://192.0.2.1:8443/foo/bar',
+            'asdf1234'
+        )
+
+    def test_build_env_paths(self):
+        swift = mock.Mock()
+        swift.url = 'https://192.0.2.1:8443/foo'
+        swift.token = 'asdf1234'
+        plan = {
+            'version': '1.0',
+            'environments': [
+                {'path': 'bar.yaml'},
+                {'data': {
+                    'parameter_defaults': {'InlineParam': 1}}}
+            ],
+            'passwords': {
+                'ThePassword': 'password1'
+            },
+            'derived_parameters': {
+                'DerivedParam': 'DerivedValue',
+                'MergableParam': {
+                    'one': 'derived one',
+                    'two': 'derived two',
+                },
+            },
+            'parameter_defaults': {
+                'Foo': 'bar',
+                'MergableParam': {
+                    'one': 'user one',
+                    'three': 'user three',
+                },
+            },
+            'resource_registry': {
+                'Foo::Bar': 'foo_bar.yaml'
+            },
+        }
+
+        env_paths, temp_env_paths = plan_utils.build_env_paths(
+            swift, 'overcloud', plan)
+
+        self.assertEqual(3, len(temp_env_paths))
+        self.assertEqual(
+            ['https://192.0.2.1:8443/foo/overcloud/bar.yaml'] + temp_env_paths,
+            env_paths
+        )
+
+        with open(env_paths[1]) as f:
+            self.assertEqual(
+                {'parameter_defaults': {'InlineParam': 1}},
+                json.load(f)
+            )
+
+        with open(env_paths[2]) as f:
+            self.assertEqual(
+                {'parameter_defaults': {
+                    'ThePassword': 'password1',
+                    'DerivedParam': 'DerivedValue',
+                    'Foo': 'bar',
+                    'MergableParam': {
+                        'one': 'user one',
+                        'two': 'derived two',
+                        'three': 'user three',
+                    }
+                }},
+                json.load(f)
+            )
+
+        with open(env_paths[3]) as f:
+            self.assertEqual(
+                {'resource_registry': {
+                    'Foo::Bar': 'foo_bar.yaml'
+                }},
+                json.load(f)
+            )
+
+        for path in temp_env_paths:
+            os.remove(path)

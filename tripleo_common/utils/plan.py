@@ -13,6 +13,12 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from heatclient.common import template_utils
+import json
+import os
+import requests
+import tempfile
 import yaml
 
 from tripleo_common import constants
@@ -71,3 +77,86 @@ def put_user_env(swift, container_name, env):
         constants.USER_ENVIRONMENT,
         yaml.safe_dump(env, default_flow_style=False)
     )
+
+
+def write_json_temp_file(data):
+    """Writes the provided data to a json file and return the filename"""
+    with tempfile.NamedTemporaryFile(delete=False, mode='w') as temp_file:
+        temp_file.write(json.dumps(data))
+    return temp_file.name
+
+
+def object_request(method, url, token):
+    """Fetch an object with the provided token"""
+    response = requests.request(
+        method, url, headers={'X-Auth-Token': token})
+    response.raise_for_status()
+    return response.content
+
+
+def process_environments_and_files(swift, env_paths):
+    """Wrap process_multiple_environments_and_files with swift object fetch"""
+    def _env_path_is_object(env_path):
+        return env_path.startswith(swift.url)
+
+    def _object_request(method, url, token=swift.token):
+        return object_request(method, url, token)
+
+    return template_utils.process_multiple_environments_and_files(
+        env_paths=env_paths,
+        env_path_is_object=_env_path_is_object,
+        object_request=_object_request)
+
+
+def get_template_contents(swift, template_object):
+    """Wrap get_template_contents with swift object fetch"""
+    def _object_request(method, url, token=swift.token):
+        return object_request(method, url, token)
+
+    return template_utils.get_template_contents(
+        template_object=template_object,
+        object_request=_object_request)
+
+
+def build_env_paths(swift, container, plan_env):
+    environments = plan_env.get('environments', [])
+    env_paths = []
+    temp_env_paths = []
+
+    for env in environments:
+        if env.get('path'):
+            env_paths.append(os.path.join(swift.url, container, env['path']))
+        elif env.get('data'):
+            env_file = write_json_temp_file(env['data'])
+            temp_env_paths.append(env_file)
+
+    # create a dict to hold all user set params and merge
+    # them in the appropriate order
+    merged_params = {}
+    # merge generated passwords into params first
+    passwords = plan_env.get('passwords', {})
+    merged_params.update(passwords)
+
+    # derived parameters are merged before 'parameter defaults'
+    # so that user-specified values can override the derived values.
+    derived_params = plan_env.get('derived_parameters', {})
+    merged_params.update(derived_params)
+
+    # handle user set parameter values next in case a user has set
+    # a new value for a password parameter
+    params = plan_env.get('parameter_defaults', {})
+    merged_params = template_utils.deep_update(merged_params, params)
+
+    if merged_params:
+        env_temp_file = write_json_temp_file(
+            {'parameter_defaults': merged_params})
+        temp_env_paths.append(env_temp_file)
+
+    registry = plan_env.get('resource_registry', {})
+    if registry:
+        env_temp_file = write_json_temp_file(
+            {'resource_registry': registry})
+        temp_env_paths.append(env_temp_file)
+
+    env_paths.extend(temp_env_paths)
+    return env_paths, temp_env_paths
