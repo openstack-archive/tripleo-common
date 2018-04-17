@@ -1,0 +1,57 @@
+---
+  - name: check if name is a symlink
+    stat:
+      path: "{{ image_filename }}"
+    register: symlnk_check
+
+  - name: bypass image naming logic if image name is provided (backwards-compatibility)
+    set_fact:
+      amphora_image: "{{ amphora_image_name }}"
+    when: amphora_image_name is defined and not amphora_image_name == ''
+
+  - name: set the actual glance image name if it is a symlink
+    set_fact:
+      amphora_image: "{{ (symlnk_check.stat.lnk_target | basename | splitext)[0] }}"
+    when: amphora_image is not defined and symlnk_check is defined and symlnk_check.stat.islnk
+
+  - name: set the actual glance image name if it is not a symlink
+    set_fact:
+      amphora_image: "{{ (image_file_result.stat.path | basename | splitext)[0] }}"
+    when: amphora_image is not defined and image_file_result.stat.exists and not symlnk_check.stat.islnk
+
+  - name: check there an image in glance already
+    shell: |
+      openstack image show {{ amphora_image }} -c checksum -f value
+    register: glance_results
+    ignore_errors: true
+
+  - name: get md5 from glance if image already exists there
+    set_fact:
+      current_md5: "{{ glance_results.stdout }}"
+    when: glance_results.rc == 0
+
+  - name: determine if the image needs to be replaced
+    set_fact:
+      replace_image: "{{ current_md5 != image_file_result.stat.md5 }}"
+    when: current_md5 is defined
+
+  - name: move existing image if the names match and the md5s are not the same
+    shell: |
+      ts=`openstack image show {{ amphora_image }} -f value -c created_at`
+      ts=${ts//:/}
+      ts=${ts//-/}
+      openstack image set {{ amphora_image }} --name "{{ amphora_image }}_$ts"
+    when: replace_image is defined and replace_image
+
+  - name: decide whether to upload new image
+    set_fact:
+      upload_image: true
+    when: current_md5 is not defined or replace_image
+
+  - name: upload image to glance
+    shell: |
+      openstack image create --disk-format qcow2  --container-format bare --tag {{ amp_image_tag }} \
+        --file {{ image_filename }} {{ amphora_image }}
+    register: image_result
+    changed_when: "image_result.stdout != ''"
+    when: image_file_result.stat.exists and upload_image is defined
