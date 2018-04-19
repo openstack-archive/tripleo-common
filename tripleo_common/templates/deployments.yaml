@@ -25,7 +25,7 @@
     path: /var/lib/heat-config/deployed/{{ deployment_uuid }}.json
     state: absent
   become: true
-  when: deployed_file_stat.stat.exists and previous_deployment_result.rc not in (0, 2)
+  when: deployed_file_stat.stat.exists and previous_deployment_result.rc != 0
 
 - name: "Force remove deployed file for {{ item }}"
   file:
@@ -51,7 +51,7 @@
       - status_code: "{{ deployment_result.rc }}"
   tags:
     - output
-  failed_when: deployment_result.rc not in (0, 2)
+  failed_when: deployment_result.rc != 0
   when: not ansible_check_mode
 
 - name: "Check-mode for Run deployment {{ item }}"
