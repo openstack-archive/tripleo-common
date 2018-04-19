@@ -8,12 +8,31 @@
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
   become: true
 
+- name: "Check if deployed file exists for {{ item }}"
+  stat:
+    path: /var/lib/heat-config/deployed/{{ deployment_uuid }}.json
+  register: deployed_file_stat
+
+- name: "Check previous deployment rc for {{ item }}"
+  shell: |
+    exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
+  register: previous_deployment_result
+  ignore_errors: false
+  when: deployed_file_stat.stat.exists
+
+- name: "Remove deployed file for {{ item }} when previous deployment failed"
+  file:
+    path: /var/lib/heat-config/deployed/{{ deployment_uuid }}.json
+    state: absent
+  become: true
+  when: deployed_file_stat.stat.exists and previous_deployment_result.rc not in (0, 2)
+
 - name: "Force remove deployed file for {{ item }}"
   file:
     path: /var/lib/heat-config/deployed/{{ deployment_uuid }}.json
     state: absent
   become: true
-  when: force | bool
+  when: (force | bool)
 
 - name: "Run deployment {{ item }}"
   shell: |
