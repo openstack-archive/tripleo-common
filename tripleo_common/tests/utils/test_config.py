@@ -35,9 +35,9 @@ class TestConfig(base.TestCase):
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
     @patch.object(ooo_config.Config, '_open_file')
-    @mock.patch('tempfile.mkdtemp', autospec=True)
+    @patch.object(ooo_config.shutil, 'rmtree')
     def test_overcloud_config_generate_config(self,
-                                              mock_tmpdir,
+                                              mock_rmtree,
                                               mock_open,
                                               mock_mkdir,
                                               mock_copyfile):
@@ -54,8 +54,7 @@ class TestConfig(base.TestCase):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
         self.config = ooo_config.Config(heat)
-        mock_tmpdir.return_value = "/tmp/tht"
-        self.config.download_config('overcloud', '/tmp', config_type_list)
+        self.config.download_config('overcloud', '/tmp/tht', config_type_list)
 
         expected_mkdir_calls = [call('/tmp/tht/%s' % r) for r in fake_role]
         mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
@@ -75,9 +74,9 @@ class TestConfig(base.TestCase):
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
     @patch.object(ooo_config.Config, '_open_file')
-    @mock.patch('tempfile.mkdtemp', autospec=True)
+    @patch.object(ooo_config.shutil, 'rmtree')
     def test_overcloud_config_one_config_type(self,
-                                              mock_tmpdir,
+                                              mock_rmtree,
                                               mock_open,
                                               mock_mkdir,
                                               mock_copyfile):
@@ -89,8 +88,8 @@ class TestConfig(base.TestCase):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
         self.config = ooo_config.Config(heat)
-        mock_tmpdir.return_value = "/tmp/tht"
-        self.config.download_config('overcloud', '/tmp', ['config_settings'])
+        self.config.download_config('overcloud', '/tmp/tht',
+                                    ['config_settings'])
         expected_mkdir_calls = [call('/tmp/tht/%s' % r) for r in fake_role]
         expected_calls = [call('/tmp/tht/%s/%s.yaml'
                           % (r, expected_config_type))
@@ -100,15 +99,14 @@ class TestConfig(base.TestCase):
 
     @mock.patch('os.mkdir')
     @mock.patch('six.moves.builtins.open')
-    @mock.patch('tempfile.mkdtemp', autospec=True)
-    def test_overcloud_config_wrong_config_type(self, mock_tmpdir,
+    @patch.object(ooo_config.shutil, 'rmtree')
+    def test_overcloud_config_wrong_config_type(self, mock_rmtree,
                                                 mock_open, mock_mkdir):
-        args = {'name': 'overcloud', 'config_dir': '/tmp',
+        args = {'name': 'overcloud', 'config_dir': '/tmp/tht',
                 'config_type': ['bad_config']}
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
         self.config = ooo_config.Config(heat)
-        mock_tmpdir.return_value = "/tmp/tht"
         self.assertRaises(
             KeyError,
             self.config.download_config, *args)
@@ -415,3 +413,157 @@ class TestConfig(base.TestCase):
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         self.assertRaises(ValueError,
                           self.config.download_config, stack, self.tmp_dir)
+
+    @patch.object(ooo_config.shutil, 'copyfile')
+    @patch.object(ooo_config.Config, '_mkdir')
+    @patch.object(ooo_config.Config, '_open_file')
+    @patch.object(ooo_config.shutil, 'rmtree')
+    @patch.object(ooo_config.os.path, 'exists')
+    def test_overcloud_config_dont_preserve_config(self,
+                                                   mock_os_path_exists,
+                                                   mock_rmtree,
+                                                   mock_open,
+                                                   mock_mkdir,
+                                                   mock_copyfile):
+        config_type_list = ['config_settings', 'global_config_settings',
+                            'logging_sources', 'monitoring_subscriptions',
+                            'service_config_settings',
+                            'service_metadata_settings',
+                            'service_names',
+                            'upgrade_batch_tasks', 'upgrade_tasks',
+                            'external_deploy_tasks']
+        fake_role = [role for role in
+                     fakes.FAKE_STACK['outputs'][1]['output_value']]
+
+        mock_os_path_exists.get.return_value = True
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = fakes.create_tht_stack()
+        self.config = ooo_config.Config(heat)
+        self.config.download_config('overcloud', '/tmp/tht', config_type_list,
+                                    False)
+
+        expected_rmtree_calls = [call('/tmp/tht')]
+        mock_rmtree.assert_has_calls(expected_rmtree_calls)
+
+        expected_mkdir_calls = [call('/tmp/tht/%s' % r) for r in fake_role]
+        mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
+        expected_calls = []
+        for config in config_type_list:
+            for role in fake_role:
+                if 'external' in config:
+                    continue
+                elif config == 'step_config':
+                    expected_calls += [call('/tmp/tht/%s/%s.pp' %
+                                            (role, config))]
+                else:
+                    expected_calls += [call('/tmp/tht/%s/%s.yaml' %
+                                            (role, config))]
+        mock_open.assert_has_calls(expected_calls, any_order=True)
+
+    @patch.object(ooo_config.shutil, 'rmtree')
+    @patch.object(ooo_config.os.path, 'exists')
+    def test_create_config_dir(self, mock_os_path_exists, mock_rmtree):
+        mock_os_path_exists.get.return_value = True
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = fakes.create_tht_stack()
+        self.config = ooo_config.Config(heat)
+        self.config.create_config_dir('/tmp/tht', False)
+        expected_rmtree_calls = [call('/tmp/tht')]
+        mock_rmtree.assert_has_calls(expected_rmtree_calls)
+
+    @patch('tripleo_common.utils.config.Config.get_config_dict')
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    def test_write_config(self, mock_deployment_data, mock_config_dict):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+        stack = mock.MagicMock()
+        heat.stacks.get.return_value = stack
+
+        stack.outputs = [
+            {'output_key': 'RoleNetHostnameMap',
+             'output_value': {
+                 'Controller': {
+                     'ctlplane': [
+                         'overcloud-controller-0.ctlplane.localdomain']},
+                 'Compute': {
+                     'ctlplane': [
+                         'overcloud-novacompute-0.ctlplane.localdomain',
+                         'overcloud-novacompute-1.ctlplane.localdomain',
+                         'overcloud-novacompute-2.ctlplane.localdomain']}}},
+            {'output_key': 'ServerIdData',
+             'output_value': {
+                 'server_ids': {
+                     'Controller': [
+                         '00b3a5e1-5e8e-4b55-878b-2fa2271f15ad'],
+                     'Compute': [
+                         'a7db3010-a51f-4ae0-a791-2364d629d20d',
+                         '8b07cd31-3083-4b88-a433-955f72039e2c',
+                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}}]
+        deployment_data, configs = \
+            self._get_config_data('config_data.yaml')
+        self.configs = configs
+
+        stack_data = self.config.fetch_config('overcloud')
+        mock_deployment_data.return_value = deployment_data
+        mock_config_dict.side_effect = self._get_config_dict
+
+        config_dir = self.useFixture(fixtures.TempDir()).path
+
+        self.config.write_config(stack_data, 'overcloud', config_dir)
+
+        for f in ['Controller',
+                  'Compute', ]:
+            self.assertEqual(
+                yaml.safe_load(
+                    open(os.path.join(config_dir, 'group_vars', f)).read()),
+                self._get_yaml_file(f))
+
+        for d in ['ControllerHostEntryDeployment',
+                  'NetworkDeployment',
+                  'MyExtraConfigPost',
+                  'MyPostConfig']:
+            self.assertEqual(
+                yaml.safe_load(
+                    open(os.path.join(config_dir, 'Controller',
+                                      'overcloud-controller-0',
+                                      d)).read()),
+                self._get_yaml_file(os.path.join(
+                    'overcloud-controller-0',
+                    d)))
+
+        for d in ['ComputeHostEntryDeployment',
+                  'NetworkDeployment',
+                  'MyExtraConfigPost']:
+            self.assertEqual(
+                yaml.safe_load(
+                    open(os.path.join(config_dir, 'Compute',
+                                      'overcloud-novacompute-0',
+                                      d)).read()),
+                self._get_yaml_file(os.path.join(
+                    'overcloud-novacompute-0',
+                    d)))
+
+        for d in ['ComputeHostEntryDeployment',
+                  'NetworkDeployment',
+                  'MyExtraConfigPost']:
+            self.assertEqual(
+                yaml.safe_load(
+                    open(os.path.join(config_dir, 'Compute',
+                                      'overcloud-novacompute-1',
+                                      d)).read()),
+                self._get_yaml_file(os.path.join(
+                    'overcloud-novacompute-1',
+                    d)))
+
+        for d in ['ComputeHostEntryDeployment',
+                  'NetworkDeployment',
+                  'MyExtraConfigPost',
+                  'AnsibleDeployment']:
+            self.assertEqual(
+                yaml.safe_load(
+                    open(os.path.join(config_dir, 'Compute',
+                                      'overcloud-novacompute-2',
+                                      d)).read()),
+                self._get_yaml_file(os.path.join(
+                    'overcloud-novacompute-2',
+                    d)))

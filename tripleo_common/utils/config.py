@@ -18,7 +18,6 @@ import os
 import re
 import shutil
 import six
-import tempfile
 import warnings
 import yaml
 
@@ -143,24 +142,30 @@ class Config(object):
                                                                str(e))
                 raise OSError(message)
 
-    def download_config(self, name, config_dir, config_type=None):
+    def create_config_dir(self, config_dir, preserve_config_dir=True):
+        # Create config directory
+        if os.path.exists(config_dir) and preserve_config_dir is False:
+            try:
+                self.log.info("Directory %s already exists, removing"
+                              % config_dir)
+                shutil.rmtree(config_dir)
+            except OSError as e:
+                message = 'Failed to remove: %s, error: %s' % (config_dir,
+                                                               str(e))
+                raise OSError(message)
+
+    def fetch_config(self, name):
         # Get the stack object
         stack = self.client.stacks.get(name)
         self.stack_outputs = {i['output_key']: i['output_value']
                               for i in stack.outputs}
+        return stack
 
-        # Create config directory
-        self._mkdir(config_dir)
-        tmp_path = tempfile.mkdtemp(prefix='tripleo-',
-                                    suffix='-config',
-                                    dir=config_dir)
-        self.log.info("Generating configuration under the directory: "
-                      "%s" % tmp_path)
-
+    def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
         role_data = self.stack_outputs.get('RoleData', {})
         for role_name, role in six.iteritems(role_data):
-            role_path = os.path.join(tmp_path, role_name)
+            role_path = os.path.join(config_dir, role_name)
             self._mkdir(role_path)
             for config in config_type or role.keys():
                 if config in constants.EXTERNAL_TASKS:
@@ -190,7 +195,7 @@ class Config(object):
                                        default_flow_style=False)
         role_config = self.get_role_config()
         for config_name, config in six.iteritems(role_config):
-            conf_path = os.path.join(tmp_path, config_name + ".yaml")
+            conf_path = os.path.join(config_dir, config_name + ".yaml")
             with self._open_file(conf_path) as conf_file:
                 if isinstance(config, list) or isinstance(config, dict):
                     yaml.safe_dump(config, conf_file, default_flow_style=False)
@@ -263,16 +268,16 @@ class Config(object):
                 if deployment_name not in role_pre_deployments:
                     role_pre_deployments.append(deployment_name)
 
-        env, templates_path = self.get_jinja_env(tmp_path)
+        env, templates_path = self.get_jinja_env(config_dir)
 
-        templates_dest = os.path.join(tmp_path, 'templates')
+        templates_dest = os.path.join(config_dir, 'templates')
         self._mkdir(templates_dest)
         shutil.copyfile(os.path.join(templates_path, 'heat-config.j2'),
                         os.path.join(templates_dest, 'heat-config.j2'))
 
-        group_vars_dir = os.path.join(tmp_path, 'group_vars')
+        group_vars_dir = os.path.join(config_dir, 'group_vars')
         self._mkdir(group_vars_dir)
-        host_vars_dir = os.path.join(tmp_path, 'host_vars')
+        host_vars_dir = os.path.join(config_dir, 'host_vars')
         self._mkdir(host_vars_dir)
 
         for server, deployments in server_deployments.items():
@@ -281,7 +286,7 @@ class Config(object):
             for d in deployments:
 
                 server_deployment_dir = os.path.join(
-                    tmp_path, server_roles[server], server)
+                    config_dir, server_roles[server], server)
                 self._mkdir(server_deployment_dir)
                 deployment_path = os.path.join(
                     server_deployment_dir, d['deployment_name'])
@@ -332,12 +337,23 @@ class Config(object):
                     post_deployments=deployments['post_deployments']))
 
         for role_name, role in six.iteritems(role_data):
-            role_path = os.path.join(tmp_path, role_name)
+            role_path = os.path.join(config_dir, role_name)
 
             shutil.copyfile(
                 os.path.join(templates_path, 'deployments.yaml'),
                 os.path.join(role_path, 'deployments.yaml'))
 
         self.log.info("The TripleO configuration has been successfully "
-                      "generated into: %s" % tmp_path)
-        return tmp_path
+                      "generated into: %s" % config_dir)
+        return config_dir
+
+    def download_config(self, name, config_dir, config_type=None,
+                        preserve_config_dir=True):
+        # One step does it all
+        stack = self.fetch_config(name)
+        self.create_config_dir(config_dir, preserve_config_dir)
+        self._mkdir(config_dir)
+        self.log.info("Generating configuration under the directory: "
+                      "%s" % config_dir)
+        self.write_config(stack, name, config_dir, config_type)
+        return config_dir
