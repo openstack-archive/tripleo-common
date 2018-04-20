@@ -87,4 +87,4 @@ container_images:
 - imagename: tripleopike/centos-binary-swift-proxy-server:current-tripleo
 - imagename: tripleopike/centos-binary-tacker:current-tripleo
 - imagename: tripleopike/centos-binary-zaqar:current-tripleo
-- imagename: docker.io/ceph/daemon:v3.0.1-stable-3.0-jewel-centos-7-x86_64
+- imagename: docker.io/ceph/daemon:v3.0.3-stable-3.0-jewel-centos-7-x86_64
