@@ -234,15 +234,6 @@ workflows:
         action: tripleo.plan.remove_noop_deploystep
         input:
           container: <% $.container %>
-        on-success: upgrade_converge
-        on-error: set_update_failed
-
-      upgrade_converge:
-        action: tripleo.deployment.deploy
-        input:
-          timeout: <% $.timeout %>
-          container: <% $.container %>
-          skip_deploy_identifier: <% $.skip_deploy_identifier %>
         on-success: send_message
         on-error: set_update_failed
 
