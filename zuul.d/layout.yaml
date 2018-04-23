@@ -25,6 +25,12 @@
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             files:
               - ^container-images/.*$
+        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
+            files:
+              - workbooks/package_update.yaml
+              - workbooks/baremetal.yaml
+              - ^container-images/.*$
+              - tripleo_common/actions/deployment.py
     gate:
       queue: tripleo
       jobs:
@@ -47,3 +53,9 @@
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             files:
               - ^container-images/.*$
+        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
+            files:
+              - workbooks/package_update.yaml
+              - workbooks/baremetal.yaml
+              - ^container-images/.*$
+              - tripleo_common/actions/deployment.py
