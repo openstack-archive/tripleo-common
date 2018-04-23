@@ -5,6 +5,43 @@ description: TripleO Overcloud Deployment Workflows v1
 
 workflows:
 
+  create_container:
+    description: >
+      Creates an object container for a given name.  If a container with the
+      same name already exists an error is returned.
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - container: overcloud
+      - queue_name: tripleo
+
+    tasks:
+      create_container:
+        action: tripleo.plan.create_container container=<% $.container %>
+        on-complete: notify_zaqar
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.create_container
+              payload:
+                status: <% $.status %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
   create_default_deployment_plan:
     description: >
       This workflow exists to maintain backwards compatibility in pike.  This
