@@ -170,12 +170,30 @@ workflows:
     input:
       - group_names: []
     output:
-      validations: <% task(find_validations).result %>
+      validations: <% $.validations %>
     tags:
       - tripleo-common-managed
     tasks:
       find_validations:
+        on-success: send_message
         action: tripleo.validations.list_validations groups=<% $.group_names %>
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+          validations: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.message.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution() %>
+          status: <% $.status %>
+          message: <% $.get('message', '') %>
+          payload:
+            validations: <% $.get('validations', []) %>
 
   list_groups:
     output:
