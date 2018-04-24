@@ -148,7 +148,6 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}designate-api{{name_suffix}}:{{tag}}"
   params:
   - DockerDesignateApiImage
-  - DockerDesignateConfigImage
   services:
   - OS::TripleO::Services::DesignateApi
   - OS::TripleO::Services::DesignateCentral
@@ -191,6 +190,7 @@ container_images_template:
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-worker{{name_suffix}}:{{tag}}"
   params:
+  - DockerDesignateConfigImage
   - DockerDesignateWorkerImage
   services:
   - OS::TripleO::Services::DesignateWorker
