@@ -104,7 +104,6 @@ workflows:
       - nodes
       - playbook
       - inventory_file
-      - queue_name: tripleo
       - ansible_queue_name: tripleo
       - module_path: /usr/share/ansible-modules
       - ansible_extra_env_variables:
@@ -169,7 +168,7 @@ workflows:
         action: zaqar.queue_post
         retry: count=5 delay=1
         input:
-          queue_name: <% $.queue_name %>
+          queue_name: <% $.ansible_queue_name %>
           messages:
             body:
               type: tripleo.package_update.v1.update_nodes
