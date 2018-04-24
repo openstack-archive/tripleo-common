@@ -398,26 +398,44 @@ class ExportPlanActionTest(base.TestCase):
 
         self.ctx = mock.MagicMock()
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_service')
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
-    def test_run_success(self, mock_create_tarball):
+    def test_run_success(self,
+                         mock_create_tarball,
+                         mock_get_obj_service):
+
         get_object_mock_calls = [
             mock.call(self.plan, tf) for tf in self.template_files
         ]
+
+        swift_service = mock.MagicMock()
+        swift_service.upload.return_value = ([
+            {'success': True},
+        ])
+        mock_get_obj_service.return_value = swift_service
 
         action = plan.ExportPlanAction(self.plan, self.delete_after,
                                        self.exports_container)
         action.run(self.ctx)
 
         self.swift.get_container.assert_called_once_with(self.plan)
-        self.swift.put_container.assert_called_once_with('plan-exports')
         self.swift.get_object.assert_has_calls(
             get_object_mock_calls, any_order=True)
-        self.swift.put_object.assert_called_once()
+        swift_service.upload.assert_called_once()
         mock_create_tarball.assert_called_once()
 
-    def test_run_container_does_not_exist(self):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_service')
+    def test_run_container_does_not_exist(self,
+                                          mock_get_obj_service):
+
         self.swift.get_container.side_effect = swiftexceptions.ClientException(
             self.plan)
+
+        swift_service = mock.MagicMock()
+        swift_service.delete.return_value = ([
+            {'success': True},
+        ])
+        mock_get_obj_service.return_value = swift_service
 
         action = plan.ExportPlanAction(self.plan, self.delete_after,
                                        self.exports_container)
@@ -426,9 +444,19 @@ class ExportPlanActionTest(base.TestCase):
         error = "Error attempting an operation on container: %s" % self.plan
         self.assertIn(error, result.error)
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_service')
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
-    def test_run_error_creating_tarball(self, mock_create_tarball):
+    def test_run_error_creating_tarball(self,
+                                        mock_create_tarball,
+                                        mock_get_obj_service):
+
         mock_create_tarball.side_effect = processutils.ProcessExecutionError
+
+        swift_service = mock.MagicMock()
+        swift_service.delete.return_value = ([
+            {'success': True},
+        ])
+        mock_get_obj_service.return_value = swift_service
 
         action = plan.ExportPlanAction(self.plan, self.delete_after,
                                        self.exports_container)

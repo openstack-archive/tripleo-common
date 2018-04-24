@@ -152,8 +152,12 @@ class UploadUndercloudBackupToSwiftTest(base.TestCase):
         self.addCleanup(swift_patcher.stop)
         self.ctx = mock.MagicMock()
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_service')
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
-    def test_simple_success(self, mock_create_tarball):
+    def test_upload_to_swift_success(self,
+                                     mock_create_tarball,
+                                     mock_get_obj_service):
+
         self.swift.head_object.return_value = {
             'content-length': 1
         }
@@ -161,15 +165,33 @@ class UploadUndercloudBackupToSwiftTest(base.TestCase):
             {}, []
         )
 
+        swift_service = mock.MagicMock()
+        swift_service.delete.return_value = ([
+            {'success': True},
+        ])
+        mock_get_obj_service.return_value = swift_service
+
         action = undercloud.UploadUndercloudBackupToSwift(
             self.backup_path, self.container)
         action.run(self.ctx)
 
-        self.swift.put_object.assert_called_once_with(
+        swift_service.upload.has_calls()
+
+        options = {'use_slo': True,
+                   'changed': None,
+                   'meta': [],
+                   'fail_fast': True,
+                   'leave_segments': False,
+                   'header': ['X-Delete-After: 86400'],
+                   'skip_identical': False,
+                   'segment_size': 1048576000,
+                   'segment_container': None,
+                   'dir_marker': False}
+
+        swift_service.upload.assert_called_once_with(
             self.container,
-            action.tarball_name,
             mock.ANY,
-            headers={'X-Delete-After': 86400}
+            options=options
             )
 
         mock_create_tarball.assert_called_once()

@@ -21,6 +21,9 @@ import tempfile
 from tripleo_common import constants
 from tripleo_common.utils import tarball
 
+from swiftclient.service import SwiftError
+from swiftclient.service import SwiftUploadObject
+
 LOG = logging.getLogger(__name__)
 
 
@@ -81,18 +84,70 @@ def create_container(swiftclient, container):
     swiftclient.put_container(container)
 
 
-def create_and_upload_tarball(swiftclient,
+def create_and_upload_tarball(swiftservice,
                               tmp_dir,
                               container,
                               tarball_name,
                               tarball_options='-czf',
-                              delete_after=3600):
-    """Create a tarball containing the tmp_dir and upload it to Swift."""
-    headers = {'X-Delete-After': delete_after}
+                              delete_after=3600,
+                              segment_size=1048576000,
+                              use_slo=True,
+                              segment_container=None,
+                              leave_segments=False,
+                              changed=None,
+                              skip_identical=False,
+                              fail_fast=True,
+                              dir_marker=False):
+    """Create a tarball containing the tmp_dir and upload it to Swift.
 
-    create_container(swiftclient, container)
+       This method allows to upload files bigger than 5GB.
+       It will create 2 swift containers to store the segments and
+       one container to reference the manifest with the segment pointers
+    """
 
-    with tempfile.NamedTemporaryFile() as tmp_tarball:
-        tarball.create_tarball(tmp_dir, tmp_tarball.name, tarball_options)
-        swiftclient.put_object(container, tarball_name, tmp_tarball,
-                               headers=headers)
+    try:
+        with tempfile.NamedTemporaryFile() as tmp_tarball:
+            tarball.create_tarball(tmp_dir,
+                                   tmp_tarball.name,
+                                   tarball_options)
+            objs = [SwiftUploadObject(tmp_tarball,
+                                      object_name=tarball_name)]
+            options = {'meta': [],
+                       'header': ['X-Delete-After: ' + str(delete_after)],
+                       'segment_size': segment_size,
+                       'use_slo': use_slo,
+                       'segment_container': segment_container,
+                       'leave_segments': leave_segments,
+                       'changed': changed,
+                       'skip_identical': skip_identical,
+                       'fail_fast': fail_fast,
+                       'dir_marker': dir_marker
+                       }
+
+            for r in swiftservice.upload(container,
+                                         objs,
+                                         options=options):
+                if r['success']:
+                    if 'object' in r:
+                        LOG.info(r['object'])
+                    elif 'for_object' in r:
+                        LOG.info(
+                            '%s segment %s' % (r['for_object'],
+                                               r['segment_index'])
+                            )
+                else:
+                    error = r['error']
+                    if r['action'] == "create_container":
+                        LOG.warning(
+                            'Warning: failed to create container '
+                            "'%s'%s", container, error
+                        )
+                    elif r['action'] == "upload_object":
+                        LOG.error(
+                            "Failed to upload object %s to container %s: %s" %
+                            (container, r['object'], error)
+                        )
+                    else:
+                        LOG.error("%s" % error)
+    except SwiftError as e:
+        LOG.error(e.value)
