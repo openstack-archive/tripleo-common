@@ -168,7 +168,7 @@ class PrepareLogDownloadAction(base.TripleOAction):
                 swift, self.logging_container, tmp_dir)
             swiftutils.create_and_upload_tarball(
                 swift_service, tmp_dir, self.downloads_container,
-                tarball_name, self.delete_after)
+                tarball_name, delete_after=self.delete_after)
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
             return actions.Result(error=msg)
