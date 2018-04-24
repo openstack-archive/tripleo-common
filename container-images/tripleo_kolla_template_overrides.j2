@@ -258,6 +258,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block fluentd_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/fluentd /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block glance_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/glance-api /openstack/healthcheck && \
@@ -318,6 +324,12 @@ RUN mkdir -p /openstack && \
 {% block ironic_conductor_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-conductor /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block ironic_inspector_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-inspector /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
@@ -540,6 +552,12 @@ RUN mkdir /etc/libqb; mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block sahara_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/sahara-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block sahara_engine_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/sahara-engine /openstack/healthcheck && \
@@ -573,6 +591,15 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+# Note(mmagr): Below block is currently noop because swift-proxy-server kolla image is used
+#              for swift_object_expirer container, but it will allow smooth transition
+#              to usage of correct image for the service in future.
+{% block swift_object_expirer_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-object-expirer /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block swift_proxy_server_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-proxy /openstack/healthcheck && \
@@ -582,16 +609,33 @@ RUN mkdir -p /openstack && \
     echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
 {% endblock %}
 
+# Note(mmagr): Below block is currently noop because swift-object kolla image is used
+#              for swift_rsync container, but it will allow smooth transition
+#              to usage of correct image for the service in future.
+{% block swift_rsyncd_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-rsync /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block tacker_server_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/tacker /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block ovn_controller_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-controller /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% set ovn_northd_packages_append = [
     'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block ovn_northd_footer %}
-RUN mkdir /etc/libqb
+RUN mkdir /etc/libqb && mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-dbs /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
 {% endblock %}
 
 {% block neutron_metadata_agent_ovn_footer %}
