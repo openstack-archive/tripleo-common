@@ -525,3 +525,42 @@ workflows:
           status: <% $.status %>
           execution: <% execution() %>
           message: <% $.get('message', '') %>
+
+  get_deployment_status:
+    description: >
+      Get deployment status
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - plan: overcloud
+      - queue_name: tripleo
+
+    output:
+      deployment_status: <% $.deployment_status %>
+
+    tasks:
+
+      get_deployment_status:
+        action: swift.get_object
+        input:
+          container: <% $.plan %>-messages
+          obj: deployment_status.yaml
+        publish:
+          deployment_status: <% yaml_parse(task().result.last()) %>
+        on-complete: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          execution: <% execution() %>
+          status: <% $.get("status", "SUCCESS") %>
+          message: <% $.get("message", "") %>
+          payload:
+            deployment_status: <% $.get(deployment_status, "") %>
