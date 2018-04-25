@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import json
+import tempfile
 import zlib
 
 from glanceclient.v2 import client as glanceclient
@@ -31,6 +32,7 @@ from zaqarclient.queues.v2 import client as zaqarclient
 
 from tripleo_common import constants
 from tripleo_common.utils import keystone as keystone_utils
+from tripleo_common.utils import tarball
 
 
 class TripleOAction(actions.Action):
@@ -234,3 +236,19 @@ class TripleOAction(actions.Action):
         except swiftexceptions.ClientException:
             # cache or container does not exist. Ignore
             pass
+
+
+class UploadDirectoryAction(TripleOAction):
+    """Upload a directory to Swift."""
+    def __init__(self, container, dir_to_upload):
+        super(UploadDirectoryAction, self).__init__()
+        self.container = container
+        self.dir_to_upload = dir_to_upload
+
+    def run(self, context):
+        with tempfile.NamedTemporaryFile() as tmp_tarball:
+            tarball.create_tarball(self.dir_to_upload, tmp_tarball.name)
+            tarball.tarball_extract_to_swift_container(
+                self.get_object_client(context),
+                tmp_tarball.name,
+                self.container)
