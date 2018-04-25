@@ -1,0 +1,38 @@
+---
+features:
+  - |
+    Adds support to specify additional parameters for Bare Metal ports when
+    registering nodes.
+
+    The  ``mac`` key in nodes_json (instackenv.json) is replaced by the new
+    ``ports`` key. Each port-entry supports the following keys: ``address``,
+    ``physical_network`` and ``local_link_connection``. (The keys in ``ports``
+    mirror a subset off the `Bare Metal service API <https://developer.openstack.org/api-ref/baremetal/#ports-ports>`_
+    .)
+
+    Example specifying port mac address only::
+
+      "ports": [
+        {
+          "address": "52:54:00:87:c8:2e"
+        }
+      ]
+
+    Example specifying additional parameters::
+
+      "ports": [
+        {
+          "address": "52:54:00:87:c8:2f",
+          "physical_network": "network",
+          "local_link_connection": {
+            "switch_info": "switch",
+            "port_id": "gi1/0/11",
+            "switch_id": "a6:18:66:33:cb:49"
+          }
+        }
+      ]
+deprecations:
+  - |
+    The ``mac`` key in nodes_json is replaced by ``ports``. The ``ports`` key
+    expect a list of dictionaries specifying ``address`` (mac address), and
+    optional keys  ``physical_network`` and ``local_link_connection``.

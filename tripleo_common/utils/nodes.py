@@ -34,6 +34,20 @@ _KNOWN_INTERFACE_FIELDS = [
 CTLPLANE_NETWORK = 'ctlplane'
 
 
+def convert_nodes_json_mac_to_ports(nodes_json):
+    for node in nodes_json:
+        if node.get('mac'):
+            LOG.warning('Key mac is deprecated, please use ports.')
+            for address in node['mac']:
+                try:
+                    node['ports'].append({'address': address})
+                except KeyError:
+                    node['ports'] = [{'address': address}]
+            del node['mac']
+
+    return nodes_json
+
+
 class DriverInfo(object):
     """Class encapsulating field conversion logic."""
     DEFAULTS = {}
@@ -232,9 +246,9 @@ class SshDriverInfo(DriverInfo):
 
     def validate(self, node):
         super(SshDriverInfo, self).validate(node)
-        if not node.get('mac'):
+        if not node.get('ports')[0]['address']:
             raise exception.InvalidNode(
-                'Nodes with SSH drivers require at least one MAC')
+                'Nodes with SSH drivers require at least one PORT')
 
 
 class iBootDriverInfo(PrefixedDriverInfo):
@@ -356,9 +370,14 @@ def register_ironic_node(node, client):
     LOG.debug('Registering node %s with ironic.', node_id)
     ironic_node = client.node.create(**create_map)
 
-    for mac in node.get("mac", []):
-        client.port.create(address=mac, physical_network=CTLPLANE_NETWORK,
-                           node_uuid=ironic_node.uuid)
+    for port in node.get('ports', []):
+        LOG.debug('Creating Bare Metal port for node: %s, with properties: %s.'
+                  % (ironic_node.uuid, port))
+        client.port.create(
+            address=port.get('address'),
+            physical_network=port.get('physical_network', 'ctlplane'),
+            local_link_connection=port.get('local_link_connection'),
+            node_uuid=ironic_node.uuid)
 
     validation = client.node.validate(ironic_node.uuid)
     if not validation.power['result']:
@@ -388,9 +407,9 @@ def _populate_node_mapping(client):
 
 def _get_node_id(node, handler, node_map):
     candidates = set()
-    for mac in node.get('mac', []):
+    for port in node.get('ports', []):
         try:
-            candidates.add(node_map['mac'][mac.lower()])
+            candidates.add(node_map['mac'][port['address'].lower()])
         except KeyError:
             pass
 
@@ -527,15 +546,16 @@ def validate_nodes(nodes_list):
         except exception.InvalidNode as exc:
             failures.append((index, exc))
 
-        for mac in node.get('mac', ()):
-            if not netutils.is_valid_mac(mac):
-                failures.append((index, 'MAC address %s is invalid' % mac))
+        for port in node.get('ports', ()):
+            if not netutils.is_valid_mac(port['address']):
+                failures.append((index, 'MAC address %s is invalid' %
+                                 port['address']))
 
-            if mac in macs:
+            if port['address'] in macs:
                 failures.append(
-                    (index, 'MAC %s is not unique' % mac))
+                    (index, 'MAC %s is not unique' % port['address']))
             else:
-                macs.add(mac)
+                macs.add(port['address'])
 
         unique_id = handler.unique_id_from_fields(node)
         if unique_id:
@@ -569,7 +589,7 @@ def validate_nodes(nodes_list):
         for field in node:
             converted = handler.convert_key(field)
             if (converted is None and field not in _NON_DRIVER_FIELDS and
-                    field not in ('mac', 'pm_type')):
+                    field not in ('ports', 'pm_type')):
                 failures.append((index, 'Unknown field %s' % field))
 
     if failures:
