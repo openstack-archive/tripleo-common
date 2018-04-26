@@ -149,4 +149,4 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         stack_params = self._get_removal_params_from_heat(
             resources_by_role, resources)
 
-        self._update_stack(parameters=stack_params, context=context)
+        return self._update_stack(parameters=stack_params, context=context)
