@@ -20,7 +20,7 @@ import struct
 import time
 import uuid
 
-import passlib.utils as passutils
+import passlib.pwd
 import six
 
 from tripleo_common import constants
@@ -55,13 +55,13 @@ def generate_passwords(mistralclient=None, stack_env=None):
             else:
                 # CephX keys aren't random strings
                 passwords[name] = create_cephx_key()
-        # Since by default generate_password uses all digits and ascii upper
+        # Since by default passlib.pwd.genword uses all digits and ascii upper
         # & lowercase letters, it provides ~5.95 entropy per character.
-        # Make the size of the default authkey 4096 bytes, which should give us
-        # ~24000 bits of randomness
+        # Make the length of the default authkey 4096 bytes, which should give
+        # us ~24000 bits of randomness
         elif name.startswith("PacemakerRemoteAuthkey"):
-            passwords[name] = passutils.generate_password(
-                size=4096)
+            passwords[name] = passlib.pwd.genword(
+                length=4096)
         # The underclouds SnmpdReadonlyUserPassword is stored in a mistral env
         # for the overcloud.
         elif mistralclient and name == 'SnmpdReadonlyUserPassword':
@@ -76,23 +76,17 @@ def generate_passwords(mistralclient=None, stack_env=None):
         elif name == 'BarbicanSimpleCryptoKek':
             passwords[name] = create_keystone_credential()
         elif name.startswith("MysqlRootPassword"):
-            passwords[name] = passutils.generate_password(
-                size=10)
+            passwords[name] = passlib.pwd.genword(length=10)
         elif name.startswith("RabbitCookie"):
-            passwords[name] = passutils.generate_password(
-                size=20)
+            passwords[name] = passlib.pwd.genword(length=20)
         elif name.startswith("PcsdPassword"):
-            passwords[name] = passutils.generate_password(
-                size=16)
+            passwords[name] = passlib.pwd.genword(length=16)
         elif name.startswith("HorizonSecret"):
-            passwords[name] = passutils.generate_password(
-                size=10)
+            passwords[name] = passlib.pwd.genword(length=10)
         elif name.startswith("HeatAuthEncryptionKey"):
-            passwords[name] = passutils.generate_password(
-                size=32)
+            passwords[name] = passlib.pwd.genword(length=32)
         else:
-            passwords[name] = passutils.generate_password(
-                size=_MIN_PASSWORD_SIZE)
+            passwords[name] = passlib.pwd.genword(length=_MIN_PASSWORD_SIZE)
     return passwords
 
 
