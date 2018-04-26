@@ -1315,3 +1315,102 @@ workflows:
                 registered_nodes: <% $.get('registered_nodes', []) %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  clean_nodes:
+    description: Wipe partition tables on all disks of given nodes
+
+    input:
+      - node_uuids
+      - concurrency: 20
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      clean_nodes:
+        workflow: tripleo.baremetal.v1.manual_cleaning
+        input:
+          node_uuid: <% $.node_uuid %>
+          clean_steps:
+            - interface: deploy
+              step: erase_devices_metadata
+          # Lower timeout, since metadata cleaning takes less time
+          timeout: 1200 # 20 minutes
+          retry_delay: 10
+          retry_count: 120
+        # Let mistral handle concurrency
+        with-items: node_uuid in <% $.node_uuids %>
+        concurrency: <% $.concurrency %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-complete: send_message
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.clean_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  clean_manageable_nodes:
+    description: Clean all nodes in a 'manageable' state.
+
+    input:
+      - concurrency: 20
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list
+        input:
+          maintenance: false
+          associated: false
+          provision_state: manageable
+        on-success: clean_manageable
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        publish:
+          cleaned_nodes: <% task().result.uuid %>
+
+      clean_manageable:
+        on-success: send_message
+        workflow: tripleo.baremetal.v1.clean_nodes
+        input:
+          node_uuids: <% $.cleaned_nodes %>
+          concurrency: <% $.concurrency %>
+          queue_name: <% $.queue_name %>
+        publish:
+          status: SUCCESS
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.clean_manageable_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                cleaned_nodes: <% $.get('cleaned_nodes', []) %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
