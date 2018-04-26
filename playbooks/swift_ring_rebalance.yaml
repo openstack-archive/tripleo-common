@@ -53,7 +53,7 @@
             src: /tmp/swift-rings.tar.gz
             dest: /{{ base_directory }}
             remote_src: yes
-            become: true
+          become: true
 
     - name: Get recon data
       command: cat /var/cache/swift/object.recon
@@ -118,4 +118,4 @@
             src: /tmp/swift-rings.tar.gz
             dest: /{{ base_directory }}
             remote_src: yes
-            become: true
+          become: true
