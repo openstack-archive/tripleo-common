@@ -137,7 +137,7 @@ class Config(object):
     def _mkdir(self, dirname):
         if not os.path.exists(dirname):
             try:
-                os.mkdir(dirname, 0o700)
+                os.makedirs(dirname, 0o700)
             except OSError as e:
                 message = 'Failed to create: %s, error: %s' % (dirname,
                                                                str(e))
@@ -211,6 +211,9 @@ class Config(object):
         # that role. The deployment names are futher separated in their own
         # dict with keys of pre_deployment/post_deployment.
         role_deployment_names = {}
+        # server_roles is a dict of server name to server role for easier
+        # lookup
+        server_roles = {}
 
         for deployment in deployments_data:
             server_id = deployment.attributes['value']['server']
@@ -241,6 +244,8 @@ class Config(object):
             role_post_deployments = role_deployments.setdefault(
                 'post_deployments', [])
 
+            server_roles[server_names[server_id]] = role
+
             # special handling of deployments that are run post the deploy
             # steps. We have to look these up based on the
             # physical_resource_id, but these names should be consistent since
@@ -264,10 +269,15 @@ class Config(object):
         self._mkdir(group_vars_dir)
 
         for server, deployments in server_deployments.items():
-            group_var_server_path = os.path.join(group_vars_dir, server)
-            group_var_server_template = env.get_template('group_var_server.j2')
+            deployment_template = env.get_template('deployment.j2')
 
             for d in deployments:
+
+                server_deployment_dir = os.path.join(
+                    tmp_path, server_roles[server], server)
+                self._mkdir(server_deployment_dir)
+                deployment_path = os.path.join(
+                    server_deployment_dir, d['deployment_name'])
 
                 # See if the config can be loaded as a JSON data structure
                 # In some cases, it may already be JSON (hiera), or it may just
@@ -280,7 +290,8 @@ class Config(object):
 
                 # If the value is not a string already, pretty print it as a
                 # string so it's rendered in a readable format.
-                if not isinstance(data, six.text_type):
+                if not (isinstance(data, six.text_type) or
+                        isinstance(data, six.string_types)):
                     data = json.dumps(data, indent=2)
 
                 d['config'] = data
@@ -298,10 +309,10 @@ class Config(object):
                                "config-download." % d['deployment_name'])
                     warnings.warn(message, DeprecationWarning)
 
-            with open(group_var_server_path, 'w') as f:
-                f.write(group_var_server_template.render(
-                    deployments=deployments,
-                    server_id=server_ids[server]))
+                with open(deployment_path, 'w') as f:
+                    f.write(deployment_template.render(
+                        deployment=d,
+                        server_id=server_ids[server]))
 
         for role, deployments in role_deployment_names.items():
             group_var_role_path = os.path.join(group_vars_dir, role)

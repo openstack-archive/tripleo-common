@@ -1,0 +1,19 @@
+deploy_server_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+
+NetworkDeployment:
+  config: |
+    #!/bin/bash
+    echo "Another script"
+  creation_time: "None"
+  deployment_name: NetworkDeployment
+  group: script
+  id: 613b3009-7708-4b06-8c2a-56f8cd379aff
+  inputs:
+    - name: deploy_server_id
+      description: None
+      type: None
+      value: |-
+        00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
+  name: None
+  options: None
+  outputs:
