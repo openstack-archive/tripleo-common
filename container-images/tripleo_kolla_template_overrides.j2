@@ -70,7 +70,9 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% set neutron_l3_agent_packages = ['docker'] %}
+{% set neutron_l3_agent_packages_append = ['docker'] %}
+# Kolla doesn't currently neutron_dhcp_agent_packages on CentOS so the append
+# isn't valid here.
 {% set neutron_dhcp_agent_packages = ['docker'] %}
 
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
