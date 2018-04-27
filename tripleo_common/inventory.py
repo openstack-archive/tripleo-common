@@ -106,6 +106,7 @@ class TripleoInventory(object):
             self.ansible_ssh_user = ansible_ssh_user
             self.plan_name = plan_name
         self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
+        self.hostvars = {}
 
     @staticmethod
     def get_roles_by_service(enabled_services):
@@ -152,10 +153,9 @@ class TripleoInventory(object):
     def list(self):
         ret = OrderedDict({
             'Undercloud': {
-                'hosts': {
-                    'undercloud': {
-                        'ansible_host': 'localhost'}},
+                'hosts': self._hosts(['undercloud']),
                 'vars': {
+                    'ansible_host': 'localhost',
                     'ansible_connection': 'local',
                     # see https://github.com/ansible/ansible/issues/41808
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
@@ -229,15 +229,25 @@ class TripleoInventory(object):
                     networks.update(hosts[name]['enabled_networks'])
 
                 children.append(role)
+
+                if self.hosts_format_dict:
+                    hosts_format = hosts
+                else:
+                    hosts_format = [h for h in hosts.keys()]
+                    hosts_format.sort()
+
                 ret[role] = {
-                    'hosts': hosts,
+                    'hosts': hosts_format,
                     'vars': {
                         'ansible_ssh_user': self.ansible_ssh_user,
                         'bootstrap_server_id': role_node_id_map.get(
                             'bootstrap_server_id'),
                         'role_name': role,
                     }
+
                 }
+
+                self.hostvars.update(hosts)
 
         if children:
             vip_map = self.stack_outputs.get('VipMap', {})
@@ -263,8 +273,10 @@ class TripleoInventory(object):
                     }
                 }
 
-        # Prevent Ansible from repeatedly calling us to get empty host details
-        ret['_meta'] = {'hostvars': {}}
+        if not self.hosts_format_dict:
+            # Prevent Ansible from repeatedly calling us to get empty host
+            # details
+            ret['_meta'] = {'hostvars': self.hostvars}
 
         return ret
 
