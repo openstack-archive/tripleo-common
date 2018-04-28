@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Add a workflow to generate fencing parameters so action
+    tripleo.parameters.generate_fencing does not need to be called directly.
