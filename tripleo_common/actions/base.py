@@ -26,6 +26,7 @@ from mistralclient.api import client as mistral_client
 from novaclient.client import Client as nova_client
 from swiftclient import client as swift_client
 from swiftclient import exceptions as swiftexceptions
+from swiftclient import service as swift_service
 from zaqarclient.queues.v2 import client as zaqarclient
 
 from tripleo_common import constants
@@ -61,6 +62,22 @@ class TripleOAction(actions.Action):
             'max_backoff': 120
         }
         return swift_client.Connection(**kwargs)
+
+    # This version returns the SwiftService API
+    def get_object_service(self, context):
+        swift_endpoint = keystone_utils.get_endpoint_for_project(
+            context, 'swift')
+
+        swift_opts = {
+            'os_storage_url': swift_endpoint.url % {
+                'tenant_id': context.project_id
+            },
+            'os_auth_token': context.auth_token,
+            'os_region_name': swift_endpoint.region,
+            'os_project_id': context.security.project_id,
+        }
+
+        return swift_service.SwiftService(options=swift_opts)
 
     def get_baremetal_client(self, context):
         ironic_endpoint = keystone_utils.get_endpoint_for_project(
