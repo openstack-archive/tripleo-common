@@ -279,11 +279,25 @@ workflows:
       - plan_name: overcloud
       - work_dir: /var/lib/mistral
       - verbosity: 1
+      - blacklist: []
 
     tags:
       - tripleo-common-managed
 
     tasks:
+
+      get_blacklisted_hostnames:
+        action: heat.stacks_output_show
+        input:
+          stack_id: <% $.plan_name %>
+          output_key: BlacklistedHostnames
+        publish:
+          blacklisted_hostnames: <% task().result.output.output_value %>
+        on-success: get_config
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
 
       get_config:
         action: tripleo.config.get_overcloud_config
@@ -387,6 +401,7 @@ workflows:
           queue_name: <% $.queue_name %>
           reproduce_command: true
           trash_output: true
+          blacklisted_hostnames: <% $.blacklisted_hostnames %>
         publish:
           log_path: <% task(run_ansible).result.get('log_path') %>
         on-success:

@@ -281,6 +281,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self.profile_tasks = self._kwargs_for_run.pop('profile_tasks', True)
         self.profile_tasks_limit = self._kwargs_for_run.pop(
             'profile_tasks_limit', 0)
+        self.blacklisted_hostnames = self._kwargs_for_run.pop(
+            'blacklisted_hostnames', [])
 
     @property
     def work_dir(self):
@@ -436,6 +438,11 @@ class AnsiblePlaybookAction(base.TripleOAction):
 
         if self.ssh_private_key:
             command.extend(['--private-key', self.ssh_private_key])
+
+        if self.blacklisted_hostnames:
+            host_pattern = ':'.join(
+                ['!%s' % h for h in self.blacklisted_hostnames])
+            command.extend(['--limit', host_pattern])
 
         if self.tags:
             command.extend(['--tags', self.tags])
