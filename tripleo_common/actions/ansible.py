@@ -284,6 +284,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
             'max_message_size', 1048576)
         self.gather_facts = self._kwargs_for_run.pop('gather_facts', False)
         self.trash_output = self._kwargs_for_run.pop('trash_output', False)
+        self.blacklisted_hostnames = self._kwargs_for_run.pop(
+            'blacklisted_hostnames', [])
 
     @property
     def work_dir(self):
@@ -439,6 +441,11 @@ class AnsiblePlaybookAction(base.TripleOAction):
 
         if self.ssh_private_key:
             command.extend(['--private-key', self.ssh_private_key])
+
+        if self.blacklisted_hostnames:
+            host_pattern = ':'.join(
+                ['!%s' % h for h in self.blacklisted_hostnames])
+            command.extend(['--limit', host_pattern])
 
         if self.tags:
             command.extend(['--tags', self.tags])
