@@ -1,0 +1,164 @@
+---
+version: '2.0'
+name: tripleo.storage.v1
+description: TripleO manages Ceph with ceph-ansible
+
+workflows:
+  ceph-install:
+    # allows for additional extra_vars via workflow input
+    input:
+      - ansible_playbook_verbosity: 0
+      - ansible_skip_tags: 'package-install,with_pkg'
+      - ansible_env_variables: {}
+      - ansible_extra_env_variables:
+          ANSIBLE_CONFIG: /usr/share/ceph-ansible/ansible.cfg
+          ANSIBLE_ACTION_PLUGINS: /usr/share/ceph-ansible/plugins/actions/
+          ANSIBLE_ROLES_PATH: /usr/share/ceph-ansible/roles/
+          ANSIBLE_RETRY_FILES_ENABLED: 'False'
+          ANSIBLE_LOG_PATH: /var/log/mistral/ceph-install-workflow.log
+          ANSIBLE_LIBRARY: /usr/share/ceph-ansible/library/
+          ANSIBLE_SSH_RETRIES: '3'
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          DEFAULT_FORKS: '25'
+      - ceph_ansible_extra_vars: {}
+      - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
+      - node_data_lookup: '{}'
+    tags:
+      - tripleo-common-managed
+    tasks:
+      collect_puppet_hieradata:
+        on-success: check_hieradata
+        publish:
+          hieradata: <% env().get('role_merged_configs', {}).values().select($.keys()).flatten().select(regex('^ceph::profile::params::osds$').search($)).where($ != null).toSet() %>
+      check_hieradata:
+        on-success:
+        - set_blacklisted_ips: <% not bool($.hieradata) %>
+        - fail(msg=<% 'Ceph deployment stopped, puppet-ceph hieradata found. Convert it into ceph-ansible variables. {0}'.format($.hieradata) %>): <% bool($.hieradata) %>
+      set_blacklisted_ips:
+        publish:
+          blacklisted_ips: <% env().get('blacklisted_ip_addresses', []) %>
+        on-success: set_ip_lists
+      set_ip_lists:
+        publish:
+          mgr_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_mgr_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          mon_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_mon_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          osd_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_osd_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          mds_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_mds_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          rgw_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_rgw_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          nfs_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_nfs_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          rbdmirror_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_rbdmirror_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+          client_ips: <% let(root => $) -> env().get('service_ips', {}).get('ceph_client_ctlplane_node_ips', []).where(not ($ in $root.blacklisted_ips)) %>
+        on-success: merge_ip_lists
+      merge_ip_lists:
+        publish:
+          ips_list: <% ($.mgr_ips + $.mon_ips + $.osd_ips + $.mds_ips + $.rgw_ips + $.nfs_ips + $.rbdmirror_ips + $.client_ips).toSet() %>
+        on-success: enable_ssh_admin
+      enable_ssh_admin:
+        workflow: tripleo.access.v1.enable_ssh_admin
+        input:
+          ssh_servers: <% $.ips_list %>
+        on-success: get_private_key
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task().result %>
+        on-success: make_fetch_directory
+      make_fetch_directory:
+        action: tripleo.files.make_temp_dir
+        publish:
+          fetch_directory: <% task().result.path %>
+        on-success: collect_nodes_uuid
+      collect_nodes_uuid:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            overcloud:
+              hosts: <% $.ips_list.toDict($, {}) %>
+          remote_user: tripleo-admin
+          become: true
+          become_user: root
+          verbosity: 0
+          ssh_private_key: <% $.private_key %>
+          #NOTE(gfidente): set ANSIBLE_CALLBACK_WHITELIST to empty string to avoid spurious output
+          #in the json output. The publish: directive will in fact parse the output.
+          extra_env_variables:
+            ANSIBLE_CALLBACK_WHITELIST: ''
+            ANSIBLE_HOST_KEY_CHECKING: 'False'
+            ANSIBLE_STDOUT_CALLBACK: 'json'
+          playbook:
+            - hosts: overcloud
+              gather_facts: no
+              tasks:
+                - name: collect machine id
+                  command: dmidecode -s system-uuid
+        publish:
+          ansible_output: <% json_parse(task().result.stderr) %>
+        on-success: set_ip_uuids
+      set_ip_uuids:
+        publish:
+          ip_uuids: <% let(root => $.ansible_output.get('plays')[0].get('tasks')[0].get('hosts')) -> $.ips_list.toDict($, $root.get($).get('stdout')) %>
+        on-success: parse_node_data_lookup
+      parse_node_data_lookup:
+        publish:
+          json_node_data_lookup: <% json_parse($.node_data_lookup) %>
+        on-success: map_node_data_lookup
+      map_node_data_lookup:
+        publish:
+          ips_data: <% let(uuids => $.ip_uuids, root => $) -> $.ips_list.toDict($, $root.json_node_data_lookup.get($uuids.get($, "NO-UUID-FOUND"), {})) %>
+        on-success: set_role_vars
+      set_role_vars:
+        publish:
+          # NOTE(gfidente): collect role settings from all tht roles
+          mgr_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_mgr_ansible_vars', {})).aggregate($1 + $2) %>
+          mon_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_mon_ansible_vars', {})).aggregate($1 + $2) %>
+          osd_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_osd_ansible_vars', {})).aggregate($1 + $2) %>
+          mds_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_mds_ansible_vars', {})).aggregate($1 + $2) %>
+          rgw_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_rgw_ansible_vars', {})).aggregate($1 + $2) %>
+          nfs_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_nfs_ansible_vars', {})).aggregate($1 + $2) %>
+          rbdmirror_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_rbdmirror_ansible_vars', {})).aggregate($1 + $2) %>
+          client_vars: <% env().get('role_merged_configs', {}).values().select($.get('ceph_client_ansible_vars', {})).aggregate($1 + $2) %>
+        on-success: build_extra_vars
+      build_extra_vars:
+        publish:
+          # NOTE(gfidente): merge vars from all ansible roles
+          extra_vars: <% {'fetch_directory'=> $.fetch_directory} + $.mgr_vars + $.mon_vars + $.osd_vars + $.mds_vars + $.rgw_vars + $.nfs_vars + $.client_vars + $.rbdmirror_vars + $.ceph_ansible_extra_vars %>
+        on-success: ceph_install
+      ceph_install:
+        with-items: playbook in <% list($.ceph_ansible_playbook).flatten() %>
+        concurrency: 1
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            mgrs:
+              hosts: <% let(root => $) -> $.mgr_ips.toDict($, $root.ips_data.get($, {})) %>
+            mons:
+              hosts: <% let(root => $) -> $.mon_ips.toDict($, $root.ips_data.get($, {})) %>
+            osds:
+              hosts: <% let(root => $) -> $.osd_ips.toDict($, $root.ips_data.get($, {})) %>
+            mdss:
+              hosts: <% let(root => $) -> $.mds_ips.toDict($, $root.ips_data.get($, {})) %>
+            rgws:
+              hosts: <% let(root => $) -> $.rgw_ips.toDict($, $root.ips_data.get($, {})) %>
+            nfss:
+              hosts: <% let(root => $) -> $.nfs_ips.toDict($, $root.ips_data.get($, {})) %>
+            rbdmirrors:
+              hosts: <% let(root => $) -> $.rbdmirror_ips.toDict($, $root.ips_data.get($, {})) %>
+            clients:
+              hosts: <% let(root => $) -> $.client_ips.toDict($, $root.ips_data.get($, {})) %>
+            all:
+              vars: <% $.extra_vars %>
+          playbook: <% $.playbook %>
+          remote_user: tripleo-admin
+          become: true
+          become_user: root
+          verbosity: <% $.ansible_playbook_verbosity %>
+          ssh_private_key: <% $.private_key %>
+          skip_tags: <% $.ansible_skip_tags %>
+          extra_env_variables: <% $.ansible_extra_env_variables.mergeWith($.ansible_env_variables) %>
+          extra_vars:
+            ireallymeanit: 'yes'
+        publish:
+          output: <% task().result %>
+        on-complete: purge_fetch_directory
+      purge_fetch_directory:
+        action: tripleo.files.remove_temp_dir path=<% $.fetch_directory %>
