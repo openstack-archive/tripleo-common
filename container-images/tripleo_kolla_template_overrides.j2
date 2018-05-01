@@ -557,4 +557,6 @@ RUN mkdir -p /openstack && \
 {% block base_footer %}
 # workaround LP1696283
 RUN mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_hosts
+# workaround for LP#1765802
+STOPSIGNAL SIGTERM
 {% endblock %}
