@@ -2,6 +2,12 @@
 - hosts: undercloud[0]
   remote_user: stack
   gather_facts: False
+  vars:
+    amp_ssh_key_name: "{{ amp_ssh_key_name }}"
+    amp_ssh_key_path: "{{ amp_ssh_key_path }}"
+    auth_username: "{{ auth_username }}"
+    auth_pasword: "{{ auth_password }}"
+    auth_project_name: "{{ auth_project_name }}"
   environment:
     OS_USERNAME: "{{ os_username }}"
     OS_USER_DOMAIN_NAME: "Default"
