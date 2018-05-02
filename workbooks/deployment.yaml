@@ -374,6 +374,7 @@ workflows:
           work_dir: <% $.get('work_dir') %>/<% execution().id %>
           queue_name: <% $.queue_name %>
           reproduce_command: true
+          trash_output: true
         publish:
           log_path: <% task().result.get('log_path') %>
         on-success:
