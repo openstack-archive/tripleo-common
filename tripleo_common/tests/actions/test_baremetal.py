@@ -408,7 +408,26 @@ class TestGetProfileAction(base.TestCase):
             'uuid': 'abcd1',
             'profile': 'compute'
         }
-        self.assertEqual(result, expected_result)
+        self.assertEqual(expected_result, result)
+
+
+class TestGetNodeHintAction(base.TestCase):
+
+    def test_run(self):
+        mock_ctx = mock.MagicMock()
+        node = {
+            'uuid': 'abcd1',
+            'properties': {
+                'capabilities': 'profile:compute,node:compute-0'
+            }
+        }
+        action = baremetal.GetNodeHintAction(node=node)
+        result = action.run(mock_ctx)
+        expected_result = {
+            'uuid': 'abcd1',
+            'hint': 'compute-0'
+        }
+        self.assertEqual(expected_result, result)
 
 
 @mock.patch.object(baremetal.socket, 'gethostbyname', lambda x: x)

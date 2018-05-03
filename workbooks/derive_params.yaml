@@ -178,14 +178,40 @@ workflows:
           role_services: <% task().result.get('role_services', []) %>
         on-success:
           # Continue only if there are features associated with this role. Otherwise, we're done.
-          - get_flavor_name: <% $.role_features %>
+          - get_scheduler_hints: <% $.role_features %>
         on-error: set_status_failed_get_role_info
 
-      # Getting introspection data workflow, which will take care of
-      # 1) profile and flavor based mapping
-      # 2) Nova placement api based mapping
-      # Currently we have implemented profile and flavor based mapping
-      # TODO-Nova placement api based mapping is pending, we will enchance it later.
+      # Find a node associated with this role. Look for nodes matching any scheduler hints
+      # associated with the role, and if there are no scheduler hints then locate nodes
+      # with a profile matching the role's flavor.
+      get_scheduler_hints:
+        publish:
+          scheduler_hints: <% let(param_name => concat($.role_name, 'SchedulerHints')) -> $.heat_resource_tree.parameters.get($param_name, {}).get('default', {}) %>
+        on-success:
+          - get_hint_regex: <% $.scheduler_hints %>
+          # If there are no scheduler hints then move on to use the flavor
+          - get_flavor_name: <% not $.scheduler_hints %>
+
+      get_hint_regex:
+        publish:
+          hint_regex: <% $.scheduler_hints.get('capabilities:node', '').replace('%index%', '(\d+)') %>
+        on-success:
+          - get_node_with_hint: <% $.hint_regex %>
+          # If there is no 'capabilities:node' hint then move on to use the flavor
+          - get_flavor_name: <% not $.hint_regex %>
+
+      get_node_with_hint:
+        workflow: tripleo.baremetal.v1.nodes_with_hint
+        input:
+          hint_regex: <% concat('^', $.hint_regex, '$') %>
+        publish:
+          role_node_uuid: <% task().result.matching_nodes.first('') %>
+        on-success:
+          - get_introspection_data: <% $.role_node_uuid %>
+          # If no nodes match the scheduler hint then move on to use the flavor
+          - get_flavor_name: <% not $.role_node_uuid %>
+        on-error: set_status_failed_on_error_get_node_with_hint
+
       get_flavor_name:
         publish:
           flavor_name: <% let(param_name => concat('Overcloud', $.role_name, 'Flavor').replace('OvercloudControllerFlavor', 'OvercloudControlFlavor')) -> $.heat_resource_tree.parameters.get($param_name, {}).get('default', '') %>
@@ -205,14 +231,14 @@ workflows:
         input:
           profile: <% $.profile_name %>
         publish:
-          profile_node_uuid: <% task().result.matching_nodes.first('') %>
+          role_node_uuid: <% task().result.matching_nodes.first('') %>
         on-success:
-          - get_introspection_data: <% $.profile_node_uuid %>
-          - set_status_failed_no_matching_node_get_profile_node: <% not $.profile_node_uuid %>
+          - get_introspection_data: <% $.role_node_uuid %>
+          - set_status_failed_no_matching_node_get_profile_node: <% not $.role_node_uuid %>
         on-error: set_status_failed_on_error_get_profile_node
 
       get_introspection_data:
-        action: baremetal_introspection.get_data uuid=<% $.profile_node_uuid %>
+        action: baremetal_introspection.get_data uuid=<% $.role_node_uuid %>
         publish:
           hw_data: <% task().result %>
           # Establish an empty dictionary of derived_parameters prior to
@@ -324,6 +350,13 @@ workflows:
           message: <% task(get_profile_node).result %>
         on-success: fail
 
+      set_status_failed_on_error_get_node_with_hint:
+        publish:
+          role_name: <% $.role_name %>
+          status: FAILED
+          message: <% task(get_node_with_hint).result %>
+        on-success: fail
+
       set_status_failed_get_introspection_data:
         publish:
           role_name: <% $.role_name %>
@@ -335,28 +368,28 @@ workflows:
         publish:
           role_name: <% $.role_name %>
           status: FAILED
-          message: <% task(get_dpdk_derive_params).result %>
+          message: <% task(get_dpdk_derive_params).result.message %>
         on-success: fail
 
       set_status_failed_get_sriov_derive_params:
         publish:
           role_name: <% $.role_name %>
           status: FAILED
-          message: <% task(get_sriov_derive_params).result %>
+          message: <% task(get_sriov_derive_params).result.message %>
         on-success: fail
 
       set_status_failed_get_host_derive_params:
         publish:
           role_name: <% $.role_name %>
           status: FAILED
-          message: <% task(get_host_derive_params).result %>
+          message: <% task(get_host_derive_params).result.message %>
         on-success: fail
 
       set_status_failed_get_hci_derive_params:
         publish:
           role_name: <% $.role_name %>
           status: FAILED
-          message: <% task(get_hci_derive_params).result %>
+          message: <% task(get_hci_derive_params).result.message %>
         on-success: fail
 
 
