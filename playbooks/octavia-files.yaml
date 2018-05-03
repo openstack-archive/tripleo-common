@@ -1,7 +1,7 @@
 ---
 - hosts: undercloud[0]
   remote_user: stack
-  gather_facts: False
+  gather_facts: True
   vars:
     amp_ssh_key_name: "{{ amp_ssh_key_name }}"
     amp_ssh_key_path: "{{ amp_ssh_key_path }}"
