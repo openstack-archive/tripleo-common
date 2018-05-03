@@ -20,6 +20,7 @@ import requests
 import six
 import urllib3
 
+from oslo_concurrency import processutils
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image import image_uploader
 from tripleo_common.tests import base
@@ -164,7 +165,10 @@ class TestDockerImageUploader(base.TestCase):
         self.uploader.upload_image(image + ':' + tag,
                                    None,
                                    push_destination,
-                                   set())
+                                   set(),
+                                   None,
+                                   None,
+                                   None)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -189,7 +193,10 @@ class TestDockerImageUploader(base.TestCase):
         self.uploader.upload_image(image,
                                    None,
                                    push_destination,
-                                   set())
+                                   set(),
+                                   None,
+                                   None,
+                                   None)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -220,13 +227,119 @@ class TestDockerImageUploader(base.TestCase):
         self.uploader.upload_image(image + ':' + tag,
                                    None,
                                    push_destination,
-                                   set())
+                                   set(),
+                                   None,
+                                   None,
+                                   None)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
 
         # both digests are the same, no pull/push
         self.dockermock.return_value.pull.assert_not_called()
+        self.dockermock.return_value.tag.assert_not_called()
+        self.dockermock.return_value.push.assert_not_called()
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_upload_image(self, mock_ansible, mock_popen):
+        result1 = {
+            'Digest': 'a'
+        }
+        result2 = {
+            'Digest': 'b'
+        }
+        mock_process = mock.Mock()
+        mock_process.communicate.side_effect = [
+            (json.dumps(result1), ''),
+            (json.dumps(result2), ''),
+        ]
+
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+        push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        playbook = [{
+            'tasks': [{
+                'import_role': {
+                    'name': 'add-foo-plugin'
+                },
+                'name': 'Import role add-foo-plugin',
+                'vars': {
+                    'target_image': '%s:%s' % (push_image, tag),
+                    'modified_append_tag': append_tag,
+                    'source_image': '%s:%s' % (image, tag),
+                    'foo_version': '1.0.1'
+                }
+            }],
+            'hosts': 'localhost'
+        }]
+
+        self.uploader.upload_image(image + ':' + tag,
+                                   None,
+                                   push_destination,
+                                   set(),
+                                   append_tag,
+                                   'add-foo-plugin',
+                                   {'foo_version': '1.0.1'})
+
+        self.dockermock.assert_called_once_with(
+            base_url='unix://var/run/docker.sock', version='auto')
+
+        self.dockermock.return_value.pull.assert_called_once_with(
+            image, tag=tag, stream=True)
+        mock_ansible.assert_called_once_with(
+            playbook=playbook, work_dir=mock.ANY)
+        self.dockermock.return_value.tag.assert_not_called()
+        self.dockermock.return_value.push.assert_called_once_with(
+            push_image,
+            tag=tag + append_tag,
+            stream=True)
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_image_failed(self, mock_ansible, mock_popen):
+        result1 = {
+            'Digest': 'a'
+        }
+        result2 = {
+            'Digest': 'b'
+        }
+        mock_process = mock.Mock()
+        mock_process.communicate.side_effect = [
+            (json.dumps(result1), ''),
+            (json.dumps(result2), ''),
+        ]
+
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+        error = processutils.ProcessExecutionError(
+            '', 'ouch', -1, 'ansible-playbook')
+        mock_ansible.return_value.run.side_effect = error
+
+        self.assertRaises(
+            processutils.ProcessExecutionError,
+            self.uploader.upload_image,
+            image + ':' + tag, None, push_destination, set(), append_tag,
+            'add-foo-plugin', {'foo_version': '1.0.1'}
+        )
+
+        self.dockermock.assert_called_once_with(
+            base_url='unix://var/run/docker.sock', version='auto')
+
+        self.dockermock.return_value.pull.assert_called_once_with(
+            image, tag=tag, stream=True)
         self.dockermock.return_value.tag.assert_not_called()
         self.dockermock.return_value.push.assert_not_called()
 

@@ -21,6 +21,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import yaml
 
 from tripleo_common.image import base
@@ -114,11 +115,18 @@ def container_images_prepare_multi(environment, roles_data):
 
     env_params = {}
     service_filter = build_service_filter(environment, roles_data)
+    modified_timestamp = time.strftime('-modified-%Y%m%d%H%M%S')
 
     for cip_entry in cip:
         mapping_args = cip_entry.get('set')
         push_destination = cip_entry.get('push_destination')
         pull_source = cip_entry.get('pull_source')
+        modify_role = cip_entry.get('modify_role')
+        modify_vars = cip_entry.get('modify_vars')
+        if modify_role:
+            append_tag = modified_timestamp
+        else:
+            append_tag = None
 
         prepare_data = container_images_prepare(
             excludes=cip_entry.get('excludes'),
@@ -129,16 +137,21 @@ def container_images_prepare_multi(environment, roles_data):
             output_env_file='image_params',
             output_images_file='upload_data',
             tag_from_label=cip_entry.get('tag_from_label'),
+            append_tag=append_tag,
+            modify_role=modify_role,
+            modify_vars=modify_vars
         )
         env_params.update(prepare_data['image_params'])
 
-        if push_destination or pull_source:
+        if push_destination or pull_source or modify_role:
             with tempfile.NamedTemporaryFile(mode='w') as f:
                 yaml.safe_dump({
                     'container_images': prepare_data['upload_data']
                 }, f)
                 uploader = image_uploader.ImageUploadManager(
-                    [f.name], verbose=True)
+                    [f.name],
+                    verbose=True,
+                )
                 uploader.upload()
     return env_params
 
@@ -157,7 +170,9 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              excludes=None, service_filter=None,
                              pull_source=None, push_destination=None,
                              mapping_args=None, output_env_file=None,
-                             output_images_file=None, tag_from_label=None):
+                             output_images_file=None, tag_from_label=None,
+                             append_tag=None, modify_role=None,
+                             modify_vars=None):
     """Perform container image preparation
 
     :param template_file: path to Jinja2 file containing all image entries
@@ -174,12 +189,18 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     :param output_images_file: key to use for image upload data
     :param tag_from_label: string when set will trigger tag discovery on every
                            image
+    :param append_tag: string to append to the tag for the destination image
+    :param modify_role: string of ansible role name to run during upload before
+                        the push to destination
+    :param modify_vars: dict of variables to pass to modify_role
     :returns: dict with entries for the supplied output_env_file or
               output_images_file
     """
 
     if mapping_args is None:
         mapping_args = {}
+    if not append_tag:
+        append_tag = ''
 
     if service_filter:
         if 'OS::TripleO::Services::OpenDaylightApi' in service_filter:
@@ -227,9 +248,15 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
             # push_destination, since that is where they will be uploaded to
             image = imagename.partition('/')[2]
             imagename = '/'.join((push_destination, image))
+        if append_tag:
+            entry['append_tag'] = append_tag
+        if modify_role:
+            entry['modify_role'] = modify_role
+        if modify_vars:
+            entry['modify_vars'] = modify_vars
         if 'params' in entry:
             for p in entry.pop('params'):
-                params[p] = imagename
+                params[p] = imagename + append_tag
         if 'services' in entry:
             del(entry['services'])
 

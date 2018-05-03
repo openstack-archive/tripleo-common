@@ -21,10 +21,13 @@ import logging
 import netifaces
 import os
 import requests
+import shutil
 import six
 from six.moves import urllib
 import subprocess
+import tempfile
 import tenacity
+import yaml
 
 import docker
 try:
@@ -32,6 +35,7 @@ try:
 except ImportError:
     from docker import Client
 from oslo_concurrency import processutils
+from tripleo_common.actions import ansible
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageUploaderException
 
@@ -96,9 +100,13 @@ class ImageUploadManager(BaseImageManager):
 
             # This updates the parsed upload_images dict with real values
             item['push_destination'] = push_destination
+            append_tag = item.get('append_tag')
+            modify_role = item.get('modify_role')
+            modify_vars = item.get('modify_vars')
 
             self.uploader(uploader).add_upload_task(
-                image_name, pull_source, push_destination)
+                image_name, pull_source, push_destination,
+                append_tag, modify_role, modify_vars)
 
         for uploader in self.uploaders.values():
             uploader.run_tasks()
@@ -122,7 +130,8 @@ class ImageUploader(object):
         pass
 
     @abc.abstractmethod
-    def add_upload_task(self, image_name, pull_source, push_destination):
+    def add_upload_task(self, image_name, pull_source, push_destination,
+                        append_tag, modify_role, modify_vars):
         """Add an upload task to be executed later"""
         pass
 
@@ -151,40 +160,89 @@ class DockerImageUploader(ImageUploader):
         self.insecure_registries = set()
 
     @staticmethod
+    def run_modify_playbook(modify_role, modify_vars,
+                            source_image, target_image, append_tag):
+        vars = {}
+        if modify_vars:
+            vars.update(modify_vars)
+        vars['source_image'] = source_image
+        vars['target_image'] = target_image
+        vars['modified_append_tag'] = append_tag
+        LOG.debug('Playbook variables: \n%s' % yaml.safe_dump(
+            vars, default_flow_style=False))
+        playbook = [{
+            'hosts': 'localhost',
+            'tasks': [{
+                'name': 'Import role %s' % modify_role,
+                'import_role': {
+                    'name': modify_role
+                },
+                'vars': vars
+            }]
+        }]
+        LOG.debug('Playbook: \n%s' % yaml.safe_dump(
+            playbook, default_flow_style=False))
+        work_dir = tempfile.mkdtemp(prefix='tripleo-modify-image-playbook-')
+        try:
+            action = ansible.AnsiblePlaybookAction(
+                playbook=playbook,
+                work_dir=work_dir
+            )
+            result = action.run(None)
+            LOG.debug(result.get('stdout', ''))
+
+        finally:
+            shutil.rmtree(work_dir)
+
+    @staticmethod
     def upload_image(image_name, pull_source, push_destination,
-                     insecure_registries):
+                     insecure_registries, append_tag, modify_role,
+                     modify_vars):
         LOG.info('imagename: %s' % image_name)
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
         if ':' in image_name:
             image = image_name.rpartition(':')[0]
-            tag = image_name.rpartition(':')[2]
+            source_tag = image_name.rpartition(':')[2]
         else:
             image = image_name
-            tag = 'latest'
+            source_tag = 'latest'
         if pull_source:
             repo = pull_source + '/' + image
         else:
             repo = image
 
-        full_image = repo + ':' + tag
-        new_repo = push_destination + '/' + repo.partition('/')[2]
-        full_new_repo = new_repo + ':' + tag
+        source_image = repo + ':' + source_tag
+        target_image_no_tag = push_destination + '/' + repo.partition('/')[2]
+        append_tag = append_tag or ''
+        target_tag = source_tag + append_tag
+        target_image_source_tag = target_image_no_tag + ':' + source_tag
+        target_image = target_image_no_tag + ':' + target_tag
 
-        if DockerImageUploader._images_match(full_image, full_new_repo,
+        if DockerImageUploader._images_match(source_image, target_image,
                                              insecure_registries):
             LOG.info('Skipping upload for image %s' % image_name)
             return []
 
-        DockerImageUploader._pull(dockerc, repo, tag=tag)
+        DockerImageUploader._pull(dockerc, repo, tag=source_tag)
 
-        response = dockerc.tag(image=full_image, repository=new_repo,
-                               tag=tag, force=True)
-        LOG.debug(response)
+        if modify_role:
+            DockerImageUploader.run_modify_playbook(
+                modify_role, modify_vars, source_image,
+                target_image_source_tag, append_tag)
+            # raise an exception if the playbook didn't tag
+            # the expected target image
+            dockerc.inspect_image(target_image)
+        else:
+            response = dockerc.tag(
+                image=source_image, repository=target_image_no_tag,
+                tag=target_tag, force=True
+            )
+            LOG.debug(response)
 
-        DockerImageUploader._push(dockerc, new_repo, tag=tag)
+        DockerImageUploader._push(dockerc, target_image_no_tag, tag=target_tag)
 
         LOG.info('Completed upload for image %s' % image_name)
-        return full_image, full_new_repo
+        return source_image, target_image
 
     @staticmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -353,7 +411,8 @@ class DockerImageUploader(ImageUploader):
                 else:
                     LOG.warning(e)
 
-    def add_upload_task(self, image_name, pull_source, push_destination):
+    def add_upload_task(self, image_name, pull_source, push_destination,
+                        append_tag, modify_role, modify_vars):
         # prime self.insecure_registries
         if pull_source:
             self.is_insecure_registry(self._image_to_url(pull_source).netloc)
@@ -361,7 +420,8 @@ class DockerImageUploader(ImageUploader):
             self.is_insecure_registry(self._image_to_url(image_name).netloc)
         self.is_insecure_registry(self._image_to_url(push_destination).netloc)
         self.upload_tasks.append((image_name, pull_source, push_destination,
-                                  self.insecure_registries))
+                                  self.insecure_registries, append_tag,
+                                  modify_role, modify_vars))
 
     def run_tasks(self):
         if not self.upload_tasks:

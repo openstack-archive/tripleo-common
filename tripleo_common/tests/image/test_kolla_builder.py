@@ -669,7 +669,9 @@ class TestPrepare(base.TestCase):
                     'set': mapping_args,
                     'tag_from_label': 'bar',
                     'excludes': ['nova', 'neutron'],
-                    'push_destination': '192.0.2.1:8787'
+                    'push_destination': '192.0.2.1:8787',
+                    'modify_role': 'add-foo-plugin',
+                    'modify_vars': {'foo_version': '1.0.1'}
                 }]
             }
         }
@@ -709,7 +711,10 @@ class TestPrepare(base.TestCase):
                 pull_source=None,
                 push_destination=None,
                 service_filter=None,
-                tag_from_label='foo'
+                tag_from_label='foo',
+                append_tag=None,
+                modify_role=None,
+                modify_vars=None
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -719,7 +724,10 @@ class TestPrepare(base.TestCase):
                 pull_source=None,
                 push_destination='192.0.2.1:8787',
                 service_filter=None,
-                tag_from_label='bar'
+                tag_from_label='bar',
+                append_tag=mock.ANY,
+                modify_role='add-foo-plugin',
+                modify_vars={'foo_version': '1.0.1'}
             )
         ])
 
