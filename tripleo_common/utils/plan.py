@@ -56,3 +56,18 @@ def put_env(swift, env):
         constants.PLAN_ENVIRONMENT,
         yaml.safe_dump(env, default_flow_style=False)
     )
+
+
+def get_user_env(swift, container_name):
+    """Get user environment from Swift convert it to a dictionary."""
+    return yaml.safe_load(
+        swift.get_object(container_name, constants.USER_ENVIRONMENT)[1])
+
+
+def put_user_env(swift, container_name, env):
+    """Convert given user environment to yaml and upload it to Swift."""
+    swift.put_object(
+        container_name,
+        constants.USER_ENVIRONMENT,
+        yaml.safe_dump(env, default_flow_style=False)
+    )

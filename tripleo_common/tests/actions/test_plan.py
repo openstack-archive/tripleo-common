@@ -615,3 +615,47 @@ class GatherRolesActionTest(base.TestCase):
         # assert that a role was loaded from self.current_roles
         self.assertTrue(result.data['gathered_roles'],
                         [SAMPLE_ROLE_OBJ, self.available_role])
+
+
+class RemoveNoopDeployStepActionTest(base.TestCase):
+
+    def setUp(self):
+        super(RemoveNoopDeployStepActionTest, self).setUp()
+        self.container = 'overcloud'
+        self.ctx = mock.MagicMock()
+        self.heat = mock.MagicMock()
+        self.swift = mock.MagicMock()
+        self.rr_before = {
+            'OS::TripleO::Foo': 'bar.yaml',
+            'OS::TripleO::DeploymentSteps': 'OS::Heat::None',
+        }
+        self.rr_after = {
+            'OS::TripleO::Foo': 'bar.yaml',
+        }
+
+    @mock.patch('tripleo_common.actions.plan.plan_utils')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
+    def test_roles_gathered(self, mock_orch_client, mock_obj_client,
+                            mock_plan_utils):
+        mock_obj_client.return_value = self.swift
+        mock_orch_client.return_value = self.heat
+        mock_plan_utils.get_env.return_value = {
+            'name': self.container,
+            'resource_registry': self.rr_before,
+        }
+        mock_plan_utils.get_user_env.return_value = {
+            'resource_registry': self.rr_before,
+        }
+        action = plan.RemoveNoopDeployStepAction(self.container)
+        action.run(self.ctx)
+
+        mock_plan_utils.put_env.assert_called_with(
+            self.swift,
+            {
+                'name': self.container,
+                'resource_registry': self.rr_after,
+            })
+        mock_plan_utils.put_user_env.assert_called_with(
+            self.swift, self.container, {'resource_registry': self.rr_after})

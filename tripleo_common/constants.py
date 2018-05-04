@@ -145,6 +145,9 @@ DEFAULT_VOLUME_API_VERSION = '3'
 # import/export
 PLAN_ENVIRONMENT = 'plan-environment.yaml'
 
+# Name of the environment with merged parameters from CLI
+USER_ENVIRONMENT = 'user-environment.yaml'
+
 # The name of the file which holds container image default parameters
 CONTAINER_DEFAULTS_ENVIRONMENT = ('environments/'
                                   'containers-default-parameters.yaml')

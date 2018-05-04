@@ -490,19 +490,26 @@ class RemoveNoopDeployStepAction(base.TripleOAction):
             return actions.Result(error=msg)
 
         swift = self.get_object_client(context)
-        plan_env = plan_utils.get_env(swift, self.container)
 
         # Get output and check if DeployStep are None
-        steps = ['OS::TripleO::DeploymentSteps']
+        removals = ['OS::TripleO::DeploymentSteps']
         for output in stack.to_dict().get('outputs', {}):
             if output['output_key'] == 'RoleData':
                 for role in output['output_value']:
-                    steps.append("OS::TripleO::Tasks::%sPreConfig" % role)
-                    steps.append("OS::TripleO::Tasks::%sPostConfig" % role)
-        # Remove noop Steps
-        for step in steps:
-            if step in plan_env.get('resource_registry', {}):
-                if plan_env['resource_registry'][step] == 'OS::Heat::None':
-                    plan_env['resource_registry'].pop(step)
-        # Push plan_env
+                    removals.append("OS::TripleO::Tasks::%sPreConfig" % role)
+                    removals.append("OS::TripleO::Tasks::%sPostConfig" % role)
+
+        plan_env = plan_utils.get_env(swift, self.container)
+        self.remove_noops_from_env(removals, plan_env)
         plan_utils.put_env(swift, plan_env)
+
+        user_env = plan_utils.get_user_env(swift, self.container)
+        self.remove_noops_from_env(removals, user_env)
+        plan_utils.put_user_env(swift, self.container, user_env)
+
+    def remove_noops_from_env(self, removals, env):
+        # Remove noop Steps
+        for rm in removals:
+            if rm in env.get('resource_registry', {}):
+                if env['resource_registry'][rm] == 'OS::Heat::None':
+                    env['resource_registry'].pop(rm)
