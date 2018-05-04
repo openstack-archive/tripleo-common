@@ -123,6 +123,8 @@ class DeletePlanAction(base.TripleOAction):
             swiftutils.delete_container(swift, self.container)
             swiftutils.delete_container(swift,
                                         "%s-swift-rings" % self.container)
+            swiftutils.delete_container(swift,
+                                        "%s-messages" % self.container)
         except swiftexceptions.ClientException as ce:
             LOG.exception("Swift error deleting plan.")
             error_text = ce.msg
