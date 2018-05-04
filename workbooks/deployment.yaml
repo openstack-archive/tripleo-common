@@ -512,6 +512,58 @@ workflows:
           plan_name: <% $.plan_name %>
           deployment_status: <% $.deployment_status %>
 
+  undeploy_plan:
+
+    description: >
+      Undeploy a plan.
+
+    input:
+      - container
+      - timeout: 240
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      send_start_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: RUNNING
+          deployment_status: UNDEPLOYING
+          message: "Deleting <% $.container %> deployment"
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+        on-complete: delete_stack
+
+      delete_stack:
+        workflow: tripleo.stack.v1.delete_stack
+        input:
+          stack: <% $.container %>
+          queue_name: <% $.queue_name %>
+        on-complete: send_undeployed_message
+        publish-on-error:
+          status: FAILED
+          deployment_status: UNDEPLOY_FAILED
+          message: "Failed to delete <% $.container %> deployment: <% task().result %>"
+        publish:
+          status: SUCCESS
+          deployment_status: UNDEPLOYED
+          message: "Deleted <% $.container %> deployment"
+
+      send_undeployed_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          deployment_status: <% $.deployment_status %>
+          message: <% $.message %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
+
   create_overcloudrc:
     description: >
       Given the name of a container and optionally a comma-separated string

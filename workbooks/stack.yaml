@@ -5,20 +5,18 @@ description: TripleO Stack Workflows
 
 workflows:
 
-  _heat_stacks_get:
-
+  _heat_stacks_list:
     tags:
       - tripleo-common-managed
 
     input:
-      - stack
       - queue_name: null
 
     tasks:
-      heat_stacks_get:
-        action: heat.stacks_get stack_id=<% $.stack %> resolve_outputs=false
+      heat_stacks_list:
+        action: heat.stacks_list
         publish:
-          stack: <% task().result.delete("outputs") %>
+          stacks: <% task().result %>
         on-success:
           - send_message: <% bool($.queue_name) %>
       send_message:
@@ -29,7 +27,7 @@ workflows:
           status: "RUNNING"  # This should never be the end of a workflow
           execution: <% execution() %>
           payload:
-            stack: <% $.stack %>
+            stacks: <% $.stacks %>
 
   wait_for_stack_complete_or_failed:
     input:
@@ -43,17 +41,16 @@ workflows:
     tasks:
 
       wait_for_stack_status:
-        workflow: _heat_stacks_get
+        workflow: _heat_stacks_list
         input:
-          stack: <% $.stack %>
           queue_name: <% $.queue_name %>
         timeout: <% $.timeout %>
         publish:
-          stack_status: <% task().result.stack.stack_status %>
+          stack_status: <% let(stack => $.stack) -> task().result.stacks.where($.stack_name = $stack).first().stack_status %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task().result.stack.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'DELETE_IN_PROGRESS'] %>
+          continue-on: <% $.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'DELETE_IN_PROGRESS'] %>
 
   wait_for_stack_in_progress:
     input:
@@ -67,34 +64,37 @@ workflows:
     tasks:
 
       wait_for_stack_status:
-        workflow: _heat_stacks_get
+        workflow: _heat_stacks_list
         input:
           stack: <% $.stack %>
           queue_name: <% $.queue_name %>
         timeout: <% $.timeout %>
         publish:
-          stack_status: <% task().result.stack.stack_status %>
+          stack_status: <% let(stack => $.stack) -> task().result.stacks.where($.stack_name = $stack).first().stack_status %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task().result.stack.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED', 'DELETE_FAILED'] %>
+          continue-on: <% $.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED', 'DELETE_FAILED'] %>
 
   wait_for_stack_does_not_exist:
     input:
       - stack
       - timeout: 3600
+      - queue_name: null
 
     tags:
       - tripleo-common-managed
 
     tasks:
-      wait_for_stack_does_not_exist:
-        action: heat.stacks_list
+      wait_for_stack_status:
+        workflow: _heat_stacks_list
+        input:
+          queue_name: <% $.queue_name %>
         timeout: <% $.timeout %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% $.stack in task().result.select([$.stack_name, $.id]).flatten() %>
+          continue-on: <% $.stack in task().result.stacks.select([$.stack_name, $.id]).flatten() %>
 
   delete_stack:
     input:
@@ -117,7 +117,10 @@ workflows:
           message: <% task(delete_the_stack).result %>
 
       wait_for_stack_does_not_exist:
-        workflow: tripleo.stack.v1.wait_for_stack_does_not_exist stack=<% $.stack %>
+        workflow: tripleo.stack.v1.wait_for_stack_does_not_exist
+        input:
+          stack: <% $.stack %>
+          queue_name: <% $.queue_name %>
         on-success: send_message
         on-error: wait_for_stack_does_not_exist_failed
 
