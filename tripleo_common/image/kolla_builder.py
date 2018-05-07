@@ -73,8 +73,16 @@ def build_service_filter(environment, roles_data):
     :param roles_data: Roles file data used to filter services
     :returns: set of resource types representing containerized services
     """
+    if not roles_data:
+        return None
     enabled_services = get_enabled_services(environment, roles_data)
     containerized_services = set()
+    resource_registry = environment.get('resource_registry')
+    if not resource_registry:
+        # no way to tell which services are containerized, so just filter by
+        # enabled services
+        return enabled_services
+
     for service, env_path in environment.get('resource_registry', {}).items():
         # Use the template path to determine if it represents a
         # containerized service
