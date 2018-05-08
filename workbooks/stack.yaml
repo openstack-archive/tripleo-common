@@ -18,6 +18,8 @@ workflows:
       wait_for_stack_status:
         action: heat.stacks_get stack_id=<% $.stack %>
         timeout: <% $.timeout %>
+        publish:
+          stack_status: <% task().result.stack_status %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
