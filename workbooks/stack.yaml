@@ -5,10 +5,37 @@ description: TripleO Stack Workflows
 
 workflows:
 
+  _heat_stacks_get:
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - stack
+      - queue_name: null
+
+    tasks:
+      heat_stacks_get:
+        action: heat.stacks_get stack_id=<% $.stack %>
+        publish:
+          stack: <% task().result %>
+        on-success:
+          - send_message: <% bool($.queue_name) %>
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: "RUNNING"  # This should never be the end of a workflow
+          execution: <% execution() %>
+          payload:
+            stack: <% task(heat_stacks_get).result %>
+
   wait_for_stack_complete_or_failed:
     input:
       - stack
       - timeout: 14400 # 4 hours. Default timeout of stack deployment
+      - queue_name: null
 
     tags:
       - tripleo-common-managed
@@ -16,19 +43,23 @@ workflows:
     tasks:
 
       wait_for_stack_status:
-        action: heat.stacks_get stack_id=<% $.stack %>
+        workflow: _heat_stacks_get
+        input:
+          stack: <% $.stack %>
+          queue_name: <% $.queue_name %>
         timeout: <% $.timeout %>
         publish:
-          stack_status: <% task().result.stack_status %>
+          stack_status: <% task().result.stack.stack_status %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task().result.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'DELETE_IN_PROGRESS'] %>
+          continue-on: <% task().result.stack.stack_status in ['CREATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS', 'DELETE_IN_PROGRESS'] %>
 
   wait_for_stack_in_progress:
     input:
       - stack
       - timeout: 600 # 10 minutes. Should not take much longer for a stack to transition to IN_PROGRESS
+      - queue_name: null
 
     tags:
       - tripleo-common-managed
@@ -36,12 +67,17 @@ workflows:
     tasks:
 
       wait_for_stack_status:
-        action: heat.stacks_get stack_id=<% $.stack %>
+        workflow: _heat_stacks_get
+        input:
+          stack: <% $.stack %>
+          queue_name: <% $.queue_name %>
         timeout: <% $.timeout %>
+        publish:
+          stack_status: <% task().result.stack.stack_status %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% task().result.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED', 'DELETE_FAILED'] %>
+          continue-on: <% task().result.stack.stack_status in ['CREATE_COMPLETE', 'CREATE_FAILED', 'UPDATE_COMPLETE', 'UPDATE_FAILED', 'DELETE_FAILED'] %>
 
   wait_for_stack_does_not_exist:
     input:

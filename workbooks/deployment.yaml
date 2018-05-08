@@ -196,7 +196,10 @@ workflows:
         on-error: set_deployment_failed
 
       wait_for_stack_complete:
-        workflow: tripleo.stack.v1.wait_for_stack_complete_or_failed stack=<% $.container %>
+        workflow: tripleo.stack.v1.wait_for_stack_complete_or_failed
+        input:
+          stack: <% $.container %>
+          queue_name: <% $.queue_name %>
         publish-on-error:
           message: <% task().result %>
         publish:
