@@ -209,7 +209,7 @@ RUN mkdir -p /openstack && \
 {% endblock %}
 
 {% set cinder_volume_packages_append = [
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
+    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents', 'nvmetcli'] %}
 {% block cinder_volume_footer %}
 RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-volume /openstack/healthcheck && \
