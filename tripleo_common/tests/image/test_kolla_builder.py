@@ -708,7 +708,7 @@ class TestPrepare(base.TestCase):
                 output_images_file='upload_data',
                 pull_source=None,
                 push_destination=None,
-                service_filter=set([]),
+                service_filter=None,
                 tag_from_label='foo'
             ),
             mock.call(
@@ -718,7 +718,7 @@ class TestPrepare(base.TestCase):
                 output_images_file='upload_data',
                 pull_source=None,
                 push_destination='192.0.2.1:8787',
-                service_filter=set([]),
+                service_filter=None,
                 tag_from_label='bar'
             )
         ])
