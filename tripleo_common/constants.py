@@ -179,3 +179,7 @@ HOST_NETWORK = 'ctlplane'
 EXTERNAL_TASKS = ['external_deploy_tasks']
 
 ANSIBLE_ERRORS_FILE = 'ansible-errors.json'
+
+DEPLOYMENT_STATUS_FILE = 'deployment_status.yaml'
+
+MISTRAL_WORK_DIR = '/var/lib/mistral'
