@@ -1,0 +1,3 @@
+---
+fixes:
+  - Check pub key file permissions and default to pub key data for Octavia.
