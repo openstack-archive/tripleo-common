@@ -438,3 +438,41 @@ workflows:
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
+
+  get_deployment_failures:
+    description: >
+      Get deployment failures
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - plan: overcloud
+      - queue_name: tripleo
+
+    output:
+      deployment_failures: <% $.deployment_failures %>
+
+    tasks:
+
+      get_deployment_failures:
+        action: tripleo.deployment.get_deployment_failures
+        input:
+          plan: <% $.plan %>
+        publish:
+          deployment_failures: <% task().result %>
+        on-complete: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          execution: <% execution() %>
+          status: <% $.get("status", "SUCCESS") %>
+          message: <% $.get("message", "") %>
+          payload:
+            deployment_failures: <% $.get(deployment_failures, "") %>
