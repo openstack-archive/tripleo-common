@@ -142,6 +142,7 @@ workflows:
             client_cert_path: <% $.client_cert_path %>
             generate_certs: <% $.generate_certs %>
             mgmt_port_dev: <% $.mgmt_port_dev %>
+            auth_project_name: <% $.auth_project_name %>
         on-complete: purge_local_temp_dir
       purge_local_temp_dir:
         action: tripleo.files.remove_temp_dir path=<% $.undercloud_local_dir %>
