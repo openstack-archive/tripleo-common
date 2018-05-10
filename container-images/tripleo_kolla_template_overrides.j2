@@ -565,4 +565,9 @@ RUN mkdir -p /openstack && \
 RUN mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_hosts
 # workaround for LP#1765802
 STOPSIGNAL SIGTERM
+# In order to ensure that we have the last base packages, we would like to do
+# a yum update in the kolla base image. All the other images should inherit this
+# but if the base distro container is out of date (i.g. 7.4 but 7.5 is out) this
+# will pull in the updated packages available. Related issue LP#1770355
+RUN yum update -y
 {% endblock %}
