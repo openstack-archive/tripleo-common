@@ -342,18 +342,16 @@ class GenerateFencingParametersAction(base.TripleOAction):
     """Generates fencing configuration for a deployment.
 
     :param nodes_json: list of nodes & attributes in json format
-    :param os_auth: dictionary of OS client auth data (if using pxe_ssh)
     :param delay: time to wait before taking fencing action
     :param ipmi_level: IPMI user level to use
     :param ipmi_cipher: IPMI cipher suite to use
     :param ipmi_lanplus: whether to use IPMIv2.0
     """
 
-    def __init__(self, nodes_json, os_auth, delay,
+    def __init__(self, nodes_json, delay,
                  ipmi_level, ipmi_cipher, ipmi_lanplus):
         super(GenerateFencingParametersAction, self).__init__()
         self.nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
-        self.os_auth = os_auth
         self.delay = delay
         self.ipmi_level = ipmi_level
         self.ipmi_cipher = ipmi_cipher
@@ -382,20 +380,14 @@ class GenerateFencingParametersAction(base.TripleOAction):
 
             # Build up fencing parameters based on which Ironic driver this
             # node is using
-            if hostmap and node["pm_type"] == "pxe_ssh":
-                # Ironic fencing driver
-                node_data["agent"] = "fence_ironic"
-                params["auth_url"] = self.os_auth["auth_url"]
-                params["login"] = self.os_auth["login"]
-                params["passwd"] = self.os_auth["passwd"]
-                params["tenant_name"] = self.os_auth["tenant_name"]
-                params["pcmk_host_map"] = "%(compute_name)s:%(bm_name)s" % (
-                    {"compute_name": hostmap[mac_addr]["compute_name"],
-                     "bm_name": hostmap[mac_addr]["baremetal_name"]})
-                if self.delay:
-                    params["delay"] = self.delay
-            elif (node['pm_type'] == 'ipmi' or node["pm_type"].split('_')[1] in
-                  ("ipmitool", "ilo", "drac")):
+            try:
+                # Deprecated classic drivers (pxe_ipmitool, etc)
+                driver_proto = node['pm_type'].split('_')[1]
+            except IndexError:
+                # New-style hardware types (ipmi, etc)
+                driver_proto = node['pm_type']
+
+            if driver_proto in {'ipmi', 'ipmitool', 'drac', 'idrac', 'ilo'}:
                 # IPMI fencing driver
                 node_data["agent"] = "fence_ipmilan"
                 params["ipaddr"] = node["pm_addr"]
