@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
+import os
 
 from oslo_concurrency import processutils
 
@@ -38,3 +39,17 @@ def tarball_extract_to_swift_container(object_client, filename, container):
             query_string='extract-archive=tar.gz',
             headers={'X-Detect-Content-Type': 'true'}
         )
+
+
+def extract_tarball(directory, tarball, options='-xf', remove=False):
+    """Extracts the tarball contained in the directory."""
+    full_path = directory + '/' + tarball
+    if not os.path.exists(full_path):
+        LOG.debug('Tarball %s does not exist' % full_path)
+    else:
+        LOG.debug('Extracting tarball %s' % full_path)
+        cmd = ['/usr/bin/tar', '-C', directory, options, full_path]
+        processutils.execute(*cmd)
+        if remove:
+            LOG.debug('Removing tarball %s' % full_path)
+            os.remove(full_path)
