@@ -54,16 +54,21 @@ class DriverInfo(object):
     DEFAULTS = {}
 
     def __init__(self, prefix, mapping, deprecated_mapping=None,
-                 mandatory_fields=(), default_port=None):
+                 mandatory_fields=(), default_port=None, hardware_type=None):
         self._prefix = prefix
         self._mapping = mapping
         self._deprecated_mapping = deprecated_mapping or {}
         self._mandatory_fields = mandatory_fields
         self._default_port = default_port
+        self._hardware_type = hardware_type
 
     @property
     def default_port(self):
         return self._default_port
+
+    @property
+    def hardware_type(self):
+        return self._hardware_type
 
     def convert_key(self, key):
         if key in self._mapping:
@@ -116,7 +121,7 @@ class DriverInfo(object):
 class PrefixedDriverInfo(DriverInfo):
     def __init__(self, prefix, deprecated_mapping=None,
                  has_port=False, address_field='address',
-                 default_port=None):
+                 default_port=None, hardware_type=None):
         mapping = {
             'pm_addr': '%s_%s' % (prefix, address_field),
             'pm_user': '%s_username' % prefix,
@@ -133,6 +138,7 @@ class PrefixedDriverInfo(DriverInfo):
             deprecated_mapping=deprecated_mapping,
             mandatory_fields=mandatory_fields,
             default_port=default_port,
+            hardware_type=hardware_type,
         )
 
     def unique_id_from_fields(self, fields):
@@ -179,6 +185,7 @@ class RedfishDriverInfo(DriverInfo):
             'redfish', mapping,
             deprecated_mapping=None,
             mandatory_fields=mandatory_fields,
+            hardware_type='redfish',
         )
 
     def _build_id(self, address, system):
@@ -211,6 +218,7 @@ class oVirtDriverInfo(DriverInfo):
         super(oVirtDriverInfo, self).__init__(
             'ovirt', mapping,
             mandatory_fields=list(mapping),
+            hardware_type='staging-ovirt',
         )
 
     def unique_id_from_fields(self, fields):
@@ -227,38 +235,14 @@ class oVirtDriverInfo(DriverInfo):
             return
 
 
-class SshDriverInfo(DriverInfo):
-    DEFAULTS = {'ssh_virt_type': 'virsh'}
-
-    def __init__(self):
-        super(SshDriverInfo, self).__init__(
-            'ssh',
-            {
-                'pm_addr': 'ssh_address',
-                'pm_user': 'ssh_username',
-                # TODO(dtantsur): support ssh_key_filename as well
-                'pm_password': 'ssh_key_contents',
-            },
-            deprecated_mapping={
-                'pm_virt_type': 'ssh_virt_type',
-            },
-            mandatory_fields=['pm_addr', 'pm_user', 'pm_password'],
-        )
-
-    def validate(self, node):
-        super(SshDriverInfo, self).validate(node)
-        if not node.get('ports')[0]['address']:
-            raise exception.InvalidNode(
-                'Nodes with SSH drivers require at least one PORT')
-
-
 class iBootDriverInfo(PrefixedDriverInfo):
     def __init__(self):
         super(iBootDriverInfo, self).__init__(
             'iboot', has_port=True,
             deprecated_mapping={
                 'pm_relay_id': 'iboot_relay_id',
-            }
+            },
+            hardware_type='staging-iboot',
         )
 
     def unique_id_from_fields(self, fields):
@@ -282,23 +266,35 @@ class iBootDriverInfo(PrefixedDriverInfo):
 DRIVER_INFO = {
     # production drivers
     '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True,
-                                             default_port=623),
-    '(idrac|.*_drac)': PrefixedDriverInfo('drac', has_port=True),
-    '(ilo|.*_ilo)': PrefixedDriverInfo('ilo', has_port=True),
-    '(cisco\-ucs\-managed|.*_ucs)': PrefixedDriverInfo('ucs'),
-    '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True),
+                                             default_port=623,
+                                             hardware_type='ipmi'),
+    '(idrac|.*_drac)': PrefixedDriverInfo('drac', has_port=True,
+                                          hardware_type='idrac'),
+    '(ilo|.*_ilo)': PrefixedDriverInfo('ilo', has_port=True,
+                                       hardware_type='ilo'),
+    '(cisco\-ucs\-managed|.*_ucs)': PrefixedDriverInfo(
+        'ucs', hardware_type='cisco-ucs-managed'),
+    '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True,
+                                         hardware_type='irmc'),
     'redfish': RedfishDriverInfo(),
     # test drivers
     'staging\-ovirt': oVirtDriverInfo(),
-    '.*_iboot': iBootDriverInfo(),
-    '.*_wol': DriverInfo(
+    '(staging\-iboot|.*_iboot)': iBootDriverInfo(),
+    '(staging\-wol|.*wol)': DriverInfo(
         'wol',
         mapping={
             'pm_addr': 'wol_host',
             'pm_port': 'wol_port',
-        }),
-    '.*_amt': PrefixedDriverInfo('amt'),
-    'fake(|_pxe|_agent)': DriverInfo('fake', mapping={}),
+        },
+        hardware_type='staging-wol'),
+    '(staging\-amt|.*_amt)': PrefixedDriverInfo('amt',
+                                                hardware_type='staging-amt'),
+    # fake_pxe was used when no management interface was supported, now
+    # manual-management is used for the same purpose
+    '(manual\-management|fake_pxe|fake_agent)': DriverInfo(
+        'fake', mapping={}, hardware_type='manual-management'),
+    '^fake(|\-hardware)$': DriverInfo('fake', mapping={},
+                                      hardware_type='fake-hardware'),
 }
 
 
@@ -359,7 +355,14 @@ def register_ironic_node(node, client):
             caps = dict_to_capabilities(caps)
         properties.update({"capabilities": six.text_type(caps)})
 
-    create_map = {"driver": node["pm_type"],
+    driver = node['pm_type']
+    if handler.hardware_type and handler.hardware_type != driver:
+        LOG.warning('Replacing deprecated driver %(old)s with the '
+                    'hardware type %(new)s, please update your inventory',
+                    {'old': driver, 'new': handler.hardware_type})
+        driver = handler.hardware_type
+
+    create_map = {"driver": driver,
                   "properties": properties,
                   "driver_info": driver_info,
                   "resource_class": resource_class}
