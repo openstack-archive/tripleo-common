@@ -43,6 +43,9 @@ def parse_opts(argv):
                         help="Run yum update in any containers that need "
                              "updating.",
                         default=False)
+    parser.add_argument('-k', '--packages', nargs='*',
+                        help="""List of packages to update, by default all""",
+                        default=None)
     opts = parser.parse_args(argv[1:])
     return opts
 
@@ -84,7 +87,7 @@ def populate_container_rpms_list((container)):
     return (subproc.returncode, container, rpms)
 
 
-def yum_update_container((container, name)):
+def yum_update_container((container, name, packages)):
 
     container_name = 'yum-update-%s' % name
 
@@ -110,6 +113,8 @@ def yum_update_container((container, name)):
             container]
 
     dcmd.extend(['yum', '-y', 'update'])
+    if packages:
+        dcmd.extend(packages)
 
     retry_count = 1
     while True:
@@ -240,7 +245,7 @@ if __name__ == '__main__':
         process_map = []
         name = 0
         for container in container_update_list:
-            process_map.append([container, str(name)])
+            process_map.append([container, str(name), opts.packages])
             name += 1
 
         ret = list(p.map(yum_update_container, process_map))
