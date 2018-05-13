@@ -1,0 +1,5 @@
+---
+features:
+  -
+    Enhance lb-mgmt-subnet to be a class B subnet, so the global amount
+    of Octavia loadbalancers won't be constrained to a very low number.
