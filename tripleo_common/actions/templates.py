@@ -13,15 +13,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import jinja2
-import json
 import logging
 import os
-import requests
 import six
 import tempfile as tf
 import yaml
 
-from heatclient.common import template_utils
 from heatclient import exc as heat_exc
 from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
@@ -32,14 +29,6 @@ from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import tarball
 
 LOG = logging.getLogger(__name__)
-
-
-def _create_temp_file(data):
-    handle, env_temp_file = tf.mkstemp()
-    with open(env_temp_file, 'w') as temp_file:
-        temp_file.write(json.dumps(data))
-        os.close(handle)
-    return env_temp_file
 
 
 class J2SwiftLoader(jinja2.BaseLoader):
@@ -371,82 +360,29 @@ class ProcessTemplatesAction(base.TripleOAction):
             return actions.Result(error=six.text_type(err))
 
         template_name = plan_env.get('template', "")
-        environments = plan_env.get('environments', [])
-        env_paths = []
-        temp_files = []
 
         template_object = os.path.join(swift.url, self.container,
                                        template_name)
-
         LOG.debug('Template: %s' % template_name)
-        LOG.debug('Environments: %s' % environments)
         try:
-            for env in environments:
-                if env.get('path'):
-                    env_paths.append(os.path.join(swift.url, self.container,
-                                                  env['path']))
-                elif env.get('data'):
-                    env_temp_file = _create_temp_file(env['data'])
-                    temp_files.append(env_temp_file)
-                    env_paths.append(env_temp_file)
+            template_files, template = plan_utils.get_template_contents(
+                swift, template_object)
+        except Exception as err:
+            error_text = six.text_type(err)
+            LOG.exception("Error occurred while fetching %s" % template_object)
 
-            # create a dict to hold all user set params and merge
-            # them in the appropriate order
-            merged_params = {}
-            # merge generated passwords into params first
-            passwords = plan_env.get('passwords', {})
-            merged_params.update(passwords)
-
-            # derived parameters are merged before 'parameter defaults'
-            # so that user-specified values can override the derived values.
-            derived_params = plan_env.get('derived_parameters', {})
-            merged_params.update(derived_params)
-
-            # handle user set parameter values next in case a user has set
-            # a new value for a password parameter
-            params = plan_env.get('parameter_defaults', {})
-            merged_params = template_utils.deep_update(merged_params, params)
-
-            if merged_params:
-                env_temp_file = _create_temp_file(
-                    {'parameter_defaults': merged_params})
-                temp_files.append(env_temp_file)
-                env_paths.append(env_temp_file)
-
-            registry = plan_env.get('resource_registry', {})
-            if registry:
-                env_temp_file = _create_temp_file(
-                    {'resource_registry': registry})
-                temp_files.append(env_temp_file)
-                env_paths.append(env_temp_file)
-
-            def _env_path_is_object(env_path):
-                retval = env_path.startswith(swift.url)
-                LOG.debug('_env_path_is_object %s: %s' % (env_path, retval))
-                return retval
-
-            def _object_request(method, url, token=context.auth_token):
-                response = requests.request(
-                    method, url, headers={'X-Auth-Token': token})
-                response.raise_for_status()
-                return response.content
-
-            template_files, template = template_utils.get_template_contents(
-                template_object=template_object,
-                object_request=_object_request)
-
-            env_files, env = (
-                template_utils.process_multiple_environments_and_files(
-                    env_paths=env_paths,
-                    env_path_is_object=_env_path_is_object,
-                    object_request=_object_request))
-
+        temp_env_paths = []
+        try:
+            env_paths, temp_env_paths = plan_utils.build_env_paths(
+                swift, self.container, plan_env)
+            env_files, env = plan_utils.process_environments_and_files(
+                swift, env_paths)
         except Exception as err:
             error_text = six.text_type(err)
             LOG.exception("Error occurred while processing plan files.")
         finally:
             # cleanup any local temp files
-            for f in temp_files:
+            for f in temp_env_paths:
                 os.remove(f)
 
         if error_text:
