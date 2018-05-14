@@ -547,5 +547,5 @@ STOPSIGNAL SIGTERM
 # a yum update in the kolla base image. All the other images should inherit this
 # but if the base distro container is out of date (i.g. 7.4 but 7.5 is out) this
 # will pull in the updated packages available. Related issue LP#1770355
-RUN yum update -y
+RUN yum update -y && yum clean all
 {% endblock %}
