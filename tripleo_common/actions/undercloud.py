@@ -161,14 +161,18 @@ class CreateFileSystemBackup(base.Action):
         """ % (self.outfile, separated_string, self.outfile)
 
         proc_failed = False
-        try:
-            subprocess.check_call(script, shell=True)
-        except subprocess.CalledProcessError:
-            proc_failed = True
-            msg = 'File system backup failed'
-            os.remove(self.outfile)
+        if self.sources_path:
+            try:
+                subprocess.check_call(script, shell=True)
+            except subprocess.CalledProcessError:
+                proc_failed = True
+                msg = 'File system backup failed'
+                os.remove(self.outfile)
+            else:
+                msg = ('File system backup created succesfully at: %s'
+                       % self.outfile)
         else:
-            msg = 'File system backup created succesfully at: ' + self.outfile
+            msg = 'File system backup has no files to backup'
 
         if proc_failed:
             # Delete failed backup here
