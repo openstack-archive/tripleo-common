@@ -139,7 +139,7 @@ workflows:
           status: <% $.get('status', 'SUCCESS') %>
           execution: <% execution() %>
           message: <% $.get('message', '') %>
-          plan_name: <% $.plan_name %>
+          plan_name: <% $.plan %>
           payload:
             result: <% $.get('result', '') %>
 
