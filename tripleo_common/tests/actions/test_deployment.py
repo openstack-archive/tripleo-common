@@ -12,6 +12,14 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from datetime import datetime
+from datetime import timedelta
 import mock
 import tempfile
 import yaml
@@ -362,7 +370,44 @@ class DeployStackActionTest(base.TestCase):
             "overcloud-swift-rings", "swift-rings.tar.gz",
             "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
 
-    def test_set_tls_parameters_no_ca_found(self):
+
+class DeployStackActionSetTLSParametersTest(base.TestCase):
+
+    def get_self_signed_certificate_and_private_key(self):
+        private_key = rsa.generate_private_key(public_exponent=3,
+                                               key_size=1024,
+                                               backend=default_backend())
+        issuer = x509.Name([
+            x509.NameAttribute(NameOID.COUNTRY_NAME, u"FI"),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, u"Helsinki"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Some Company"),
+            x509.NameAttribute(NameOID.COMMON_NAME, u"Test Certificate"),
+        ])
+        cert_builder = x509.CertificateBuilder(
+            issuer_name=issuer, subject_name=issuer,
+            public_key=private_key.public_key(),
+            serial_number=x509.random_serial_number(),
+            not_valid_before=datetime.utcnow(),
+            not_valid_after=datetime.utcnow() + timedelta(days=10)
+        )
+        cert = cert_builder.sign(private_key,
+                                 hashes.SHA256(),
+                                 default_backend())
+        cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
+        key_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption())
+        return cert_pem, key_pem
+
+    def create_temp_file(self, content):
+        temp_file = tempfile.NamedTemporaryFile()
+        temp_file.write(content)
+        temp_file.flush()
+        self.addCleanup(temp_file.close)
+        return temp_file.name
+
+    def test_no_ca_found(self):
         action = deployment.DeployStackAction(1, 'overcloud',
                                               skip_deploy_identifier=True)
         my_params = {}
@@ -371,49 +416,58 @@ class DeployStackActionTest(base.TestCase):
                                   local_ca_path='/tmp/my-unexistent-file.txt')
         self.assertEqual(my_params, {})
 
-    def test_set_tls_parameters_ca_found_no_camap_provided(self):
+    @mock.patch('oslo_concurrency.processutils.execute')
+    def test_ca_found_no_camap_provided(self, mock_execute):
         action = deployment.DeployStackAction(1, 'overcloud',
                                               skip_deploy_identifier=True)
+        # Write test data
         my_params = {}
         my_env = {'parameter_defaults': {}}
-        with tempfile.NamedTemporaryFile() as ca_file:
-            # Write test data
-            ca_file.write(b'FAKE CA CERT')
-            ca_file.flush()
+        cert_pem, _ = self.get_self_signed_certificate_and_private_key()
+        ca_file_path = self.create_temp_file(cert_pem)
+        overcloud_cert_path = self.create_temp_file(b'FAKE OVERCLOUD CERT')
+        overcloud_key_path = self.create_temp_file(b'FAKE OVERCLOUD KEY')
 
-            # Test
-            action.set_tls_parameters(parameters=my_params, env=my_env,
-                                      local_ca_path=ca_file.name)
-            self.assertIn('CAMap', my_params)
-            self.assertIn('undercloud-ca', my_params['CAMap'])
-            self.assertIn('content', my_params['CAMap']['undercloud-ca'])
-            self.assertEqual(b'FAKE CA CERT',
-                             my_params['CAMap']['undercloud-ca']['content'])
+        # Test
+        action.set_tls_parameters(parameters=my_params, env=my_env,
+                                  local_ca_path=ca_file_path,
+                                  overcloud_cert_path=overcloud_cert_path,
+                                  overcloud_key_path=overcloud_key_path)
+        self.assertIn('CAMap', my_params)
+        self.assertIn('undercloud-ca', my_params['CAMap'])
+        self.assertIn('content', my_params['CAMap']['undercloud-ca'])
+        self.assertEqual(cert_pem,
+                         my_params['CAMap']['undercloud-ca']['content'])
 
-    def test_set_tls_parameters_ca_found_camap_provided(self):
+    @mock.patch('oslo_concurrency.processutils.execute')
+    def test_ca_found_camap_provided(self, mock_execute):
         action = deployment.DeployStackAction(1, 'overcloud',
                                               skip_deploy_identifier=True)
+        # Write test data
+        undercloud_pem, _ = self.get_self_signed_certificate_and_private_key()
+        overcloud_pem, _ = self.get_self_signed_certificate_and_private_key()
         my_params = {}
         my_env = {
             'parameter_defaults': {
-                'CAMap': {'overcloud-ca': {'content': b'ANOTER FAKE CERT'}}}}
-        with tempfile.NamedTemporaryFile() as ca_file:
-            # Write test data
-            ca_file.write(b'FAKE CA CERT')
-            ca_file.flush()
+                'CAMap': {'overcloud-ca': {'content': overcloud_pem}}}}
+        ca_file_path = self.create_temp_file(undercloud_pem)
+        overcloud_cert_path = self.create_temp_file(b'FAKE OVERCLOUD CERT')
+        overcloud_key_path = self.create_temp_file(b'FAKE OVERCLOUD KEY')
 
-            # Test
-            action.set_tls_parameters(parameters=my_params, env=my_env,
-                                      local_ca_path=ca_file.name)
-            self.assertIn('CAMap', my_params)
-            self.assertIn('undercloud-ca', my_params['CAMap'])
-            self.assertIn('content', my_params['CAMap']['undercloud-ca'])
-            self.assertEqual(b'FAKE CA CERT',
-                             my_params['CAMap']['undercloud-ca']['content'])
-            self.assertIn('overcloud-ca', my_params['CAMap'])
-            self.assertIn('content', my_params['CAMap']['overcloud-ca'])
-            self.assertEqual(b'ANOTER FAKE CERT',
-                             my_params['CAMap']['overcloud-ca']['content'])
+        # Test
+        action.set_tls_parameters(parameters=my_params, env=my_env,
+                                  local_ca_path=ca_file_path,
+                                  overcloud_cert_path=overcloud_cert_path,
+                                  overcloud_key_path=overcloud_key_path)
+        self.assertIn('CAMap', my_params)
+        self.assertIn('undercloud-ca', my_params['CAMap'])
+        self.assertIn('content', my_params['CAMap']['undercloud-ca'])
+        self.assertEqual(undercloud_pem,
+                         my_params['CAMap']['undercloud-ca']['content'])
+        self.assertIn('overcloud-ca', my_params['CAMap'])
+        self.assertIn('content', my_params['CAMap']['overcloud-ca'])
+        self.assertEqual(overcloud_pem,
+                         my_params['CAMap']['overcloud-ca']['content'])
 
 
 class OvercloudRcActionTestCase(base.TestCase):
