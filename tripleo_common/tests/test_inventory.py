@@ -192,17 +192,20 @@ class TestInventory(base.TestCase):
                 'hosts': ['cp-0'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'Compute'}},
+                         'role_name': 'Compute',
+                         'tripleo_role_name': 'Compute'}},
             'Controller': {
                 'hosts': ['c-0', 'c-1', 'c-2'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'Controller'}},
+                         'role_name': 'Controller',
+                         'tripleo_role_name': 'Controller'}},
             'CustomRole': {
                 'hosts': ['cs-0'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'CustomRole'}},
+                         'role_name': 'CustomRole',
+                         'tripleo_role_name': 'CustomRole'}},
 
             'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
@@ -261,17 +264,20 @@ class TestInventory(base.TestCase):
                 'hosts': ['cp-0'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'Compute'}},
+                         'role_name': 'Compute',
+                         'tripleo_role_name': 'Compute'}},
             'Controller': {
                 'hosts': ['c-0', 'c-1', 'c-2'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'Controller'}},
+                         'role_name': 'Controller',
+                         'tripleo_role_name': 'Controller'}},
             'CustomRole': {
                 'hosts': ['cs-0'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'CustomRole'}},
+                         'role_name': 'CustomRole',
+                         'tripleo_role_name': 'CustomRole'}},
             'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
@@ -326,7 +332,8 @@ class TestInventory(base.TestCase):
                         'enabled_networks': ['ctlplane']}},
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'Compute'}},
+                         'role_name': 'Compute',
+                         'tripleo_role_name': 'Compute'}},
             'Controller': {
                 'hosts': {
                     'c-0': {
@@ -346,7 +353,8 @@ class TestInventory(base.TestCase):
                         'enabled_networks': ['ctlplane']}},
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'Controller'}},
+                         'role_name': 'Controller',
+                         'tripleo_role_name': 'Controller'}},
             'CustomRole': {
                 'hosts': {
                     'cs-0': {
@@ -356,7 +364,8 @@ class TestInventory(base.TestCase):
                         'enabled_networks': ['ctlplane']}},
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
-                         'role_name': 'CustomRole'}},
+                         'role_name': 'CustomRole',
+                         'tripleo_role_name': 'CustomRole'}},
             'overcloud': {'children': {'Compute': {},
                                        'Controller': {},
                                        'CustomRole': {}},
