@@ -1,8 +1,0 @@
----
-features:
-  - |
-    The default plan deployment workflow now automatically adds the necessary
-    certificate and key to enable TLS by default in the overcloud. Note that
-    this doesn't overwrite any certificate or keys given by the deployer;
-    those still take precedence. This will enable TLS if it isn't already
-    enabled though.

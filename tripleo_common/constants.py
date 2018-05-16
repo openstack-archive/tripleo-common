@@ -57,10 +57,6 @@ DEFAULT_VALIDATIONS_PATH = \
 # The path to the local CA certificate installed on the undercloud
 LOCAL_CACERT_PATH = '/etc/pki/ca-trust/source/anchors/cm-local-ca.pem'
 
-# The path to the locally generated overcloud certificate and key
-OVERCLOUD_CERT_PATH = '/etc/pki/tls/certs/overcloud-{container}-cert.pem'
-OVERCLOUD_KEY_PATH = '/etc/pki/tls/private/overcloud-{container}-key.pem'
-
 # TRIPLEO_META_USAGE_KEY is inserted into metadata for containers created in
 # Swift via SwiftPlanStorageBackend to identify them from other containers
 TRIPLEO_META_USAGE_KEY = 'x-container-meta-usage-tripleo'

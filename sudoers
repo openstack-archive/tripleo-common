@@ -9,5 +9,4 @@ mistral ALL = NOPASSWD: /usr/bin/rm -f /tmp/validations_identity_[A-Za-z0-9_][A-
 mistral ALL = NOPASSWD: /bin/nova-manage cell_v2 discover_hosts *
 mistral ALL = NOPASSWD: /usr/bin/tar --ignore-failed-read -C / -cf /var/tmp/undercloud-backup-*.tar *
 mistral ALL = NOPASSWD: /usr/bin/chown mistral. /var/tmp/undercloud-backup-*/filesystem-*.tar
-mistral ALL = NOPASSWD: /usr/bin/tripleo-overcloud-cert *
 validations ALL = NOPASSWD: ALL
