@@ -555,6 +555,8 @@ class AnsibleGenerateInventoryAction(base.TripleOAction):
             'work_dir', None)
         self.plan_name = self._kwargs_for_run.pop(
             'plan_name', 'overcloud')
+        self.ssh_network = self._kwargs_for_run.pop(
+            'ssh_network', 'ctlplane')
 
     @property
     def work_dir(self):
@@ -576,7 +578,8 @@ class AnsibleGenerateInventoryAction(base.TripleOAction):
             project_name=context.security.project_name,
             username=context.security.user_name,
             ansible_ssh_user=self.ansible_ssh_user,
-            plan_name=self.plan_name)
+            plan_name=self.plan_name,
+            host_network=self.ssh_network)
 
         inventory.write_static_inventory(inventory_path)
         return inventory_path
