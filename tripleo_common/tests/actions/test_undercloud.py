@@ -101,6 +101,9 @@ class CreateFileSystemBackupTest(base.TestCase):
         self.fsback = undercloud.CreateFileSystemBackup(
             '/home/stack/,/etc/hosts',
             '/var/tmp/undercloud-backup-ef9b_H')
+        self.fsemptyback = undercloud.CreateFileSystemBackup(
+            '',
+            '/var/tmp/undercloud-backup-ef9b_H')
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('subprocess.check_call')
@@ -119,6 +122,16 @@ class CreateFileSystemBackupTest(base.TestCase):
                          self.fsback.outfile +
                          '\n        ')
         mock_check_call.assert_called_once_with(assert_string, shell=True)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('subprocess.check_call')
+    def test_create_empty_file_system_backup(
+            self,
+            mock_check_call,
+            mock_get_object_client):
+        self.fsemptyback.logger = mock.Mock()
+        self.fsemptyback.run(mock_get_object_client)
+        mock_check_call.assert_not_called()
 
 
 class CreateBackupDirTest(base.TestCase):
