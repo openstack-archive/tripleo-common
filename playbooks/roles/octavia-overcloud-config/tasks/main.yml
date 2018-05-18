@@ -1,5 +1,6 @@
 ---
 # Previously was a stack in the overcloud
   - include_tasks: network.yml
+  - include_tasks: quotas.yml
   - include_tasks: certs_gen.yml
     when: generate_certs
