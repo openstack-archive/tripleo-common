@@ -238,6 +238,7 @@ workflows:
           execution: <% execution() %>
           plan_name: <% $.container %>
           message: <% $.get('message', '') %>
+          deployment_status: UNDEPLOYED
 
   update_deployment_plan:
     input:
