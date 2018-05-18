@@ -47,6 +47,9 @@ CONFIG_CONTAINER_NAME = 'overcloud-config'
 #: The default name to use for the container for validations
 VALIDATIONS_CONTAINER_NAME = 'tripleo-validations'
 
+#: The name of the plan subdirectory that holds custom validations
+CUSTOM_VALIDATIONS_FOLDER = 'custom-validations'
+
 #: The default key to use for updating parameters in plan environment.
 DEFAULT_PLAN_ENV_KEY = 'parameter_defaults'
 

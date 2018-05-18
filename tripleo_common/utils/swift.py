@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import dateutil.parser
 import logging
 import os
 import tempfile
@@ -53,22 +54,39 @@ def delete_container(swiftclient, name):
         LOG.info(six.text_type(e))
 
 
-def download_container(swiftclient, container, dest):
+def download_container(swiftclient, container, dest,
+                       overwrite_only_newer=False):
     """Download the contents of a Swift container to a directory"""
 
     objects = swiftclient.get_container(container)[1]
 
     for obj in objects:
+        is_newer = False
         filename = obj['name']
         contents = swiftclient.get_object(container, filename)[1]
         path = os.path.join(dest, filename)
         dirname = os.path.dirname(path)
+        already_exists = os.path.exists(path)
 
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        if already_exists:
+            last_mod_swift = int(dateutil.parser.parse(
+                obj['last_modified']).strftime('%s'))
+            last_mod_disk = int(os.path.getmtime(path))
 
-        with open(path, 'w') as f:
-            f.write(contents)
+            if last_mod_swift > last_mod_disk:
+                is_newer = True
+
+        # write file if `overwrite_only_newer` is not set,
+        # or if file does not exist at destination,
+        # or if we found a newer file at source
+        if (not overwrite_only_newer
+                or not already_exists
+                or (overwrite_only_newer and is_newer)):
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+
+            with open(path, 'w') as f:
+                f.write(contents)
 
 
 def create_container(swiftclient, container):

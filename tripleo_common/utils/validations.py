@@ -12,7 +12,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import glob
 import logging
 import os
 import re
@@ -20,8 +19,10 @@ import tempfile
 import yaml
 
 from oslo_concurrency import processutils
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
+import tripleo_common.utils.swift as swift_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -42,26 +43,63 @@ def get_validation_metadata(validation, key):
         LOG.exception("Failed to get validation metadata.")
 
 
-def load_validations(groups=None):
-    '''Loads all validations.'''
-    paths = glob.glob('{}/*.yaml'.format(constants.DEFAULT_VALIDATIONS_PATH))
+def _get_validations_from_swift(swift, container, objects, groups, results,
+                                skip_existing=False):
+    existing_ids = [validation['id'] for validation in results]
+
+    for obj in objects:
+        validation_id, ext = os.path.splitext(obj['name'])
+        if ext != '.yaml':
+            continue
+
+        if skip_existing and validation_id in existing_ids:
+            continue
+
+        contents = swift.get_object(container, obj['name'])[1]
+        validation = yaml.safe_load(contents)
+        validation_groups = get_validation_metadata(validation, 'groups') or []
+
+        if not groups or set.intersection(set(groups), set(validation_groups)):
+            results.append({
+                'id': validation_id,
+                'name': get_validation_metadata(validation, 'name'),
+                'groups': get_validation_metadata(validation, 'groups'),
+                'description': get_validation_metadata(validation,
+                                                       'description'),
+                'metadata': get_remaining_metadata(validation)
+            })
+
+    return results
+
+
+def load_validations(swift, plan, groups=None):
+    """Loads all validations.
+
+    Retrieves all of default and custom validations for a given plan and
+    returns a list of dicts, with each dict representing a single validation.
+    If both a default and a custom validation with the same name are found,
+    the custom validation is picked.
+    """
     results = []
-    for validation_path in sorted(paths):
-        with open(validation_path) as f:
-            validation = yaml.safe_load(f.read())
-            validation_groups = get_validation_metadata(validation, 'groups') \
-                or []
-            if not groups or \
-                    set.intersection(set(groups), set(validation_groups)):
-                results.append({
-                    'id': os.path.splitext(
-                        os.path.basename(validation_path))[0],
-                    'name': get_validation_metadata(validation, 'name'),
-                    'groups': get_validation_metadata(validation, 'groups'),
-                    'description': get_validation_metadata(validation,
-                                                           'description'),
-                    'metadata': get_remaining_metadata(validation)
-                })
+
+    # Get custom validations first
+    container = plan
+
+    try:
+        objects = swift.get_container(
+            container, prefix=constants.CUSTOM_VALIDATIONS_FOLDER)[1]
+    except swiftexceptions.ClientException:
+        pass
+    else:
+        results = _get_validations_from_swift(
+            swift, container, objects, groups, results)
+
+    # Get default validations
+    container = constants.VALIDATIONS_CONTAINER_NAME
+    objects = swift.get_container(container)[1]
+    results = _get_validations_from_swift(swift, container, objects, groups,
+                                          results, skip_existing=True)
+
     return results
 
 
@@ -73,11 +111,36 @@ def get_remaining_metadata(validation):
         return dict()
 
 
-def find_validation(validation):
-    return '{}/{}.yaml'.format(constants.DEFAULT_VALIDATIONS_PATH, validation)
+def download_validation(swift, plan, validation):
+    """Downloads validations from Swift to a temporary location"""
+    dst_dir = '/tmp/{}-validations'.format(plan)
+
+    # Download the whole default validations container
+    swift_utils.download_container(
+        swift,
+        constants.VALIDATIONS_CONTAINER_NAME,
+        dst_dir,
+        overwrite_only_newer=True
+    )
+
+    filename = '{}.yaml'.format(validation)
+    swift_path = os.path.join(constants.CUSTOM_VALIDATIONS_FOLDER, filename)
+    dst_path = os.path.join(dst_dir, filename)
+
+    # If a custom validation with that name exists, get it from the plan
+    # container and override. Otherwise, the default one will be used.
+    try:
+        contents = swift.get_object(plan, swift_path)[1]
+    except swiftexceptions.ClientException:
+        pass
+    else:
+        with open(dst_path, 'w') as f:
+            f.write(contents)
+
+    return dst_path
 
 
-def run_validation(validation, identity_file, plan, context):
+def run_validation(swift, validation, identity_file, plan, context):
     return processutils.execute(
         '/usr/bin/sudo', '-u', 'validations',
         'OS_AUTH_URL={}'.format(context.auth_uri),
@@ -85,7 +148,7 @@ def run_validation(validation, identity_file, plan, context):
         'OS_AUTH_TOKEN={}'.format(context.auth_token),
         'OS_TENANT_NAME={}'.format(context.project_name),
         '/usr/bin/run-validation',
-        find_validation(validation),
+        download_validation(swift, plan, validation),
         identity_file,
         plan
     )
