@@ -118,6 +118,14 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set mariadb_packages_append = ['mariadb-server', 'mariadb-server-galera', 'xinetd'] %}
 {% set sensu_client_packages_append = ['mariadb-server', 'mariadb-server-galera'] %}
 
+# Horizon dashboards we do not support
+# See LP#1767520
+{% set horizon_packages_remove = [
+    'openstack-cloudkitty-ui',
+    'openstack-murano-ui',
+    'openstack-trove-ui'
+] %}
+
 # Required for nova migration
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
 {% set nova_libvirt_packages_append = ['openstack-nova-migration'] %}
