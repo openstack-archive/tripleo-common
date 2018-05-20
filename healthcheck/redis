@@ -14,9 +14,9 @@ fi
 
 if parse_out=$(cat "/etc/redis.conf" | egrep "^requirepass +.*$"); then
   redis_pass=$(echo -n $parse_out | awk '{print $2}')
-  result=$(printf "*2\r\n\$4\r\nAUTH\r\n\$${#redis_pass}\r\n${redis_pass}\r\n*1\r\n\$4\r\nPING\r\n" | nc $redis_host $redis_port)
+  result=$(printf "*2\r\n\$4\r\nAUTH\r\n\$${#redis_pass}\r\n${redis_pass}\r\n*1\r\n\$4\r\nPING\r\n" | socat - TCP:$redis_host:$redis_port)
 else
-  result=$(printf "*1\r\n\$4\r\nPING\r\n" | nc $redis_host $redis_port)
+  result=$(printf "*1\r\n\$4\r\nPING\r\n" | socat - TCP:$redis_host:$redis_port)
 fi
 
 if echo $result | grep -q '+PONG'; then
