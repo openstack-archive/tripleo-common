@@ -402,6 +402,54 @@ class TestPrepare(base.TestCase):
         )
 
     @mock.patch('requests.get')
+    def test_prepare_includes(self, mock_get):
+        self.assertEqual({
+            'container_images.yaml': [
+                {'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
+            ],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNovaLibvirtImage': '192.0.2.0:8787/t/p-nova-libvirt:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                includes=['libvirt'],
+                mapping_args={
+                    'namespace': '192.0.2.0:8787/t',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
+    def test_prepare_includes_excludes(self, mock_get):
+        # assert same result as includes only. includes trumps excludes
+        self.assertEqual({
+            'container_images.yaml': [
+                {'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
+            ],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNovaLibvirtImage': '192.0.2.0:8787/t/p-nova-libvirt:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                includes=['libvirt'],
+                excludes=['libvirt'],
+                mapping_args={
+                    'namespace': '192.0.2.0:8787/t',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
     def test_prepare_push_dest(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [{
@@ -665,6 +713,7 @@ class TestPrepare(base.TestCase):
                 'ContainerImagePrepare': [{
                     'set': mapping_args,
                     'tag_from_label': 'foo',
+                    'includes': ['nova', 'neutron'],
                 }, {
                     'set': mapping_args,
                     'tag_from_label': 'bar',
@@ -705,6 +754,7 @@ class TestPrepare(base.TestCase):
         mock_cip.assert_has_calls([
             mock.call(
                 excludes=None,
+                includes=['nova', 'neutron'],
                 mapping_args=mapping_args,
                 output_env_file='image_params',
                 output_images_file='upload_data',
@@ -718,6 +768,7 @@ class TestPrepare(base.TestCase):
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
+                includes=None,
                 mapping_args=mapping_args,
                 output_env_file='image_params',
                 output_images_file='upload_data',
