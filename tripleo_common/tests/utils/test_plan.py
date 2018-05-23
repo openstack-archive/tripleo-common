@@ -37,6 +37,41 @@ passwords:
   ZaqarPassword: zzzz
 """
 
+USER_ENV_CONTENTS = """
+resource_registry:
+  OS::TripleO::Foo: bar.yaml
+"""
+
+UNORDERED_PLAN_ENV_LIST = [
+    {'path': 'overcloud-resource-registry-puppet.yaml'},
+    {'path': 'environments/docker-ha.yaml'},
+    {'path': 'environments/containers-default-parameters.yaml'},
+    {'path': 'environments/docker.yaml'}
+]
+
+CAPABILITIES_DICT = {
+    'topics': [{
+        'environment_groups': [{
+            'environments': [{
+                'file': 'overcloud-resource-registry-puppet.yaml'}
+            ]}, {
+            'environments': [{
+                'file': 'environments/docker.yaml',
+                'requires': ['overcloud-resource-registry-puppet.yaml']
+            }, {
+                'file': 'environments/containers-default-parameters.yaml',
+                'requires': ['overcloud-resource-registry-puppet.yaml',
+                             'environments/docker.yaml']
+            }]}, {
+            'environments': [{
+                'file': 'environments/docker-ha.yaml',
+                'requires': ['overcloud-resource-registry-puppet.yaml',
+                             'environments/docker.yaml']
+            }]}
+        ]
+    }]
+}
+
 
 class PlanTest(base.TestCase):
     def setUp(self):
@@ -90,3 +125,15 @@ class PlanTest(base.TestCase):
 
         self.swift.get_object.assert_called()
         self.swift.put_object.assert_called()
+
+    def test_apply_env_order(self):
+        ordered_plan_env_list = [
+            {'path': 'overcloud-resource-registry-puppet.yaml'},
+            {'path': 'environments/docker.yaml'},
+            {'path': 'environments/docker-ha.yaml'},
+            {'path': 'environments/containers-default-parameters.yaml'}
+        ]
+
+        ordered_env = plan_utils.apply_environments_order(
+            CAPABILITIES_DICT, UNORDERED_PLAN_ENV_LIST)
+        self.assertEqual(ordered_env, ordered_plan_env_list)

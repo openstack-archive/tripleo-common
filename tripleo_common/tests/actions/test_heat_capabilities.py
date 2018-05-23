@@ -246,7 +246,9 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         - path: /path/to/overcloud-default-env.yaml
         - path: /path/to/ceph-storage-env.yaml
         """
-        swift.get_object.return_value = ({}, mocked_env)
+        swift.get_object.side_effect = (
+            ({}, mocked_env),
+            ({}, MAPPING_YAML_CONTENTS))
         get_object_client_mock.return_value = swift
 
         environments = {
@@ -287,7 +289,9 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         - path: /path/to/overcloud-default-env.yaml
         - path: /path/to/ceph-storage-env.yaml
         """
-        swift.get_object.return_value = ({}, mocked_env)
+        swift.get_object.side_effect = (
+            ({}, mocked_env),
+            ({}, MAPPING_YAML_CONTENTS))
         get_object_client_mock.return_value = swift
 
         environments = {
