@@ -193,6 +193,23 @@ class UpdateCapabilitiesAction(base.TripleOAction):
 
         self.cache_delete(context, self.container, "tripleo.parameters.get")
 
+        # get the capabilities-map content to perform the environment ordering
+        try:
+            swift = self.get_object_client(context)
+            map_file = swift.get_object(
+                self.container, 'capabilities-map.yaml')
+            capabilities = yaml.safe_load(map_file[1])
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error retrieving capabilities-map.yaml for "
+                       "plan %s: %s" % (self.container, err))
+            LOG.exception(err_msg)
+            return actions.Result(error=err_msg)
+
+        ordered_env = plan_utils.apply_environments_order(
+            capabilities, env.get('environments', []))
+
+        env['environments'] = ordered_env
+
         try:
             plan_utils.put_env(swift, env)
         except swiftexceptions.ClientException as err:
