@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fix Octavia amphora image RPM install on undercloud node for Red Hat based
+    deployments (`bug 1772880
+    <https://bugs.launchpad.net/tripleo/+bug/1772880>`)

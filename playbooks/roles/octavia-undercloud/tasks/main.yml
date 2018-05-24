@@ -11,9 +11,7 @@
 
   - block:
       - name: install Octavia amphora image if Red Hat
-        yum:
-          name: octavia-amphora-image
-          state: latest
+        raw: sudo yum -y install octavia-amphora-image
       - name: set location if Red Hat
         set_fact:
           image_filename: "/usr/share/rhosp-director-images/octavia-amphora.qcow2"
