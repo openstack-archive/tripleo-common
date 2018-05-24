@@ -65,11 +65,13 @@ class ImageUploadManager(BaseImageManager):
        syntax. Multiple config files can be specified. They will be merged.
        """
 
-    def __init__(self, config_files=None, verbose=False, debug=False):
+    def __init__(self, config_files=None, verbose=False, debug=False,
+                 dry_run=False):
         if config_files is None:
             config_files = []
         super(ImageUploadManager, self).__init__(config_files)
         self.uploaders = {}
+        self.dry_run = dry_run
 
     def discover_image_tag(self, image, tag_from_label=None):
         uploader = self.uploader('docker')
@@ -106,7 +108,7 @@ class ImageUploadManager(BaseImageManager):
 
             self.uploader(uploader).add_upload_task(
                 image_name, pull_source, push_destination,
-                append_tag, modify_role, modify_vars)
+                append_tag, modify_role, modify_vars, self.dry_run)
 
         for uploader in self.uploaders.values():
             uploader.run_tasks()
@@ -131,7 +133,7 @@ class ImageUploader(object):
 
     @abc.abstractmethod
     def add_upload_task(self, image_name, pull_source, push_destination,
-                        append_tag, modify_role, modify_vars):
+                        append_tag, modify_role, modify_vars, dry_run):
         """Add an upload task to be executed later"""
         pass
 
@@ -197,9 +199,8 @@ class DockerImageUploader(ImageUploader):
     @staticmethod
     def upload_image(image_name, pull_source, push_destination,
                      insecure_registries, append_tag, modify_role,
-                     modify_vars):
+                     modify_vars, dry_run):
         LOG.info('imagename: %s' % image_name)
-        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
         if ':' in image_name:
             image = image_name.rpartition(':')[0]
             source_tag = image_name.rpartition(':')[2]
@@ -218,11 +219,15 @@ class DockerImageUploader(ImageUploader):
         target_image_source_tag = target_image_no_tag + ':' + source_tag
         target_image = target_image_no_tag + ':' + target_tag
 
+        if dry_run:
+            return source_image, target_image
+
         if DockerImageUploader._images_match(source_image, target_image,
                                              insecure_registries):
             LOG.info('Skipping upload for image %s' % image_name)
             return []
 
+        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
         DockerImageUploader._pull(dockerc, repo, tag=source_tag)
 
         if modify_role:
@@ -412,7 +417,7 @@ class DockerImageUploader(ImageUploader):
                     LOG.warning(e)
 
     def add_upload_task(self, image_name, pull_source, push_destination,
-                        append_tag, modify_role, modify_vars):
+                        append_tag, modify_role, modify_vars, dry_run):
         # prime self.insecure_registries
         if pull_source:
             self.is_insecure_registry(self._image_to_url(pull_source).netloc)
@@ -421,7 +426,7 @@ class DockerImageUploader(ImageUploader):
         self.is_insecure_registry(self._image_to_url(push_destination).netloc)
         self.upload_tasks.append((image_name, pull_source, push_destination,
                                   self.insecure_registries, append_tag,
-                                  modify_role, modify_vars))
+                                  modify_role, modify_vars, dry_run))
 
     def run_tasks(self):
         if not self.upload_tasks:

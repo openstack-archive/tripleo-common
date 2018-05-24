@@ -168,7 +168,8 @@ class TestDockerImageUploader(base.TestCase):
                                    set(),
                                    None,
                                    None,
-                                   None)
+                                   None,
+                                   False)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -196,7 +197,8 @@ class TestDockerImageUploader(base.TestCase):
                                    set(),
                                    None,
                                    None,
-                                   None)
+                                   None,
+                                   False)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -230,12 +232,11 @@ class TestDockerImageUploader(base.TestCase):
                                    set(),
                                    None,
                                    None,
-                                   None)
-
-        self.dockermock.assert_called_once_with(
-            base_url='unix://var/run/docker.sock', version='auto')
+                                   None,
+                                   False)
 
         # both digests are the same, no pull/push
+        self.dockermock.assert_not_called()
         self.dockermock.return_value.pull.assert_not_called()
         self.dockermock.return_value.tag.assert_not_called()
         self.dockermock.return_value.push.assert_not_called()
@@ -286,7 +287,8 @@ class TestDockerImageUploader(base.TestCase):
                                    set(),
                                    append_tag,
                                    'add-foo-plugin',
-                                   {'foo_version': '1.0.1'})
+                                   {'foo_version': '1.0.1'},
+                                   False)
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -332,7 +334,7 @@ class TestDockerImageUploader(base.TestCase):
             processutils.ProcessExecutionError,
             self.uploader.upload_image,
             image + ':' + tag, None, push_destination, set(), append_tag,
-            'add-foo-plugin', {'foo_version': '1.0.1'}
+            'add-foo-plugin', {'foo_version': '1.0.1'}, False
         )
 
         self.dockermock.assert_called_once_with(
@@ -342,6 +344,41 @@ class TestDockerImageUploader(base.TestCase):
             image, tag=tag, stream=True)
         self.dockermock.return_value.tag.assert_not_called()
         self.dockermock.return_value.push.assert_not_called()
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_upload_image_dry_run(self, mock_ansible, mock_popen):
+        mock_process = mock.Mock()
+        mock_popen.return_value = mock_process
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+        push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+
+        result = self.uploader.upload_image(
+            image + ':' + tag,
+            None,
+            push_destination,
+            set(),
+            append_tag,
+            'add-foo-plugin',
+            {'foo_version': '1.0.1'},
+            True
+        )
+
+        self.dockermock.assert_not_called()
+        mock_ansible.assert_not_called()
+        mock_process.communicate.assert_not_called()
+
+        # the push image is still returned even though no modify or push
+        # occured
+        self.assertEqual((
+            '%s:%s' % (image, tag),
+            '%s:%s%s' % (push_image, tag, append_tag)
+        ), result)
 
     @mock.patch('requests.get')
     def test_is_insecure_registry_known(self, mock_get):

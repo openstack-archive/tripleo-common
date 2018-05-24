@@ -93,7 +93,7 @@ def build_service_filter(environment, roles_data):
     return containerized_services.intersection(enabled_services)
 
 
-def container_images_prepare_multi(environment, roles_data):
+def container_images_prepare_multi(environment, roles_data, dry_run=False):
     """Perform multiple container image prepares and merge result
 
     Given the full heat environment and roles data, perform multiple image
@@ -115,7 +115,6 @@ def container_images_prepare_multi(environment, roles_data):
 
     env_params = {}
     service_filter = build_service_filter(environment, roles_data)
-    modified_timestamp = time.strftime('-modified-%Y%m%d%H%M%S')
 
     for cip_entry in cip:
         mapping_args = cip_entry.get('set')
@@ -124,7 +123,10 @@ def container_images_prepare_multi(environment, roles_data):
         modify_role = cip_entry.get('modify_role')
         modify_vars = cip_entry.get('modify_vars')
         if modify_role:
-            append_tag = modified_timestamp
+            append_tag = cip_entry.get(
+                'modify_append_tag',
+                time.strftime('-modified-%Y%m%d%H%M%S')
+            )
         else:
             append_tag = None
 
@@ -140,7 +142,7 @@ def container_images_prepare_multi(environment, roles_data):
             tag_from_label=cip_entry.get('tag_from_label'),
             append_tag=append_tag,
             modify_role=modify_role,
-            modify_vars=modify_vars
+            modify_vars=modify_vars,
         )
         env_params.update(prepare_data['image_params'])
 
@@ -152,6 +154,7 @@ def container_images_prepare_multi(environment, roles_data):
                 uploader = image_uploader.ImageUploadManager(
                     [f.name],
                     verbose=True,
+                    dry_run=dry_run,
                 )
                 uploader.upload()
     return env_params
