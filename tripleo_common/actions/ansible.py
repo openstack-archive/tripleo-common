@@ -267,6 +267,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
             'work_dir', None)
         self.max_message_size = self._kwargs_for_run.pop(
             'max_message_size', 1048576)
+        self.trash_output = self._kwargs_for_run.pop('trash_output', False)
 
     @property
     def work_dir(self):
@@ -497,6 +498,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 # stdout we don't know the difference. To keep the return dict
                 # similar there is an empty stderr. We can use the return code
                 # to determine if there was an error.
+                if self.trash_output:
+                    stdout = []
+                    stderr = ""
                 return {"stdout": "".join(stdout), "returncode": returncode,
                         "stderr": ""}
 
