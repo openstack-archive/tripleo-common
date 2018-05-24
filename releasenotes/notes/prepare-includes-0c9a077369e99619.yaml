@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    ContainerImagePrepare entries can now take an `includes` option, which like
+    `excludes` will take a list of regex patterns. `includes` will filter
+    entries which do not match at least one of the include expressions.

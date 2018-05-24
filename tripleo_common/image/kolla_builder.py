@@ -130,6 +130,7 @@ def container_images_prepare_multi(environment, roles_data):
 
         prepare_data = container_images_prepare(
             excludes=cip_entry.get('excludes'),
+            includes=cip_entry.get('includes'),
             service_filter=service_filter,
             pull_source=pull_source,
             push_destination=push_destination,
@@ -167,7 +168,7 @@ def container_images_prepare_defaults():
 
 
 def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
-                             excludes=None, service_filter=None,
+                             excludes=None, includes=None, service_filter=None,
                              pull_source=None, push_destination=None,
                              mapping_args=None, output_env_file=None,
                              output_images_file=None, tag_from_label=None,
@@ -177,6 +178,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
     :param template_file: path to Jinja2 file containing all image entries
     :param excludes: list of image name substrings to use for exclude filter
+    :param includes: list of image name substrings, at least one must match.
+                     All excludes are ignored if includes is specified.
     :param service_filter: set of heat resource types for containerized
                            services to filter by. Disable by passing None.
     :param pull_source: DEPRECATED namespace for pulling during image uploads
@@ -210,15 +213,20 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
     def ffunc(entry):
         imagename = entry.get('imagename', '')
-        if excludes:
-            for p in excludes:
-                if re.search(p, imagename):
-                    return None
         if service_filter is not None:
             # check the entry is for a service being deployed
             image_services = set(entry.get('services', []))
             if not image_services.intersection(service_filter):
                 return None
+        if includes:
+            for p in includes:
+                if re.search(p, imagename):
+                    return entry
+            return None
+        if excludes:
+            for p in excludes:
+                if re.search(p, imagename):
+                    return None
         return entry
 
     builder = KollaImageBuilder([template_file])
