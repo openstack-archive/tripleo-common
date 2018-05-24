@@ -12,7 +12,7 @@ if [ -z "$*" ]; then
 fi
 HOSTNAME=$(/bin/hostname -s)
 SERVICE_NODEID=$(/bin/hiera -c /etc/puppet/hiera.yaml "${SERVICE_NAME}_short_bootstrap_node_name")
-if [[ "$HOSTNAME" == "$SERVICE_NODEID" ]]; then
+if [[ "${HOSTNAME,,}" == "${SERVICE_NODEID,,}" ]]; then
   exec "$@"
 else
   echo "Skipping execution since this is not the bootstrap node for this service."
