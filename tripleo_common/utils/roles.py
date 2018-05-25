@@ -105,7 +105,6 @@ def validate_role_yaml(role_data=None, role_path=None):
         'CountDefault': {'type': int},
         'HostnameFormatDefault': {'type': six.string_types},
         'disable_constraints': {'type': bool},
-        'disable_upgrade_deployment': {'type': bool},
         'upgrade_batch_size': {'type': int},
         'ServicesDefault': {'type': list},
         'tags': {'type': list},
