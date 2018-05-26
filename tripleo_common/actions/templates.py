@@ -16,7 +16,6 @@ import jinja2
 import logging
 import os
 import six
-import tempfile as tf
 import yaml
 
 from heatclient import exc as heat_exc
@@ -26,7 +25,6 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import plan as plan_utils
-from tripleo_common.utils import tarball
 
 LOG = logging.getLogger(__name__)
 
@@ -66,21 +64,11 @@ class J2SwiftLoader(jinja2.BaseLoader):
         raise jinja2.exceptions.TemplateNotFound(template)
 
 
-class UploadTemplatesAction(base.TripleOAction):
+class UploadTemplatesAction(base.UploadDirectoryAction):
     """Upload default heat templates for TripleO."""
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
-                 templates_path=constants.DEFAULT_TEMPLATES_PATH):
-        super(UploadTemplatesAction, self).__init__()
-        self.container = container
-        self.templates_path = templates_path
-
-    def run(self, context):
-        with tf.NamedTemporaryFile() as tmp_tarball:
-            tarball.create_tarball(self.templates_path, tmp_tarball.name)
-            tarball.tarball_extract_to_swift_container(
-                self.get_object_client(context),
-                tmp_tarball.name,
-                self.container)
+                 dir_to_upload=constants.DEFAULT_TEMPLATES_PATH):
+        super(UploadTemplatesAction, self).__init__(container, dir_to_upload)
 
 
 class UploadPlanEnvironmentAction(base.TripleOAction):
