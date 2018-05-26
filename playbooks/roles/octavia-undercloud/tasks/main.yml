@@ -1,18 +1,28 @@
 ---
+  - name: set file if already set by heat variable (backwards-compatibility)
+    set_fact:
+      image_filename: "{{ amp_image_filename }}"
+    when: amp_image_filename is defined and not amp_image_filename == ''
+
+  - name: set location if CentOS
+    set_fact:
+      image_filename: "/usr/share/openstack-octavia-amphora-images/amphora-x64-haproxy.qcow2"
+    when: ansible_distribution == 'CentOS' and not image_filename is defined
+
+  - name: set location if Red Hat
+    set_fact:
+      image_filename: "/usr/share/rhosp-director-images/octavia-amphora.qcow2"
+    when: ansible_distribution == 'RedHat' and not image_filename is defined
 
   - name: check if amphora image file exists
     stat:
-      path: "{{ amp_image_filename }}"
-    register: amp_image_file_result
-  - name: upload image to glance
-    shell: |
-      if [[ $(openstack image show {{ amp_image_name }} > /dev/null; echo $?) -eq 1 ]]; then
-        glance image-create --name {{ amp_image_name }} --disk-format qcow2 \
-        --container-format bare --tags {{ amp_image_tag }} --file {{ amp_image_filename }}
-      fi
-    register: image_result
-    changed_when: "image_result.stdout != ''"
-    when: amp_image_file_result.stat.exists == True
+      path: "{{ image_filename }}"
+      follow: true
+      get_md5: true
+    register: image_file_result
+
+  - include_tasks: image_mgmt.yml
+    when: image_file_result.stat.exists
 
   - name: check if pub key file exists
     stat: path="{{ amp_ssh_key_path }}"

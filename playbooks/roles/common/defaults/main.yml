@@ -1,6 +1,6 @@
 ---
-amp_image_name: "octavia-amphora"
-amp_image_filename: "/usr/share/openstack-octavia-amphora-images/amphora-x64-haproxy.qcow2"
+amp_image_name: ""
+amp_image_filename: ""
 amp_image_tag: "amphora-image"
 amp_ssh_key_name: "octavia-ssh-key"
 amp_ssh_key_path: "/home/stack/.ssh/id_rsa.pub"
