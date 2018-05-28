@@ -180,6 +180,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block ceilometer_compute_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-compute /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block ceilometer_ipmi_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-ipmi /openstack/healthcheck && \
@@ -388,6 +394,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block neutron_sriov_agent_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-sriov-agent /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block nova_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-api /openstack/healthcheck && \
@@ -418,6 +430,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block nova_libvirt_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-libvirt /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block nova_novncproxy_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-vnc-proxy /openstack/healthcheck && \
@@ -439,6 +457,12 @@ RUN mkdir -p /openstack && \
 {% block nova_placement_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-placement /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block octavia_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/octavia-api /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
