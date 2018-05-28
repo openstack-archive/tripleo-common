@@ -248,14 +248,8 @@ class TestDockerImageUploader(base.TestCase):
         result1 = {
             'Digest': 'a'
         }
-        result2 = {
-            'Digest': 'b'
-        }
         mock_process = mock.Mock()
-        mock_process.communicate.side_effect = [
-            (json.dumps(result1), ''),
-            (json.dumps(result2), ''),
-        ]
+        mock_process.communicate.return_value = json.dumps(result1)
 
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
@@ -310,14 +304,8 @@ class TestDockerImageUploader(base.TestCase):
         result1 = {
             'Digest': 'a'
         }
-        result2 = {
-            'Digest': 'b'
-        }
         mock_process = mock.Mock()
-        mock_process.communicate.side_effect = [
-            (json.dumps(result1), ''),
-            (json.dumps(result2), ''),
-        ]
+        mock_process.communicate.return_value = json.dumps(result1)
 
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
@@ -379,6 +367,34 @@ class TestDockerImageUploader(base.TestCase):
             '%s:%s' % (image, tag),
             '%s:%s%s' % (push_image, tag, append_tag)
         ), result)
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'DockerImageUploader._inspect')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_image_existing(self, mock_ansible, mock_inspect):
+        mock_inspect.return_value = {'Digest': 'a'}
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+
+        result = self.uploader.upload_image(
+            image + ':' + tag,
+            None,
+            push_destination,
+            set(),
+            append_tag,
+            'add-foo-plugin',
+            {'foo_version': '1.0.1'},
+            False
+        )
+
+        self.dockermock.assert_not_called()
+        mock_ansible.assert_not_called()
+
+        self.assertEqual([], result)
 
     @mock.patch('requests.get')
     def test_is_insecure_registry_known(self, mock_get):
