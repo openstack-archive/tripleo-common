@@ -39,7 +39,7 @@ code to accomplish these tasks. ::
     mistral action-list | grep tripleo
 
 Workflow Development
-------------------
+--------------------
 
 
 When developing new workflows, you will need to reload the modified workflows,
