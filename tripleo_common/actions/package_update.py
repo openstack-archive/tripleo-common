@@ -28,11 +28,9 @@ LOG = logging.getLogger(__name__)
 
 class UpdateStackAction(templates.ProcessTemplatesAction):
 
-    def __init__(self, timeout, container_registry,
-                 container=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME):
         super(UpdateStackAction, self).__init__(container)
         self.timeout_mins = timeout
-        self.container_registry = container_registry
 
     def run(self, context):
         # get the stack. Error if doesn't exist
@@ -55,8 +53,6 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             return actions.Result(error=err_msg)
 
         update_env = {}
-        if self.container_registry is not None:
-            update_env.update(self.container_registry)
 
         noop_env = {
             'resource_registry': {
@@ -76,10 +72,6 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
                     noop_env['resource_registry'].update(role_env)
         update_env.update(noop_env)
         template_utils.deep_update(env, update_env)
-        parameters = {}
-        if self.container_registry is not None:
-            parameters.update(self.container_registry['parameter_defaults'])
-        plan_utils.update_in_env(swift, env, 'parameter_defaults', parameters)
 
         # process all plan files and create or update a stack
         processed_data = super(UpdateStackAction, self).run(context)

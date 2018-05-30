@@ -11,7 +11,7 @@ workflows:
 
     input:
       - container
-      - container_registry
+      - container_registry: ''
       - timeout: 240
       - queue_name: tripleo
       - skip_deploy_identifier: False
@@ -26,7 +26,6 @@ workflows:
         input:
           timeout: <% $.timeout %>
           container: <% $.container %>
-          container_registry: <% $.container_registry %>
         on-success: send_message
         on-error: set_update_failed
 
