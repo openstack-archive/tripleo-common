@@ -83,4 +83,9 @@ class DownloadConfigAction(templates.ProcessTemplatesAction):
         swift = self.get_object_client(context)
         swiftutils.download_container(swift, self.container_config,
                                       self.work_dir)
+        symlink_path = os.path.join(
+            os.path.dirname(self.work_dir), 'config-download-latest')
+        if os.path.exists(symlink_path):
+            os.unlink(symlink_path)
+        os.symlink(self.work_dir, symlink_path)
         return self.work_dir

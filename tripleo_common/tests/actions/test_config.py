@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import mock
+import os
 
 from tripleo_common.actions import config
 from tripleo_common.tests import base
@@ -107,12 +108,64 @@ class DownloadConfigActionTest(base.TestCase):
 
         self.ctx = mock.MagicMock()
 
+    @mock.patch('tripleo_common.actions.config.os.unlink')
+    @mock.patch('tripleo_common.actions.config.os.path.exists')
+    @mock.patch('tripleo_common.actions.config.os.symlink')
     @mock.patch('tripleo_common.utils.swift.download_container')
     @mock.patch('tempfile.mkdtemp')
     def test_run(self, mock_mkdtemp,
-                 mock_swiftutils):
+                 mock_swiftutils,
+                 mock_os_symlink,
+                 mock_os_path_exists,
+                 mock_os_unlink):
         action = config.DownloadConfigAction(self.config_container)
         action.run(self.ctx)
         mock_swiftutils.assert_called_once_with(self.swift,
                                                 self.config_container,
                                                 mock_mkdtemp())
+
+    @mock.patch('tripleo_common.actions.config.os.path.exists')
+    @mock.patch('tripleo_common.actions.config.os.symlink')
+    @mock.patch('tripleo_common.utils.swift.download_container')
+    @mock.patch('tempfile.mkdtemp')
+    def test_run_create_latest_symlink(
+            self, mock_mkdtemp,
+            mock_swiftutils,
+            mock_os_symlink,
+            mock_os_path_exists):
+        mock_mkdtemp.return_value = '/var/lib/mistral/uuid'
+        mock_os_path_exists.return_value = False
+        action = config.DownloadConfigAction(self.config_container)
+        action.run(self.ctx)
+        mock_swiftutils.assert_called_once_with(self.swift,
+                                                self.config_container,
+                                                mock_mkdtemp())
+        mock_os_symlink.assert_called_once_with(
+            action.work_dir,
+            os.path.join(os.path.dirname(action.work_dir),
+                         'config-download-latest'))
+
+    @mock.patch('tripleo_common.actions.config.os.unlink')
+    @mock.patch('tripleo_common.actions.config.os.path.exists')
+    @mock.patch('tripleo_common.actions.config.os.symlink')
+    @mock.patch('tripleo_common.utils.swift.download_container')
+    @mock.patch('tempfile.mkdtemp')
+    def test_run_update_latest_symlink(
+            self, mock_mkdtemp,
+            mock_swiftutils,
+            mock_os_symlink,
+            mock_os_path_exists,
+            mock_os_unlink):
+        mock_mkdtemp.return_value = '/var/lib/mistral/uuid'
+        mock_os_path_exists.return_value = True
+        action = config.DownloadConfigAction(self.config_container)
+        action.run(self.ctx)
+        mock_swiftutils.assert_called_once_with(self.swift,
+                                                self.config_container,
+                                                mock_mkdtemp())
+        mock_os_symlink.assert_called_once_with(
+            action.work_dir,
+            os.path.join(os.path.dirname(action.work_dir),
+                         'config-download-latest'))
+        mock_os_unlink.assert_called_once_with(
+            '/var/lib/mistral/config-download-latest')
