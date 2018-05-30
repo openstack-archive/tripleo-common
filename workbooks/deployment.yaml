@@ -360,6 +360,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
+          deployment_status: DEPLOY_FAILED
 
       download_config:
         action: tripleo.config.download_config
@@ -370,6 +371,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
+          deployment_status: DEPLOY_FAILED
 
       send_msg_config_download:
         workflow: tripleo.messaging.v1.send
@@ -392,6 +394,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
+          deployment_status: DEPLOY_FAILED
 
       generate_inventory:
         action: tripleo.ansible-generate-inventory
@@ -406,6 +409,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
+          deployment_status: DEPLOY_FAILED
 
       send_msg_generate_inventory:
         workflow: tripleo.messaging.v1.send
@@ -453,6 +457,7 @@ workflows:
           trash_output: true
         publish:
           log_path: <% task().result.get('log_path') %>
+          deployment_status: DEPLOY_SUCCESS
         on-success:
           - ansible_passed: <% task().result.returncode = 0 %>
           - ansible_failed: <% task().result.returncode != 0 %>
@@ -460,18 +465,21 @@ workflows:
         publish-on-error:
           status: FAILED
           message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
+          deployment_status: DEPLOY_FAILED
 
       ansible_passed:
         on-success: send_message
         publish:
           status: SUCCESS
           message: Ansible passed.
+          deployment_status: DEPLOY_SUCCESS
 
       ansible_failed:
         on-success: send_message
         publish:
           status: FAILED
           message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
+          deployment_status: DEPLOY_FAILED
 
       send_message:
         workflow: tripleo.messaging.v1.send
@@ -482,6 +490,7 @@ workflows:
           execution: <% execution() %>
           message: <% $.get('message', '') %>
           plan_name: <% $.plan_name %>
+          deployment_status: <% $.deployment_status %>
 
   create_overcloudrc:
     description: >
