@@ -28,11 +28,10 @@ LOG = logging.getLogger(__name__)
 
 class UpdateStackAction(templates.ProcessTemplatesAction):
 
-    def __init__(self, timeout, container_registry, ceph_ansible_playbook,
+    def __init__(self, timeout, ceph_ansible_playbook,
                  container=constants.DEFAULT_CONTAINER_NAME):
         super(UpdateStackAction, self).__init__(container)
         self.timeout_mins = timeout
-        self.container_registry = container_registry
         self.ceph_ansible_playbook = ceph_ansible_playbook
 
     def run(self, context):
@@ -56,8 +55,6 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             return actions.Result(error=err_msg)
 
         update_env = {}
-        if self.container_registry is not None:
-            update_env.update(self.container_registry)
 
         noop_env = {
             'resource_registry': {
@@ -78,8 +75,6 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
         update_env.update(noop_env)
         template_utils.deep_update(env, update_env)
         parameters = {}
-        if self.container_registry is not None:
-            parameters.update(self.container_registry['parameter_defaults'])
         if self.ceph_ansible_playbook:
             parameters.update({'CephAnsiblePlaybook': '%s' %
                                self.ceph_ansible_playbook})

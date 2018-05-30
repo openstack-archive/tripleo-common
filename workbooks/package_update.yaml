@@ -11,7 +11,7 @@ workflows:
 
     input:
       - container
-      - container_registry
+      - container_registry: ''
       - ceph_ansible_playbook
       - timeout: 240
       - queue_name: tripleo
@@ -27,7 +27,6 @@ workflows:
         input:
           timeout: <% $.timeout %>
           container: <% $.container %>
-          container_registry: <% $.container_registry %>
           ceph_ansible_playbook: <% $.ceph_ansible_playbook %>
         on-success: clean_plan
         on-error: set_update_failed
