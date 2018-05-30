@@ -3,4 +3,4 @@
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
 check_url=$(get_url_from_vhost /etc/httpd/conf.d/10-heat_api_cfn_wsgi.conf)
-healthcheck_curl ${check_url} | grep ^401
+healthcheck_curl ${check_url} | grep ^400
