@@ -64,7 +64,7 @@ def rm_container(name):
         log.debug(cmd_stderr)
 
 
-def populate_container_rpms_list((container)):
+def populate_container_rpms_list(container):
 
     dcmd = ['/usr/bin/docker', 'run',
             '--user', 'root',
@@ -87,7 +87,7 @@ def populate_container_rpms_list((container)):
     return (subproc.returncode, container, rpms)
 
 
-def yum_update_container((container, name, packages)):
+def yum_update_container(container, name, packages):
 
     container_name = 'yum-update-%s' % name
 
