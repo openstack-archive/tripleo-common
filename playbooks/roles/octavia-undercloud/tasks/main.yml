@@ -29,16 +29,39 @@
   - include_tasks: image_mgmt.yml
     when: image_file_result.stat.exists
 
-  - name: check if pub key file exists
-    stat: path="{{ amp_ssh_key_path }}"
-    register: ssh_pub_key_file_result
+  - name: use ssh pub key file if provided and is readable
+    block:
+      - name: check if pub key file exists
+        stat: path="{{ amp_ssh_key_path }}"
+        register: key_file_result
+        ignore_errors: true
+
+      - name: fail if ssh pub key file does not exist or is not readable
+        fail: msg="{{ amp_ssh_key_path }} does not exist or is not readable by user {{ ansible_user }}"
+        when: key_file_result|failed or key_file_result.stat.exists == False or key_file_result.stat.readable == False
+
+      - set_fact:
+          amp_ssh_key_path_final: "{{ amp_ssh_key_path }}"
+    when: amp_ssh_key_path is defined and amp_ssh_key_path != ""
+
+  - name: defaulting to public key from undercloud default keypair
+    block:
+      - name: create temp pub key file
+        tempfile: state=file
+        register: ssh_key_tmp_file
+
+      - name: copy ssh public key content to temp file
+        copy: content="{{ amp_ssh_key_data }}" dest="{{ ssh_key_tmp_file.path }}"
+
+      - set_fact:
+          amp_ssh_key_path_final: "{{ ssh_key_tmp_file.path }}"
+    when: amp_ssh_key_path is not defined or amp_ssh_key_path == ""
 
   - name: upload pub key to overcloud
     shell: |
       openstack keypair show {{ amp_ssh_key_name }} || \
-        openstack keypair create --public-key {{ amp_ssh_key_path }} {{ amp_ssh_key_name }}
+        openstack keypair create --public-key {{ amp_ssh_key_path_final }} {{ amp_ssh_key_name }}
     environment:
-      OS_USERNAME: {{ auth_username }}
-      OS_PASSWORD: {{ auth_password }}
-      OS_PROJECT_NAME: {{ auth_project_name }}
-    when: ssh_pub_key_file_result.stat.exists == True
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"

@@ -13,6 +13,7 @@ workflows:
       - amp_image_tag
       - amp_ssh_key_name
       - amp_ssh_key_path
+      - amp_ssh_key_data
       - auth_username
       - auth_password
       - auth_project_name
@@ -101,6 +102,7 @@ workflows:
             amp_image_tag: <% $.amp_image_tag %>
             amp_ssh_key_name: <% $.amp_ssh_key_name %>
             amp_ssh_key_path: <% $.amp_ssh_key_path %>
+            amp_ssh_key_data: <% $.amp_ssh_key_data %>
             auth_username: <% $.auth_username %>
             auth_password: <% $.auth_password %>
             auth_project_name: <% $.auth_project_name %>
