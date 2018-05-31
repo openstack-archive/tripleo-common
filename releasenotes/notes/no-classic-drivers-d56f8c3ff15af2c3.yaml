@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    On enrollment, all classic drivers are replaced with their hardware type
+    equivalents (e.g. ``pxe_ipmitool`` is replaced with ``ipmi``).
+    The ``fake_pxe`` classic driver is replaced with the ``manual-management``
+    hardware type (which must be enabled in the undercloud).

@@ -667,11 +667,28 @@ class NodesTest(base.TestCase):
         node['pm_type'] = 'fake_pxe'
         client = mock.MagicMock()
         nodes.register_ironic_node(node, client=client)
-        client.node.create.assert_called_once_with(driver='fake_pxe',
+        client.node.create.assert_called_once_with(driver='manual-management',
                                                    name='node1',
                                                    properties=node_properties,
                                                    resource_class='baremetal',
                                                    driver_info={})
+
+    def test_register_ironic_node_ucs(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'cisco-ucs-managed'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='cisco-ucs-managed', name='node1',
+            properties=node_properties,
+            resource_class='baremetal',
+            driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
+                         'ucs_username': 'test'})
 
     def test_register_ironic_node_pxe_ucs(self):
         node_properties = {"cpus": "1",
@@ -684,7 +701,8 @@ class NodesTest(base.TestCase):
         client = mock.MagicMock()
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
-            driver='pxe_ucs', name='node1', properties=node_properties,
+            driver='cisco-ucs-managed', name='node1',
+            properties=node_properties,
             resource_class='baremetal',
             driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
                          'ucs_username': 'test'})
@@ -718,7 +736,7 @@ class NodesTest(base.TestCase):
         client = mock.MagicMock()
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
-            driver='pxe_ipmitool', name='node1', properties=node_properties,
+            driver='ipmi', name='node1', properties=node_properties,
             resource_class='baremetal',
             driver_info={'ipmi_password': 'random', 'ipmi_address': 'foo.bar',
                          'ipmi_username': 'test', 'ipmi_port': '6230'})
@@ -769,10 +787,27 @@ class NodesTest(base.TestCase):
         client = mock.MagicMock()
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
-            driver='pxe_drac', name='node1', properties=node_properties,
+            driver='idrac', name='node1', properties=node_properties,
             resource_class='baremetal',
             driver_info={'drac_password': 'random', 'drac_address': 'foo.bar',
                          'drac_username': 'test', 'drac_port': '6230'})
+
+    def test_register_ironic_node_pxe_ilo(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'pxe_ilo'
+        node['pm_port'] = '1234'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='ilo', name='node1', properties=node_properties,
+            resource_class='baremetal',
+            driver_info={'ilo_password': 'random', 'ilo_address': 'foo.bar',
+                         'ilo_username': 'test', 'ilo_port': '1234'})
 
     def test_register_ironic_node_redfish(self):
         node_properties = {"cpus": "1",
@@ -833,16 +868,16 @@ class NodesTest(base.TestCase):
         nodes._clean_up_extra_nodes(seen, client, remove=True)
         client.node.delete.assert_called_once_with('foobar')
 
-    def test__get_node_id_fake_pxe(self):
+    def test__get_node_id_manual_management(self):
         node = self._get_node()
-        node['pm_type'] = 'fake_pxe'
-        handler = nodes.find_driver_handler('fake_pxe')
+        node['pm_type'] = 'manual-management'
+        handler = nodes.find_driver_handler('manual-management')
         node_map = {'mac': {'aaa': 'abcdef'}, 'pm_addr': {}}
         self.assertEqual('abcdef', nodes._get_node_id(node, handler, node_map))
 
     def test__get_node_id_conflict(self):
         node = self._get_node()
-        handler = nodes.find_driver_handler('pxe_ipmitool')
+        handler = nodes.find_driver_handler('ipmi')
         node_map = {'mac': {'aaa': 'abcdef'},
                     'pm_addr': {'foo.bar': 'defabc'}}
         self.assertRaises(exception.InvalidNode,
@@ -851,7 +886,7 @@ class NodesTest(base.TestCase):
 
     def test_get_node_id_valid_duplicate(self):
         node = self._get_node()
-        handler = nodes.find_driver_handler('pxe_ipmitool')
+        handler = nodes.find_driver_handler('ipmi')
         node_map = {'mac': {'aaa': 'id'},
                     'pm_addr': {'foo.bar': 'id'}}
         self.assertEqual('id', nodes._get_node_id(node, handler, node_map))
@@ -874,12 +909,12 @@ class TestPopulateNodeMapping(base.TestCase):
                     'uuids': {'abcdef', 'fedcba', 'xyz'}}
         self.assertEqual(expected, nodes._populate_node_mapping(client))
 
-    def test_populate_node_mapping_ironic_fake_pxe(self):
+    def test_populate_node_mapping_ironic_manual_management(self):
         client = mock.MagicMock()
         ironic_node = collections.namedtuple('node', ['uuid', 'driver',
                                              'driver_info'])
         ironic_port = collections.namedtuple('port', ['address'])
-        node = ironic_node('abcdef', 'fake_pxe', None)
+        node = ironic_node('abcdef', 'manual-management', None)
         client.node.list_ports.return_value = [ironic_port('aaa')]
         client.node.list.return_value = [node]
         expected = {'mac': {'aaa': 'abcdef'}, 'pm_addr': {},
