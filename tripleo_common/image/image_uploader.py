@@ -222,10 +222,17 @@ class DockerImageUploader(ImageUploader):
         if dry_run:
             return source_image, target_image
 
-        if DockerImageUploader._images_match(source_image, target_image,
-                                             insecure_registries):
-            LOG.info('Skipping upload for image %s' % image_name)
-            return []
+        if modify_role:
+            if DockerImageUploader._image_exists(target_image,
+                                                 insecure_registries):
+                LOG.info('Skipping upload for modified image %s' %
+                         target_image)
+                return []
+        else:
+            if DockerImageUploader._images_match(source_image, target_image,
+                                                 insecure_registries):
+                LOG.info('Skipping upload for image %s' % image_name)
+                return []
 
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
         DockerImageUploader._pull(dockerc, repo, tag=source_tag)
@@ -303,6 +310,15 @@ class DockerImageUploader(ImageUploader):
         insecure = image_url.netloc in insecure_registries
         i = DockerImageUploader._inspect(image_url.geturl(), insecure)
         return i.get('Digest')
+
+    @staticmethod
+    def _image_exists(image, insecure_registries):
+        try:
+            DockerImageUploader._image_digest(image, insecure_registries)
+        except Exception:
+            return False
+        else:
+            return True
 
     @staticmethod
     def _inspect(image, insecure=False):
