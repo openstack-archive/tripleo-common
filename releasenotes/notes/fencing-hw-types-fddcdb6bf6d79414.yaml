@@ -1,0 +1,11 @@
+---
+fixes:
+  - |
+    Fixes handling hardware types (new-style Ironic drivers) when generating
+    fencing parameters. Also completely removes support for no longer existing
+    ``pxe_ssh`` driver.
+deprecations:
+  - |
+    The ``os_auth`` argument to the ``generate_fencing_parameters`` workflow
+    is deprecated and should not be provided. It will be removed in a future
+    version.

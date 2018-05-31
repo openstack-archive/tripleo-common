@@ -227,31 +227,6 @@ class oVirtDriverInfo(DriverInfo):
             return
 
 
-class SshDriverInfo(DriverInfo):
-    DEFAULTS = {'ssh_virt_type': 'virsh'}
-
-    def __init__(self):
-        super(SshDriverInfo, self).__init__(
-            'ssh',
-            {
-                'pm_addr': 'ssh_address',
-                'pm_user': 'ssh_username',
-                # TODO(dtantsur): support ssh_key_filename as well
-                'pm_password': 'ssh_key_contents',
-            },
-            deprecated_mapping={
-                'pm_virt_type': 'ssh_virt_type',
-            },
-            mandatory_fields=['pm_addr', 'pm_user', 'pm_password'],
-        )
-
-    def validate(self, node):
-        super(SshDriverInfo, self).validate(node)
-        if not node.get('ports')[0]['address']:
-            raise exception.InvalidNode(
-                'Nodes with SSH drivers require at least one PORT')
-
-
 class iBootDriverInfo(PrefixedDriverInfo):
     def __init__(self):
         super(iBootDriverInfo, self).__init__(

@@ -881,7 +881,7 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
         test_envjson = [{
             "name": "control-0",
             "pm_password": "control-0-password",
-            "pm_type": "pxe_ipmitool",
+            "pm_type": "ipmi",
             "pm_user": "control-0-admin",
             "pm_addr": "0.1.2.3",
             "pm_port": "0123",
@@ -891,7 +891,8 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
         }, {
             "name": "control-1",
             "pm_password": "control-1-password",
-            "pm_type": "pxe_ssh",
+            # Still support deprecated drivers
+            "pm_type": "pxe_ipmitool",
             "pm_user": "control-1-admin",
             "pm_addr": "1.2.3.4",
             "mac": [
@@ -902,22 +903,15 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
             # cope with unprovisioned nodes
             "name": "control-2",
             "pm_password": "control-2-password",
-            "pm_type": "pxe_ipmitool",
+            "pm_type": "ipmi",
             "pm_user": "control-2-admin",
             "pm_addr": "2.3.4.5",
             "mac": [
                 "22:33:44:55:66:77"
             ]
         }]
-        test_osauth = {
-            "auth_url": "test://auth.url",
-            "login": "test_os_username",
-            "passwd": "test_os_password",
-            "tenant_name": "test_os_tenant_name",
-            }
 
         action = parameters.GenerateFencingParametersAction(test_envjson,
-                                                            test_osauth,
                                                             28,
                                                             5,
                                                             0,
@@ -942,15 +936,16 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                              }
                          })
         self.assertEqual(result["FencingConfig"]["devices"][1], {
-                         "agent": "fence_ironic",
+                         "agent": "fence_ipmilan",
                          "host_mac": "11:22:33:44:55:66",
                          "params": {
-                             "auth_url": "test://auth.url",
                              "delay": 28,
-                             "login": "test_os_username",
-                             "passwd": "test_os_password",
-                             "tenant_name": "test_os_tenant_name",
-                             "pcmk_host_map": "compute_name_1:baremetal_name_1"
+                             "ipaddr": "1.2.3.4",
+                             "lanplus": True,
+                             "privlvl": 5,
+                             "login": "control-1-admin",
+                             "passwd": "control-1-password",
+                             "pcmk_host_list": "compute_name_1"
                              }
                          })
 
