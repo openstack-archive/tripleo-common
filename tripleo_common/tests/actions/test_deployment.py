@@ -12,6 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import json
 import mock
 import tempfile
 import yaml
@@ -500,3 +501,77 @@ class OvercloudRcActionTestCase(base.TestCase):
         result = action.run(mock_ctx)
 
         self.assertEqual(result, {"overcloudrc": "fake overcloudrc"})
+
+
+class DeploymentFailuresActionTest(base.TestCase):
+
+    def setUp(self):
+        super(DeploymentFailuresActionTest, self).setUp()
+        self.plan = 'overcloud'
+        self.ctx = mock.MagicMock()
+
+    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('tripleo_common.actions.deployment.open')
+    def test_get_deployment_failures(
+            self, mock_open, mock_obj_client, mock_yaml_load):
+
+        test_result = dict(host0=["a", "b", "c"])
+        mock_read = mock.MagicMock()
+        mock_read.read.return_value = json.dumps(test_result)
+        mock_open.return_value = mock_read
+        action = deployment.DeploymentFailuresAction(self.plan)
+        result = action.run(self.ctx)
+
+        self.assertEqual(result['failures'], test_result)
+
+    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('tripleo_common.actions.deployment.open')
+    def test_get_deployment_failures_no_container(
+            self, mock_open, mock_obj_client, mock_yaml_load):
+
+        test_result = dict(
+            failures={},
+            message='Swift container overcloud-messages not found')
+
+        swift = mock.MagicMock()
+        swift.get_object.side_effect = swiftexceptions.ClientException("404")
+        mock_obj_client.return_value = swift
+
+        action = deployment.DeploymentFailuresAction(self.plan)
+        result = action.run(self.ctx)
+
+        self.assertEqual(result, test_result)
+
+    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('tripleo_common.actions.deployment.open')
+    def test_get_deployment_failures_no_execution(
+            self, mock_open, mock_obj_client, mock_yaml_load):
+
+        test_result = dict(
+            failures={},
+            message='Execution not found in deployment_status.yaml')
+
+        mock_yaml_load.side_effect = KeyError()
+
+        action = deployment.DeploymentFailuresAction(self.plan)
+        result = action.run(self.ctx)
+
+        self.assertEqual(result, test_result)
+
+    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('tripleo_common.actions.deployment.open')
+    def test_get_deployment_failures_no_file(
+            self, mock_open, mock_obj_client, mock_yaml_load):
+
+        mock_open.side_effect = IOError()
+
+        action = deployment.DeploymentFailuresAction(self.plan)
+        result = action.run(self.ctx)
+
+        self.assertTrue(result['message'].startswith(
+                        "Ansible errors file not found at"))
+        self.assertEqual({}, result['failures'])
