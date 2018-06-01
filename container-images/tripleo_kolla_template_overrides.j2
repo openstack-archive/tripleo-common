@@ -70,6 +70,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% set neutron_metadata_agent_ovn_packages_append = ['docker'] %}
 {% set neutron_l3_agent_packages_append = ['docker'] %}
 # Kolla doesn't currently neutron_dhcp_agent_packages on CentOS so the append
 # isn't valid here.
