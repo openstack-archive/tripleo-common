@@ -102,7 +102,7 @@ class ImageUploadManager(BaseImageManager):
 
             # This updates the parsed upload_images dict with real values
             item['push_destination'] = push_destination
-            append_tag = item.get('append_tag')
+            append_tag = item.get('modify_append_tag')
             modify_role = item.get('modify_role')
             modify_vars = item.get('modify_vars')
 
