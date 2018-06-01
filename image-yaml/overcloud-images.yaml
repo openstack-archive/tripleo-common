@@ -23,6 +23,7 @@ disk_images:
       - remove-machine-id
       - remove-resolvconf
       - openssh
+      - disable-nouveau
     packages:
       - python-psutil
       - python-debtcollector

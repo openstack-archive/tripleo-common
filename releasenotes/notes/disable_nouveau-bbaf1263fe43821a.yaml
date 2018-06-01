@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Add disable-nouveau element to tripleo images
+    This ensures nouveau is not loaded at boot, as this can prevent PCI passthrough
+    or loading the NVIDIA binary drivers that are required for vGPU support.

@@ -21,9 +21,10 @@ disk_images:
       - dracut-regenerate
       - remove-machine-id
       - remove-resolvconf
-      - modprobe-blacklist
+      - modprobe
       - overcloud-secure
       - openssh
+      - disable-nouveau
     packages:
       - ntp
       - python-psutil
