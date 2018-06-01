@@ -177,3 +177,5 @@ TRIPLEO_DEPLOYMENT_RESOURCE = 'TripleODeployment'
 HOST_NETWORK = 'ctlplane'
 
 EXTERNAL_TASKS = ['external_deploy_tasks']
+
+ANSIBLE_ERRORS_FILE = 'ansible-errors.json'
