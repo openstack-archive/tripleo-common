@@ -23,6 +23,7 @@ disk_images:
       - remove-resolvconf
       - modprobe-blacklist
       - overcloud-secure
+      - openssh
     packages:
       - ntp
       - python-psutil
