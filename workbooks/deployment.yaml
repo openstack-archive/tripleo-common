@@ -313,11 +313,12 @@ workflows:
 
     tasks:
       get_horizon_url:
-        action: heat.stacks_get
+        action: heat.stacks_output_show
         input:
           stack_id: <% $.stack %>
+          output_key: EndpointMap
         publish:
-          horizon_url: <% task().result.outputs.where($.output_key = "EndpointMap").output_value.HorizonPublic.uri.single() %>
+          horizon_url: <% task().result.output.output_value.HorizonPublic.uri %>
         on-success: send_message
         publish-on-error:
           status: FAILED
