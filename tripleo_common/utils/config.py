@@ -242,8 +242,16 @@ class Config(object):
             else:
                 # We can't have an integer here, let's figure out the
                 # grandparent resource name
-                deployment_stack_id = \
-                    deployment.attributes['value']['deployment'].split('/')[-1]
+                deployment_ref = deployment.attributes['value']['deployment']
+                if '/' in deployment_ref:
+                    deployment_stack_id = deployment_ref.split('/')[-1]
+                else:
+                    for link in deployment.links:
+                        if link['rel'] == 'stack':
+                            deployment_stack_id = link['href'].split('/')[-1]
+                            break
+                    else:
+                        raise ValueError("Couldn't not find parent stack")
                 deployment_stack = self.client.stacks.get(
                     deployment_stack_id, resolve_outputs=False)
                 parent_stack = deployment_stack.parent
@@ -255,8 +263,7 @@ class Config(object):
                     message = "The deployment resource grandparent name could" \
                               "not be determined."
                     raise ValueError(message)
-                deployment_name = resources[0].name
-
+                deployment_name = resources[0].resource_name
             config_dict['deployment_name'] = deployment_name
 
             # reset deploy_server_id to the actual server_id since we have to
