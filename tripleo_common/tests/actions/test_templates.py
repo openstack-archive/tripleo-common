@@ -400,12 +400,13 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_object = mock.MagicMock()
         swift.get_container = mock.MagicMock()
         get_obj_client_mock.return_value = swift
+        mock_ctx = mock.MagicMock()
 
         # Test
         action = templates.ProcessTemplatesAction()
         action._j2_render_and_put(JINJA_SNIPPET_CONFIG,
                                   {'role': 'CustomRole'},
-                                  'customrole-config.yaml')
+                                  'customrole-config.yaml', context=mock_ctx)
 
         action_result = swift.put_object._mock_mock_calls[0]
 
@@ -427,12 +428,14 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_container = mock.MagicMock(
             side_effect=return_container_files)
         get_obj_client_mock.return_value = swift
+        mock_ctx = mock.MagicMock()
 
         # Test
         action = templates.ProcessTemplatesAction()
         action._j2_render_and_put(r"{% include 'foo.yaml' %}",
                                   {'role': 'CustomRole'},
-                                  'customrole-config.yaml')
+                                  'customrole-config.yaml',
+                                  context=mock_ctx)
 
         action_result = swift.put_object._mock_mock_calls[0]
 
@@ -456,12 +459,14 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_container = mock.MagicMock(
             side_effect=return_container_files)
         get_obj_client_mock.return_value = swift
+        mock_ctx = mock.MagicMock()
 
         # Test
         action = templates.ProcessTemplatesAction()
         action._j2_render_and_put(r"{% include 'foo.yaml' %}",
                                   {'role': 'CustomRole'},
-                                  'bar/customrole-config.yaml')
+                                  'bar/customrole-config.yaml',
+                                  context=mock_ctx)
 
         action_result = swift.put_object._mock_mock_calls[0]
 

@@ -48,17 +48,19 @@ class TripleOAction(actions.Action):
         return session_and_auth['session']
 
     def get_object_client(self, context):
+        security_ctx = context.security
+
         swift_endpoint = keystone_utils.get_endpoint_for_project(
-            context,
+            security_ctx,
             'swift'
         )
 
         kwargs = {
             'preauthurl': swift_endpoint.url % {
-                'tenant_id': context.project_id
+                'tenant_id': security_ctx.project_id
             },
-            'session': self.get_session(context, 'swift'),
-            'insecure': context.insecure,
+            'session': self.get_session(security_ctx, 'swift'),
+            'insecure': security_ctx.insecure,
             'retries': 10,
             'starting_backoff': 3,
             'max_backoff': 120
@@ -82,8 +84,9 @@ class TripleOAction(actions.Action):
         return swift_service.SwiftService(options=swift_opts)
 
     def get_baremetal_client(self, context):
+        security_ctx = context.security
         ironic_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'ironic')
+            security_ctx, 'ironic')
 
         # FIXME(lucasagomes): Use ironicclient.get_client() instead
         # of ironicclient.Client(). Client() might cause errors since
@@ -91,7 +94,7 @@ class TripleOAction(actions.Action):
         # prefered way
         return ironicclient.Client(
             ironic_endpoint.url,
-            token=context.auth_token,
+            token=security_ctx.auth_token,
             region_name=ironic_endpoint.region,
             os_ironic_api_version='1.36',
             # FIXME(lucasagomes):Paramtetize max_retries and
@@ -104,10 +107,11 @@ class TripleOAction(actions.Action):
         )
 
     def get_baremetal_introspection_client(self, context):
+        security_ctx = context.security
         bmi_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'ironic-inspector')
+            security_ctx, 'ironic-inspector')
 
-        auth = Token(endpoint=bmi_endpoint.url, token=context.auth_token)
+        auth = Token(endpoint=bmi_endpoint.url, token=security_ctx.auth_token)
 
         return ironic_inspector_client.ClientV1(
             api_version='1.2',
@@ -116,28 +120,30 @@ class TripleOAction(actions.Action):
         )
 
     def get_image_client(self, context):
+        security_ctx = context.security
         glance_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'glance')
+            security_ctx, 'glance')
         return glanceclient.Client(
             glance_endpoint.url,
-            token=context.auth_token,
+            token=security_ctx.auth_token,
             region_name=glance_endpoint.region
         )
 
     def get_orchestration_client(self, context):
+        security_ctx = context.security
         heat_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'heat')
+            security_ctx, 'heat')
 
         endpoint_url = keystone_utils.format_url(
             heat_endpoint.url,
-            {'tenant_id': context.project_id}
+            {'tenant_id': security_ctx.project_id}
         )
 
         return heatclient.Client(
             endpoint_url,
             region_name=heat_endpoint.region,
-            token=context.auth_token,
-            username=context.user_name
+            token=security_ctx.auth_token,
+            username=security_ctx.user_name
         )
 
     def get_messaging_client(self, context):
@@ -160,18 +166,20 @@ class TripleOAction(actions.Action):
         return zaqarclient.Client(zaqar_endpoint.url, conf=conf)
 
     def get_workflow_client(self, context):
+        security_ctx = context.security
         mistral_endpoint = keystone_utils.get_endpoint_for_project(
-            context, 'mistral')
+            security_ctx, 'mistral')
 
-        mc = mistral_client.client(auth_token=context.auth_token,
+        mc = mistral_client.client(auth_token=security_ctx.auth_token,
                                    mistral_url=mistral_endpoint.url)
 
         return mc
 
     def get_compute_client(self, context):
+        security_ctx = context.security
 
         conf = keystone_utils.get_session_and_auth(
-            context,
+            security_ctx,
             service_type='compute'
         )
 
