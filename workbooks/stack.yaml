@@ -16,9 +16,7 @@ workflows:
 
     tasks:
       heat_stacks_get:
-        action: heat.stacks_get stack_id=<% $.stack %>
-        # NOTE(d0ugal): resolve_outputs does not seem to be working. Manually
-        # remove the outputs from the task results. See lp #1774958
+        action: heat.stacks_get stack_id=<% $.stack %> resolve_outputs=false
         publish:
           stack: <% task().result.delete("outputs") %>
         on-success:
