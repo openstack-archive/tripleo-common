@@ -90,10 +90,13 @@ def build_service_filter(environment, roles_data):
         # enabled services
         return enabled_services
 
+    # Use the template path to determine if it represents a
+    # containerized service
+    containerized_services_path = ['/docker/services/',
+                                   '/services/kubernetes',
+                                   '/services/openshift']
     for service, env_path in environment.get('resource_registry', {}).items():
-        # Use the template path to determine if it represents a
-        # containerized service
-        if '/docker/services/' in env_path:
+        if any(p in env_path for p in containerized_services_path):
             containerized_services.add(service)
 
     return containerized_services.intersection(enabled_services)

@@ -682,7 +682,9 @@ class TestPrepare(base.TestCase):
         self.assertEqual(
             set([
                 'OS::TripleO::Services::NovaApi',
-                'OS::TripleO::Services::NovaCompute'
+                'OS::TripleO::Services::NovaCompute',
+                'OS::TripleO::Services::OpenShift::Master',
+                'OS::TripleO::Services::Kubernetes::Worker',
             ]),
             kb.build_service_filter({
                 'resource_registry': {
@@ -692,6 +694,10 @@ class TestPrepare(base.TestCase):
                     '/tht/docker/services/foo.yaml',
                     'OS::TripleO::Services::NovaCompute':
                     '/tht/docker/services/foo.yaml',
+                    'OS::TripleO::Services::OpenShift::Master':
+                    'extraconfig/services/openshift-master.yaml',
+                    'OS::TripleO::Services::Kubernetes::Worker':
+                    'extraconfig/services/kubernetes-worker.yaml'
                 }
             }, [
                 {
@@ -699,13 +705,15 @@ class TestPrepare(base.TestCase):
                     'CountDefault': 1,
                     'ServicesDefault': [
                         'OS::TripleO::Services::NeutronApi',
-                        'OS::TripleO::Services::NovaApi'
+                        'OS::TripleO::Services::NovaApi',
+                        'OS::TripleO::Services::OpenShift::Master'
                     ]
                 }, {
                     'name': 'Compute',
                     'CountDefault': 1,
                     'ServicesDefault': [
-                        'OS::TripleO::Services::NovaCompute'
+                        'OS::TripleO::Services::NovaCompute',
+                        'OS::TripleO::Services::Kubernetes::Worker'
                     ]
                 }, {
                     'name': 'BlockStorage',
