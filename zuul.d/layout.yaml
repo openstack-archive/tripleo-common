@@ -59,3 +59,8 @@
               - workbooks/baremetal.yaml
               - ^container-images/.*$
               - tripleo_common/actions/deployment.py
+    experimental:
+      jobs:
+        - tripleo-ci-centos-7-scenario009-multinode-oooq:
+            files:
+              - ^container-images/.*$
