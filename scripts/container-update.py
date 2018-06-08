@@ -179,15 +179,13 @@ def get_available_rpms():
 
 
 def get_container_list(container_file):
+    container_list = []
     with open(container_file) as cf:
-        data = yaml.safe_load(cf.read()).get('container_images')
-        if not data:
-            return None
-        container_list = []
+        data = yaml.safe_load(cf.read()).get('container_images', [])
         for image_info in data:
             print('image_info: %s' % image_info)
             container_list.append(image_info['imagename'])
-        return container_list
+    return container_list
 
 
 if __name__ == '__main__':
