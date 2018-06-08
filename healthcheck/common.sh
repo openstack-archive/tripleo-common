@@ -14,7 +14,7 @@ healthcheck_port () {
   process=$1
 
   # ss truncate command name to 15 characters and this behaviour
-  # cannot be diabled
+  # cannot be disabled
   if [ ${#process} -gt 15 ] ; then
     process=${process:0:15}
   fi
@@ -29,7 +29,7 @@ healthcheck_listen () {
   process=$1
 
   # ss truncate command name to 15 characters and this behaviour
-  # cannot be diabled
+  # cannot be disabled
   if [ ${#process} -gt 15 ] ; then
     process=${process:0:15}
   fi
@@ -39,6 +39,19 @@ healthcheck_listen () {
   ports=${args// /|}
   ss -lnp | awk '{print $5,"-",$7}' | egrep ":($ports)" | grep "$process"
 }
+
+healthcheck_socket () {
+  process=$1
+  socket=$2
+
+  # lsof truncate command name to 15 characters and this behaviour
+  # cannot be disabled
+  if [ ${#process} -gt 15 ] ; then
+    process=${process:0:15}
+  fi
+  lsof -Fc -Ua $socket | grep "c$process"
+}
+
 
 get_config_val () {
   crudini --get "$1" "$2" "$3" 2> /dev/null || echo "$4"
