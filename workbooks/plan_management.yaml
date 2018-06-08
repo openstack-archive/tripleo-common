@@ -998,6 +998,7 @@ workflows:
     description: Internal workflow for validating a network exists from a role
 
     input:
+      - container: overcloud
       - defined_networks
       - networks_in_roles
       - queue_name: tripleo
@@ -1084,6 +1085,7 @@ workflows:
       validate_roles_and_networks:
         workflow: _validate_networks_from_roles
         input:
+          container: <% $.container %>
           defined_networks: <% $.network_data.name %>
           networks_in_roles: <% $.networks_in_roles %>
           queue_name: <% $.queue_name %>
@@ -1189,6 +1191,9 @@ workflows:
     tasks:
       get_available_roles:
         workflow: list_available_roles
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name%>
         publish:
           available_roles: <% task().result.available_roles %>
         on-success: validate_input
