@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    The tripleo.plan_management.v1.update_roles workflow didn't pass the plan
+    name (container name) or Zaqar queue name to the sub-workflow it triggered.
+    This caused the behaviour to be incorrect when using a name other than the
+    default. It now correctly passes on these parameters.
