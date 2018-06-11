@@ -11,6 +11,7 @@ workflows:
     input:
       - plan: overcloud
       - queue_name: tripleo
+      - persist_params_in_plan: true
       - user_inputs: {}
 
     tags:
@@ -58,7 +59,9 @@ workflows:
         publish:
           # Gets all the roles derived parameters as dictionary
           result: <% task().result.select($.get('derived_parameters', {})).sum() %>
-        on-success: reset_derive_parameters_in_plan
+        on-success:
+          - send_message: <% not $.persist_params_in_plan %>
+          - reset_derive_parameters_in_plan: <% $.persist_params_in_plan %>
         on-error: set_status_failed_for_each_role
 
       reset_derive_parameters_in_plan:
