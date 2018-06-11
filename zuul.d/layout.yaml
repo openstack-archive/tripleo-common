@@ -11,26 +11,32 @@
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
               - tripleo_common/actions/ansible.py
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
             files:
               - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario003-multinode-oooq-container:
             files:
               - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario004-multinode-oooq-container:
             files:
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
               - tripleo_common/actions/ansible.py
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             files:
               - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
             files:
               - workbooks/package_update.yaml
               - workbooks/baremetal.yaml
               - ^container-images/.*$
               - tripleo_common/actions/deployment.py
+              - tripleo_common/image/kolla_builder.py
     gate:
       queue: tripleo
       jobs:
@@ -39,28 +45,35 @@
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
               - tripleo_common/actions/ansible.py
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
             files:
               - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario003-multinode-oooq-container:
             files:
               - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario004-multinode-oooq-container:
             files:
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
               - tripleo_common/actions/ansible.py
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             files:
               - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
             files:
               - workbooks/package_update.yaml
               - workbooks/baremetal.yaml
               - ^container-images/.*$
               - tripleo_common/actions/deployment.py
+              - tripleo_common/image/kolla_builder.py
     experimental:
       jobs:
         - tripleo-ci-centos-7-scenario009-multinode-oooq:
             files:
               - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
