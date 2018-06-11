@@ -171,7 +171,13 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
                 'tag': 'current-tripleo',
-                'neutron_driver': None
+                'neutron_driver': None,
+                'openshift_namespace': 'docker.io/openshift',
+                'openshift_tag': 'v3.9.0',
+                'openshift_base_image': 'origin',
+                'openshift_cockpit_namespace': 'docker.io/cockpit',
+                'openshift_cockpit_image': 'kubernetes',
+                'openshift_cockpit_tag': 'latest',
             },
             builder.container_images_template_inputs()
         )
@@ -185,7 +191,13 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_prefix': 'prefix-',
                 'name_suffix': '-suffix',
                 'tag': 'master',
-                'neutron_driver': 'ovn'
+                'neutron_driver': 'ovn',
+                'openshift_namespace': 'docker.io/openshift3',
+                'openshift_tag': 'v3.10.0',
+                'openshift_base_image': 'ose',
+                'openshift_cockpit_namespace': 'docker.io/openshift-cockpit',
+                'openshift_cockpit_image': 'cockpit',
+                'openshift_cockpit_tag': 'tag',
             },
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleomaster',
@@ -196,6 +208,12 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 name_suffix='suffix',
                 tag='master',
                 neutron_driver='ovn',
+                openshift_namespace='docker.io/openshift3',
+                openshift_tag='v3.10.0',
+                openshift_base_image='ose',
+                openshift_cockpit_namespace='docker.io/openshift-cockpit',
+                openshift_cockpit_image='cockpit',
+                openshift_cockpit_tag='tag',
             )
         )
 

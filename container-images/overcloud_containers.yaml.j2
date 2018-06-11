@@ -208,6 +208,7 @@ container_images_template:
   - DockerEtcdImage
   services:
   - OS::TripleO::Services::Etcd
+  - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{namespace}}/{{name_prefix}}fluentd{{name_suffix}}:{{tag}}"
   params:
@@ -790,3 +791,54 @@ container_images_template:
   - OS::TripleO::Services::HAproxy
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftStorage
+
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftBaseImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_namespace}}/node:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftNodeImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+  - OS::TripleO::Services::OpenShift::Worker
+
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-deployer:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftDeployerImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-docker-registry:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftDockerRegistryImage
+  services:
+  - OS::TripleO::Services::OpenShift::Worker
+
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-haproxy-router:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftHAProxyRouterImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+  - OS::TripleO::Services::OpenShift::Worker
+
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-pod:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftPodImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+  - OS::TripleO::Services::OpenShift::Worker
+
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-web-console:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftWebConsoleImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_cockpit_namespace}}/{{openshift_cockpit_image}}:{{openshift_cockpit_tag}}"
+  params:
+  - DockerOpenShiftCockpitImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
