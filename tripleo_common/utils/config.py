@@ -366,6 +366,12 @@ class Config(object):
                     pre_deployments=deployments['pre_deployments'],
                     post_deployments=deployments['post_deployments']))
 
+        shutil.copyfile(
+            os.path.join(templates_path, 'deployments.yaml'),
+            os.path.join(config_dir, 'deployments.yaml'))
+
+        # Also copy deployments.yaml to the role dir for temporary backwards
+        # compatibility until https://review.openstack.org/574474 merges.
         for role_name, role in six.iteritems(role_data):
             role_path = os.path.join(config_dir, role_name)
 
