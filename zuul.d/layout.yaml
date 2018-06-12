@@ -6,6 +6,9 @@
       - tripleo-multinode-container-minimal
     check:
       jobs:
+        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
+            files:
+              - ^container-images/.*$
         - tripleo-ci-centos-7-scenario001-multinode-oooq-container:
             files:
               - workbooks/ceph-ansible.yaml
@@ -26,6 +29,9 @@
     gate:
       queue: tripleo
       jobs:
+        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
+            files:
+              - ^container-images/.*$
         - tripleo-ci-centos-7-scenario001-multinode-oooq-container:
             files:
               - workbooks/ceph-ansible.yaml
