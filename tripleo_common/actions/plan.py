@@ -281,27 +281,19 @@ class UpdatePlanFromDirAction(base.TripleOAction):
 class UpdatePlanEnvironmentAction(base.TripleOAction):
     """Updates the plan environment values
 
-    Updates a plan environment values with the given parameters:
-        Add new parameter
-        Delete parameter
+    Updates a plan environment values - when parameter is specified
+    the value is merged with the env_key (useful for parameter_defaults)
+    otherwise the value for env_key is replaced.
 
-    :param parameter: key value of the parameter to add or delete
-    :param value: value of the parameter to add or delete
-    :param delete: True if the parameter should be deleted from the env
     :param env_key: environment key that should be one of the keys present
-                    in the plan environment dictionary:
-                         'passwords',
-                         'description',
-                         'parameter_defaults',
-                         'environments',
-                         'version',
-                         'template',
-                         'resource_registry',
-                         'name'
+                    in the plan environment dictionary
+    :param parameter: key value of the parameter add/delete/modify
+    :param value: value of the parameter or of env_key when no parameter
+    :param delete: True if the parameter should be deleted from env_key
     :param container: name of the Swift container / plan name
     """
 
-    def __init__(self, parameter, env_key, value=None, delete=False,
+    def __init__(self, env_key, parameter=None, value=None, delete=False,
                  container=constants.DEFAULT_CONTAINER_NAME):
         super(UpdatePlanEnvironmentAction, self).__init__()
         self.container = container
@@ -314,20 +306,26 @@ class UpdatePlanEnvironmentAction(base.TripleOAction):
         try:
             swift = self.get_object_client(context)
             plan_env = plan_utils.get_env(swift, self.container)
-            if self.env_key in plan_env.keys():
-                if self.delete:
-                    try:
-                        plan_env[self.env_key].pop(self.parameter)
-                    except KeyError:
-                        pass
-                else:
-                    plan_env[self.env_key].update({self.parameter: self.value})
-                plan_utils.update_in_env(swift, plan_env,
-                                         self.env_key,
-                                         value=plan_env[self.env_key])
-            else:
+
+            if self.env_key not in plan_env:
                 msg = "The environment key doesn't exist: %s" % self.env_key
                 return actions.Result(error=msg)
+
+            if self.delete:
+                if not self.parameter:
+                    raise ValueError("delete must specify a parameter")
+                plan_env[self.env_key].pop(self.parameter, None)
+            elif self.parameter:
+                plan_env[self.env_key][self.parameter] = self.value
+            elif self.value is not None:
+                plan_env[self.env_key] = self.value
+            else:
+                # Nothing to modify
+                return
+
+            plan_utils.update_in_env(swift, plan_env,
+                                     self.env_key,
+                                     value=plan_env[self.env_key])
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
             return actions.Result(error=msg)
