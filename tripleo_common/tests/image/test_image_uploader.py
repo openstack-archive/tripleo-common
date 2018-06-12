@@ -344,7 +344,6 @@ class TestDockerImageUploader(base.TestCase):
         tag = 'latest'
         append_tag = 'modify-123'
         push_destination = 'localhost:8787'
-        push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
 
         result = self.uploader.upload_image(
             image + ':' + tag,
@@ -360,13 +359,7 @@ class TestDockerImageUploader(base.TestCase):
         self.dockermock.assert_not_called()
         mock_ansible.assert_not_called()
         mock_process.communicate.assert_not_called()
-
-        # the push image is still returned even though no modify or push
-        # occured
-        self.assertEqual((
-            '%s:%s' % (image, tag),
-            '%s:%s%s' % (push_image, tag, append_tag)
-        ), result)
+        self.assertEqual([], result)
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'DockerImageUploader._inspect')

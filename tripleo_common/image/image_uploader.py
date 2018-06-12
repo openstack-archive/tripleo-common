@@ -220,7 +220,7 @@ class DockerImageUploader(ImageUploader):
         target_image = target_image_no_tag + ':' + target_tag
 
         if dry_run:
-            return source_image, target_image
+            return []
 
         if modify_role:
             if DockerImageUploader._image_exists(target_image,
@@ -419,6 +419,9 @@ class DockerImageUploader(ImageUploader):
                                                fallback_tag)
 
     def cleanup(self, local_images):
+        if not local_images:
+            return []
+
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
         for image in sorted(local_images):
             if not image:
