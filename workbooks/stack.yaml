@@ -17,8 +17,10 @@ workflows:
     tasks:
       heat_stacks_get:
         action: heat.stacks_get stack_id=<% $.stack %>
+        # NOTE(d0ugal): resolve_outputs does not seem to be working. Manually
+        # remove the outputs from the task results. See lp #1774958
         publish:
-          stack: <% task().result %>
+          stack: <% task().result.delete("outputs") %>
         on-success:
           - send_message: <% bool($.queue_name) %>
       send_message:
@@ -29,7 +31,7 @@ workflows:
           status: "RUNNING"  # This should never be the end of a workflow
           execution: <% execution() %>
           payload:
-            stack: <% task(heat_stacks_get).result %>
+            stack: <% $.stack %>
 
   wait_for_stack_complete_or_failed:
     input:
