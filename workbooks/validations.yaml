@@ -17,19 +17,17 @@ workflows:
     tasks:
 
       notify_running:
-        on-complete: run_validation
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.message.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.run_validation
-              payload:
-                validation_name: <% $.validation_name %>
-                plan: <% $.plan %>
-                status: RUNNING
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: RUNNING
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          payload:
+            validation_name: <% $.validation_name %>
+            plan: <% $.plan %>
+        on-complete: run_validation
 
       run_validation:
         on-success: send_message
@@ -48,22 +46,18 @@ workflows:
           stderr: <% task(run_validation).result.stderr %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.run_validation
-              payload:
-                validation_name: <% $.validation_name %>
-                plan: <% $.plan %>
-                status: <% $.get('status', 'SUCCESS') %>
-                stdout: <% $.stdout %>
-                stderr: <% $.stderr %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          payload:
+            validation_name: <% $.validation_name %>
+            plan: <% $.plan %>
+            stdout: <% $.stdout %>
+            stderr: <% $.stderr %>
 
   run_validations:
     input:
@@ -77,19 +71,17 @@ workflows:
     tasks:
 
       notify_running:
-        on-complete: run_validations
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.message.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.run_validations
-              payload:
-                validation_names: <% $.validation_names %>
-                plan: <% $.plan %>
-                status: RUNNING
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: RUNNING
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          payload:
+            validation_name: <% $.validation_name %>
+            plan: <% $.plan %>
+        on-complete: run_validations
 
       run_validations:
         on-success: send_message
@@ -105,20 +97,16 @@ workflows:
           status: FAILED
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.message.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.run_validations
-              payload:
-                validation_names: <% $.validation_names %>
-                plan: <% $.plan %>
-                status: <% $.get('status', 'SUCCESS') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          payload:
+            validation_name: <% $.validation_name %>
+            plan: <% $.plan %>
 
   run_groups:
     input:
@@ -138,20 +126,18 @@ workflows:
           validations: <% task().result %>
 
       notify_running:
-        on-complete: run_validation_group
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.message.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.run_validations
-              payload:
-                group_names: <% $.group_names %>
-                validation_names: <% $.validations.id %>
-                plan: <% $.plan %>
-                status: RUNNING
-                execution: <% execution() %>
+          type: <% execution().name %>
+          status: RUNNING
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          payload:
+            group_names: <% $.group_names %>
+            validation_name: <% $.validation_name %>
+            plan: <% $.plan %>
+        on-complete: run_validation_group
 
       run_validation_group:
         on-success: send_message
@@ -167,21 +153,18 @@ workflows:
           status: FAILED
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.message.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.run_groups
-              payload:
-                group_names: <% $.group_names %>
-                validation_names: <% $.validations.id %>
-                plan: <% $.plan %>
-                status: <% $.get('status', 'SUCCESS') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          payload:
+            group_names: <% $.group_names %>
+            validation_names: <% $.validations.id %>
+            validation_name: <% $.validation_name %>
+            plan: <% $.plan %>
 
   list:
     input:
@@ -322,23 +305,18 @@ workflows:
           message: <% task().result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.check_boot_images
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                kernel_id: <% $.kernel_id %>
-                ramdisk_id: <% $.ramdisk_id %>
-                errors: <% $.errors %>
-                warnings: <% $.warnings %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            kernel_id: <% $.kernel_id %>
+            ramdisk_id: <% $.ramdisk_id %>
+            errors: <% $.errors %>
+            warnings: <% $.warnings %>
 
   collect_flavors:
     input:
@@ -377,22 +355,17 @@ workflows:
           message: <% task().result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.collect_flavors
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                flavors: <% $.flavors %>
-                errors: <% $.errors %>
-                warnings: <% $.warnings %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            flavors: <% $.flavors %>
+            errors: <% $.errors %>
+            warnings: <% $.warnings %>
 
   check_ironic_boot_configuration:
     input:
@@ -446,21 +419,16 @@ workflows:
           message: <% task().result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.check_ironic_boot_configuration
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                errors: <% $.errors %>
-                warnings: <% $.warnings %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            errors: <% $.errors %>
+            warnings: <% $.warnings %>
 
   verify_profiles:
     input:
@@ -510,21 +478,16 @@ workflows:
           message: <% task().result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.verify_profiles
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                errors: <% $.errors %>
-                warnings: <% $.warnings %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            errors: <% $.errors %>
+            warnings: <% $.warnings %>
 
   check_default_nodes_count:
     input:
@@ -623,22 +586,17 @@ workflows:
           warnings: <% task().result.warnings %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.check_hypervisor_stats
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                statistics: <% $.statistics %>
-                errors: <% $.errors %>
-                warnings: <% $.warnings %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            statistics: <% $.statistics %>
+            errors: <% $.errors %>
+            warnings: <% $.warnings %>
 
   check_pre_deployment_validations:
     input:
@@ -765,22 +723,17 @@ workflows:
         on-error: send_message
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.validations.v1.check_hypervisor_stats
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                kernel_id: <% $.kernel_id %>
-                ramdisk_id: <% $.ramdisk_id %>
-                flavors: <% $.flavors %>
-                statistics: <% $.statistics %>
-                errors: <% $.errors %>
-                warnings: <% $.warnings %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            kernel_id: <% $.kernel_id %>
+            ramdisk_id: <% $.ramdisk_id %>
+            flavors: <% $.flavors %>
+            statistics: <% $.statistics %>
+            errors: <% $.errors %>
+            warnings: <% $.warnings %>
