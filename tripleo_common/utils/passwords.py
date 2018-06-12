@@ -31,7 +31,8 @@ KEYSTONE_FERNET_REPO = '/etc/keystone/fernet-keys/'
 LOG = logging.getLogger(__name__)
 
 
-def generate_passwords(mistralclient=None, stack_env=None):
+def generate_passwords(mistralclient=None, stack_env=None,
+                       rotate_passwords=False):
     """Create the passwords needed for deploying OpenStack via t-h-t.
 
     This will create the set of passwords required by the undercloud and
@@ -46,7 +47,8 @@ def generate_passwords(mistralclient=None, stack_env=None):
     for name in constants.PASSWORD_PARAMETER_NAMES:
         # Support users upgrading from Mitaka or otherwise creating a plan for
         # a Heat stack that already exists.
-        if stack_env and name in stack_env.get('parameter_defaults', {}):
+        if (stack_env and name in stack_env.get('parameter_defaults', {}) and
+                not rotate_passwords):
             passwords[name] = stack_env['parameter_defaults'][name]
         elif name.startswith("Ceph"):
             if name == "CephClusterFSID":

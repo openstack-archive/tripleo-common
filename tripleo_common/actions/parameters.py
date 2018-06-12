@@ -232,13 +232,24 @@ class GeneratePasswordsAction(base.TripleOAction):
     """Generates passwords needed for Overcloud deployment
 
     This method generates passwords and ensures they are stored in the
-    plan environment. This method respects previously generated passwords and
-    adds new passwords as necessary.
+    plan environment. By default, this method respects previously
+    generated passwords and adds new passwords as necessary.
+
+    If rotate_passwords is set to True, then passwords will be replaced as
+    follows:
+    - if password names are specified in the rotate_pw_list, then only those
+      passwords will be replaced.
+    - otherwise, all passwords not in the DO_NOT_ROTATE list (as they require
+      special handling, like KEKs and Fernet keys) will be replaced.
     """
 
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
+                 rotate_passwords=False,
+                 rotate_pw_list=[]):
         super(GeneratePasswordsAction, self).__init__()
         self.container = container
+        self.rotate_passwords = rotate_passwords
+        self.rotate_pw_list = rotate_pw_list
 
     def run(self, context):
         heat = self.get_orchestration_client(context)
@@ -271,7 +282,11 @@ class GeneratePasswordsAction(base.TripleOAction):
         except heat_exc.HTTPNotFound:
             stack_env = None
 
-        passwords = password_utils.generate_passwords(mistral, stack_env)
+        passwords = password_utils.generate_passwords(
+            mistralclient=mistral,
+            stack_env=stack_env,
+            rotate_passwords=self.rotate_passwords
+        )
 
         # if passwords don't yet exist in plan environment
         if 'passwords' not in env:
@@ -289,6 +304,15 @@ class GeneratePasswordsAction(base.TripleOAction):
         for name, password in passwords.items():
             if name not in env['passwords']:
                 env['passwords'][name] = password
+
+        if self.rotate_passwords:
+            if len(self.rotate_pw_list) > 0:
+                for name in self.rotate_pw_list:
+                    env['passwords'][name] = passwords[name]
+            else:
+                for name, password in passwords.items():
+                    if name not in constants.DO_NOT_ROTATE_LIST:
+                        env['passwords'][name] = password
 
         try:
             plan_utils.put_env(swift, env)
