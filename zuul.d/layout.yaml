@@ -13,6 +13,7 @@
               - ^container-images/.*$
               - tripleo_common/actions/deployment.py
               - tripleo_common/image/kolla_builder.py
+              - scripts/.*$
         - tripleo-ci-centos-7-scenario001-multinode-oooq-container:
             files:
               - workbooks/ceph-ansible.yaml
