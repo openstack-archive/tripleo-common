@@ -44,15 +44,17 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'log_path',
                os.path.join(work_dir, 'ansible.log'))
     config.set('defaults', 'forks', '25')
+    config.set('defaults', 'timeout', '30')
 
     # mistral user has no home dir set, so no place to save a known hosts file
     config.set('ssh_connection', 'ssh_args',
                '-o UserKnownHostsFile=/dev/null '
                '-o StrictHostKeyChecking=no '
                '-o ControlMaster=auto '
-               '-o ControlPersist=60s')
+               '-o ControlPersist=30m')
     config.set('ssh_connection', 'control_path_dir',
                os.path.join(work_dir, 'ansible-ssh'))
+    config.set('ssh_connection', 'retries', '8')
 
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
