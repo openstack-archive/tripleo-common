@@ -535,7 +535,7 @@ workflows:
     tasks:
       initialize:
         publish:
-          introspection_attempt: 1
+          introspection_attempt: 0
         on-complete:
           - run_validations: <% $.run_validations %>
           - introspect_nodes: <% not $.run_validations %>
