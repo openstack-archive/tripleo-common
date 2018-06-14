@@ -90,13 +90,9 @@ def build_service_filter(environment, roles_data):
         # enabled services
         return enabled_services
 
-    # Use the template path to determine if it represents a
-    # containerized service
-    containerized_services_path = ['/docker/services/',
-                                   '/services/kubernetes',
-                                   '/services/openshift']
     for service, env_path in environment.get('resource_registry', {}).items():
-        if any(p in env_path for p in containerized_services_path):
+        if not any(p in env_path for p in ['/puppet/services',
+                                           'OS::Heat::None']):
             containerized_services.add(service)
 
     return containerized_services.intersection(enabled_services)

@@ -685,6 +685,7 @@ class TestPrepare(base.TestCase):
                 'OS::TripleO::Services::NovaCompute',
                 'OS::TripleO::Services::OpenShift::Master',
                 'OS::TripleO::Services::Kubernetes::Worker',
+                'OS::TripleO::Services::SkydiveAgent',
             ]),
             kb.build_service_filter({
                 'resource_registry': {
@@ -697,7 +698,11 @@ class TestPrepare(base.TestCase):
                     'OS::TripleO::Services::OpenShift::Master':
                     'extraconfig/services/openshift-master.yaml',
                     'OS::TripleO::Services::Kubernetes::Worker':
-                    'extraconfig/services/kubernetes-worker.yaml'
+                    'extraconfig/services/kubernetes-worker.yaml',
+                    'OS::TripleO::Services::SkydiveAgent':
+                    'extraconfig/services/skydive-agent.yaml',
+                    'OS::TripleO::Services::Noop':
+                    'OS::Heat::None'
                 }
             }, [
                 {
@@ -706,7 +711,9 @@ class TestPrepare(base.TestCase):
                     'ServicesDefault': [
                         'OS::TripleO::Services::NeutronApi',
                         'OS::TripleO::Services::NovaApi',
-                        'OS::TripleO::Services::OpenShift::Master'
+                        'OS::TripleO::Services::OpenShift::Master',
+                        'OS::TripleO::Services::SkydiveAgent',
+                        'OS::TripleO::Services::Noop'
                     ]
                 }, {
                     'name': 'Compute',
