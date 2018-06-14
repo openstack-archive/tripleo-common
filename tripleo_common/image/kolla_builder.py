@@ -269,7 +269,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
             image = imagename.partition('/')[2]
             imagename = '/'.join((push_destination, image))
         if append_tag:
-            entry['append_tag'] = append_tag
+            entry['modify_append_tag'] = append_tag
         if modify_role:
             entry['modify_role'] = modify_role
         if modify_vars:
