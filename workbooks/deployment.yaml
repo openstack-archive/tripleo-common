@@ -514,7 +514,8 @@ workflows:
 
   create_overcloudrc:
     description: >
-      Given the name of a container, generate the overcloudrc files
+      Given the name of a container and optionally a comma-separated string
+      of hosts that shouldn't be proxied, generate the overcloudrc files
       needed to access the overcloud via the CLI.
 
     tags:
@@ -522,6 +523,7 @@ workflows:
 
     input:
       - container: overcloud
+      - no_proxy: ''
       - queue_name: tripleo
 
     tasks:
@@ -529,6 +531,7 @@ workflows:
         action: tripleo.deployment.overcloudrc
         input:
           container: <% $.container %>
+          no_proxy: <% $.no_proxy %>
         on-complete: send_message
         publish-on-error:
           status: FAILED
