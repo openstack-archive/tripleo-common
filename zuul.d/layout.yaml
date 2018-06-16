@@ -34,7 +34,6 @@
               - tripleo_common/actions/ansible.py
               - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
-            voting: false
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
@@ -67,6 +66,10 @@
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
               - tripleo_common/actions/ansible.py
+              - tripleo_common/image/kolla_builder.py
+        - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
+            files:
+              - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
     experimental:
       jobs:
