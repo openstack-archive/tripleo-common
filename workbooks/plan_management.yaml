@@ -20,7 +20,7 @@ workflows:
     tasks:
       create_container:
         action: tripleo.plan.create_container container=<% $.container %>
-        on-complete: notify_zaqar
+        on-complete: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -28,19 +28,15 @@ workflows:
           status: SUCCESS
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.create_container
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
 
   create_default_deployment_plan:
     description: >
@@ -619,7 +615,7 @@ workflows:
           container: <% $.container %>
           parameters: <% $.parameters %>
           key: <% $.key %>
-        on-complete: notify_zaqar
+        on-complete: send_message
         publish-on-error:
           status: FAILED
           message: <% task().result %>
@@ -627,19 +623,15 @@ workflows:
           status: SUCCESS
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.plan_management.v1.update_parameters
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          plan_name: <% $.container %>
 
   publish_ui_logs_to_swift:
     description: >
@@ -776,8 +768,6 @@ workflows:
           message: <% $.get('message', '') %>
           payload:
             tempurl: <% $.get('tempurl', '') %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   list_roles:
     description: Retrieve the roles_data.yaml and return a usable object
@@ -1019,8 +1009,6 @@ workflows:
           message: <% $.get('message', '') %>
           payload:
             network_data: <% $.get('network_data', {}) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   validate_roles:
     description: Vaildate roles data exists and is parsable
@@ -1064,8 +1052,6 @@ workflows:
           message: <% $.get('message', '') %>
           payload:
             roles_data: <% $.get('roles_data', '') %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   _validate_networks_from_roles:
     description: Internal workflow for validating a network exists from a role
@@ -1178,8 +1164,6 @@ workflows:
           payload:
             roles_data: <% $.get('roles_data', {}) %>
             network_data: <% $.get('network_data', {}) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   list_available_roles:
     input:
@@ -1240,8 +1224,6 @@ workflows:
           message: <% $.get('message', '') %>
           payload:
             available_roles: <% $.get('available_roles', []) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   update_roles:
     description: >
@@ -1391,8 +1373,6 @@ workflows:
           message: <% $.get('message', '') %>
           payload:
             updated_roles: <% $.get('updated_roles', []) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   select_roles:
     description: >
@@ -1483,8 +1463,6 @@ workflows:
           message: <% $.get('message', '') %>
           payload:
             selected_roles: <% $.get('selected_roles', []) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   list_plans:
     description: >
@@ -1523,5 +1501,3 @@ workflows:
           message: <% $.get('message', '') %>
           payload:
             plans: <% $.get('plans', []) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
