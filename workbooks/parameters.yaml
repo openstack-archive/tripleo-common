@@ -35,7 +35,7 @@ workflows:
           ipmi_level: <% $.ipmi_level %>
           ipmi_cipher: <% $.ipmi_cipher %>
           ipmi_lanplus: <% $.ipmi_lanplus %>
-        on-complete: notify_zaqar
+        on-complete: send_message
         publish:
           fencing_parameters: <% task().result %>
           status: SUCCESS
@@ -44,18 +44,14 @@ workflows:
           status: FAILED
           message: <% task().result %>
 
-      notify_zaqar:
-        action: zaqar.queue_post
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.parameters.v1.generate_fencing_parameters
-              payload:
-                status: <% $.status %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                fencing_parameters: <% $.get('fencing_parameters', {}) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
+          payload:
+            fencing_parameters: <% $.get('fencing_parameters', {}) %>
 
