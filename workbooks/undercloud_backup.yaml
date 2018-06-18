@@ -118,16 +118,10 @@ workflows:
 
       # Sending a message to show that the backup finished
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.undercloud_backup.v1.launch
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                execution: <% execution() %>
-                message: <% $.get('message', '') %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
