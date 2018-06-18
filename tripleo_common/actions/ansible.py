@@ -268,6 +268,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self.max_message_size = self._kwargs_for_run.pop(
             'max_message_size', 1048576)
         self.trash_output = self._kwargs_for_run.pop('trash_output', False)
+        self.profile_tasks = self._kwargs_for_run.pop('profile_tasks', True)
+        self.profile_tasks_limit = self._kwargs_for_run.pop(
+            'profile_tasks_limit', 0)
 
     @property
     def work_dir(self):
@@ -441,8 +444,17 @@ class AnsiblePlaybookAction(base.TripleOAction):
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
                 'HOME': self.work_dir,
-                'ANSIBLE_CONFIG': ansible_config_path
+                'ANSIBLE_CONFIG': ansible_config_path,
             }
+
+            if self.profile_tasks:
+                env_variables.update({
+                    # the whitelist could be collected from multiple
+                    # arguments if we find a use case for it
+                    'ANSIBLE_CALLBACK_WHITELIST': 'profile_tasks',
+                    'PROFILE_TASKS_TASK_OUTPUT_LIMIT':
+                        six.text_type(self.profile_tasks_limit),
+                })
 
             if self.extra_env_variables:
                 env_variables.update(self.extra_env_variables)
