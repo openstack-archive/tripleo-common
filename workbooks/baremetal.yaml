@@ -503,8 +503,6 @@ workflows:
           message: <% $.get('message', '') %>
           execution: <% execution() %>
           payload: <% { introspected_node => $.get('introspected_node'), node_uuid => $.node_uuid } %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   introspect:
     description: >
@@ -642,8 +640,6 @@ workflows:
           message: <% $.get('message', '') %>
           execution: <% execution() %>
           payload: <% { introspected_nodes => $.get('introspected_nodes', []), failed_introspection => $.get('failed_introspection', []) } %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   introspect_manageable_nodes:
     description: Introspect all nodes in a 'manageable' state.
@@ -708,8 +704,6 @@ workflows:
           message: <% $.get('message', '') %>
           execution: <% execution() %>
           payload: <% { introspected_nodes => $.get('introspected_nodes', []) } %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   configure:
     description: Take a list of manageable nodes and update their boot configuration.
@@ -908,8 +902,6 @@ workflows:
           status: <% $.get('status', 'FAILED') %>
           message: <% $.get('message', '') %>
           execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   nodes_with_hint:
     description: Find nodes matching a hint regex
@@ -948,20 +940,15 @@ workflows:
           message: <% task(get_matching_nodes).result %>
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.nodes_with_hint
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                matching_nodes: <% $.matching_nodes or [] %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            matching_nodes: <% $.matching_nodes or [] %>
 
   nodes_with_profile:
     description: Find nodes with a specific profile
@@ -1018,8 +1005,6 @@ workflows:
           message: <% $.get('message', '') %>
           execution: <% execution() %>
           payload: <% { matching_nodes => $.matching_nodes or [] } %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   create_raid_configuration:
     description: Create and apply RAID configuration for given nodes
@@ -1202,8 +1187,6 @@ workflows:
           message: <% $.get('message', '') %>
           execution: <% execution() %>
           payload: <% { nodes_json => $.get('nodes_json', []) } %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   discover_and_enroll_nodes:
     description: Run nodes discovery over the given IP range and enroll nodes
@@ -1269,8 +1252,6 @@ workflows:
           message: <% $.get('message', '') %>
           execution: <% execution() %>
           payload: <% { registered_nodes => $.get('registered_nodes', []) } %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
   clean_nodes:
     description: Wipe partition tables on all disks of given nodes
@@ -1305,19 +1286,13 @@ workflows:
         on-complete: send_message
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.clean_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   clean_manageable_nodes:
     description: Clean all nodes in a 'manageable' state.
@@ -1356,17 +1331,12 @@ workflows:
           status: SUCCESS
 
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.clean_manageable_nodes
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-                cleaned_nodes: <% $.get('cleaned_nodes', []) %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            cleaned_nodes: <% $.get('cleaned_nodes', []) %>
