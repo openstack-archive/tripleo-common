@@ -101,7 +101,9 @@ class AnsiblePlaybookActionTest(base.TestCase):
         pb = os.path.join(action.work_dir, 'playbook.yaml')
         env = {
             'HOME': action.work_dir,
-            'ANSIBLE_CONFIG': ansible_config_path
+            'ANSIBLE_CONFIG': ansible_config_path,
+            'ANSIBLE_CALLBACK_WHITELIST': 'profile_tasks',
+            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '0',
         }
 
         mock_execute.assert_called_once_with(
