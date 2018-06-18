@@ -50,18 +50,13 @@ workflows:
           message: <% task(update).result %>
 
       send_message:
-        action: zaqar.queue_post
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.package_update.v1.package_update_plan
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   get_config:
     input:
@@ -83,18 +78,13 @@ workflows:
         on-complete: send_message
 
       send_message:
-        action: zaqar.queue_post
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.package_update.v1.package_update_plan
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   update_nodes:
     description: Take a container and perform an update nodes by nodes
@@ -155,30 +145,25 @@ workflows:
           output: <% task().result %>
 
       node_update_passed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: SUCCESS
           message: Updated nodes - <% $.nodes %>
 
       node_update_failed:
-        on-success: notify_zaqar
+        on-success: send_message
         publish:
           status: FAILED
           message: Failed to update nodes - <% $.nodes %>, please see the logs.
 
-      notify_zaqar:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+      send_message:
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.ansible_queue_name %>
-          messages:
-            body:
-              type: tripleo.package_update.v1.update_nodes
-              payload:
-                status: <% $.status %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   update_converge_plan:
     description: Take a container and perform the converge for minor update
@@ -205,18 +190,13 @@ workflows:
           message: <% task(remove_noop).result %>
 
       send_message:
-        action: zaqar.queue_post
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.package_update.v1.update_converge_plan
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   converge_upgrade_plan:
     description: Take a container and perform the converge step of a major upgrade
@@ -245,18 +225,13 @@ workflows:
           message: <% task(upgrade_converge).result %>
 
       send_message:
-        action: zaqar.queue_post
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.major_upgrade.v1.converge_upgrade_plan
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
 
   ffwd_upgrade_converge_plan:
     description: ffwd-upgrade converge removes DeploymentSteps no-op from plan
@@ -283,15 +258,10 @@ workflows:
           message: <% task(remove_noop).result %>
 
       send_message:
-        action: zaqar.queue_post
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.package_update.v1.ffwd_upgrade_converge_plan
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
