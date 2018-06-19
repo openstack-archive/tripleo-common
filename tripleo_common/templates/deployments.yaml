@@ -1,10 +1,10 @@
 - name: Lookup deployment UUID
   set_fact:
-    deployment_uuid: "{{ lookup('file', role_name ~ '/' ~ ansible_hostname ~ '/' ~ item) | from_yaml | json_query(item ~ '.id')}}"
+    deployment_uuid: "{{ lookup('file', role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.id')}}"
 
 - name: "Render deployment file for {{ item }}"
   copy:
-    content: "[ {{ lookup('file', role_name ~ '/' ~ ansible_hostname ~ '/' ~ item) | from_yaml | json_query(item) }} ]"
+    content: "[ {{ lookup('file', role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item) }} ]"
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item }}"
   become: true
 
