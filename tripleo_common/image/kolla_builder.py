@@ -44,6 +44,9 @@ CONTAINER_IMAGE_PREPARE_PARAM = [{
         'openshift_cockpit_namespace': 'docker.io/cockpit',
         'openshift_cockpit_image': 'kubernetes',
         'openshift_cockpit_tag': 'latest',
+        'openshift_etcd_namespace': 'registry.fedoraproject.org/latest',
+        'openshift_etcd_image': 'etcd',
+        'openshift_etcd_tag': 'latest',
     }
 }]
 
