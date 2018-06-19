@@ -1,0 +1,9 @@
+disk_images:
+  -
+    imagename: overcloud-hardened-uefi-full
+    type: qcow2
+    distro: centos7
+    elements:
+      - selinux-permissive
+    packages:
+      - yum-plugin-priorities
