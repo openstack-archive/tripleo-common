@@ -197,6 +197,7 @@ class Config(object):
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
         role_data = self.stack_outputs.get('RoleData', {})
+        role_group_vars = self.stack_outputs.get('RoleGroupVars', {})
         for role_name, role in six.iteritems(role_data):
             role_path = os.path.join(config_dir, role_name)
             self._mkdir(role_path)
@@ -428,7 +429,8 @@ class Config(object):
                 template_data = group_var_role_template.render(
                     role=role,
                     pre_deployments=deployments['pre_deployments'],
-                    post_deployments=deployments['post_deployments'])
+                    post_deployments=deployments['post_deployments'],
+                    role_group_vars=role_group_vars[role])
                 self.validate_config(template_data, group_var_role_path)
                 f.write(template_data)
 
