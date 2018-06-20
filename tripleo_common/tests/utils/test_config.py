@@ -266,7 +266,16 @@ class TestConfig(base.TestCase):
                      'Compute': [
                          'a7db3010-a51f-4ae0-a791-2364d629d20d',
                          '8b07cd31-3083-4b88-a433-955f72039e2c',
-                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}}]
+                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
+            {'output_key': 'RoleGroupVars',
+             'output_value': {
+                 'Controller': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+                 'Compute': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+                 }}]
         deployment_data, configs = \
             self._get_config_data('config_data.yaml')
         self.configs = configs
@@ -363,7 +372,16 @@ class TestConfig(base.TestCase):
                      'Compute': [
                          'a7db3010-a51f-4ae0-a791-2364d629d20d',
                          '8b07cd31-3083-4b88-a433-955f72039e2c',
-                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}}]
+                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
+            {'output_key': 'RoleGroupVars',
+             'output_value': {
+                 'Controller': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+                 'Compute': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+             }}]
         deployment_data, configs = \
             self._get_config_data('config_data.yaml')
 
@@ -502,7 +520,16 @@ class TestConfig(base.TestCase):
                      'Compute': [
                          'a7db3010-a51f-4ae0-a791-2364d629d20d',
                          '8b07cd31-3083-4b88-a433-955f72039e2c',
-                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}}]
+                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
+            {'output_key': 'RoleGroupVars',
+             'output_value': {
+                 'Controller': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+                 'Compute': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+             }}]
         deployment_data, configs = \
             self._get_config_data('config_data.yaml')
         self.configs = configs
