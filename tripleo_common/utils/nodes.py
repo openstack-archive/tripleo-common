@@ -277,6 +277,7 @@ DRIVER_INFO = {
     '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True,
                                          hardware_type='irmc'),
     'redfish': RedfishDriverInfo(),
+    'xclarity': PrefixedDriverInfo('xclarity', has_port=True),
     # test drivers
     'staging\-ovirt': oVirtDriverInfo(),
     '(staging\-iboot|.*_iboot)': iBootDriverInfo(),
