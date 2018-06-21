@@ -567,3 +567,48 @@ class TestConfig(base.TestCase):
                 self._get_yaml_file(os.path.join(
                     'overcloud-novacompute-2',
                     d)))
+
+    @patch('tripleo_common.utils.config.Config.get_config_dict')
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    @patch.object(ooo_config.yaml, 'safe_load')
+    def test_validate_config(self, mock_yaml, mock_deployment_data,
+                             mock_config_dict):
+        stack_config = """
+        Controller:
+          ctlplane:
+            overcloud-controller-0.ctlplane.localdomain
+        Compute:
+          ctlplane:
+            overcloud-novacompute-0.ctlplane.localdomain
+            overcloud-novacompute-1.ctlplane.localdomain
+            overcloud-novacompute-2.ctlplane.localdomain
+        """
+        yaml_file = '/tmp/testfile.yaml'
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = fakes.create_tht_stack()
+        self.config = ooo_config.Config(heat)
+        self.config.validate_config(stack_config, yaml_file)
+        expected_yaml_safe_load_calls = [call(stack_config)]
+        mock_yaml.assert_has_calls(expected_yaml_safe_load_calls)
+
+    @patch('tripleo_common.utils.config.Config.get_config_dict')
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    def test_validate_config_invalid_yaml(self, mock_deployment_data,
+                                          mock_config_dict):
+        # Use invalid YAML to assert that we properly handle the exception
+        stack_config = """
+        Controller:
+          ctlplane:
+            overcloud-controller-0.ctlplane.localdomain
+        Compute:
+          ctlplane:
+        overcloud-novacompute-0.ctlplane.localdomain
+        overcloud-novacompute-1.ctlplane.localdomain
+        overcloud-novacompute-2.ctlplane.localdomain
+        """
+        yaml_file = '/tmp/testfile.yaml'
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = fakes.create_tht_stack()
+        self.config = ooo_config.Config(heat)
+        self.assertRaises(yaml.scanner.ScannerError,
+                          self.config.validate_config, stack_config, yaml_file)

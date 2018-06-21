@@ -161,6 +161,14 @@ class Config(object):
                               for i in stack.outputs}
         return stack
 
+    def validate_config(self, template_data, yaml_file):
+        try:
+            yaml.safe_load(template_data)
+        except (yaml.scanner.ScannerError, yaml.YAMLError) as e:
+            self.log.error("Config for file {} contains invalid yaml, got "
+                           "error {}".format(yaml_file, e))
+            raise e
+
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
         role_data = self.stack_outputs.get('RoleData', {})
@@ -352,19 +360,23 @@ class Config(object):
                     warnings.warn(message, DeprecationWarning)
 
                 with open(deployment_path, 'w') as f:
-                    f.write(deployment_template.render(
+                    template_data = deployment_template.render(
                         deployment=d,
-                        server_id=server_ids[server]))
+                        server_id=server_ids[server])
+                    self.validate_config(template_data, deployment_path)
+                    f.write(template_data)
 
         for role, deployments in role_deployment_names.items():
             group_var_role_path = os.path.join(group_vars_dir, role)
             group_var_role_template = env.get_template('group_var_role.j2')
 
             with open(group_var_role_path, 'w') as f:
-                f.write(group_var_role_template.render(
+                template_data = group_var_role_template.render(
                     role=role,
                     pre_deployments=deployments['pre_deployments'],
-                    post_deployments=deployments['post_deployments']))
+                    post_deployments=deployments['post_deployments'])
+                self.validate_config(template_data, group_var_role_path)
+                f.write(template_data)
 
         for role_name, role in six.iteritems(role_data):
             role_path = os.path.join(config_dir, role_name)
