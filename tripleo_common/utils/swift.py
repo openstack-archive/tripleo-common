@@ -18,7 +18,6 @@ import logging
 import os
 import tempfile
 
-from tripleo_common import constants
 from tripleo_common.utils import tarball
 
 from swiftclient.service import SwiftError
@@ -33,18 +32,11 @@ def empty_container(swiftclient, name):
 
     if name in container_names:
         headers, objects = swiftclient.get_container(name)
-        # ensure container is a plan
-        if headers.get(constants.TRIPLEO_META_USAGE_KEY) != 'plan':
-            error_text = ("The {name} container does not contain a "
-                          "TripleO deployment plan and was not "
-                          "deleted.".format(name=name))
-            raise ValueError(error_text)
-        else:
-            # FIXME(rbrady): remove delete_object loop when
-            # LP#1615830 is fixed.  See LP#1615825 for more info.
-            # delete files from plan
-            for o in objects:
-                swiftclient.delete_object(name, o['name'])
+        # FIXME(rbrady): remove delete_object loop when
+        # LP#1615830 is fixed.  See LP#1615825 for more info.
+        # delete files from plan
+        for o in objects:
+            swiftclient.delete_object(name, o['name'])
     else:
         error_text = "The {name} container does not exist.".format(name=name)
         raise ValueError(error_text)

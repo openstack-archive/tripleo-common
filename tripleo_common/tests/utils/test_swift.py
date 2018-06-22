@@ -60,22 +60,6 @@ class SwiftTest(base.TestCase):
         self.swiftclient.get_container.assert_not_called()
         self.swiftclient.delete_object.assert_not_called()
 
-    def test_delete_container_not_a_plan(self):
-        self.swiftclient.get_container.return_value = (
-            {'x-container-meta-usage-tripleo': 'not-a-plan'}, [
-                {'name': 'some-name.yaml'},
-                {'name': 'some-other-name.yaml'},
-                {'name': 'yet-some-other-name.yaml'},
-                {'name': 'finally-another-name.yaml'}
-            ]
-        )
-        self.assertRaises(ValueError,
-                          swift_utils.empty_container,
-                          self.swiftclient, self.container_name)
-        self.swiftclient.get_account.assert_called()
-        self.swiftclient.get_container.assert_called()
-        self.swiftclient.delete_object.assert_not_called()
-
     def test_create_container(self):
         swift_utils.create_container(self.swiftclient, 'abc')
         self.swiftclient.put_container.assert_called()
