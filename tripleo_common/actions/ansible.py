@@ -221,6 +221,7 @@ class AnsibleAction(actions.Action):
                 self.ssh_private_key)
             env_variables = {
                 'HOME': self.work_dir,
+                'ANSIBLE_LOCAL_TEMP': self.work_dir,
                 'ANSIBLE_CONFIG': ansible_config_path
             }
 
@@ -482,6 +483,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 self.ssh_private_key)
             env_variables = {
                 'HOME': self.work_dir,
+                'ANSIBLE_LOCAL_TEMP': self.work_dir,
                 'ANSIBLE_CONFIG': ansible_config_path,
             }
 
