@@ -200,6 +200,7 @@ class AnsibleAction(actions.Action):
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
                 'HOME': self.work_dir,
+                'ANSIBLE_LOCAL_TEMP': self.work_dir,
                 'ANSIBLE_CONFIG': ansible_config_path
             }
 
@@ -444,6 +445,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
             ansible_config_path = write_default_ansible_cfg(self.work_dir)
             env_variables = {
                 'HOME': self.work_dir,
+                'ANSIBLE_LOCAL_TEMP': self.work_dir,
                 'ANSIBLE_CONFIG': ansible_config_path,
             }
 
