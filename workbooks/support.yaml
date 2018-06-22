@@ -43,19 +43,13 @@ workflows:
 
       # status messaging
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: <% $.get('type', 'tripleo.support.v1.collect_logs') %>
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = 'FAILED' %>
+          type: <% $.get('type', execution().name) %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
 
   upload_logs:
     description: >
@@ -122,19 +116,13 @@ workflows:
 
       # status messaging
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: <% $.get('type', 'tripleo.support.v1.upload_logs') %>
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = 'FAILED' %>
+          type: <% $.get('type', execution().name) %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
 
   create_container:
     description: >
@@ -172,19 +160,13 @@ workflows:
 
       # status messaging
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: <% $.get('type', 'tripleo.support.v1.create_container') %>
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = 'FAILED' %>
+          type: <% $.get('type', execution().name) %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
 
   delete_container:
     description: >
@@ -259,20 +241,13 @@ workflows:
 
       # status messaging
       send_message:
-        action: zaqar.queue_post
-        wait-before: 5
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: <% $.get('type', 'tripleo.support.v1.delete_container') %>
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = 'FAILED' %>
+          type: <% $.get('type', execution().name) %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
 
   fetch_logs:
     description: >
@@ -350,16 +325,10 @@ workflows:
 
       # status messaging
       send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: <% $.get('type', 'tripleo.support.v1.fetch_logs') %>
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = 'FAILED' %>
+          type: <% $.get('type', execution().name) %>
+          status: <% $.get('status', 'SUCCESS') %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
