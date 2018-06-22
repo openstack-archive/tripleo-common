@@ -112,6 +112,7 @@ container_images:
 - imagename: docker.io/openshift/origin-docker-registry:v3.9.0
 - imagename: docker.io/openshift/origin-haproxy-router:v3.9.0
 - imagename: docker.io/openshift/origin-pod:v3.9.0
+- imagename: docker.io/openshift/origin-sti-builder:v3.9.0
 - imagename: docker.io/openshift/origin-web-console:v3.9.0
 - imagename: docker.io/cockpit/kubernetes:latest
 - imagename: registry.fedoraproject.org/latest/etcd:latest
