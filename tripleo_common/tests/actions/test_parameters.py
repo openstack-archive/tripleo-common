@@ -151,6 +151,7 @@ _EXISTING_PASSWORDS = {
         'public_key': 'public_key'
         },
     'LibvirtTLSPassword': 'xCdt9yeamKz8Fb6EGba9u82XU',
+    'OpenDaylightPassword': 'abc487gfh017rmviuq75jdiw7',
 }
 
 
