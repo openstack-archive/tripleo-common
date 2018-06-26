@@ -1,0 +1,7 @@
+---
+upgrade:
+  - |
+    The tripleo.plan_management.v1.create_default_deployment_plan workflow
+    has been removed, since it's been deprecated since the pike release and
+    is no longer used in TripleO.  Any other users of this workflow should
+    switch to tripleo.plan_management.v1.create_deployment_plan instead.

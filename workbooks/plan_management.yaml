@@ -38,48 +38,6 @@ workflows:
           execution: <% execution() %>
           plan_name: <% $.container %>
 
-  create_default_deployment_plan:
-    description: >
-      This workflow exists to maintain backwards compatibility in pike.  This
-      workflow will likely be removed in queens in favor of create_deployment_plan.
-    input:
-      - container
-      - queue_name: tripleo
-      - generate_passwords: true
-    tags:
-      - tripleo-common-managed
-    tasks:
-      call_create_deployment_plan:
-        workflow: tripleo.plan_management.v1.create_deployment_plan
-        on-success: set_status_success
-        on-error: call_create_deployment_plan_set_status_failed
-        input:
-          container: <% $.container %>
-          queue_name: <% $.queue_name %>
-          generate_passwords: <% $.generate_passwords %>
-          use_default_templates: true
-
-      set_status_success:
-        on-success: send_message
-        publish:
-          status: SUCCESS
-          message: <% task(call_create_deployment_plan).result %>
-
-      call_create_deployment_plan_set_status_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(call_create_deployment_plan).result %>
-
-      send_message:
-        workflow: tripleo.messaging.v1.send
-        input:
-          queue_name: <% $.queue_name %>
-          type: <% execution().name %>
-          status: <% $.status %>
-          execution: <% execution() %>
-          plan_name: <% $.container %>
-
   create_deployment_plan:
     description: >
       This workflow provides the capability to create a deployment plan using
