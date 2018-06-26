@@ -47,3 +47,33 @@ workflows:
       create_container:
         action: swift.put_container
         input: <% $.create_input %>
+
+  object_exists:
+
+    description: >-
+        Verify if a Swift object exists
+
+        Given the name of a Swift container and object this workflow will
+        verify if it already exists. The workflow will ERROR if it doesn't
+        and end in SUCCESS if it does.
+
+
+    input:
+      - container
+      - object
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      get_objects:
+        action: swift.get_container
+        input:
+          container: <% $.container %>
+          prefix: <% $.object %>
+        publish:
+          object_exists: <% bool(task().result) and $.object in task().result[1].select($.name) %>
+        on-success:
+          - succeed: <% $.object_exists %>
+          - fail: <% not $.object_exists %>
