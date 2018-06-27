@@ -66,7 +66,7 @@ can be used to get the status and output of that workflow execution.
 ::
 
    echo '{"container": "<container-name>"}' > input.json
-   openstack workflow execution create tripleo.plan_management.v1.create_default_deployment_plan input.json
+   openstack workflow execution create tripleo.plan_management.v1.create_deployment_plan input.json
    openstack workflow execution show <execution ID>
    openstack workflow execution show output <execution ID>
 
