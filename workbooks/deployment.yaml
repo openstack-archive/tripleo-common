@@ -588,6 +588,111 @@ workflows:
           payload:
             deployment_status: <% $.get(deployment_status, "") %>
 
+  set_deployment_status_success:
+    description: >
+      Set deployment status to success and return the new status
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - plan: overcloud
+      - queue_name: tripleo
+
+    output:
+      deployment_status: <% $.deployment_status %>
+
+    tasks:
+
+      set_deployment_success:
+        on-success: send_message
+        publish:
+          status: SUCCESS
+          deployment_status: DEPLOY_SUCCESS
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          deployment_status: <% $.deployment_status %>
+          payload:
+            deployment_status: <% $.deployment_status %>
+
+  set_deployment_status_failed:
+    description: >
+      Set deployment status to failed and return the new status
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - plan: overcloud
+      - queue_name: tripleo
+
+    output:
+      deployment_status: <% $.deployment_status %>
+
+    tasks:
+
+      set_deployment_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          deployment_status: DEPLOY_FAILED
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          deployment_status: <% $.deployment_status %>
+          payload:
+            deployment_status: <% $.deployment_status %>
+
+  set_deployment_status_deploying:
+    description: >
+      Set deployment status to deploying and return the new status
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - plan: overcloud
+      - queue_name: tripleo
+
+    output:
+      deployment_status: <% $.deployment_status %>
+
+    tasks:
+
+      set_deployment_failed:
+        on-success: send_message
+        publish:
+          status: RUNNING
+          deployment_status: DEPLOYING
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          deployment_status: <% $.deployment_status %>
+          payload:
+            deployment_status: <% $.deployment_status %>
+
   get_deployment_failures:
     description: >
       Get deployment failures

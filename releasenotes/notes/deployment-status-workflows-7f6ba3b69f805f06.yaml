@@ -1,0 +1,6 @@
+---
+features:
+  - New workflows are added for manipulating the deployment status, including
+    tripleo.deployment.v1.set_deployment_status_success,
+    tripleo.deployment.v1.set_deployment_status_failed, and
+    tripleo.deployment.v1.set_deployment_status_deploying.
