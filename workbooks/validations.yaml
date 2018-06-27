@@ -527,6 +527,7 @@ workflows:
         action: heat.stacks_get
         input:
           stack_id: <% $.stack_id %>
+          resolve_outputs: false
         on-success: get_associated_nodes
         publish:
           stack: <% task().result %>
