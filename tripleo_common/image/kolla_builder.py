@@ -98,7 +98,8 @@ def build_service_filter(environment, roles_data):
     return containerized_services.intersection(enabled_services)
 
 
-def container_images_prepare_multi(environment, roles_data, dry_run=False):
+def container_images_prepare_multi(environment, roles_data, dry_run=False,
+                                   cleanup=image_uploader.CLEANUP_FULL):
     """Perform multiple container image prepares and merge result
 
     Given the full heat environment and roles data, perform multiple image
@@ -160,6 +161,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False):
                     [f.name],
                     verbose=True,
                     dry_run=dry_run,
+                    cleanup=cleanup
                 )
                 uploader.upload()
     return env_params

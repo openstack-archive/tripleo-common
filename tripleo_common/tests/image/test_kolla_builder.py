@@ -911,7 +911,8 @@ class TestPrepare(base.TestCase):
             )
         ])
 
-        mock_im.assert_called_once_with(mock.ANY, dry_run=True, verbose=True)
+        mock_im.assert_called_once_with(mock.ANY, dry_run=True, verbose=True,
+                                        cleanup='full')
 
         self.assertEqual(
             {

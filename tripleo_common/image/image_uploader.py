@@ -48,6 +48,12 @@ SECURE_REGISTRIES = (
     'docker.io',
 )
 
+CLEANUP = (
+    CLEANUP_FULL, CLEANUP_PARTIAL, CLEANUP_NONE
+) = (
+    'full', 'partial', 'none'
+)
+
 
 def get_undercloud_registry():
     addr = 'localhost'
@@ -66,12 +72,13 @@ class ImageUploadManager(BaseImageManager):
        """
 
     def __init__(self, config_files=None, verbose=False, debug=False,
-                 dry_run=False):
+                 dry_run=False, cleanup=CLEANUP_FULL):
         if config_files is None:
             config_files = []
         super(ImageUploadManager, self).__init__(config_files)
         self.uploaders = {}
         self.dry_run = dry_run
+        self.cleanup = cleanup
 
     def discover_image_tag(self, image, tag_from_label=None):
         uploader = self.uploader('docker')
@@ -108,7 +115,8 @@ class ImageUploadManager(BaseImageManager):
 
             self.uploader(uploader).add_upload_task(
                 image_name, pull_source, push_destination,
-                append_tag, modify_role, modify_vars, self.dry_run)
+                append_tag, modify_role, modify_vars, self.dry_run,
+                self.cleanup)
 
         for uploader in self.uploaders.values():
             uploader.run_tasks()
@@ -133,7 +141,8 @@ class ImageUploader(object):
 
     @abc.abstractmethod
     def add_upload_task(self, image_name, pull_source, push_destination,
-                        append_tag, modify_role, modify_vars, dry_run):
+                        append_tag, modify_role, modify_vars, dry_run,
+                        cleanup):
         """Add an upload task to be executed later"""
         pass
 
@@ -199,7 +208,7 @@ class DockerImageUploader(ImageUploader):
     @staticmethod
     def upload_image(image_name, pull_source, push_destination,
                      insecure_registries, append_tag, modify_role,
-                     modify_vars, dry_run):
+                     modify_vars, dry_run, cleanup):
         LOG.info('imagename: %s' % image_name)
         if ':' in image_name:
             image = image_name.rpartition(':')[0]
@@ -254,7 +263,11 @@ class DockerImageUploader(ImageUploader):
         DockerImageUploader._push(dockerc, target_image_no_tag, tag=target_tag)
 
         LOG.info('Completed upload for image %s' % image_name)
-        return source_image, target_image
+        if cleanup == CLEANUP_NONE:
+            return []
+        if cleanup == CLEANUP_PARTIAL:
+            return [source_image]
+        return [source_image, target_image]
 
     @staticmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -436,7 +449,8 @@ class DockerImageUploader(ImageUploader):
                     LOG.warning(e)
 
     def add_upload_task(self, image_name, pull_source, push_destination,
-                        append_tag, modify_role, modify_vars, dry_run):
+                        append_tag, modify_role, modify_vars, dry_run,
+                        cleanup):
         # prime self.insecure_registries
         if pull_source:
             self.is_insecure_registry(self._image_to_url(pull_source).netloc)
@@ -445,7 +459,7 @@ class DockerImageUploader(ImageUploader):
         self.is_insecure_registry(self._image_to_url(push_destination).netloc)
         self.upload_tasks.append((image_name, pull_source, push_destination,
                                   self.insecure_registries, append_tag,
-                                  modify_role, modify_vars, dry_run))
+                                  modify_role, modify_vars, dry_run, cleanup))
 
     def run_tasks(self):
         if not self.upload_tasks:
