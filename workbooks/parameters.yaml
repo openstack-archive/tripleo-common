@@ -10,9 +10,6 @@ workflows:
       a deployment.
     input:
       - nodes_json
-      # TODO(dtantsur): remove in Stein (after it is no longer used)
-      - os_auth
-      - fence_action
       - delay
       - ipmi_level
       - ipmi_cipher
@@ -30,7 +27,6 @@ workflows:
         action: tripleo.parameters.generate_fencing
         input:
           nodes_json: <% $.nodes_json %>
-          fence_action: <% $.fence_action %>
           delay: <% $.delay %>
           ipmi_level: <% $.ipmi_level %>
           ipmi_cipher: <% $.ipmi_cipher %>
