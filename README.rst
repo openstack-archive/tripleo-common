@@ -17,7 +17,7 @@ A common library for TripleO workflows.
 * Documentation: https://docs.openstack.org/tripleo-common/latest/
 * Source: http://git.openstack.org/cgit/openstack/tripleo-common
 * Bugs: https://bugs.launchpad.net/tripleo-common
-
+* Release notes: https://docs.openstack.org/releasenotes/tripleo-common
 Action Development
 ------------------
 
