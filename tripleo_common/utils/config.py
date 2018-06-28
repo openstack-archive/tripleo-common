@@ -12,6 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import git
 import json
 import logging
 import os
@@ -132,6 +133,19 @@ class Config(object):
         with self._open_file(filepath) as conf_file:
             yaml.safe_dump(playbook, conf_file, default_flow_style=False)
         return sorted_tasks
+
+    def initialize_git_repo(self, dirname):
+        repo = git.Repo.init(dirname)
+        return repo
+
+    def snapshot_config_dir(self, repo, commit_message):
+        if repo.is_dirty(untracked_files=True):
+            self.log.info('Snapshotting {}'.format(repo.working_dir))
+            repo.index.add('*')
+            commit = repo.index.commit(commit_message)
+            self.log.info('Created commit {}'.format(commit.hexsha))
+        else:
+            self.log.info('No changes to commit')
 
     def _mkdir(self, dirname):
         if not os.path.exists(dirname):
@@ -390,12 +404,18 @@ class Config(object):
         return config_dir
 
     def download_config(self, name, config_dir, config_type=None,
-                        preserve_config_dir=True):
+                        preserve_config_dir=True, commit_message=None):
+
+        if commit_message is None:
+            commit_message = 'Automatic commit of config-download'
+
         # One step does it all
         stack = self.fetch_config(name)
         self.create_config_dir(config_dir, preserve_config_dir)
         self._mkdir(config_dir)
+        git_repo = self.initialize_git_repo(config_dir)
         self.log.info("Generating configuration under the directory: "
                       "%s" % config_dir)
         self.write_config(stack, name, config_dir, config_type)
+        self.snapshot_config_dir(git_repo, commit_message)
         return config_dir

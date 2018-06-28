@@ -97,11 +97,13 @@ class TestConfig(base.TestCase):
         mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
         mock_open.assert_has_calls(expected_calls, any_order=True)
 
+    @patch.object(ooo_config.git, 'Repo')
     @mock.patch('os.mkdir')
     @mock.patch('six.moves.builtins.open')
     @patch.object(ooo_config.shutil, 'rmtree')
     def test_overcloud_config_wrong_config_type(self, mock_rmtree,
-                                                mock_open, mock_mkdir):
+                                                mock_open, mock_mkdir,
+                                                mock_repo):
         args = {'name': 'overcloud', 'config_dir': '/tmp/tht',
                 'config_type': ['bad_config']}
         heat = mock.MagicMock()
@@ -414,6 +416,7 @@ class TestConfig(base.TestCase):
         self.assertRaises(ValueError,
                           self.config.download_config, stack, self.tmp_dir)
 
+    @patch.object(ooo_config.git, 'Repo')
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
     @patch.object(ooo_config.Config, '_open_file')
@@ -424,7 +427,8 @@ class TestConfig(base.TestCase):
                                                    mock_rmtree,
                                                    mock_open,
                                                    mock_mkdir,
-                                                   mock_copyfile):
+                                                   mock_copyfile,
+                                                   mock_repo):
         config_type_list = ['config_settings', 'global_config_settings',
                             'logging_sources', 'monitoring_subscriptions',
                             'service_config_settings',
