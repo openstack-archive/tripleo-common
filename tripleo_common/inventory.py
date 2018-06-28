@@ -159,6 +159,8 @@ class TripleoInventory(object):
                 'vars': {
                     'ansible_host': 'localhost',
                     'ansible_connection': 'local',
+                    # see https://github.com/ansible/ansible/issues/41808
+                    'ansible_remote_tmp': '/tmp/ansible-${USER}',
                     'auth_url': self.auth_url,
                     'cacert': self.cacert,
                     'os_auth_token':

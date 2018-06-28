@@ -213,6 +213,7 @@ class TestInventory(base.TestCase):
                 'hosts': ['undercloud'],
                 'vars': {'ansible_connection': 'local',
                          'ansible_host': 'localhost',
+                         'ansible_remote_tmp': '/tmp/ansible-${USER}',
                          'auth_url': 'xyz://keystone.local',
                          'cacert': 'acacert',
                          'os_auth_token': 'atoken',
@@ -281,6 +282,7 @@ class TestInventory(base.TestCase):
                 'hosts': ['undercloud'],
                 'vars': {'ansible_connection': 'local',
                          'ansible_host': 'localhost',
+                         'ansible_remote_tmp': '/tmp/ansible-${USER}',
                          'auth_url': 'xyz://keystone.local',
                          'cacert': 'acacert',
                          'os_auth_token':
@@ -377,6 +379,8 @@ class TestInventory(base.TestCase):
             'Undercloud': {'hosts': {'undercloud': {}},
                            'vars': {'ansible_connection': 'local',
                                     'ansible_host': 'localhost',
+                                    'ansible_remote_tmp':
+                                        '/tmp/ansible-${USER}',
                                     'auth_url': 'xyz://keystone.local',
                                     'cacert': 'acacert',
                                     'os_auth_token': 'atoken',
