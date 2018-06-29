@@ -1136,6 +1136,19 @@ workflows:
       - tripleo-common-managed
 
     tasks:
+      get_plan_role_tags:
+        action: swift.get_object
+        input:
+          container: <% $.container %>
+          obj: plan-environment.yaml
+        publish:
+          role_tags: <% yaml_parse(task().result.last()).get(role_tags) %>
+        on-success: get_role_file_names
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
       get_role_file_names:
         action: swift.get_container
         input:
@@ -1166,7 +1179,7 @@ workflows:
       transform_output:
         publish:
           status: SUCCESS
-          available_roles: <% yaml_parse($.available_yaml_roles.join("\n")) %>
+          available_roles: <% let(root => $, roles => yaml_parse($.available_yaml_roles.join("\n"))) -> $roles.where($root.role_tags.toSet().intersect($.get(tags, []).toSet()) or $root.role_tags = null) %>
         publish-on-error:
           status: FAILED
           message: <% task().result %>
