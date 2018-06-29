@@ -17,6 +17,8 @@ import os
 import shutil
 import tempfile
 
+from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.utils import config as ooo_config
@@ -49,11 +51,33 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
 
     def run(self, context):
         heat = self.get_orchestration_client(context)
+        swift = self.get_object_client(context)
+
+        # Since the config-download directory is now a git repo, first download
+        # the existing config container if it exists so we can reuse the
+        # existing git repo.
+        try:
+            swiftutils.download_container(swift, self.container_config,
+                                          self.config_dir)
+            # Delete the existing container before we re-upload, otherwise
+            # files may not be fully overwritten.
+            swiftutils.delete_container(swift, self.container_config)
+        except swiftexceptions.ClientException as err:
+            if err.http_status != 404:
+                raise
+
         config = ooo_config.Config(heat)
-        config_path = config.download_config(self.container, self.config_dir)
+        message = ('Automatic commit by Mistral GetOvercloudConfig action.\n\n'
+                   'User: {user}\n'
+                   'Project: {project}'.format(user=context.user_name,
+                                               project=context.project_name))
+        config_path = config.download_config(self.container, self.config_dir,
+                                             preserve_config_dir=True,
+                                             commit_message=message)
 
         with tempfile.NamedTemporaryFile() as tmp_tarball:
-            tarball.create_tarball(config_path, tmp_tarball.name)
+            tarball.create_tarball(config_path, tmp_tarball.name,
+                                   excludes=['.tox', '*.pyc', '*.pyo'])
             tarball.tarball_extract_to_swift_container(
                 self.get_object_client(context),
                 tmp_tarball.name,
