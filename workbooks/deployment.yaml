@@ -368,6 +368,7 @@ workflows:
         publish-on-error:
           status: FAILED
           message: <% task().result %>
+          deployment_status: DEPLOY_FAILED
 
       get_config:
         action: tripleo.config.get_overcloud_config
