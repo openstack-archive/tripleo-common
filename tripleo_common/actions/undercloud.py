@@ -156,7 +156,7 @@ class CreateFileSystemBackup(base.Action):
 
         script = """
         #!/bin/bash
-        sudo tar --ignore-failed-read -C / -cf %s %s
+        sudo tar --xattrs --ignore-failed-read -C / -cf %s %s
         sudo chown mistral. %s
         """ % (self.outfile, separated_string, self.outfile)
 

@@ -114,7 +114,7 @@ class CreateFileSystemBackupTest(base.TestCase):
         self.fsback.logger = mock.Mock()
         self.fsback.run(mock_get_object_client)
         assert_string = ('\n        #!/bin/bash\n        '
-                         'sudo tar --ignore-failed-read -C / '
+                         'sudo tar --xattrs --ignore-failed-read -C / '
                          '-cf ' +
                          self.fsback.outfile +
                          ' /home/stack/ /etc/hosts\n        '
