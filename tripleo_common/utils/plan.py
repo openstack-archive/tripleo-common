@@ -160,3 +160,42 @@ def build_env_paths(swift, container, plan_env):
 
     env_paths.extend(temp_env_paths)
     return env_paths, temp_env_paths
+
+
+def apply_environments_order(capabilities, environments):
+    """traverses the capabilities and orders the environment files
+
+    by dependency rules defined in capabilities-map, so that parent
+    environments are first and children environments override these
+    parents
+
+    :param capabilities: dict representing capabilities-map.yaml file
+    :param environments: list representing the environments section of the
+                         plan-environments.yaml file
+    :return: list containing ordered environments
+
+    """
+    # get ordering rules from capabilities-map file
+    order_rules = {}
+    for topic in capabilities.get('topics', []):
+        for group in topic.get('environment_groups', []):
+            for environment in group.get('environments', []):
+                order_rules[environment['file']] = []
+                if 'requires' in environment:
+                    order_rules[environment['file']] \
+                        = environment.get('requires', [])
+
+    # apply ordering rules
+    for e in environments:
+        path = e.get('path', '')
+        if path not in order_rules:
+            continue
+        path_pos = environments.index(e)
+        for requirement in order_rules[path]:
+            if {'path': requirement} in environments:
+                requirement_pos = environments.index({'path': requirement})
+                if requirement_pos > path_pos:
+                    item = environments.pop(requirement_pos)
+                    environments.insert(path_pos, item)
+
+    return environments
