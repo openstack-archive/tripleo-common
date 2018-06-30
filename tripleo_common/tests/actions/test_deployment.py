@@ -520,6 +520,10 @@ class DeploymentFailuresActionTest(base.TestCase):
         mock_read = mock.MagicMock()
         mock_read.read.return_value = json.dumps(test_result)
         mock_open.return_value = mock_read
+        status_return = json.loads('{"workflow_status": {"payload": '
+                                   '{"execution_id": "foo"}}}')
+        mock_yaml_load.return_value = status_return
+
         action = deployment.DeploymentFailuresAction(self.plan)
         result = action.run(self.ctx)
 
@@ -568,6 +572,10 @@ class DeploymentFailuresActionTest(base.TestCase):
             self, mock_open, mock_obj_client, mock_yaml_load):
 
         mock_open.side_effect = IOError()
+
+        status_return = json.loads('{"workflow_status": {"payload": '
+                                   '{"execution_id": "foo"}}}')
+        mock_yaml_load.return_value = status_return
 
         action = deployment.DeploymentFailuresAction(self.plan)
         result = action.run(self.ctx)

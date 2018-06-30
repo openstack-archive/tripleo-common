@@ -118,11 +118,12 @@ class DownloadConfigActionTest(base.TestCase):
                  mock_os_symlink,
                  mock_os_path_exists,
                  mock_os_unlink):
+        mock_mkdtemp.return_value = '/tmp/tripleo-foo-config'
         action = config.DownloadConfigAction(self.config_container)
         action.run(self.ctx)
         mock_swiftutils.assert_called_once_with(self.swift,
                                                 self.config_container,
-                                                mock_mkdtemp())
+                                                '/tmp/tripleo-foo-config')
 
     @mock.patch('tripleo_common.actions.config.os.path.exists')
     @mock.patch('tripleo_common.actions.config.os.symlink')
