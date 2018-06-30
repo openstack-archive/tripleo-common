@@ -36,8 +36,9 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% set mistral_base_packages_append = ['openstack-tripleo-common', 'ceph-ansible'] %}
 
 # NOTE: Mistral executor needs to run nova-manage cells_v2 commands on
-# the undercloud baremetal workflows.
-{% set mistral_executor_packages_append = ['openstack-nova-common'] %}
+# the undercloud baremetal workflows. Undercloud mistral executor needs to run
+# container image operations during overcloud deploy
+{% set mistral_executor_packages_append = ['openstack-nova-common', 'docker'] %}
 
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
