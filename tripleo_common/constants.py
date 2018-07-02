@@ -137,6 +137,17 @@ LEGACY_HEAT_PASSWORD_RESOURCE_NAMES = (
     'RabbitCookie',
 )
 
+# List of passwords that should not be rotated by default using the
+# GeneratePasswordAction because they require some special handling
+DO_NOT_ROTATE_LIST = (
+    'BarbicanSimpleCryptoKek',
+    'KeystoneCredential0',
+    'KeystoneCredential1',
+    'KeystoneFernetKey0',
+    'KeystoneFernetKey1',
+    'KeystoneFernetKeys',
+)
+
 PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
 
 # The default version of the Image API to set in overcloudrc.

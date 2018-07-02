@@ -718,6 +718,158 @@ class GeneratePasswordsActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_rotate_no_rotate_list(self, mock_get_object_client,
+                                       mock_get_workflow_client,
+                                       mock_get_snmpd_readonly_user_password,
+                                       mock_fernet_keys_setup,
+                                       mock_create_ssh_keypair,
+                                       mock_get_orchestration_client,
+                                       mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        mock_ctx = mock.MagicMock()
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': _EXISTING_PASSWORDS.copy()
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'value': 'existing_value'
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+        mock_get_orchestration_client.return_value = mock_orchestration
+
+        action = parameters.GeneratePasswordsAction(rotate_passwords=True)
+        result = action.run(mock_ctx)
+
+        # ensure passwords in the DO_NOT_ROTATE_LIST are not modified
+        for name in constants.DO_NOT_ROTATE_LIST:
+            self.assertEqual(_EXISTING_PASSWORDS[name], result[name])
+
+        # ensure all passwords are generated
+        for name in constants.PASSWORD_PARAMETER_NAMES:
+            self.assertTrue(name in result, "%s is not in %s" % (name, result))
+
+        # ensure new passwords have been generated
+        self.assertNotEqual(_EXISTING_PASSWORDS, result)
+        mock_cache.assert_called_once_with(
+            mock_ctx,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_rotate_with_rotate_list(self, mock_get_object_client,
+                                         mock_get_workflow_client,
+                                         mock_get_snmpd_readonly_user_password,
+                                         mock_fernet_keys_setup,
+                                         mock_create_ssh_keypair,
+                                         mock_get_orchestration_client,
+                                         mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        mock_ctx = mock.MagicMock()
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': _EXISTING_PASSWORDS.copy()
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'value': 'existing_value'
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+        mock_get_orchestration_client.return_value = mock_orchestration
+
+        rotate_list = [
+            'MistralPassword',
+            'BarbicanPassword',
+            'AdminPassword',
+            'CeilometerMeteringSecret',
+            'ZaqarPassword',
+            'NovaPassword',
+            'MysqlRootPassword'
+        ]
+
+        action = parameters.GeneratePasswordsAction(
+            rotate_passwords=True,
+            rotate_pw_list=rotate_list
+        )
+        result = action.run(mock_ctx)
+
+        # ensure only specified passwords are regenerated
+        for name in constants.PASSWORD_PARAMETER_NAMES:
+            self.assertTrue(name in result, "%s is not in %s" % (name, result))
+            if name in rotate_list:
+                self.assertNotEqual(_EXISTING_PASSWORDS[name], result[name])
+            else:
+                self.assertEqual(_EXISTING_PASSWORDS[name], result[name])
+
+        mock_cache.assert_called_once_with(
+            mock_ctx,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_passwords_exist_in_heat(self, mock_get_object_client,
                                      mock_get_workflow_client,
                                      mock_get_snmpd_readonly_user_password,
