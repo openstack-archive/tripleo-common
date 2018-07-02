@@ -1,0 +1,5 @@
+---
+features:
+  - The config_download_deploy workflow now uses a consistent working directory
+    for the config-download directory. Since the directory is now managed by
+    git, it can be reused across executions.
