@@ -162,14 +162,21 @@ class TestDockerImageUploader(base.TestCase):
         push_destination = 'localhost:8787'
         push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
 
-        self.uploader.upload_image(image + ':' + tag,
-                                   None,
-                                   push_destination,
-                                   set(),
-                                   None,
-                                   None,
-                                   None,
-                                   False)
+        self.assertEqual(
+            ['docker.io/tripleomaster/heat-docker-agents-centos:latest',
+             'localhost:8787/tripleomaster/heat-docker-agents-centos:latest'],
+            self.uploader.upload_image(
+                image + ':' + tag,
+                None,
+                push_destination,
+                set(),
+                None,
+                None,
+                None,
+                False,
+                'full'
+            )
+        )
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -198,7 +205,8 @@ class TestDockerImageUploader(base.TestCase):
                                    None,
                                    None,
                                    None,
-                                   False)
+                                   False,
+                                   'full')
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -226,14 +234,20 @@ class TestDockerImageUploader(base.TestCase):
         tag = 'latest'
         push_destination = 'localhost:8787'
 
-        self.uploader.upload_image(image + ':' + tag,
-                                   None,
-                                   push_destination,
-                                   set(),
-                                   None,
-                                   None,
-                                   None,
-                                   False)
+        self.assertEqual(
+            [],
+            self.uploader.upload_image(
+                image + ':' + tag,
+                None,
+                push_destination,
+                set(),
+                None,
+                None,
+                None,
+                False,
+                'full'
+            )
+        )
 
         # both digests are the same, no pull/push
         self.dockermock.assert_not_called()
@@ -275,14 +289,21 @@ class TestDockerImageUploader(base.TestCase):
             'hosts': 'localhost'
         }]
 
-        self.uploader.upload_image(image + ':' + tag,
-                                   None,
-                                   push_destination,
-                                   set(),
-                                   append_tag,
-                                   'add-foo-plugin',
-                                   {'foo_version': '1.0.1'},
-                                   False)
+        # test response for a partial cleanup
+        self.assertEqual(
+            ['docker.io/tripleomaster/heat-docker-agents-centos:latest'],
+            self.uploader.upload_image(
+                image + ':' + tag,
+                None,
+                push_destination,
+                set(),
+                append_tag,
+                'add-foo-plugin',
+                {'foo_version': '1.0.1'},
+                False,
+                'partial'
+            )
+        )
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -322,7 +343,7 @@ class TestDockerImageUploader(base.TestCase):
             processutils.ProcessExecutionError,
             self.uploader.upload_image,
             image + ':' + tag, None, push_destination, set(), append_tag,
-            'add-foo-plugin', {'foo_version': '1.0.1'}, False
+            'add-foo-plugin', {'foo_version': '1.0.1'}, False, 'full'
         )
 
         self.dockermock.assert_called_once_with(
@@ -353,7 +374,8 @@ class TestDockerImageUploader(base.TestCase):
             append_tag,
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
-            True
+            True,
+            'full'
         )
 
         self.dockermock.assert_not_called()
@@ -381,7 +403,8 @@ class TestDockerImageUploader(base.TestCase):
             append_tag,
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
-            False
+            False,
+            'full'
         )
 
         self.dockermock.assert_not_called()
