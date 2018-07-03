@@ -21,6 +21,7 @@ import six
 import urllib3
 
 from oslo_concurrency import processutils
+from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image import image_uploader
 from tripleo_common.tests import base
@@ -259,13 +260,11 @@ class TestDockerImageUploader(base.TestCase):
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
     def test_modify_upload_image(self, mock_ansible, mock_popen):
-        result1 = {
-            'Digest': 'a'
-        }
         mock_process = mock.Mock()
-        mock_process.communicate.return_value = json.dumps(result1)
+        mock_process.communicate.return_value = (
+            '', 'FATA[0000] Error reading manifest: manifest unknown')
 
-        mock_process.returncode = 0
+        mock_process.returncode = 1
         mock_popen.return_value = mock_process
 
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
@@ -322,13 +321,10 @@ class TestDockerImageUploader(base.TestCase):
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
     def test_modify_image_failed(self, mock_ansible, mock_popen):
-        result1 = {
-            'Digest': 'a'
-        }
         mock_process = mock.Mock()
-        mock_process.communicate.return_value = json.dumps(result1)
+        mock_process.communicate.return_value = ('', 'manifest unknown')
 
-        mock_process.returncode = 0
+        mock_process.returncode = 1
         mock_popen.return_value = mock_process
 
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
@@ -484,8 +480,9 @@ class TestDockerImageUploader(base.TestCase):
 
         # inspect call failed
         mock_process.returncode = 1
+        mock_process.communicate.return_value = ('', 'manifest unknown')
         self.assertRaises(
-            ImageUploaderException,
+            ImageNotFoundException,
             self.uploader.discover_image_tag,
             'docker.io/t/foo',
             'rdo_version')

@@ -37,6 +37,7 @@ except ImportError:
 from oslo_concurrency import processutils
 from tripleo_common.actions import ansible
 from tripleo_common.image.base import BaseImageManager
+from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageUploaderException
 
 
@@ -328,12 +329,18 @@ class DockerImageUploader(ImageUploader):
     def _image_exists(image, insecure_registries):
         try:
             DockerImageUploader._image_digest(image, insecure_registries)
-        except Exception:
+        except ImageNotFoundException:
             return False
         else:
             return True
 
     @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(ImageUploaderException),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def _inspect(image, insecure=False):
 
         cmd = ['skopeo', 'inspect']
@@ -349,6 +356,14 @@ class DockerImageUploader(ImageUploader):
 
         out, err = process.communicate()
         if process.returncode != 0:
+            not_found_msgs = (
+                'manifest unknown',
+                # returned by docker.io
+                'requested access to the resource is denied'
+            )
+            if any(n in err for n in not_found_msgs):
+                raise ImageNotFoundException('Not found image: %s\n%s' %
+                                             (image, err))
             raise ImageUploaderException('Error inspecting image: %s\n%s' %
                                          (image, err))
         return json.loads(out)
