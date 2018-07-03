@@ -121,13 +121,14 @@ class DriverInfo(object):
 class PrefixedDriverInfo(DriverInfo):
     def __init__(self, prefix, deprecated_mapping=None,
                  has_port=False, address_field='address',
-                 default_port=None, hardware_type=None):
+                 default_port=None, hardware_type=None,
+                 mandatory_fields=None):
         mapping = {
             'pm_addr': '%s_%s' % (prefix, address_field),
             'pm_user': '%s_username' % prefix,
             'pm_password': '%s_password' % prefix,
         }
-        mandatory_fields = list(mapping)
+        mandatory_fields = mandatory_fields or list(mapping)
 
         if has_port:
             mapping['pm_port'] = '%s_port' % prefix
@@ -267,7 +268,9 @@ DRIVER_INFO = {
     # production drivers
     '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True,
                                              default_port=623,
-                                             hardware_type='ipmi'),
+                                             hardware_type='ipmi',
+                                             mandatory_fields=['pm_addr']
+                                             ),
     '(idrac|.*_drac)': PrefixedDriverInfo('drac', has_port=True,
                                           hardware_type='idrac'),
     '(ilo|.*_ilo)': PrefixedDriverInfo('ilo', has_port=True,
