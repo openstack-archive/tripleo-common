@@ -24,3 +24,7 @@ class ImageSpecificationException(Exception):
 
 class ImageUploaderException(Exception):
     pass
+
+
+class ImageNotFoundException(Exception):
+    pass
