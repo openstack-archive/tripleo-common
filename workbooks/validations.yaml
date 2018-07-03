@@ -17,7 +17,7 @@ workflows:
     tasks:
 
       notify_running:
-        workflow: tripleo.message.v1.send
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
@@ -71,7 +71,7 @@ workflows:
     tasks:
 
       notify_running:
-        workflow: tripleo.message.v1.send
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
@@ -97,7 +97,7 @@ workflows:
           status: FAILED
 
       send_message:
-        workflow: tripleo.message.v1.send
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
@@ -126,7 +126,7 @@ workflows:
           validations: <% task().result %>
 
       notify_running:
-        workflow: tripleo.message.v1.send
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
@@ -153,7 +153,7 @@ workflows:
           status: FAILED
 
       send_message:
-        workflow: tripleo.message.v1.send
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
@@ -186,7 +186,7 @@ workflows:
           message: <% task().result %>
 
       send_message:
-        workflow: tripleo.message.v1.send
+        workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
           type: <% execution() %>
