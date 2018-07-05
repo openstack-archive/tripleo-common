@@ -206,7 +206,7 @@ class TripleoInventory(object):
         for role, hostnames in role_net_hostname_map.items():
             if hostnames:
                 names = hostnames.get(self.host_network) or []
-                shortnames = [n.split(".%s." % self.host_network)[0]
+                shortnames = [n.split(".%s." % self.host_network)[0].lower()
                               for n in names]
                 ips = role_net_ip_map[role][self.host_network]
                 hosts = {}

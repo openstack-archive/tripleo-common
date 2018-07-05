@@ -49,7 +49,7 @@ class Config(object):
                 for idx, name in enumerate(shortnames):
                     if 'server_ids' in role_node_id_map:
                         server_id = role_node_id_map['server_ids'][role][idx]
-                        servers[server_id] = name
+                        servers[server_id] = name.lower()
         return servers
 
     def get_deployment_data(self, stack,
