@@ -1340,3 +1340,171 @@ workflows:
           execution: <% execution() %>
           payload:
             cleaned_nodes: <% $.get('cleaned_nodes', []) %>
+
+  apply_bios_settings:
+    description: Apply BIOS settings for given nodes
+    input:
+      - node_uuids
+      - settings
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      apply_configuration:
+        with-items: node_uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.manual_cleaning
+        input:
+          node_uuid: <% $.node_uuid %>
+          clean_steps:
+            - interface: bios
+              step: apply_configuration
+              args: <% $.settings %>
+        on-complete: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+
+  apply_bios_settings_on_manageable_nodes:
+    description: Apply BIOS settings on manageable nodes
+    input:
+      - settings
+      - concurrency: 20
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list
+        input:
+          maintenance: false
+          associated: false
+          provision_state: manageable
+        on-success: apply_configuration_manageable
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        publish:
+          applied_nodes: <% task().result.uuid %>
+
+      apply_configuration_manageable:
+        workflow: tripleo.baremetal.v1.manual_cleaning
+        input:
+          node_uuids: <% $.applied_nodes %>
+          concurrency: <% $.concurrency %>
+          clean_steps:
+            - interface: bios
+              step: apply_configuration
+              args: <% $.settings %>
+        on-complete: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            applied_nodes: <% $.get('applied_nodes', []) %>
+
+  reset_bios_settings:
+    description: Reset BIOS settings for given nodes to factory default
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      factory_reset:
+        with-items: node_uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.manual_cleaning
+        input:
+          node_uuid: <% $.node_uuid %>
+          clean_steps:
+            - interface: bios
+              step: factory_reset
+        on-complete: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+
+  reset_bios_settings_on_manageable_nodes:
+    description: Reset BIOS settings on manageable nodes to factory default
+    input:
+      - concurrency: 20
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list
+        input:
+          maintenance: false
+          associated: false
+          provision_state: manageable
+        on-success: factory_reset_manageable
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        publish:
+          reset_nodes: <% task().result.uuid %>
+
+      factory_reset_manageable:
+        workflow: tripleo.baremetal.v1.manual_cleaning
+        input:
+          node_uuids: <% $.reset_nodes %>
+          concurrency: <% $.concurrency %>
+          clean_steps:
+            - interface: bios
+              step: factory_reset
+        on-complete: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            reset_nodes: <% $.get('reset_nodes', []) %>
