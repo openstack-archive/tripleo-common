@@ -527,9 +527,6 @@ workflows:
     tags:
       - tripleo-common-managed
 
-    task-defaults:
-      on-error: unhandled_error
-
     tasks:
       initialize:
         publish:
@@ -623,12 +620,6 @@ workflows:
         publish:
           status: SUCCESS
           message: Successfully introspected <% $.introspected_nodes.len() %> node(s).
-        on-complete: send_message
-
-      unhandled_error:
-        publish:
-          status: FAILED
-          message: "Unhandled workflow error"
         on-complete: send_message
 
       send_message:
@@ -827,16 +818,13 @@ workflows:
       - role: null
       - queue_name: tripleo
 
-    task-defaults:
-      on-error: send_message
-
     tags:
       - tripleo-common-managed
 
     tasks:
 
       update_node:
-        on-success: send_message
+        on-complete: send_message
         action: tripleo.baremetal.update_node_capability node_uuid=<% $.node_uuid %> capability='profile' value=<% $.role %>
         publish:
           message: <% task().result %>
@@ -860,9 +848,6 @@ workflows:
       - plan: overcloud
       - queue_name: tripleo
 
-    task-defaults:
-      on-error: send_message
-
     tags:
       - tripleo-common-managed
 
@@ -877,6 +862,7 @@ workflows:
           role: <% $.role %>
         concurrency: 1
         on-success: untag_nodes
+        on-error: send_message
 
       untag_nodes:
         with-items: node_uuid in <% $.untag_node_uuids %>
@@ -886,9 +872,10 @@ workflows:
           queue_name: <% $.queue_name %>
         concurrency: 1
         on-success: update_role_parameters
+        on-error: send_message
 
       update_role_parameters:
-        on-success: send_message
+        on-complete: send_message
         action: tripleo.parameters.update_role role=<% $.role %> container=<% $.plan %>
         publish:
           message: <% task().result %>
