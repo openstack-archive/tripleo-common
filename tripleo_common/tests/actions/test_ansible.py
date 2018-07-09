@@ -60,7 +60,8 @@ class AnsibleActionTest(base.TestCase):
         }
 
         mock_write_cfg.assert_called_once_with(action.work_dir,
-                                               self.remote_user, None)
+                                               self.remote_user,
+                                               ssh_private_key=None)
 
         mock_execute.assert_called_once_with(
             'ansible', self.hosts, '-vvvvv', '--module-name', self.module,
@@ -101,7 +102,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
         action.run(self.ctx)
 
         mock_write_cfg.assert_called_once_with(action.work_dir,
-                                               self.remote_user, None)
+                                               self.remote_user,
+                                               ssh_private_key=None)
 
         pb = os.path.join(action.work_dir, 'playbook.yaml')
         env = {
@@ -191,7 +193,7 @@ class CopyConfigFileTest(base.TestCase):
             ansible_cfg_file.flush()
 
             resulting_ansible_config = ansible.write_default_ansible_cfg(
-                work_dir, None, None, base_ansible_cfg=ansible_cfg_path)
+                work_dir, None, None, None, base_ansible_cfg=ansible_cfg_path)
 
             self.assertEqual(resulting_ansible_config,
                              os.path.join(work_dir, 'ansible.cfg'))

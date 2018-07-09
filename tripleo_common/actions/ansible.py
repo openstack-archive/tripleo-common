@@ -34,7 +34,8 @@ LOG = logging.getLogger(__name__)
 
 def write_default_ansible_cfg(work_dir,
                               remote_user,
-                              ssh_private_key,
+                              ssh_private_key=None,
+                              transport=None,
                               base_ansible_cfg='/etc/ansible/ansible.cfg'):
     ansible_config_path = os.path.join(work_dir, 'ansible.cfg')
     shutil.copy(base_ansible_cfg, ansible_config_path)
@@ -64,6 +65,8 @@ def write_default_ansible_cfg(work_dir,
         config.set('defaults', 'remote_user', remote_user)
     if ssh_private_key:
         config.set('defaults', 'private_key_file', ssh_private_key)
+    if transport:
+        config.set('defaults', 'transport', transport)
 
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
@@ -218,7 +221,7 @@ class AnsibleAction(actions.Action):
             ansible_config_path = write_default_ansible_cfg(
                 self.work_dir,
                 self.remote_user,
-                self.ssh_private_key)
+                ssh_private_key=self.ssh_private_key)
             env_variables = {
                 'HOME': self.work_dir,
                 'ANSIBLE_LOCAL_TEMP': self.work_dir,
@@ -480,7 +483,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
             ansible_config_path = write_default_ansible_cfg(
                 self.work_dir,
                 self.remote_user,
-                self.ssh_private_key)
+                ssh_private_key=self.ssh_private_key)
             env_variables = {
                 'HOME': self.work_dir,
                 'ANSIBLE_LOCAL_TEMP': self.work_dir,
