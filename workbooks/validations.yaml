@@ -79,7 +79,7 @@ workflows:
           execution: <% execution() %>
           plan_name: <% $.plan %>
           payload:
-            validation_name: <% $.validation_name %>
+            validation_names: <% $.validation_names %>
             plan: <% $.plan %>
         on-complete: run_validations
 
@@ -105,7 +105,7 @@ workflows:
           execution: <% execution() %>
           plan_name: <% $.plan %>
           payload:
-            validation_name: <% $.validation_name %>
+            validation_names: <% $.validation_names %>
             plan: <% $.plan %>
 
   run_groups:
@@ -135,7 +135,7 @@ workflows:
           plan_name: <% $.plan %>
           payload:
             group_names: <% $.group_names %>
-            validation_name: <% $.validation_name %>
+            validation_names: <% $.validations %>
             plan: <% $.plan %>
         on-complete: run_validation_group
 
@@ -162,8 +162,7 @@ workflows:
           plan_name: <% $.plan %>
           payload:
             group_names: <% $.group_names %>
-            validation_names: <% $.validations.id %>
-            validation_name: <% $.validation_name %>
+            validation_names: <% $.validations %>
             plan: <% $.plan %>
 
   list:
