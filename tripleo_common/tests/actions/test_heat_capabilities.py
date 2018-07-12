@@ -246,6 +246,46 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         - path: /path/to/overcloud-default-env.yaml
         - path: /path/to/ceph-storage-env.yaml
         """
+        swift.get_object.return_value = ({}, mocked_env)
+        get_object_client_mock.return_value = swift
+
+        environments = {
+            '/path/to/ceph-storage-env.yaml': False,
+            '/path/to/network-isolation.json': False,
+            '/path/to/poc-custom-env.yaml': True
+        }
+
+        action = heat_capabilities.UpdateCapabilitiesAction(
+            environments, self.container_name)
+        self.assertEqual({
+            'name': 'test-container',
+            'environments': [
+                {'path': '/path/to/overcloud-default-env.yaml'},
+                {'path': '/path/to/poc-custom-env.yaml'}
+            ]},
+            action.run(mock_ctx))
+
+        mock_cache.assert_called_once_with(
+            mock_ctx,
+            self.container_name,
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_with_sorting_environments(self, get_object_client_mock,
+                                           mock_cache):
+        mock_ctx = mock.MagicMock()
+
+        # setup swift
+        swift = mock.MagicMock()
+        mocked_env = """
+           name: test-container
+           environments:
+           - path: /path/to/overcloud-default-env.yaml
+           - path: /path/to/ceph-storage-env.yaml
+           """
         swift.get_object.side_effect = (
             ({}, mocked_env),
             ({}, MAPPING_YAML_CONTENTS))
@@ -258,7 +298,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         }
 
         action = heat_capabilities.UpdateCapabilitiesAction(
-            environments, self.container_name)
+            environments, self.container_name, sort_environments=True)
         self.assertEqual({
             'name': 'test-container',
             'environments': [
@@ -289,9 +329,7 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         - path: /path/to/overcloud-default-env.yaml
         - path: /path/to/ceph-storage-env.yaml
         """
-        swift.get_object.side_effect = (
-            ({}, mocked_env),
-            ({}, MAPPING_YAML_CONTENTS))
+        swift.get_object.return_value = ({}, mocked_env)
         get_object_client_mock.return_value = swift
 
         environments = {
