@@ -39,6 +39,10 @@
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
+        - tripleo-ci-centos-7-scenario008-multinode-oooq-container:
+            files:
+              - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
     gate:
       queue: tripleo
       jobs:
