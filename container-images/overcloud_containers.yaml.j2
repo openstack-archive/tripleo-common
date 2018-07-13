@@ -855,3 +855,21 @@ container_images_template:
   - DockerOpenShiftEtcdImage
   services:
   - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_gluster_namespace}}/{{openshift_gluster_image}}:{{openshift_gluster_tag}}"
+  params:
+  - DockerOpenShiftGlusterFSImage
+  services:
+  - OS::TripleO::Services::OpenShift::GlusterFS
+
+- imagename: "{{openshift_gluster_namespace}}/{{openshift_gluster_block_image}}:{{openshift_gluster_tag}}"
+  params:
+  - DockerOpenShiftGlusterFSBlockImage
+  services:
+  - OS::TripleO::Services::OpenShift::GlusterFS
+
+- imagename: "{{openshift_heketi_namespace}}/{{openshift_heketi_image}}:{{openshift_heketi_tag}}"
+  params:
+  - DockerOpenShiftGlusterFSHeketiImage
+  services:
+  - OS::TripleO::Services::OpenShift::GlusterFS

@@ -47,6 +47,13 @@ CONTAINER_IMAGE_PREPARE_PARAM = [{
         'openshift_etcd_namespace': 'registry.fedoraproject.org/latest',
         'openshift_etcd_image': 'etcd',
         'openshift_etcd_tag': 'latest',
+        'openshift_gluster_namespace': 'docker.io/gluster',
+        'openshift_gluster_image': 'gluster-centos',
+        'openshift_gluster_block_image': 'glusterblock-provisioner',
+        'openshift_gluster_tag': 'latest',
+        'openshift_heketi_namespace': 'docker.io/heketi',
+        'openshift_heketi_image': 'heketi',
+        'openshift_heketi_tag': 'latest',
     }
 }]
 
