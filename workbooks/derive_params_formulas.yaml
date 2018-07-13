@@ -572,7 +572,7 @@ workflows:
 
       get_gb_per_osd:
         publish:
-          gb_per_osd: <% $.user_inputs.get('gb_per_osd', 3) %>
+          gb_per_osd: <% $.user_inputs.get('gb_per_osd', 5) %>
         on-success:
           - get_cores_per_osd: <% isNumber($.gb_per_osd) %>
           - set_failed_invalid_gb_per_osd: <% not isNumber($.gb_per_osd) %>
