@@ -108,6 +108,18 @@ workflows:
 
       create_plan:
         on-success:
+          - ensure_plan_environment_exists
+
+      # This selects the default "openstack" sample plan if no user
+      # provided plan-environment.yaml or capabilities-map.yaml exists
+      # Note in the case where a user provided plan-environment.yaml
+      # exists we'll still copy the missing capabilities-map.yaml
+      ensure_plan_environment_exists:
+        workflow: tripleo.plan_management.v1._check_plan_environment
+        input:
+          container: <% $.container %>
+          queue_name: <% queue_name %>
+        on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
           - add_root_stack_name: <% $.generate_passwords != true %>
 
@@ -192,6 +204,42 @@ workflows:
           plan_name: <% $.container %>
           message: <% $.get('message', '') %>
           deployment_status: UNDEPLOYED
+
+  _check_plan_environment:
+    input:
+      - container
+      - queue_name
+    tags:
+      - tripleo-common-managed
+    tasks:
+      check_for_plan_env:
+        workflow: tripleo.swift.v1.object_exists
+        input:
+          container: <% $.container %>
+          object: plan-environment.yaml
+        on-error: select_default_sample_plan
+        on-success: check_for_capabilities_map
+
+      check_for_capabilities_map:
+        workflow: tripleo.swift.v1.object_exists
+        input:
+          container: <% $.container %>
+          object: capabilities-map.yaml
+        on-error: select_default_sample_plan
+
+      # If there's no existing or user-defined plan-environment.yaml
+      # We run select_default_sample_plan with the default sample_plan_name
+      # to select the openstack default openstack plan
+      # Note in the case where plan-environment.yaml exists we'll skip
+      # copying that and only copy the capabilities-map.yaml, which is
+      # needed when a user provides a plan-environment.yaml - to select
+      # a new sample plan it will be necessary to delete both files
+      # from the root of the plan.
+      select_default_sample_plan:
+        workflow: tripleo.plan_management.v1.select_sample_plan
+        input:
+          container: <% $.container %>
+          queue_name: <% queue_name %>
 
   update_deployment_plan:
     input:
@@ -1287,6 +1335,14 @@ workflows:
       - tripleo-common-managed
 
     tasks:
+      # We skip any files where the root object already exists
+      check_for_existing_object:
+        workflow: tripleo.swift.v1.object_exists
+        input:
+          container: <% $.container %>
+          object: <% $.object_name.split('/').last() %>
+        on-error: copy_object
+
       copy_object:
         action: swift.copy_object
         input:
