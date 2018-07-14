@@ -178,6 +178,10 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_cockpit_namespace': 'docker.io/cockpit',
                 'openshift_cockpit_image': 'kubernetes',
                 'openshift_cockpit_tag': 'latest',
+                'openshift_etcd_namespace': 'registry.fedoraproject.org'
+                '/latest',
+                'openshift_etcd_image': 'etcd',
+                'openshift_etcd_tag': 'latest',
             },
             builder.container_images_template_inputs()
         )
@@ -198,6 +202,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_cockpit_namespace': 'docker.io/openshift-cockpit',
                 'openshift_cockpit_image': 'cockpit',
                 'openshift_cockpit_tag': 'tag',
+                'openshift_etcd_namespace': 'registry.access.redhat.com/rhel7',
+                'openshift_etcd_image': 'openshift-etcd',
+                'openshift_etcd_tag': 'tag',
             },
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleomaster',
@@ -214,6 +221,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 openshift_cockpit_namespace='docker.io/openshift-cockpit',
                 openshift_cockpit_image='cockpit',
                 openshift_cockpit_tag='tag',
+                openshift_etcd_namespace='registry.access.redhat.com/rhel7',
+                openshift_etcd_image='openshift-etcd',
+                openshift_etcd_tag='tag',
             )
         )
 

@@ -208,7 +208,6 @@ container_images_template:
   - DockerEtcdImage
   services:
   - OS::TripleO::Services::Etcd
-  - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{namespace}}/{{name_prefix}}fluentd{{name_suffix}}:{{tag}}"
   params:
@@ -841,5 +840,11 @@ container_images_template:
 - imagename: "{{openshift_cockpit_namespace}}/{{openshift_cockpit_image}}:{{openshift_cockpit_tag}}"
   params:
   - DockerOpenShiftCockpitImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_etcd_namespace}}/{{openshift_etcd_image}}:{{openshift_etcd_tag}}"
+  params:
+  - DockerOpenShiftEtcdImage
   services:
   - OS::TripleO::Services::OpenShift::Master
