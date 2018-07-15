@@ -1,6 +1,7 @@
 ---
 
 - name: Template /etc/ssh/ssh_known_hosts
+  become: true
   template:
     src: ssh_known_hosts.j2
     dest: /etc/ssh/ssh_known_hosts
