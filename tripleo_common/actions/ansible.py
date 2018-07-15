@@ -52,6 +52,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('ssh_connection', 'control_path_dir',
                os.path.join(work_dir, 'ansible-ssh'))
     config.set('ssh_connection', 'retries', '8')
+    config.set('ssh_connection', 'pipelining', 'True')
 
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
