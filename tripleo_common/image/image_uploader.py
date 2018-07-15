@@ -17,7 +17,6 @@
 import abc
 from concurrent import futures
 import json
-import logging
 import netifaces
 import os
 import requests
@@ -35,6 +34,7 @@ try:
 except ImportError:
     from docker import Client
 from oslo_concurrency import processutils
+from oslo_log import log as logging
 from tripleo_common.actions import ansible
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageNotFoundException
@@ -235,13 +235,13 @@ class DockerImageUploader(ImageUploader):
         if modify_role:
             if DockerImageUploader._image_exists(target_image,
                                                  insecure_registries):
-                LOG.info('Skipping upload for modified image %s' %
-                         target_image)
+                LOG.warning('Skipping upload for modified image %s' %
+                            target_image)
                 return []
         else:
             if DockerImageUploader._images_match(source_image, target_image,
                                                  insecure_registries):
-                LOG.info('Skipping upload for image %s' % image_name)
+                LOG.warning('Skipping upload for image %s' % image_name)
                 return []
 
         dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
@@ -263,7 +263,7 @@ class DockerImageUploader(ImageUploader):
 
         DockerImageUploader._push(dockerc, target_image_no_tag, tag=target_tag)
 
-        LOG.info('Completed upload for image %s' % image_name)
+        LOG.warning('Completed upload for image %s' % image_name)
         if cleanup == CLEANUP_NONE:
             return []
         if cleanup == CLEANUP_PARTIAL:
@@ -277,7 +277,7 @@ class DockerImageUploader(ImageUploader):
         stop=tenacity.stop_after_attempt(5)
     )
     def _pull(dockerc, image, tag=None):
-        LOG.debug('Pulling %s' % image)
+        LOG.info('Pulling %s' % image)
 
         for line in dockerc.pull(image, tag=tag, stream=True):
             status = json.loads(line)
@@ -292,7 +292,7 @@ class DockerImageUploader(ImageUploader):
         stop=tenacity.stop_after_attempt(5)
     )
     def _push(dockerc, image, tag=None):
-        LOG.debug('Pushing %s' % image)
+        LOG.info('Pushing %s' % image)
 
         for line in dockerc.push(image, tag=tag, stream=True):
             status = json.loads(line)
@@ -454,14 +454,14 @@ class DockerImageUploader(ImageUploader):
         for image in sorted(local_images):
             if not image:
                 continue
-            LOG.info('Removing local copy of %s' % image)
+            LOG.warning('Removing local copy of %s' % image)
             try:
                 dockerc.remove_image(image)
             except docker.errors.APIError as e:
                 if e.explanation:
-                    LOG.warning(e.explanation)
+                    LOG.error(e.explanation)
                 else:
-                    LOG.warning(e)
+                    LOG.error(e)
 
     def add_upload_task(self, image_name, pull_source, push_destination,
                         append_tag, modify_role, modify_vars, dry_run,
