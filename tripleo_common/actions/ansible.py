@@ -40,6 +40,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'retry_files_enabled', 'False')
     config.set('defaults', 'log_path',
                os.path.join(work_dir, 'ansible.log'))
+    config.set('defaults', 'forks', '25')
 
     # mistral user has no home dir set, so no place to save a known hosts file
     config.set('ssh_connection', 'ssh_args',
