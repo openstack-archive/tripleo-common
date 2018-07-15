@@ -44,7 +44,12 @@ def write_default_ansible_cfg(work_dir,
 
     # mistral user has no home dir set, so no place to save a known hosts file
     config.set('ssh_connection', 'ssh_args',
-               '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no')
+               '-o UserKnownHostsFile=/dev/null '
+               '-o StrictHostKeyChecking=no '
+               '-o ControlMaster=auto '
+               '-o ControlPersist=60s')
+    config.set('ssh_connection', 'control_path_dir',
+               os.path.join(work_dir, 'ansible-ssh'))
 
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
