@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    We are changing nova metadata api to be served via httpd wsgi. Therefore
+    we'll have a new config volume for the nova_metadata container.
+
+    Adding DockerNovaMetadataConfigImage for this.

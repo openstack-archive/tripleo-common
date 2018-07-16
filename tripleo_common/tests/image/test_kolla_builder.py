@@ -485,9 +485,14 @@ class TestPrepare(base.TestCase):
                 'push_destination': '192.0.2.0:8787',
             }],
             'environments/containers-default-parameters.yaml': {
-                'DockerNovaApiImage': '192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaConfigImage': '192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaMetadataImage': '192.0.2.0:8787/t/p-nova-api:l'
+                'DockerNovaApiImage':
+                '192.0.2.0:8787/t/p-nova-api:l',
+                'DockerNovaConfigImage':
+                '192.0.2.0:8787/t/p-nova-api:l',
+                'DockerNovaMetadataConfigImage':
+                u'192.0.2.0:8787/t/p-nova-api:l',
+                'DockerNovaMetadataImage':
+                '192.0.2.0:8787/t/p-nova-api:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
