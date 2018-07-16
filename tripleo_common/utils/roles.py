@@ -44,12 +44,56 @@ def check_role_exists(available_roles, requested_roles):
     :param requested_roles list of requested role names
     :exception NotFound if a role in the requested list is not available
     """
-    role_check = set(requested_roles) - set(available_roles)
+    unique_roles = list(set([r.split(':')[0] for r in requested_roles]))
+    role_check = set(unique_roles) - set(available_roles)
     if len(role_check) > 0:
         msg = "Invalid roles requested: {}\nValid Roles:\n{}".format(
             ','.join(role_check), '\n'.join(available_roles)
         )
         raise NotFound(msg)
+
+
+def generate_role_with_colon_format(content, defined_role, generated_role):
+    """Generate role data with input as Compute:ComputeA
+
+    In Compute:ComputeA, the defined role 'Compute' can be added to
+    roles_data.yaml by changing the name to 'ComputeA'. This allows duplicating
+    the defined roles so that hardware specific nodes can be targeted with
+    specific roles.
+
+    :param content defined role file's content
+    :param defined_role defined role's name
+    :param generated_role role's name to generate from defined role
+    :exception ValueError if generated role name is of invalid format
+    """
+
+    # "Compute:Compute" is invalid format
+    if generated_role == defined_role:
+        msg = ("Generated role name cannot be same as existing role name (%s) "
+               "with colon format".format(defined_role))
+        raise ValueError(msg)
+
+    # "Compute:A" is invalid format
+    if not generated_role.startswith(defined_role):
+        msg = ("Generated role name (%s) name should start with existing role "
+               "name (%s)".format(generated_role, defined_role))
+        raise ValueError(msg)
+
+    name_line = "name:%s" % defined_role
+    name_line_match = False
+    processed = []
+    for line in content.split('\n'):
+        stripped_line = line.replace(' ', '')
+        # Only 'name' need to be replaced in the existing role
+        if name_line in stripped_line:
+            line = line.replace(defined_role, generated_role)
+            name_line_match = True
+        processed.append(line)
+
+    if not name_line_match:
+        raise ValueError(" error")
+
+    return '\n'.join(processed)
 
 
 def generate_roles_data_from_directory(directory, roles, validate=True):
@@ -71,11 +115,19 @@ def generate_roles_data_from_directory(directory, roles, validate=True):
     output.write("\n".join(header))
 
     for role in roles:
-        file_path = os.path.join(directory, "{}.yaml".format(role))
+        defined_role = role.split(':')[0]
+        file_path = os.path.join(directory, "{}.yaml".format(defined_role))
         if validate:
             validate_role_yaml(role_path=file_path)
         with open(file_path, "r") as f:
-            shutil.copyfileobj(f, output)
+            if ':' in role:
+                generated_role = role.split(':')[1]
+                content = generate_role_with_colon_format(f.read(),
+                                                          defined_role,
+                                                          generated_role)
+                output.write(content)
+            else:
+                shutil.copyfileobj(f, output)
 
     return output.getvalue()
 
