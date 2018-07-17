@@ -510,72 +510,23 @@ class DeploymentFailuresActionTest(base.TestCase):
         self.plan = 'overcloud'
         self.ctx = mock.MagicMock()
 
-    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.actions.deployment.open')
-    def test_get_deployment_failures(
-            self, mock_open, mock_obj_client, mock_yaml_load):
+    def test_get_deployment_failures(self, mock_open):
 
         test_result = dict(host0=["a", "b", "c"])
         mock_read = mock.MagicMock()
         mock_read.read.return_value = json.dumps(test_result)
         mock_open.return_value = mock_read
-        status_return = json.loads('{"workflow_status": {"payload": '
-                                   '{"execution_id": "foo"}}}')
-        mock_yaml_load.return_value = status_return
 
         action = deployment.DeploymentFailuresAction(self.plan)
         result = action.run(self.ctx)
 
         self.assertEqual(result['failures'], test_result)
 
-    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.actions.deployment.open')
-    def test_get_deployment_failures_no_container(
-            self, mock_open, mock_obj_client, mock_yaml_load):
-
-        test_result = dict(
-            failures={},
-            message='Swift container overcloud-messages not found')
-
-        swift = mock.MagicMock()
-        swift.get_object.side_effect = swiftexceptions.ClientException("404")
-        mock_obj_client.return_value = swift
-
-        action = deployment.DeploymentFailuresAction(self.plan)
-        result = action.run(self.ctx)
-
-        self.assertEqual(result, test_result)
-
-    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('tripleo_common.actions.deployment.open')
-    def test_get_deployment_failures_no_execution(
-            self, mock_open, mock_obj_client, mock_yaml_load):
-
-        test_result = dict(
-            failures={},
-            message='Execution not found in deployment_status.yaml')
-
-        mock_yaml_load.side_effect = KeyError()
-
-        action = deployment.DeploymentFailuresAction(self.plan)
-        result = action.run(self.ctx)
-
-        self.assertEqual(result, test_result)
-
-    @mock.patch('tripleo_common.actions.deployment.yaml.safe_load')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('tripleo_common.actions.deployment.open')
-    def test_get_deployment_failures_no_file(
-            self, mock_open, mock_obj_client, mock_yaml_load):
+    def test_get_deployment_failures_no_file(self, mock_open):
 
         mock_open.side_effect = IOError()
-
-        status_return = json.loads('{"workflow_status": {"payload": '
-                                   '{"execution_id": "foo"}}}')
-        mock_yaml_load.return_value = status_return
 
         action = deployment.DeploymentFailuresAction(self.plan)
         result = action.run(self.ctx)
