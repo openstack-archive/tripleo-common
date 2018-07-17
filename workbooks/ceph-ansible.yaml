@@ -23,9 +23,14 @@ workflows:
       - ceph_ansible_extra_vars: {}
       - ceph_ansible_playbook: /usr/share/ceph-ansible/site-docker.yml.sample
       - node_data_lookup: '{}'
+      - swift_container: 'ceph_ansible_fetch_dir'
     tags:
       - tripleo-common-managed
     tasks:
+      set_swift_container:
+        publish:
+          swift_container: <% concat(env().get('heat_stack_name', ''), '_', $.swift_container) %>
+        on-complete: collect_puppet_hieradata
       collect_puppet_hieradata:
         on-success: check_hieradata
         publish:
@@ -67,6 +72,19 @@ workflows:
         action: tripleo.files.make_temp_dir
         publish:
           fetch_directory: <% task().result.path %>
+        on-success: verify_container_exists
+      verify_container_exists:
+        action: swift.head_container container=<% $.swift_container %>
+        on-success: restore_fetch_directory
+        on-error: create_container
+      restore_fetch_directory:
+        action: tripleo.files.restore_temp_dir_from_swift
+        input:
+          container: <% $.swift_container %>
+          path: <% $.fetch_directory %>
+        on-success: collect_nodes_uuid
+      create_container:
+        action: swift.put_container container=<% $.swift_container %>
         on-success: collect_nodes_uuid
       collect_nodes_uuid:
         action: tripleo.ansible-playbook
@@ -159,6 +177,12 @@ workflows:
             ireallymeanit: 'yes'
         publish:
           output: <% task().result %>
-        on-complete: purge_fetch_directory
+        on-complete: save_fetch_directory
+      save_fetch_directory:
+        action: tripleo.files.save_temp_dir_to_swift
+        input:
+          container: <% $.swift_container %>
+          path: <% $.fetch_directory %>
+        on-success: purge_fetch_directory
       purge_fetch_directory:
         action: tripleo.files.remove_temp_dir path=<% $.fetch_directory %>
