@@ -18,10 +18,11 @@ import logging
 import os
 import tempfile
 
-from tripleo_common.utils import tarball
-
+import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
+
+from tripleo_common.utils import tarball
 
 LOG = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def delete_container(swiftclient, name):
     except ValueError as e:
         # ValueError is raised when we can't find the container, which means
         # that it's already deleted.
-        LOG.info(e.message)
+        LOG.info(six.text_type(e))
 
 
 def download_container(swiftclient, container, dest):
