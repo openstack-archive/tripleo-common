@@ -350,6 +350,7 @@ workflows:
       - work_dir: /var/lib/mistral
       - verbosity: 1
       - blacklist: []
+      - override_ansible_cfg: ""
 
     tags:
       - tripleo-common-managed
@@ -476,6 +477,7 @@ workflows:
           reproduce_command: true
           trash_output: true
           blacklisted_hostnames: <% $.blacklisted_hostnames %>
+          override_ansible_cfg: <% $.override_ansible_cfg %>
         publish:
           log_path: <% task().result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS

@@ -18,6 +18,7 @@ import os
 import shutil
 import six
 from six.moves import configparser
+from six.moves import cStringIO as StringIO
 import subprocess
 import tempfile
 import time
@@ -36,7 +37,8 @@ def write_default_ansible_cfg(work_dir,
                               remote_user,
                               ssh_private_key=None,
                               transport=None,
-                              base_ansible_cfg='/etc/ansible/ansible.cfg'):
+                              base_ansible_cfg='/etc/ansible/ansible.cfg',
+                              override_ansible_cfg=None):
     ansible_config_path = os.path.join(work_dir, 'ansible.cfg')
     shutil.copy(base_ansible_cfg, ansible_config_path)
 
@@ -68,6 +70,13 @@ def write_default_ansible_cfg(work_dir,
         config.set('defaults', 'private_key_file', ssh_private_key)
     if transport:
         config.set('defaults', 'transport', transport)
+
+    if override_ansible_cfg:
+        sio_cfg = StringIO()
+        sio_cfg.write(override_ansible_cfg)
+        sio_cfg.seek(0)
+        config.readfp(sio_cfg)
+        sio_cfg.close()
 
     with open(ansible_config_path, 'w') as configfile:
         config.write(configfile)
@@ -305,6 +314,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
             'profile_tasks_limit', 0)
         self.blacklisted_hostnames = self._kwargs_for_run.pop(
             'blacklisted_hostnames', [])
+        self.override_ansible_cfg = self._kwargs_for_run.pop(
+            'override_ansible_cfg', None)
 
     @property
     def work_dir(self):
@@ -484,7 +495,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
             ansible_config_path = write_default_ansible_cfg(
                 self.work_dir,
                 self.remote_user,
-                ssh_private_key=self.ssh_private_key)
+                ssh_private_key=self.ssh_private_key,
+                override_ansible_cfg=self.override_ansible_cfg)
             env_variables = {
                 'HOME': self.work_dir,
                 'ANSIBLE_LOCAL_TEMP': self.work_dir,
