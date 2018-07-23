@@ -1,9 +1,11 @@
 ---
-
-- name: Template /etc/ssh/ssh_known_hosts
+- name: Add hosts key in /etc/ssh/ssh_known_hosts for live/cold-migration
   become: true
-  template:
-    src: ssh_known_hosts.j2
-    dest: /etc/ssh/ssh_known_hosts
+  lineinfile:
+    path: /etc/ssh/ssh_known_hosts
+    line: "{{ ssh_known_hosts[hostvars[item]['ansible_hostname']] + ' ssh-rsa ' + hostvars[item]['ansible_ssh_host_key_rsa_public'] }}"
+    create: yes
+  with_items: "{{ groups['overcloud']|intersect(play_hosts) }}"
   tags:
     - tripleo_ssh_known_hosts
+
