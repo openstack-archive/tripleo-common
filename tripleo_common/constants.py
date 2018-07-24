@@ -83,6 +83,7 @@ PASSWORD_PARAMETER_NAMES = (
     'CinderPassword',
     'CongressPassword',
     'DesignatePassword',
+    'DesignateRndcKey',
     'Ec2ApiPassword',
     'EtcdInitialClusterToken',
     'GlancePassword',

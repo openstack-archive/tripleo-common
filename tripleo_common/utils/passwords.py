@@ -13,6 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import base64
+import hashlib
+import hmac
 import logging
 import os
 import paramiko
@@ -87,6 +89,8 @@ def generate_passwords(mistralclient=None, stack_env=None,
             passwords[name] = passlib.pwd.genword(length=10)
         elif name.startswith("HeatAuthEncryptionKey"):
             passwords[name] = passlib.pwd.genword(length=32)
+        elif name.startswith("DesignateRndcKey"):
+            passwords[name] = create_rndc_key_secret()
         else:
             passwords[name] = passlib.pwd.genword(length=_MIN_PASSWORD_SIZE)
     return passwords
@@ -135,3 +139,12 @@ def create_ssh_keypair(comment=None, bits=2048):
         'private_key': private_key,
         'public_key': public_key,
     }
+
+
+def create_rndc_key_secret():
+    # The rndc key secret is a base64-encoded hmac-sha256 value
+    h = hmac.new(
+        passlib.pwd.genword(length=_MIN_PASSWORD_SIZE).encode('utf-8'),
+        msg=passlib.pwd.genword(length=_MIN_PASSWORD_SIZE).encode('utf-8'),
+        digestmod=hashlib.sha256)
+    return base64.b64encode(h.digest())
