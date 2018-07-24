@@ -385,7 +385,7 @@ workflows:
       download_config:
         action: tripleo.config.download_config
         input:
-          work_dir: <% $.get('work_dir') %>/<% execution().id %>
+          work_dir: <% $.get('work_dir') %>/<% $.get('plan_name') %>
           container_config: <% $.get('plan_name') %>-config
         on-success: send_msg_config_download
         on-error: send_message
@@ -402,7 +402,7 @@ workflows:
           status: <% $.get('status', 'RUNNING') %>
           deployment_status: DEPLOYING
           execution: <% execution() %>
-          message: Config downloaded at <% $.get('work_dir') %>/<% execution().id %>
+          message: Config downloaded at <% $.get('work_dir') %>/<% $.get('plan_name') %>
           plan_name: <% $.plan_name %>
         on-success: get_private_key
 
@@ -421,7 +421,7 @@ workflows:
         action: tripleo.ansible-generate-inventory
         input:
           ansible_ssh_user: tripleo-admin
-          work_dir: <% $.get('work_dir') %>/<% execution().id %>
+          work_dir: <% $.get('work_dir') %>/<% $.get('plan_name') %>
           plan_name: <% $.get('plan_name') %>
           ssh_network: <% $.get('ssh_network') %>
         publish:
@@ -455,8 +455,8 @@ workflows:
           execution: <% execution() %>
           plan_name: <% $.plan_name %>
           message: >
-            Running ansible playbook at <% $.get('work_dir') %>/<% execution().id %>/deploy_steps_playbook.yaml.
-            See log file at <% $.get('work_dir') %>/<% execution().id %>/ansible.log for progress.
+            Running ansible playbook at <% $.get('work_dir') %>/<% $.get('plan_name') %>/deploy_steps_playbook.yaml.
+            See log file at <% $.get('work_dir') %>/<% $.get('plan_name') %>/ansible.log for progress.
             ...
         on-success: run_ansible
 
@@ -464,7 +464,7 @@ workflows:
         action: tripleo.ansible-playbook
         input:
           inventory: <% $.inventory %>
-          playbook: <% $.get('work_dir') %>/<% execution().id %>/deploy_steps_playbook.yaml
+          playbook: <% $.get('work_dir') %>/<% $.get('plan_name') %>/deploy_steps_playbook.yaml
           playbook_name: deploy_steps_playbook.yaml
           plan_name: <% $.plan_name %>
           remote_user: tripleo-admin
@@ -473,7 +473,7 @@ workflows:
           verbosity: <% $.get('verbosity') %>
           become: true
           timeout: <% $.timeout %>
-          work_dir: <% $.get('work_dir') %>/<% execution().id %>
+          work_dir: <% $.get('work_dir') %>/<% $.get('plan_name') %>
           queue_name: <% $.queue_name %>
           reproduce_command: true
           trash_output: true
@@ -487,7 +487,7 @@ workflows:
         on-error: send_message
         publish-on-error:
           status: FAILED
-          message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
+          message: Ansible failed, check log at <% $.get('work_dir') %>/<% $.get('plan_name') %>/ansible.log.
           deployment_status: DEPLOY_FAILED
 
       ansible_passed:
@@ -501,7 +501,7 @@ workflows:
         on-success: send_message
         publish:
           status: FAILED
-          message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
+          message: Ansible failed, check log at <% $.get('work_dir') %>/<% $.get('plan_name') %>/ansible.log.
           deployment_status: DEPLOY_FAILED
 
       send_message:
