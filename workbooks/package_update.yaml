@@ -12,7 +12,6 @@ workflows:
     input:
       - container
       - container_registry
-      - ceph_ansible_playbook: '/usr/share/ceph-ansible/site-docker.yml.sample'
       - timeout: 240
       - queue_name: tripleo
       - skip_deploy_identifier: False
@@ -28,20 +27,8 @@ workflows:
           timeout: <% $.timeout %>
           container: <% $.container %>
           container_registry: <% $.container_registry %>
-          ceph_ansible_playbook: <% $.ceph_ansible_playbook %>
-        on-success: clean_plan
-        on-error: set_update_failed
-
-      clean_plan:
-        action: tripleo.plan.update_plan_environment
-        input:
-          container: <% $.container %>
-          parameter: CephAnsiblePlaybook
-          env_key: parameter_defaults
-          delete: true
         on-success: send_message
         on-error: set_update_failed
-
 
       set_update_failed:
         on-success: send_message
