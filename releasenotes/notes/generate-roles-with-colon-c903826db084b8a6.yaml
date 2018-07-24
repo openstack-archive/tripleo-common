@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Generating roles_data.yaml file has been enhanced to generate the defined
+    roles's properties with a differnet name, so that a cluster can have
+    multiple roles with same set of service, without manual edit. Adds the
+    support to provide role name input as ``Compute:ComputeA`` so that the
+    role ``ComputeA`` can be generated from the defined role ``Compute``, by
+    only chaning the name.
