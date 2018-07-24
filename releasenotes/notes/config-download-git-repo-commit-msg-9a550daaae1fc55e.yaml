@@ -1,0 +1,10 @@
+---
+features:
+  - The GetOvercloudConfig action now sets a commit message that indicates the
+    config was downloaded by the Mistral action and what user/project were used
+    to execute the action.
+  - Since the config download directory is now managed by git, the
+    GetOvercloudConfig action will now first download the existing config
+    container (default of overcloud-config), so that the git history is
+    preserved and new changes will reuse the same git repo. Each new change to
+    the config-download directory creates a new git commit.

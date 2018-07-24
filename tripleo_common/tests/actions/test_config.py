@@ -76,6 +76,8 @@ class GetOvercloudConfigActionTest(base.TestCase):
 
         self.swift.put_object.assert_called_once()
         mock_create_tarball.assert_called_once()
+        self.assertEqual(dict(excludes=['.tox', '*.pyc', '*.pyo']),
+                         mock_create_tarball.call_args[1])
 
 
 class DownloadConfigActionTest(base.TestCase):
