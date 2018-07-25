@@ -13,12 +13,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+
 import logging
 import os
 import sys
 
 from mistral_lib import actions
-import six
 from swiftclient import exceptions as swiftexceptions
 import yaml
 
@@ -26,7 +26,6 @@ from tripleo_common.actions import base
 from tripleo_common.actions import heat_capabilities
 from tripleo_common import constants
 from tripleo_common.image import kolla_builder
-from tripleo_common.utils import plan as plan_utils
 
 
 LOG = logging.getLogger(__name__)
@@ -74,77 +73,6 @@ class PrepareContainerImageEnv(base.TripleOAction):
             err_msg = ("Error updating %s for plan %s: %s" % (
                 constants.CONTAINER_DEFAULTS_ENVIRONMENT,
                 self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        environments = {constants.CONTAINER_DEFAULTS_ENVIRONMENT: True}
-
-        update_action = heat_capabilities.UpdateCapabilitiesAction(
-            environments, container=self.container)
-        return update_action.run(context)
-
-
-class PrepareContainerImageParameters(base.TripleOAction):
-    """Populate environment with image params
-
-    """
-
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
-        super(PrepareContainerImageParameters, self).__init__()
-        self.container = container
-
-    def _get_role_data(self, swift):
-        try:
-            j2_role_file = swift.get_object(
-                self.container, constants.OVERCLOUD_J2_ROLES_NAME)[1]
-            role_data = yaml.safe_load(j2_role_file)
-        except swiftexceptions.ClientException:
-            LOG.info("No %s file found, not filtering container images by role"
-                     % constants.OVERCLOUD_J2_ROLES_NAME)
-            role_data = None
-        return role_data
-
-    def run(self, context):
-        self.context = context
-        swift = self.get_object_client(context)
-
-        try:
-            plan_env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        try:
-            env_paths, temp_env_paths = plan_utils.build_env_paths(
-                swift, self.container, plan_env)
-            env_files, env = plan_utils.process_environments_and_files(
-                swift, env_paths)
-
-            role_data = self._get_role_data(swift)
-            image_params = kolla_builder.container_images_prepare_multi(
-                env, role_data, dry_run=True)
-        except Exception as err:
-            LOG.exception("Error occurred while processing plan files.")
-            return actions.Result(error=six.text_type(err))
-        finally:
-            # cleanup any local temp files
-            for f in temp_env_paths:
-                os.remove(f)
-
-        try:
-            swift.put_object(
-                self.container,
-                constants.CONTAINER_DEFAULTS_ENVIRONMENT,
-                yaml.safe_dump(
-                    {'parameter_defaults': image_params},
-                    default_flow_style=False
-                )
-            )
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error updating %s for plan %s: %s" % (
-                constants.CONTAINER_DEFAULTS_ENVIRONMENT, self.container, err))
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
