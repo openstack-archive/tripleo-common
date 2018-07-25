@@ -150,7 +150,7 @@ workflows:
           queue_name: <% $.queue_name %>
         on-complete:
           - run_validations: <% $.run_validations %>
-          - container_image_prepare_params: <% not $.run_validations %>
+          - create_swift_rings_backup_plan: <% not $.run_validations %>
 
       run_validations:
         workflow: tripleo.validations.v1.run_groups
@@ -159,15 +159,6 @@ workflows:
             - 'pre-deployment'
           plan: <% $.container %>
           queue_name: <% $.queue_name %>
-        publish-on-error:
-          message: <% task().result %>
-        on-success: container_image_prepare_params
-        on-error: set_deployment_failed
-
-      container_image_prepare_params:
-        action: tripleo.container_images.prepare_params
-        input:
-          container: <% $.container %>
         publish-on-error:
           message: <% task().result %>
         on-success: create_swift_rings_backup_plan
