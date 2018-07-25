@@ -136,6 +136,16 @@ class Config(object):
 
     def initialize_git_repo(self, dirname):
         repo = git.Repo.init(dirname)
+        gitignore_path = os.path.join(dirname, '.gitignore')
+
+        # Ignore tarballs, which we use for the export process
+        if not os.path.exists(gitignore_path):
+            with open(gitignore_path, 'w') as f:
+                f.write('*.tar.gz\n')
+            # For some reason using repo.index.add is not working, so go
+            # directly to the GitCmd interface.
+            repo.git.add('.gitignore')
+
         return repo
 
     def snapshot_config_dir(self, repo, commit_message):

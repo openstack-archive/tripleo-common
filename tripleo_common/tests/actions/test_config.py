@@ -74,7 +74,10 @@ class GetOvercloudConfigActionTest(base.TestCase):
                                            self.config_container)
         action.run(self.ctx)
 
-        self.swift.put_object.assert_called_once()
+        self.assertEqual(2, self.swift.put_object.call_count)
+        self.assertEqual(mock.call('config-overcloud',
+                                   'config-overcloud.tar.gz', ''),
+                         self.swift.put_object.call_args_list[1])
         mock_create_tarball.assert_called_once()
         self.assertEqual(dict(excludes=['.tox', '*.pyc', '*.pyo']),
                          mock_create_tarball.call_args[1])

@@ -1,0 +1,5 @@
+---
+fixes:
+  - A new workflow, config_download_export, for exporting the config-download
+    files via a Swift tempurl is added so that the openstack overcloud config
+    download tripleoclient command can use the API.

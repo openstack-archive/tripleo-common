@@ -524,6 +524,63 @@ workflows:
           plan_name: <% $.plan_name %>
           deployment_status: <% $.deployment_status %>
 
+  config_download_export:
+
+    description: Creates an export tarball and an associated Swift tempurl for config-download for the given plan.
+
+    input:
+      - plan
+      - queue_name: tripleo
+      - config_type: ""
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      get_config:
+        action: tripleo.config.get_overcloud_config
+        input:
+          container: <% $.plan %>
+          container_config: <% $.plan %>-config
+          config_type: <% $.config_type %>
+        on-success: create_tempurl
+        on-error: send_message
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      create_tempurl:
+        action: tripleo.swift.tempurl
+        on-success: set_status_success
+        on-error: send_message
+        input:
+          container: <% $.plan %>-config
+          obj: "<% $.plan %>-config.tar.gz"
+          valid: 3600
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      set_status_success:
+        on-success: send_message
+        publish:
+          status: SUCCESS
+          message: "config-download export successful"
+          tempurl: <% task(create_tempurl).result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          message: <% $.get('message', '') %>
+          payload:
+            tempurl: <% $.get('tempurl', '') %>
+
   undeploy_plan:
 
     description: >
