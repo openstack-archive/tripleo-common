@@ -54,8 +54,9 @@ class TestActionsBase(tests_base.TestCase):
             cache_key
         )
 
+    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
     @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_set(self, mock_conn, mock_endpoint):
+    def test_cache_set(self, mock_conn, mock_keystone, mock_endpoint):
         mock_ctx = mock.Mock()
         mock_swift = mock.Mock()
         mock_conn.return_value = mock_swift
@@ -74,8 +75,9 @@ class TestActionsBase(tests_base.TestCase):
         )
         mock_swift.delete_object.assert_not_called()
 
+    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
     @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_set_none(self, mock_conn, mock_endpoint):
+    def test_cache_set_none(self, mock_conn, mock_keystone, mock_endpoint):
         mock_ctx = mock.Mock()
         mock_swift = mock.Mock()
         mock_conn.return_value = mock_swift
@@ -92,8 +94,9 @@ class TestActionsBase(tests_base.TestCase):
             cache_key
         )
 
+    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
     @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_get_filled(self, mock_conn, mock_endpoint):
+    def test_cache_get_filled(self, mock_conn, mock_keystone, mock_endpoint):
         mock_ctx = mock.Mock()
         mock_swift = mock.Mock()
         mock_conn.return_value = mock_swift
@@ -106,8 +109,9 @@ class TestActionsBase(tests_base.TestCase):
         result = self.action.cache_get(mock_ctx, container, key)
         self.assertEqual(result, {"foo": 1})
 
+    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
     @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_empty(self, mock_conn, mock_endpoint):
+    def test_cache_empty(self, mock_conn, mock_keystone, mock_endpoint):
         mock_ctx = mock.Mock()
         mock_swift = mock.Mock()
         mock_conn.return_value = mock_swift
@@ -130,8 +134,9 @@ class TestActionsBase(tests_base.TestCase):
             cache_key
         )
 
+    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
     @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_delete(self, mock_conn, mock_endpoint):
+    def test_cache_delete(self, mock_conn, mock_keystone, mock_endpoint):
         mock_ctx = mock.Mock()
         mock_swift = mock.Mock()
         mock_conn.return_value = mock_swift
