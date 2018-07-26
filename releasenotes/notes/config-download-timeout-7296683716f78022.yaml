@@ -1,0 +1,5 @@
+---
+fixes:
+  - The config_download_deploy workflow now has a config_download_timeout input
+    that will honor the user requested timeout. Previously, no timeout was
+    honored even though the user could request one via tripleoclient.
