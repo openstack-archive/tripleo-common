@@ -360,6 +360,7 @@ workflows:
       - verbosity: 1
       - blacklist: []
       - override_ansible_cfg: ""
+      - config_download_timeout: 14400
 
     tags:
       - tripleo-common-managed
@@ -472,6 +473,7 @@ workflows:
 
       run_ansible:
         action: tripleo.ansible-playbook
+        timeout: <% $.config_download_timeout %>
         input:
           inventory: <% $.inventory %>
           playbook: <% $.get('work_dir') %>/<% $.get('plan_name') %>/deploy_steps_playbook.yaml
