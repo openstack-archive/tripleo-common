@@ -96,6 +96,7 @@ container_images_template:
   - DockerCinderApiImage
   - DockerCinderConfigImage
   services:
+  - OS::TripleO::Services::BlockStorageCinderVolume
   - OS::TripleO::Services::CinderApi
   - OS::TripleO::Services::CinderBackup
   - OS::TripleO::Services::CinderScheduler
