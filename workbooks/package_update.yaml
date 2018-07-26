@@ -101,6 +101,7 @@ workflows:
             ANSIBLE_HOST_KEY_CHECKING: 'False'
       - verbosity: 1
       - work_dir: /var/lib/mistral
+      - tags: ''
       - skip_tags: ''
 
     tags:
@@ -135,6 +136,7 @@ workflows:
           module_path: <% $.module_path %>
           queue_name: <% $.ansible_queue_name %>
           execution_id: <% execution().id %>
+          tags: <% $.tags %>
           skip_tags: <% $.skip_tags %>
           trash_output: true
         on-success:
