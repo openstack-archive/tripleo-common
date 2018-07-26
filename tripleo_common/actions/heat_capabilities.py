@@ -153,16 +153,20 @@ class UpdateCapabilitiesAction(base.TripleOAction):
     :param purge_missing: remove any environments from the plan environment
                           that aren't included in the environments map
                           defaults to False
+    :param sort_environments: use the dependencies defined in the
+                              capabilites-map.yaml file in the plan to order
+                              the environments
     :return: the updated plan environment
     """
 
     def __init__(self, environments,
                  container=constants.DEFAULT_CONTAINER_NAME,
-                 purge_missing=False):
+                 purge_missing=False, sort_environments=False):
         super(UpdateCapabilitiesAction, self).__init__()
         self.container = container
         self.environments = environments
         self.purge_missing = purge_missing
+        self.sort_environments = sort_environments
 
     def run(self, context):
         swift = self.get_object_client(context)
@@ -193,22 +197,24 @@ class UpdateCapabilitiesAction(base.TripleOAction):
 
         self.cache_delete(context, self.container, "tripleo.parameters.get")
 
-        # get the capabilities-map content to perform the environment ordering
-        try:
-            swift = self.get_object_client(context)
-            map_file = swift.get_object(
-                self.container, 'capabilities-map.yaml')
-            capabilities = yaml.safe_load(map_file[1])
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving capabilities-map.yaml for "
-                       "plan %s: %s" % (self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
+        if self.sort_environments:
+            # get the capabilities-map content to perform the environment
+            # ordering
+            try:
+                swift = self.get_object_client(context)
+                map_file = swift.get_object(
+                    self.container, 'capabilities-map.yaml')
+                capabilities = yaml.safe_load(map_file[1])
+            except swiftexceptions.ClientException as err:
+                err_msg = ("Error retrieving capabilities-map.yaml for "
+                           "plan %s: %s" % (self.container, err))
+                LOG.exception(err_msg)
+                return actions.Result(error=err_msg)
 
-        ordered_env = plan_utils.apply_environments_order(
-            capabilities, env.get('environments', []))
+            ordered_env = plan_utils.apply_environments_order(
+                capabilities, env.get('environments', []))
 
-        env['environments'] = ordered_env
+            env['environments'] = ordered_env
 
         try:
             plan_utils.put_env(swift, env)
