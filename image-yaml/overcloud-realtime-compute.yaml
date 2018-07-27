@@ -21,6 +21,7 @@ disk_images:
       - remove-resolvconf
       - realtime-kernel
       - openssh
+      - disable-nouveau
     packages:
       - python-psutil
       - python-debtcollector
