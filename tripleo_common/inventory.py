@@ -242,7 +242,10 @@ class TripleoInventory(object):
                         'ansible_ssh_user': self.ansible_ssh_user,
                         'bootstrap_server_id': role_node_id_map.get(
                             'bootstrap_server_id'),
+                        # Keep "role_name" until we get rid of it
+                        # https://bugs.launchpad.net/tripleo/+bug/1771171
                         'role_name': role,
+                        'tripleo_role_name': role,
                     }
 
                 }
