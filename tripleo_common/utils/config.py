@@ -105,9 +105,8 @@ class Config(object):
 
     @staticmethod
     def _open_file(path):
-        return os.fdopen(os.open(path,
-                                 os.O_WRONLY | os.O_CREAT, 0o600),
-                         'w')
+        return os.fdopen(
+            os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w')
 
     def _write_playbook_get_tasks(self, tasks, role, filepath):
         playbook = []
