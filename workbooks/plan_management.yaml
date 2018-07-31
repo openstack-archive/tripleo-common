@@ -1405,7 +1405,7 @@ workflows:
       transform_output:
         publish:
           status: SUCCESS
-          available_roles: <% let(root => $, roles => yaml_parse($.available_yaml_roles.join("\n"))) -> $roles.where($root.role_tags.toSet().intersect($.get(tags, []).toSet()) or $root.role_tags = null) %>
+          available_roles: <% let(root => $, roles => yaml_parse($.available_yaml_roles.join("\n"))) -> ($root.role_tags = null and $roles or $roles.where($root.role_tags.toSet().intersect($.get(tags, []).toSet()))) %>
         publish-on-error:
           status: FAILED
           message: <% task().result %>
