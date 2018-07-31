@@ -16,7 +16,6 @@ import json
 import logging
 import os
 import time
-import yaml
 
 from heatclient.common import deployment_utils
 from heatclient import exc as heat_exc
@@ -300,13 +299,10 @@ class DeploymentFailuresAction(base.TripleOAction):
 
     def __init__(self,
                  plan=constants.DEFAULT_CONTAINER_NAME,
-                 deployment_status_file=constants.DEPLOYMENT_STATUS_FILE,
                  work_dir=constants.MISTRAL_WORK_DIR,
                  ansible_errors_file=constants.ANSIBLE_ERRORS_FILE):
         super(DeploymentFailuresAction, self).__init__()
         self.plan = plan
-        self.messages_container = "%s-messages" % self.plan
-        self.deployment_status_file = deployment_status_file
         self.work_dir = work_dir
         self.ansible_errors_file = ansible_errors_file
 
@@ -315,25 +311,8 @@ class DeploymentFailuresAction(base.TripleOAction):
                     failures=failures)
 
     def run(self, context):
-        swift = self.get_object_client(context)
-
         try:
-            deployment_status_obj = swift.get_object(
-                self.messages_container, self.deployment_status_file)[1]
-        except swiftexceptions.ClientException:
-            return self._format_return(
-                'Swift container %s not found' % self.messages_container)
-
-        try:
-            deployment_status = yaml.safe_load(deployment_status_obj)
-            execution_id = \
-                deployment_status['workflow_status']['payload']['execution_id']
-        except KeyError:
-            return self._format_return(
-                'Execution not found in %s' % self.deployment_status_file)
-
-        try:
-            failures_file = os.path.join(self.work_dir, execution_id,
+            failures_file = os.path.join(self.work_dir, self.plan,
                                          self.ansible_errors_file)
             failures = json.loads(open(failures_file).read())
             return self._format_return('', failures)

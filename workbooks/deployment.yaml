@@ -769,7 +769,9 @@ workflows:
         input:
           plan: <% $.plan %>
         publish:
-          deployment_failures: <% task().result %>
+          deployment_failures: <% task().result.failures %>
+          message: <% task().result.message %>
+          status: <% task().result.message and "FAILED" or "SUCCESS" %>
         on-complete: send_message
         publish-on-error:
           status: FAILED
