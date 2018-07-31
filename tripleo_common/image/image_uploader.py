@@ -91,6 +91,17 @@ class ImageUploadManager(BaseImageManager):
             self.uploaders[uploader] = ImageUploader.get_uploader(uploader)
         return self.uploaders[uploader]
 
+    def get_push_destination(self, item):
+        push_destination = item.get('push_destination')
+        if not push_destination:
+            return get_undercloud_registry()
+
+        # If set to True, use discovered undercloud registry
+        if isinstance(push_destination, bool):
+            return get_undercloud_registry()
+
+        return push_destination
+
     def upload(self):
         """Start the upload process"""
 
@@ -104,9 +115,7 @@ class ImageUploadManager(BaseImageManager):
             image_name = item.get('imagename')
             uploader = item.get('uploader', 'docker')
             pull_source = item.get('pull_source')
-            push_destination = item.get('push_destination')
-            if not push_destination:
-                push_destination = get_undercloud_registry()
+            push_destination = self.get_push_destination(item)
 
             # This updates the parsed upload_images dict with real values
             item['push_destination'] = push_destination

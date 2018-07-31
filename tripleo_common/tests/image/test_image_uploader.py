@@ -113,6 +113,36 @@ class TestImageUploadManager(base.TestCase):
             image_uploader.get_undercloud_registry()
         )
 
+    @mock.patch('netifaces.ifaddresses')
+    @mock.patch('netifaces.interfaces')
+    def test_get_push_destination(self, mock_interfaces, mock_addresses):
+        mock_interfaces.return_value = ['lo', 'eth0', 'br-ctlplane']
+        mock_addresses.return_value = {
+            2: [{'addr': '192.0.2.0'}]
+        }
+        manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
+        self.assertEqual(
+            '192.0.2.0:8787',
+            manager.get_push_destination({})
+        )
+        self.assertEqual(
+            '192.0.2.1:8787',
+            manager.get_push_destination({'push_destination':
+                                          '192.0.2.1:8787'})
+        )
+        self.assertEqual(
+            '192.0.2.0:8787',
+            manager.get_push_destination({'push_destination': False})
+        )
+        self.assertEqual(
+            '192.0.2.0:8787',
+            manager.get_push_destination({'push_destination': True})
+        )
+        self.assertEqual(
+            '192.0.2.0:8787',
+            manager.get_push_destination({'push_destination': None})
+        )
+
 
 class TestImageUploader(base.TestCase):
 
