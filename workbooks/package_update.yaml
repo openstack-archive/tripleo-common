@@ -12,7 +12,7 @@ workflows:
     input:
       - container
       - container_registry
-      - ceph_ansible_playbook
+      - ceph_ansible_playbook: '/usr/share/ceph-ansible/site-docker.yml.sample'
       - timeout: 240
       - queue_name: tripleo
       - skip_deploy_identifier: False
