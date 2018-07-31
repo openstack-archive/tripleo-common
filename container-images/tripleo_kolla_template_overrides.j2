@@ -95,7 +95,12 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'libtomcrypt',
     'libtommath',
     'python2-crypto',
-    'python2-msgpack'
+    'python2-msgpack',
+    'python-cloudkittyclient',
+    'python-magnumclient',
+    'python-muranoclient',
+    'python-troveclient',
+    'python-vitrageclient',
 ] %}
 # Pick up the proper packages for python2-crypto and python2-msgpack
 {% set openstack_base_packages_append = ['python-crypto', 'python-msgpack'] %}
