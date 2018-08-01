@@ -135,7 +135,7 @@ PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
 DEFAULT_IMAGE_API_VERSION = '2'
 
 # The default version of the Volume API to set in overcloudrc.
-DEFAULT_VOLUME_API_VERSION = '3'
+DEFAULT_VOLUME_API_VERSION = '3.50'
 
 # The name of the file which holds the Mistral environment contents for plan
 # import/export
