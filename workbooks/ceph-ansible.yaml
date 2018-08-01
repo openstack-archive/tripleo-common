@@ -146,6 +146,7 @@ workflows:
         concurrency: 1
         action: tripleo.ansible-playbook
         input:
+          trash_output: true
           inventory:
             mgrs:
               hosts: <% let(root => $) -> $.mgr_ips.toDict($, $root.ips_data.get($, {})) %>
