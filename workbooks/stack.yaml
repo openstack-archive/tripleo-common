@@ -91,10 +91,14 @@ workflows:
         input:
           queue_name: <% $.queue_name %>
         timeout: <% $.timeout %>
+        publish:
+          stack_status: <% let(stack => $.stack) -> task().result.stacks.where($.stack_name = $stack).first().stack_status %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% $.stack in task().result.stacks.select([$.stack_name, $.id]).flatten() %>
+          continue-on: <% $.stack_status = 'DELETE_FAILED' or $.stack in task().result.stacks.select([$.stack_name, $.id]).flatten() %>
+        on-complete:
+          fail: <% $.stack_status = 'DELETE_FAILED' %>
 
   delete_stack:
     input:
