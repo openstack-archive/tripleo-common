@@ -96,7 +96,7 @@ workflows:
         on-error: clone_git_repo_set_status_failed
 
       upload_templates_directory:
-        action: tripleo.templates.upload container=<% $.container %> templates_path=<% task(clone_git_repo).result %>
+        action: tripleo.templates.upload container=<% $.container %> dir_to_upload=<% task(clone_git_repo).result %>
         on-success: create_plan
         on-complete: cleanup_temporary_files
         on-error: upload_templates_directory_set_status_failed
@@ -262,7 +262,7 @@ workflows:
         on-error: clone_git_repo_set_status_failed
 
       upload_templates_directory:
-        action: tripleo.templates.upload container=<% $.container %> templates_path=<% task(clone_git_repo).result %>
+        action: tripleo.templates.upload container=<% $.container %> dir_to_upload=<% task(clone_git_repo).result %>
         on-success: create_swift_rings_backup_plan
         on-complete: cleanup_temporary_files
         on-error: upload_templates_directory_set_status_failed
