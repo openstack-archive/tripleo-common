@@ -29,6 +29,12 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
 {% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini', 'openstack-selinux', 'ansible', 'python-shade', 'puppet-tripleo', 'python2-kubernetes'] %}
+
+# This installs the novajoin package in the nova_api container image; This is
+# required for TLS everywhere, as nova-api will use the cloud-init script
+# provided by the novajoin package in order to enroll the nodes to the CA
+{% set nova_api_packages_append = ['python-novajoin'] %}
+
 {% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
 
 # Required for mistral-db-populate to load tripleo custom actions on
