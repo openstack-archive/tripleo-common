@@ -119,6 +119,8 @@ workflows:
       parse_node_data_lookup:
         publish:
           json_node_data_lookup: <% json_parse($.node_data_lookup) %>
+        on-error:
+          - fail(msg=<% 'Ceph deployment stopped, NodeDataLookup (node_data_lookup) is not valid JSON. {0}'.format($.node_data_lookup) %>)
         on-success: map_node_data_lookup
       map_node_data_lookup:
         publish:
