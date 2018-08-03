@@ -172,7 +172,7 @@ function find_node_by_name_id_or_ip {
 function get_static_inventory {
   local config_dir=$1
   if [ -d "$config_dir" ] ;then
-    local inventory_args=" --static-inventory $config_dir/tripleo-ansible-inventory"
+    local inventory_args=" --plan $STACK_NAME --static-inventory $config_dir/tripleo-ansible-inventory"
     if [[ $UPGRADE_NODE_USER != $UPGRADE_NODE_USER_DEFAULT ]]; then
       inventory_args+=" --ansible_ssh_user $UPGRADE_NODE_USER"
     fi
