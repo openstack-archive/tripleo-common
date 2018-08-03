@@ -186,3 +186,23 @@ workflows:
         on-success: purge_fetch_directory
       purge_fetch_directory:
         action: tripleo.files.remove_temp_dir path=<% $.fetch_directory %>
+        on-success: remove_ceph_osd_package_from_baremetal
+      remove_ceph_osd_package_from_baremetal:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            overcloud:
+              hosts: <% $.ips_list.toDict($, {}) %>
+          remote_user: tripleo-admin
+          become: true
+          become_user: root
+          verbosity: 0
+          ssh_private_key: <% $.private_key %>
+          extra_env_variables:
+            ANSIBLE_HOST_KEY_CHECKING: 'False'
+          playbook:
+            - hosts: overcloud
+              gather_facts: no
+              tasks:
+                - name: Remove ceph-ods from baremetal
+                  yum: name=ceph-osd state=absent
