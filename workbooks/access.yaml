@@ -26,12 +26,34 @@ workflows:
       - ssh_servers: []
       - overcloud_admin: tripleo-admin
       - queue_name: tripleo
+      - plan_name: overcloud
+
     tasks:
       get_pubkey:
         action: tripleo.validations.get_pubkey
-        on-success: generate_playbook
+        on-success: get_blacklisted_ip_addresses
         publish:
           pubkey: <% task().result %>
+
+      get_blacklisted_ip_addresses:
+        action: heat.stacks_output_show
+        input:
+          stack_id: <% $.plan_name %>
+          output_key: BlacklistedIpAddresses
+        publish:
+          blacklisted_ip_addresses: <% task().result.output.output_value %>
+        on-success: get_ssh_servers_not_blacklisted
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      get_ssh_servers_not_blacklisted:
+        publish:
+          ssh_servers_not_blacklisted: <% let(blacklisted=>$.blacklisted_ip_addresses, ssh_servers=>$.ssh_servers) -> $ssh_servers.where(not $ in $blacklisted) %>
+        on-success: generate_playbook
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
 
       generate_playbook:
         on-success:
@@ -73,7 +95,7 @@ workflows:
         workflow: tripleo.access.v1.create_admin_via_nova
         input:
           queue_name: <% $.queue_name %>
-          ssh_servers: <% $.ssh_servers %>
+          ssh_servers: <% $.ssh_servers_not_blacklisted %>
           tasks: <% $.create_admin_tasks %>
           overcloud_admin: <% $.overcloud_admin %>
 
@@ -83,7 +105,7 @@ workflows:
         input:
           ssh_private_key: <% $.ssh_private_key %>
           ssh_user: <% $.ssh_user %>
-          ssh_servers: <% $.ssh_servers %>
+          ssh_servers: <% $.ssh_servers_not_blacklisted %>
           tasks: <% $.create_admin_tasks %>
 
   create_admin_via_nova:
