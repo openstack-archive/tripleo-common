@@ -335,6 +335,12 @@ class DockerImageUploader(ImageUploader):
         return i.get('Digest')
 
     @staticmethod
+    def _image_labels(image, insecure):
+        image_url = DockerImageUploader._image_to_url(image)
+        i = DockerImageUploader._inspect(image_url.geturl(), insecure)
+        return i.get('Labels', {}) or {}
+
+    @staticmethod
     def _image_exists(image, insecure_registries):
         try:
             DockerImageUploader._image_digest(image, insecure_registries)
@@ -454,6 +460,18 @@ class DockerImageUploader(ImageUploader):
         i = self._inspect(image_url.geturl(), insecure)
         return self._discover_tag_from_inspect(i, image, tag_from_label,
                                                fallback_tag)
+
+    def filter_images_with_labels(self, images, labels):
+        images_with_labels = []
+        for image in images:
+            url = self._image_to_url(image)
+            image_labels = self._image_labels(url.geturl(),
+                                              self.is_insecure_registry(
+                                                  url.netloc))
+            if set(labels).issubset(set(image_labels)):
+                images_with_labels.append(image)
+
+        return images_with_labels
 
     def cleanup(self, local_images):
         if not local_images:

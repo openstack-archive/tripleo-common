@@ -138,13 +138,10 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
         pull_source = cip_entry.get('pull_source')
         modify_role = cip_entry.get('modify_role')
         modify_vars = cip_entry.get('modify_vars')
-        if modify_role:
-            append_tag = cip_entry.get(
-                'modify_append_tag',
-                time.strftime('-modified-%Y%m%d%H%M%S')
-            )
-        else:
-            append_tag = None
+        modify_only_with_labels = cip_entry.get('modify_only_with_labels')
+        modify_append_tag = cip_entry.get('modify_append_tag',
+                                          time.strftime(
+                                              '-modified-%Y%m%d%H%M%S'))
 
         prepare_data = container_images_prepare(
             excludes=cip_entry.get('excludes'),
@@ -156,9 +153,10 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             output_env_file='image_params',
             output_images_file='upload_data',
             tag_from_label=cip_entry.get('tag_from_label'),
-            append_tag=append_tag,
+            modify_append_tag=modify_append_tag,
             modify_role=modify_role,
             modify_vars=modify_vars,
+            modify_only_with_labels=modify_only_with_labels,
         )
         env_params.update(prepare_data['image_params'])
 
@@ -192,8 +190,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              pull_source=None, push_destination=None,
                              mapping_args=None, output_env_file=None,
                              output_images_file=None, tag_from_label=None,
-                             append_tag=None, modify_role=None,
-                             modify_vars=None):
+                             modify_append_tag=None, modify_role=None,
+                             modify_vars=None, modify_only_with_labels=None):
     """Perform container image preparation
 
     :param template_file: path to Jinja2 file containing all image entries
@@ -212,18 +210,19 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     :param output_images_file: key to use for image upload data
     :param tag_from_label: string when set will trigger tag discovery on every
                            image
-    :param append_tag: string to append to the tag for the destination image
+    :param modify_append_tag: string to append to the tag for the destination
+                              image
     :param modify_role: string of ansible role name to run during upload before
                         the push to destination
     :param modify_vars: dict of variables to pass to modify_role
+    :param modify_only_with_labels: only modify the container images with the
+                                    given labels
     :returns: dict with entries for the supplied output_env_file or
               output_images_file
     """
 
     if mapping_args is None:
         mapping_args = {}
-    if not append_tag:
-        append_tag = ''
 
     if service_filter:
         if 'OS::TripleO::Services::OpenDaylightApi' in service_filter:
@@ -253,9 +252,10 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     result = builder.container_images_from_template(
         filter=ffunc, **mapping_args)
 
+    uploader = image_uploader.ImageUploadManager().uploader('docker')
+    images = [i.get('imagename', '') for i in result]
+
     if tag_from_label:
-        uploader = image_uploader.ImageUploadManager().uploader('docker')
-        images = [i.get('imagename', '') for i in result]
         image_version_tags = uploader.discover_image_tags(
             images, tag_from_label)
         for entry in result:
@@ -265,9 +265,23 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                 entry['imagename'] = '%s:%s' % (
                     image_no_tag, image_version_tags[image_no_tag])
 
+    if modify_only_with_labels:
+        images_with_labels = uploader.filter_images_with_labels(
+            images, modify_only_with_labels)
+
     params = {}
     for entry in result:
         imagename = entry.get('imagename', '')
+        append_tag = ''
+        if modify_role and (
+                (not modify_only_with_labels)
+                or imagename in images_with_labels):
+            entry['modify_role'] = modify_role
+            if modify_append_tag:
+                entry['modify_append_tag'] = modify_append_tag
+                append_tag = modify_append_tag
+            if modify_vars:
+                entry['modify_vars'] = modify_vars
         if pull_source:
             entry['pull_source'] = pull_source
         if push_destination:
@@ -276,12 +290,6 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
             # push_destination, since that is where they will be uploaded to
             image = imagename.partition('/')[2]
             imagename = '/'.join((push_destination, image))
-        if append_tag:
-            entry['modify_append_tag'] = append_tag
-        if modify_role:
-            entry['modify_role'] = modify_role
-        if modify_vars:
-            entry['modify_vars'] = modify_vars
         if 'params' in entry:
             for p in entry.pop('params'):
                 params[p] = imagename + append_tag

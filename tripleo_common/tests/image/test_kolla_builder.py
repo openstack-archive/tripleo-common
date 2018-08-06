@@ -792,6 +792,7 @@ class TestPrepare(base.TestCase):
                     'excludes': ['nova', 'neutron'],
                     'push_destination': '192.0.2.1:8787',
                     'modify_role': 'add-foo-plugin',
+                    'modify_only_with_labels': ['kolla_version'],
                     'modify_vars': {'foo_version': '1.0.1'}
                 }]
             }
@@ -834,8 +835,9 @@ class TestPrepare(base.TestCase):
                 push_destination=None,
                 service_filter=None,
                 tag_from_label='foo',
-                append_tag=None,
+                modify_append_tag=mock.ANY,
                 modify_role=None,
+                modify_only_with_labels=None,
                 modify_vars=None
             ),
             mock.call(
@@ -848,8 +850,9 @@ class TestPrepare(base.TestCase):
                 push_destination='192.0.2.1:8787',
                 service_filter=None,
                 tag_from_label='bar',
-                append_tag=mock.ANY,
+                modify_append_tag=mock.ANY,
                 modify_role='add-foo-plugin',
+                modify_only_with_labels=['kolla_version'],
                 modify_vars={'foo_version': '1.0.1'}
             )
         ])
@@ -887,6 +890,7 @@ class TestPrepare(base.TestCase):
                     'excludes': ['nova', 'neutron'],
                     'push_destination': '192.0.2.1:8787',
                     'modify_role': 'add-foo-plugin',
+                    'modify_only_with_labels': ['kolla_version'],
                     'modify_vars': {'foo_version': '1.0.1'},
                     'modify_append_tag': 'modify-123'
                 }]
@@ -930,8 +934,9 @@ class TestPrepare(base.TestCase):
                 push_destination=None,
                 service_filter=None,
                 tag_from_label='foo',
-                append_tag=None,
+                modify_append_tag=mock.ANY,
                 modify_role=None,
+                modify_only_with_labels=None,
                 modify_vars=None
             ),
             mock.call(
@@ -944,8 +949,9 @@ class TestPrepare(base.TestCase):
                 push_destination='192.0.2.1:8787',
                 service_filter=None,
                 tag_from_label='bar',
-                append_tag=mock.ANY,
+                modify_append_tag=mock.ANY,
                 modify_role='add-foo-plugin',
+                modify_only_with_labels=['kolla_version'],
                 modify_vars={'foo_version': '1.0.1'}
             )
         ])
