@@ -100,7 +100,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
                            'SSLContext object is not available"'),
         'OS_AUTH_TYPE': 'password',
         'OS_PASSWORD': admin_password,
-        'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', '') + '/v3',
+        'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', ''),
         'OS_IDENTITY_API_VERSION': '3',
         'OS_IMAGE_API_VERSION': constants.DEFAULT_IMAGE_API_VERSION,
         'OS_VOLUME_API_VERSION': constants.DEFAULT_VOLUME_API_VERSION,
