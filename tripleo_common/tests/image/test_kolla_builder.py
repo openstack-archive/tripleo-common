@@ -182,6 +182,13 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 '/latest',
                 'openshift_etcd_image': 'etcd',
                 'openshift_etcd_tag': 'latest',
+                'openshift_gluster_namespace': 'docker.io/gluster',
+                'openshift_gluster_image': 'gluster-centos',
+                'openshift_gluster_block_image': 'glusterblock-provisioner',
+                'openshift_gluster_tag': 'latest',
+                'openshift_heketi_namespace': 'docker.io/heketi',
+                'openshift_heketi_image': 'heketi',
+                'openshift_heketi_tag': 'latest',
             },
             builder.container_images_template_inputs()
         )
@@ -201,10 +208,20 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_base_image': 'ose',
                 'openshift_cockpit_namespace': 'docker.io/openshift-cockpit',
                 'openshift_cockpit_image': 'cockpit',
-                'openshift_cockpit_tag': 'tag',
+                'openshift_cockpit_tag': 'cockpit-tag',
                 'openshift_etcd_namespace': 'registry.access.redhat.com/rhel7',
                 'openshift_etcd_image': 'openshift-etcd',
-                'openshift_etcd_tag': 'tag',
+                'openshift_etcd_tag': 'etcd-tag',
+                'openshift_gluster_namespace':
+                'registry.access.redhat.com/rhgs3',
+                'openshift_gluster_image': 'rhgs-server-rhel7',
+                'openshift_gluster_block_image':
+                'rhgs-gluster-block-prov-rhel7',
+                'openshift_gluster_tag': 'gluster-tag',
+                'openshift_heketi_namespace':
+                'registry.access.redhat.com/rhgs3',
+                'openshift_heketi_image': 'rhgs-volmanager-rhel7',
+                'openshift_heketi_tag': 'heketi-tag',
             },
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleomaster',
@@ -220,10 +237,17 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 openshift_base_image='ose',
                 openshift_cockpit_namespace='docker.io/openshift-cockpit',
                 openshift_cockpit_image='cockpit',
-                openshift_cockpit_tag='tag',
+                openshift_cockpit_tag='cockpit-tag',
                 openshift_etcd_namespace='registry.access.redhat.com/rhel7',
                 openshift_etcd_image='openshift-etcd',
-                openshift_etcd_tag='tag',
+                openshift_etcd_tag='etcd-tag',
+                openshift_gluster_namespace='registry.access.redhat.com/rhgs3',
+                openshift_gluster_image='rhgs-server-rhel7',
+                openshift_gluster_block_image='rhgs-gluster-block-prov-rhel7',
+                openshift_gluster_tag='gluster-tag',
+                openshift_heketi_namespace='registry.access.redhat.com/rhgs3',
+                openshift_heketi_image='rhgs-volmanager-rhel7',
+                openshift_heketi_tag='heketi-tag',
             )
         )
 
