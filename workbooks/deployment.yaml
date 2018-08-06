@@ -362,7 +362,7 @@ workflows:
           stack_id: <% $.plan_name %>
           output_key: BlacklistedHostnames
         publish:
-          blacklisted_hostnames: <% task().result.output.output_value %>
+          blacklisted_hostnames: <% task().result.output.output_value.where($ != "") %>
         on-success: get_config
         on-error: send_message
         publish-on-error:
