@@ -50,9 +50,13 @@ get_url_from_vhost () {
   server_name=$(awk '/ServerName/ {print $2}' $vhost_file)
   ssl_enabled=$(awk '/SSLEngine/ {print $2}' $vhost_file)
   bind_port=$(grep -h "<VirtualHost .*>" $vhost_file | sed 's/<VirtualHost .*:\(.*\)>/\1/')
+  wsgi_alias=$(awk '/WSGIScriptAlias/ {print $2}' $vhost_file)
   proto=http
   if [[ $ssl_enabled == "on" ]]; then
     proto=https
   fi
-  echo ${proto}://${server_name}:${bind_port}/
+  if [[ $wsgi_alias != "/" ]]; then
+    wsgi_alias="${wsgi_alias}/"
+  fi
+  echo ${proto}://${server_name}:${bind_port}${wsgi_alias}
 }
