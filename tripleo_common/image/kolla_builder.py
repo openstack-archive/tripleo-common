@@ -153,7 +153,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             output_env_file='image_params',
             output_images_file='upload_data',
             tag_from_label=cip_entry.get('tag_from_label'),
-            modify_append_tag=modify_append_tag,
+            append_tag=modify_append_tag,
             modify_role=modify_role,
             modify_vars=modify_vars,
             modify_only_with_labels=modify_only_with_labels,
@@ -190,7 +190,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              pull_source=None, push_destination=None,
                              mapping_args=None, output_env_file=None,
                              output_images_file=None, tag_from_label=None,
-                             modify_append_tag=None, modify_role=None,
+                             append_tag=None, modify_role=None,
                              modify_vars=None, modify_only_with_labels=None):
     """Perform container image preparation
 
@@ -210,7 +210,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     :param output_images_file: key to use for image upload data
     :param tag_from_label: string when set will trigger tag discovery on every
                            image
-    :param modify_append_tag: string to append to the tag for the destination
+    :param append_tag: string to append to the tag for the destination
                               image
     :param modify_role: string of ansible role name to run during upload before
                         the push to destination
@@ -270,6 +270,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
             images, modify_only_with_labels)
 
     params = {}
+    modify_append_tag = append_tag
     for entry in result:
         imagename = entry.get('imagename', '')
         append_tag = ''
