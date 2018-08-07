@@ -11,7 +11,6 @@ workflows:
 
     input:
       - container
-      - container_registry: ''
       - ceph_ansible_playbook
       - timeout: 240
       - queue_name: tripleo
