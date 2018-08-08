@@ -108,8 +108,7 @@ class UpdateStackActionTest(base.TestCase):
         mock_object_client.return_value = mock_swift
 
         action = package_update.UpdateStackAction(self.timeout, fake_registry,
-                                                  container=self.container,
-                                                  ceph_ansible_playbook=None)
+                                                  container=self.container)
         action.run(mock_ctx)
         mock_updateinenv.assert_called_once_with(
             mock_swift, env, 'parameter_defaults',
