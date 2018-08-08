@@ -139,8 +139,8 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'openstack-trove-ui'
 ] %}
 
-# Required for nova migration
-{% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
+# Required for nova migration & TLS everywhere
+{% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server', 'python-novajoin'] %}
 {% set nova_libvirt_packages_append = ['openstack-nova-migration'] %}
 
 ############################ service container footers #########################
