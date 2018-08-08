@@ -44,7 +44,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # NOTE: Mistral executor needs to run nova-manage cells_v2 commands on
 # the undercloud baremetal workflows. Undercloud mistral executor needs to run
 # container image operations during overcloud deploy
-{% set mistral_executor_packages_append = ['openstack-nova-common', 'docker'] %}
+{% set mistral_executor_packages_append = ['openstack-nova-common', 'docker', 'podman'] %}
 
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
@@ -79,11 +79,11 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% set neutron_metadata_agent_ovn_packages_append = ['docker'] %}
-{% set neutron_l3_agent_packages_append = ['docker'] %}
+{% set neutron_metadata_agent_ovn_packages_append = ['docker', 'podman'] %}
+{% set neutron_l3_agent_packages_append = ['docker', 'podman'] %}
 # Kolla doesn't currently neutron_dhcp_agent_packages on CentOS so the append
 # isn't valid here.
-{% set neutron_dhcp_agent_packages = ['docker'] %}
+{% set neutron_dhcp_agent_packages = ['docker', 'podman'] %}
 
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
 # redis resource-agent requires pidof
