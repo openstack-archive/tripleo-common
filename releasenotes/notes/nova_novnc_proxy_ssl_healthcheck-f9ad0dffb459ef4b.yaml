@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    If nova novnc proxy is configured to ssl only, (see LP 178570)
+    we need to make sure to also use ssl with the healthcheck script.
+    With this change we verify if ssl_only is configured in nova.conf
+    and set https as the proto to use for the novnc healthcheck.
