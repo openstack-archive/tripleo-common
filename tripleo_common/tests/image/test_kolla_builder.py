@@ -534,6 +534,40 @@ class TestPrepare(base.TestCase):
         )
 
     @mock.patch('requests.get')
+    @mock.patch('tripleo_common.image.image_uploader.get_undercloud_registry')
+    def test_prepare_push_dest_discover(self, mock_gur, mock_get):
+        mock_gur.return_value = '192.0.2.0:8787'
+        self.assertEqual({
+            'container_images.yaml': [{
+                'imagename': 'docker.io/t/p-nova-api:l',
+                'push_destination': '192.0.2.0:8787',
+            }],
+            'environments/containers-default-parameters.yaml': {
+                'DockerNovaApiImage':
+                '192.0.2.0:8787/t/p-nova-api:l',
+                'DockerNovaConfigImage':
+                '192.0.2.0:8787/t/p-nova-api:l',
+                'DockerNovaMetadataConfigImage':
+                u'192.0.2.0:8787/t/p-nova-api:l',
+                'DockerNovaMetadataImage':
+                '192.0.2.0:8787/t/p-nova-api:l'
+            }},
+            kb.container_images_prepare(
+                template_file=TEMPLATE_PATH,
+                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_images_file='container_images.yaml',
+                service_filter=['OS::TripleO::Services::NovaApi'],
+                push_destination=True,
+                mapping_args={
+                    'namespace': 'docker.io/t',
+                    'name_prefix': 'p',
+                    'name_suffix': '',
+                    'tag': 'l',
+                }
+            )
+        )
+
+    @mock.patch('requests.get')
     def test_prepare_ceph(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [{
@@ -782,6 +816,7 @@ class TestPrepare(base.TestCase):
         }
         env = {
             'parameter_defaults': {
+                'LocalContainerRegistry': '192.0.2.1',
                 'ContainerImagePrepare': [{
                     'set': mapping_args,
                     'tag_from_label': 'foo',
@@ -790,7 +825,7 @@ class TestPrepare(base.TestCase):
                     'set': mapping_args,
                     'tag_from_label': 'bar',
                     'excludes': ['nova', 'neutron'],
-                    'push_destination': '192.0.2.1:8787',
+                    'push_destination': True,
                     'modify_role': 'add-foo-plugin',
                     'modify_only_with_labels': ['kolla_version'],
                     'modify_vars': {'foo_version': '1.0.1'}
