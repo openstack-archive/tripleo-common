@@ -897,6 +897,25 @@ class NodesTest(base.TestCase):
                          'redfish_username': 'test',
                          'redfish_system_id': '/redfish/v1/Systems/1'})
 
+    def test_register_ironic_node_redfish_without_credentials(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'redfish'
+        node['pm_system_id'] = '/redfish/v1/Systems/1'
+        del node['pm_user']
+        del node['pm_password']
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='redfish', name='node1', properties=node_properties,
+            resource_class='baremetal',
+            driver_info={'redfish_address': 'foo.bar',
+                         'redfish_system_id': '/redfish/v1/Systems/1'})
+
     def test_register_ironic_node_with_physical_network(self):
         node = self._get_node()
         node['ports'] = [{'physical_network': 'subnet1', 'address': 'aaa'}]

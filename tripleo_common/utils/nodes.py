@@ -180,7 +180,7 @@ class RedfishDriverInfo(DriverInfo):
             'pm_password': 'redfish_password',
             'pm_system_id': 'redfish_system_id'
         }
-        mandatory_fields = list(mapping)
+        mandatory_fields = ['pm_addr', 'pm_system_id']
 
         super(RedfishDriverInfo, self).__init__(
             'redfish', mapping,
