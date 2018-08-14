@@ -146,6 +146,42 @@ workflows:
           payload:
             result: <% $.get('result', '') %>
 
+  get_flattened_parameters:
+    description: Workflow to retreive a list of flattened parameters
+
+    input:
+      - plan: overcloud
+      - queue_name: tripleo
+
+    output:
+      flattened_parameters: <% $.flattened_parameters %>
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_flattened_parameters:
+        action: tripleo.parameters.get_flatten container=<% $.plan %>
+        on-success: send_message
+        publish:
+          status: SUCCESS
+          message: <% task().result %>
+          flattened_parameters: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS')
+          execution: <% execution() %>
+          messages: <% $.get('message', '') %>
+          payload:
+            flattened_parameters: <% $.get('flattened_parameters', []) %>
+
   _derive_parameters_per_role:
     description: >
       Workflow which runs per role to get the introspection data on the first matching node assigned to role.

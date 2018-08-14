@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Creates a worflow to get flattened deployment parameters, so the related
+    action does not need to be called directly.
