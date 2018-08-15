@@ -135,6 +135,12 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
     for cip_entry in cip:
         mapping_args = cip_entry.get('set')
         push_destination = cip_entry.get('push_destination')
+        # use the configured registry IP as the discovered registry
+        # if it is available
+        if push_destination and isinstance(push_destination, bool):
+            local_registry_ip = pd.get('LocalContainerRegistry')
+            if local_registry_ip:
+                push_destination = '%s:8787' % local_registry_ip
         pull_source = cip_entry.get('pull_source')
         modify_role = cip_entry.get('modify_role')
         modify_vars = cip_entry.get('modify_vars')
@@ -286,6 +292,10 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
         if pull_source:
             entry['pull_source'] = pull_source
         if push_destination:
+            # substitute discovered registry if push_destination is set to true
+            if isinstance(push_destination, bool):
+                push_destination = image_uploader.get_undercloud_registry()
+
             entry['push_destination'] = push_destination
             # replace the host portion of the imagename with the
             # push_destination, since that is where they will be uploaded to
