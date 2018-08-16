@@ -32,6 +32,26 @@ from tripleo_common.utils import plan as plan_utils
 LOG = logging.getLogger(__name__)
 
 
+def default_image_params():
+    def ffunc(entry):
+        return entry
+
+    template_file = os.path.join(sys.prefix, 'share', 'tripleo-common',
+                                 'container-images',
+                                 'overcloud_containers.yaml.j2')
+
+    builder = kolla_builder.KollaImageBuilder([template_file])
+    result = builder.container_images_from_template(filter=ffunc)
+
+    params = {}
+    for entry in result:
+        imagename = entry.get('imagename', '')
+        if 'params' in entry:
+            for p in entry.pop('params'):
+                params[p] = imagename
+    return params
+
+
 class PrepareContainerImageEnv(base.TripleOAction):
     """Populates env parameters with results from container image prepare
 
@@ -44,22 +64,7 @@ class PrepareContainerImageEnv(base.TripleOAction):
 
     def run(self, context):
 
-        def ffunc(entry):
-            return entry
-
-        template_file = os.path.join(sys.prefix, 'share', 'tripleo-common',
-                                     'container-images',
-                                     'overcloud_containers.yaml.j2')
-
-        builder = kolla_builder.KollaImageBuilder([template_file])
-        result = builder.container_images_from_template(filter=ffunc)
-
-        params = {}
-        for entry in result:
-            imagename = entry.get('imagename', '')
-            if 'params' in entry:
-                for p in entry.pop('params'):
-                    params[p] = imagename
+        params = default_image_params()
         swift = self.get_object_client(context)
         try:
             swift.put_object(
@@ -122,9 +127,16 @@ class PrepareContainerImageParameters(base.TripleOAction):
             env_files, env = plan_utils.process_environments_and_files(
                 swift, env_paths)
 
+            # ensure every image parameter has a default value, even if prepare
+            # didn't return it
+            params = default_image_params()
+
             role_data = self._get_role_data(swift)
             image_params = kolla_builder.container_images_prepare_multi(
                 env, role_data, dry_run=True)
+            if image_params:
+                params.update(image_params)
+
         except Exception as err:
             LOG.exception("Error occurred while processing plan files.")
             return actions.Result(error=six.text_type(err))
@@ -138,7 +150,7 @@ class PrepareContainerImageParameters(base.TripleOAction):
                 self.container,
                 constants.CONTAINER_DEFAULTS_ENVIRONMENT,
                 yaml.safe_dump(
-                    {'parameter_defaults': image_params},
+                    {'parameter_defaults': params},
                     default_flow_style=False
                 )
             )

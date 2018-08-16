@@ -133,7 +133,10 @@ class PrepareContainerImageParametersTest(base.TestCase):
     @mock.patch("tripleo_common.utils.plan.get_env", autospec=True)
     @mock.patch("tripleo_common.image.kolla_builder."
                 "container_images_prepare_multi")
-    def test_run(self, prepare, get_env, update_action, goc, grd):
+    @mock.patch("tripleo_common.image.kolla_builder.KollaImageBuilder")
+    def test_run(self, kib, prepare, get_env, update_action, goc, grd):
+        builder = kib.return_value
+        builder.container_images_from_template.return_value = image_entries
         plan = {
             'version': '1.0',
             'environments': [],
@@ -145,7 +148,12 @@ class PrepareContainerImageParametersTest(base.TestCase):
             {'path': 'environments/containers-default-parameters.yaml'},
             {'path': 'user-environment.yaml'}
         ]}
-        image_params = {'FooContainerImage': '192.0.2.1/foo/image'}
+        image_params = {
+            'FooContainerImage': '192.0.2.1/foo/image',
+            'DockerNovaComputeImage': 't/cb-nova-compute:liberty',
+            'DockerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
+            'DockerNovaLibvirtImage': 't/cb-nova-libvirt:liberty',
+        }
         image_env_contents = yaml.safe_dump(
             {'parameter_defaults': image_params},
             default_flow_style=False
