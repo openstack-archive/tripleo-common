@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Adds nova_metadata healthcheck script when nova metadata api is run via
+    httpd wsgi to check service status.
