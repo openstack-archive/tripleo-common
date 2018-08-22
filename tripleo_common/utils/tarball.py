@@ -35,7 +35,7 @@ def create_tarball(directory, filename, options='-czf',
 def tarball_extract_to_swift_container(object_client, filename, container):
     LOG.debug('Uploading filename %s to Swift container %s' % (filename,
                                                                container))
-    with open(filename, 'r') as f:
+    with open(filename, 'rb') as f:
         object_client.put_object(
             container=container,
             obj='',
