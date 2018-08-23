@@ -34,6 +34,20 @@ SAMPLE_ROLE = """
   ServicesDefault:
     - OS::TripleO::Services::Ntp
 """
+SAMPLE_ROLE_NETWORK_DICT = """
+###############################################################################
+# Role: sample                                                                #
+###############################################################################
+- name: sample
+  description: |
+    Sample!
+  networks:
+    InternalApi:
+      subnet: internal_api_subnet
+  HostnameFormatDefault: '%stackname%-sample-%index%'
+  ServicesDefault:
+    - OS::TripleO::Services::Ntp
+"""
 SAMPLE_GENERATED_ROLE = """
 ###############################################################################
 # Role: sample                                                                #
@@ -53,6 +67,16 @@ SAMPLE_ROLE_OBJ = {
     'description': 'Sample!\n',
     'name': 'sample',
     'networks': ['InternalApi']
+}
+SAMPLE_ROLE_OBJ_NETWORK_DICT = {
+    'HostnameFormatDefault': '%stackname%-sample-%index%',
+    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'description': 'Sample!\n',
+    'name': 'sample',
+    'networks': {
+        'InternalApi': {
+            'subnet': 'internal_api_subnet'}
+    }
 }
 
 
@@ -111,6 +135,10 @@ class TestRolesUtils(base.TestCase):
         role = rolesutils.validate_role_yaml(SAMPLE_ROLE)
         self.assertEqual(SAMPLE_ROLE_OBJ, role)
 
+    def test_validate_role_with_network_dict(self):
+        role = rolesutils.validate_role_yaml(SAMPLE_ROLE_NETWORK_DICT)
+        self.assertEqual(SAMPLE_ROLE_OBJ_NETWORK_DICT, role)
+
     def test_validate_role_yaml_with_file(self):
         m = mock.mock_open(read_data=SAMPLE_ROLE)
         with mock.patch('tripleo_common.utils.roles.open', m):
@@ -130,6 +158,12 @@ class TestRolesUtils(base.TestCase):
     def test_validate_role_yaml_invalid_type(self):
         role = yaml.safe_load(SAMPLE_ROLE)
         role[0]['CountDefault'] = 'should not be a string'
+        self.assertRaises(RoleMetadataError, rolesutils.validate_role_yaml,
+                          yaml.safe_dump(role))
+
+    def test_validate_role_yaml_invalid_network_type(self):
+        role = yaml.safe_load(SAMPLE_ROLE)
+        role[0]['networks'] = 'should not be a string'
         self.assertRaises(RoleMetadataError, rolesutils.validate_role_yaml,
                           yaml.safe_dump(role))
 

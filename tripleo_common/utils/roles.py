@@ -161,7 +161,7 @@ def validate_role_yaml(role_data=None, role_path=None):
         'ServicesDefault': {'type': list},
         'tags': {'type': list},
         'description': {'type': six.string_types},
-        'networks': {'type': list},
+        'networks': {'type': [list, dict]},
         'networks_skip_config': {'type': list},
     }
 
@@ -170,8 +170,16 @@ def validate_role_yaml(role_data=None, role_path=None):
 
     # validate numeric metadata is numeric
     for k in schema:
-        if k in role and not isinstance(role[k], schema[k]['type']):
-            msg = "Role '{}': {} is not of expected type {}".format(
-                role['name'], k, schema[k]['type'])
-            raise RoleMetadataError(msg)
+        if k in role:
+            if k == 'networks':
+                if not (isinstance(role[k], schema[k]['type'][0]) or
+                        isinstance(role[k], schema[k]['type'][1])):
+                    msg = "Role '{}': {} is not of expected type {}".format(
+                        role['name'], k, schema[k]['type'])
+                    raise RoleMetadataError(msg)
+            else:
+                if not isinstance(role[k], schema[k]['type']):
+                    msg = "Role '{}': {} is not of expected type {}".format(
+                        role['name'], k, schema[k]['type'])
+                    raise RoleMetadataError(msg)
     return role
