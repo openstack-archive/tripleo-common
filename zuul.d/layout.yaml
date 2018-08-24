@@ -4,10 +4,10 @@
       - tripleo-multinode-baremetal-minimal
       - tripleo-multinode-container-minimal
       - check-requirements
-      - publish-openstack-sphinx-docs
+      - publish-openstack-docs-pti
       - openstack-python-jobs
       - openstack-python35-jobs
-      - release-notes-jobs
+      - release-notes-jobs-python3
     check:
       jobs:
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
