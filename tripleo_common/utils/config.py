@@ -208,6 +208,14 @@ class Config(object):
                     filepath = os.path.join(role_path, 'step_config.pp')
                     with self._open_file(filepath) as step_config:
                         step_config.write(role[config])
+                elif config == 'ansible_group_vars':
+                    # NOTE(aschultz): ansible group vars are for specific role
+                    # services so we merge them in with the others so they
+                    # end up in the role vars. This means the last var
+                    # definition wins and will override them all.
+                    if role_name not in role_group_vars:
+                        role_group_vars[role_name] = {}
+                    role_group_vars[role_name].update(role[config])
                 else:
                     if 'upgrade_tasks' in config:
                         filepath = os.path.join(role_path, '%s_playbook.yaml' %
