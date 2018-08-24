@@ -47,6 +47,13 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # container image operations during overcloud deploy
 {% set mistral_executor_packages_append = ['openstack-nova-common', 'docker', 'podman'] %}
 
+# NOTE: Logrotate-crond needs to restart some non-SIGHUP friendly containers
+# to make them reopen log files after the logs rotated
+{% set cron_packages_append = ['docker'] %}
+
+# NOTE: Split this apart because we'll need to backport docker but not podman
+{% set cron_packages_append = cron_packages_append|default([]) + ['podman'] %}
+
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
 # NOTE(mandre) Apache cleanup done below in swift_proxy_server_footer block
