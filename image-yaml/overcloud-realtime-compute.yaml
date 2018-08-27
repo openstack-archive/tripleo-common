@@ -15,7 +15,7 @@ disk_images:
       - dynamic-login
       - iptables
       - enable-packages-install
-      - pip-and-virtualenv-override
+      - override-pip-and-virtualenv
       - dracut-regenerate
       - remove-machine-id
       - remove-resolvconf

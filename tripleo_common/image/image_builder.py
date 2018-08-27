@@ -81,7 +81,6 @@ class DibImageBuilder(ImageBuilder):
         if elements_path is None:
             env['ELEMENTS_PATH'] = os.pathsep.join([
                 "/usr/share/tripleo-puppet-elements",
-                "/usr/share/instack-undercloud",
                 '/usr/share/tripleo-image-elements',
             ])
             os.environ.update(env)
