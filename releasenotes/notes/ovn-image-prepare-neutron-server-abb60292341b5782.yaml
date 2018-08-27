@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Preparing docker image containers with just OVN now also generates the
+    corresponding Neutron Server OVN docker image.
