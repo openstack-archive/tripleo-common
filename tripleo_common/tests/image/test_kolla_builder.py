@@ -173,7 +173,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'current-tripleo',
                 'neutron_driver': None,
                 'openshift_namespace': 'docker.io/openshift',
-                'openshift_tag': 'v3.9.0',
+                'openshift_tag': 'v3.10.0',
                 'openshift_base_image': 'origin',
                 'openshift_cockpit_namespace': 'docker.io/cockpit',
                 'openshift_cockpit_image': 'kubernetes',
