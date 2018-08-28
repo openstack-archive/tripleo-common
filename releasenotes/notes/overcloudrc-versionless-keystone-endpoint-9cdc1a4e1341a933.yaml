@@ -1,0 +1,7 @@
+---
+other:
+  - |
+    Switched to a versionless Keystone url in the overcloudrc. Previously,
+    /v3 was being appended to the OS_AUTH_URL url but is not required when
+    configuring OS_IDENTITY_API_VERSION
+
