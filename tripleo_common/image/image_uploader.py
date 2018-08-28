@@ -372,9 +372,9 @@ class DockerImageUploader(ImageUploader):
         out, err = process.communicate()
         if process.returncode != 0:
             not_found_msgs = (
-                'manifest unknown',
+                u'manifest unknown',
                 # returned by docker.io
-                'requested access to the resource is denied'
+                u'requested access to the resource is denied'
             )
             if any(n in err for n in not_found_msgs):
                 raise ImageNotFoundException('Not found image: %s\n%s' %
