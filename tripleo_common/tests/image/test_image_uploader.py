@@ -13,13 +13,11 @@
 #   under the License.
 #
 
-import inspect
 import json
 import mock
 import operator
 import requests
 import six
-import tenacity
 import urllib3
 
 from oslo_concurrency import processutils
@@ -166,6 +164,10 @@ class TestDockerImageUploader(base.TestCase):
     def setUp(self):
         super(TestDockerImageUploader, self).setUp()
         self.uploader = image_uploader.DockerImageUploader()
+        self.uploader._push.retry.sleep = mock.Mock()
+        self.uploader._pull.retry.sleep = mock.Mock()
+        self.uploader._inspect.retry.sleep = mock.Mock()
+
         self.patcher = mock.patch('tripleo_common.image.image_uploader.Client')
         self.dockermock = self.patcher.start()
 
@@ -636,8 +638,6 @@ class TestDockerImageUploader(base.TestCase):
             ])
 
     def test_pull_retry(self):
-        orig_call = tenacity.wait.wait_random_exponential.__call__
-        orig_argspec = inspect.getargspec(orig_call)
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
@@ -648,22 +648,16 @@ class TestDockerImageUploader(base.TestCase):
             ['{"error": "ouch"}'],
             ['{"status": "done"}']
         ]
-        with mock.patch('tenacity.wait.wait_random_exponential.__call__') as f:
-            f.return_value = 0
-            with mock.patch('inspect.getargspec') as mock_args:
-                mock_args.return_value = orig_argspec
+        self.uploader._pull(dockerc, image)
 
-                self.uploader._pull(dockerc, image)
-
-                self.assertEqual(dockerc.pull.call_count, 5)
-                dockerc.pull.assert_has_calls([
-                    mock.call(image, tag=None, stream=True)
-                ])
+        self.assertEqual(dockerc.pull.call_count, 5)
+        dockerc.pull.assert_has_calls([
+            mock.call(image, tag=None, stream=True)
+        ])
 
     def test_pull_retry_failure(self):
-        orig_call = tenacity.wait.wait_random_exponential.__call__
-        orig_argspec = inspect.getargspec(orig_call)
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+
         dockerc = self.dockermock.return_value
         dockerc.pull.side_effect = [
             urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
@@ -672,23 +666,15 @@ class TestDockerImageUploader(base.TestCase):
             urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
             urllib3.exceptions.ReadTimeoutError('p', '/foo', 'ouch'),
         ]
+        self.assertRaises(urllib3.exceptions.ReadTimeoutError,
+                          self.uploader._pull, dockerc, image)
 
-        with mock.patch('tenacity.wait.wait_random_exponential.__call__') as f:
-            f.return_value = 0
-            with mock.patch('inspect.getargspec') as mock_args:
-                mock_args.return_value = orig_argspec
-
-                self.assertRaises(urllib3.exceptions.ReadTimeoutError,
-                                  self.uploader._pull, dockerc, image)
-
-                self.assertEqual(dockerc.pull.call_count, 5)
-                dockerc.pull.assert_has_calls([
-                    mock.call(image, tag=None, stream=True)
-                ])
+        self.assertEqual(dockerc.pull.call_count, 5)
+        dockerc.pull.assert_has_calls([
+            mock.call(image, tag=None, stream=True)
+        ])
 
     def test_push_retry(self):
-        orig_call = tenacity.wait.wait_random_exponential.__call__
-        orig_argspec = inspect.getargspec(orig_call)
         image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
@@ -699,21 +685,14 @@ class TestDockerImageUploader(base.TestCase):
             ['{"error": "ouch"}'],
             ['{"status": "done"}']
         ]
-        with mock.patch('tenacity.wait.wait_random_exponential.__call__') as f:
-            f.return_value = 0
-            with mock.patch('inspect.getargspec') as mock_args:
-                mock_args.return_value = orig_argspec
+        self.uploader._push(dockerc, image)
 
-                self.uploader._push(dockerc, image)
-
-                self.assertEqual(dockerc.push.call_count, 5)
-                dockerc.push.assert_has_calls([
-                    mock.call(image, tag=None, stream=True)
-                ])
+        self.assertEqual(dockerc.push.call_count, 5)
+        dockerc.push.assert_has_calls([
+            mock.call(image, tag=None, stream=True)
+        ])
 
     def test_push_retry_failure(self):
-        orig_call = tenacity.wait.wait_random_exponential.__call__
-        orig_argspec = inspect.getargspec(orig_call)
         image = 'docker.io/tripleoupstream/heat-docker-agents-centos'
 
         dockerc = self.dockermock.return_value
@@ -724,18 +703,13 @@ class TestDockerImageUploader(base.TestCase):
             ['{"error": "ouch"}'],
             ['{"error": "ouch"}'],
         ]
-        with mock.patch('tenacity.wait.wait_random_exponential.__call__') as f:
-            f.return_value = 0
-            with mock.patch('inspect.getargspec') as mock_args:
-                mock_args.return_value = orig_argspec
+        self.assertRaises(ImageUploaderException,
+                          self.uploader._push, dockerc, image)
 
-                self.assertRaises(ImageUploaderException,
-                                  self.uploader._push, dockerc, image)
-
-                self.assertEqual(dockerc.push.call_count, 5)
-                dockerc.push.assert_has_calls([
-                    mock.call(image, tag=None, stream=True)
-                ])
+        self.assertEqual(dockerc.push.call_count, 5)
+        dockerc.push.assert_has_calls([
+            mock.call(image, tag=None, stream=True)
+        ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'DockerImageUploader._inspect')
