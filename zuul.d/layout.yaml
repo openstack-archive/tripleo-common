@@ -1,9 +1,13 @@
-
 - project:
     templates:
       - tripleo-undercloud-jobs
       - tripleo-multinode-baremetal-minimal
       - tripleo-multinode-container-minimal
+      - check-requirements
+      - publish-openstack-sphinx-docs
+      - openstack-python-jobs
+      - openstack-python35-jobs
+      - release-notes-jobs
     check:
       jobs:
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
@@ -26,6 +30,9 @@
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             files:
               - ^container-images/.*$
+        - openstack-tox-cover:
+            voting: false
+
     gate:
       queue: tripleo
       jobs:
