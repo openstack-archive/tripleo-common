@@ -113,47 +113,64 @@ class Enabled(base.TestCase):
 class ListValidationsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.validations.load_validations')
-    def test_run_default(self, mock_load_validations):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_default(self, mock_get_object_client, mock_load_validations):
         mock_ctx = mock.MagicMock()
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        mock_get_object_client.return_value = swiftclient
         mock_load_validations.return_value = 'list of validations'
-        action = validations.ListValidationsAction()
+
+        action = validations.ListValidationsAction(plan='overcloud')
         self.assertEqual('list of validations', action.run(mock_ctx))
-        mock_load_validations.assert_called_once_with(groups=None)
+        mock_load_validations.assert_called_once_with(
+            mock_get_object_client(), plan='overcloud', groups=None)
 
     @mock.patch('tripleo_common.utils.validations.load_validations')
-    def test_run_groups(self, mock_load_validations):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_groups(self, mock_get_object_client, mock_load_validations):
         mock_ctx = mock.MagicMock()
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        mock_get_object_client.return_value = swiftclient
         mock_load_validations.return_value = 'list of validations'
-        action = validations.ListValidationsAction(groups=['group1',
-                                                           'group2'])
+
+        action = validations.ListValidationsAction(
+            plan='overcloud', groups=['group1', 'group2'])
         self.assertEqual('list of validations', action.run(mock_ctx))
-        mock_load_validations.assert_called_once_with(groups=['group1',
-                                                              'group2'])
+        mock_load_validations.assert_called_once_with(
+            mock_get_object_client(), plan='overcloud',
+            groups=['group1', 'group2'])
 
 
 class ListGroupsActionTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.validations.load_validations')
-    def test_run(self, mock_load_validations):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run(self, mock_get_object_client, mock_load_validations):
         mock_ctx = mock.MagicMock()
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        mock_get_object_client.return_value = swiftclient
         mock_load_validations.return_value = [
             test_validations.VALIDATION_GROUPS_1_2_PARSED,
             test_validations.VALIDATION_GROUP_1_PARSED,
             test_validations.VALIDATION_WITH_METADATA_PARSED]
-        action = validations.ListGroupsAction()
-        self.assertEqual(set(['group1', 'group2']), action.run(mock_ctx))
-        mock_load_validations.assert_called_once_with()
+
+        action = validations.ListGroupsAction(plan='overcloud')
+        self.assertEqual({'group1', 'group2'}, action.run(mock_ctx))
+        mock_load_validations.assert_called_once_with(
+            mock_get_object_client(), plan='overcloud')
 
 
 class RunValidationActionTest(base.TestCase):
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.utils.validations.write_identity_file')
     @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
     @mock.patch('tripleo_common.utils.validations.run_validation')
     def test_run(self, mock_run_validation, mock_cleanup_identity_file,
-                 mock_write_identity_file, get_workflow_client_mock):
+                 mock_write_identity_file, mock_get_object_client,
+                 get_workflow_client_mock):
         mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
@@ -161,6 +178,8 @@ class RunValidationActionTest(base.TestCase):
         mistral.environments.get.return_value = environment(variables={
             'private_key': 'shhhh'
         })
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        mock_get_object_client.return_value = swiftclient
         mock_write_identity_file.return_value = 'identity_file_path'
         mock_run_validation.return_value = 'output', 'error'
         action = validations.RunValidationAction('validation')
@@ -173,6 +192,7 @@ class RunValidationActionTest(base.TestCase):
         self.assertEqual(expected, action.run(mock_ctx))
         mock_write_identity_file.assert_called_once_with('shhhh')
         mock_run_validation.assert_called_once_with(
+            mock_get_object_client(),
             'validation',
             'identity_file_path',
             constants.DEFAULT_CONTAINER_NAME,
@@ -182,11 +202,13 @@ class RunValidationActionTest(base.TestCase):
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.utils.validations.write_identity_file')
     @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
     @mock.patch('tripleo_common.utils.validations.run_validation')
     def test_run_failing(self, mock_run_validation, mock_cleanup_identity_file,
-                         mock_write_identity_file, get_workflow_client_mock):
+                         mock_write_identity_file, mock_get_object_client,
+                         get_workflow_client_mock):
         mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
         get_workflow_client_mock.return_value = mistral
@@ -194,6 +216,8 @@ class RunValidationActionTest(base.TestCase):
         mistral.environments.get.return_value = environment(variables={
             'private_key': 'shhhh'
         })
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        mock_get_object_client.return_value = swiftclient
         mock_write_identity_file.return_value = 'identity_file_path'
         mock_run_validation.side_effect = ProcessExecutionError(
             stdout='output', stderr='error')
@@ -207,6 +231,7 @@ class RunValidationActionTest(base.TestCase):
         self.assertEqual(expected, action.run(mock_ctx))
         mock_write_identity_file.assert_called_once_with('shhhh')
         mock_run_validation.assert_called_once_with(
+            mock_get_object_client(),
             'validation',
             'identity_file_path',
             constants.DEFAULT_CONTAINER_NAME,

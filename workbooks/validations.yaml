@@ -121,7 +121,7 @@ workflows:
 
       find_validations:
         on-success: notify_running
-        action: tripleo.validations.list_validations groups=<% $.group_names %>
+        action: tripleo.validations.list_validations plan=<% $.plan %> groups=<% $.group_names %>
         publish:
           validations: <% task().result %>
 
@@ -168,6 +168,7 @@ workflows:
   list:
     input:
       - group_names: []
+      - plan: overcloud
     output:
       validations: <% $.validations %>
     tags:
@@ -175,7 +176,7 @@ workflows:
     tasks:
       find_validations:
         on-success: send_message
-        action: tripleo.validations.list_validations groups=<% $.group_names %>
+        action: tripleo.validations.list_validations plan=<% $.plan %> groups=<% $.group_names %>
         publish:
           status: SUCCESS
           message: <% task().result %>
@@ -195,13 +196,15 @@ workflows:
             validations: <% $.get('validations', []) %>
 
   list_groups:
+    input:
+      - plan: overcloud
     output:
       groups: <% task(find_groups).result %>
     tags:
       - tripleo-common-managed
     tasks:
       find_groups:
-        action: tripleo.validations.list_groups
+        action: tripleo.validations.list_groups plan=<% $.plan %>
 
   add_validation_ssh_key_parameter:
     input:

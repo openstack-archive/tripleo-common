@@ -12,9 +12,12 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import six
+
 from mistral_lib import actions
 from mistralclient.api import base as mistralclient_api
 from oslo_concurrency.processutils import ProcessExecutionError
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
@@ -82,19 +85,34 @@ class Enabled(base.TripleOAction):
 
 class ListValidationsAction(base.TripleOAction):
     """Return a set of TripleO validations"""
-    def __init__(self, groups=None):
+    def __init__(self, plan=constants.DEFAULT_CONTAINER_NAME, groups=None):
         super(ListValidationsAction, self).__init__()
         self.groups = groups
+        self.plan = plan
 
     def run(self, context):
-        return utils.load_validations(groups=self.groups)
+        swift = self.get_object_client(context)
+        try:
+            return utils.load_validations(
+                swift, plan=self.plan, groups=self.groups)
+        except swiftexceptions.ClientException as err:
+            msg = "Error loading validations from Swift: %s" % err
+            return actions.Result(error={"msg": six.text_type(msg)})
 
 
 class ListGroupsAction(base.TripleOAction):
     """Return a set of TripleO validation groups"""
+    def __init__(self, plan=constants.DEFAULT_CONTAINER_NAME):
+        super(ListGroupsAction, self).__init__()
+        self.plan = plan
 
     def run(self, context):
-        validations = utils.load_validations()
+        swift = self.get_object_client(context)
+        try:
+            validations = utils.load_validations(swift, plan=self.plan)
+        except swiftexceptions.ClientException as err:
+            msg = "Error loading validations from Swift: %s" % err
+            return actions.Result(error={"msg": six.text_type(msg)})
         return {
             group for validation in validations
             for group in validation['groups']
@@ -110,13 +128,16 @@ class RunValidationAction(base.TripleOAction):
 
     def run(self, context):
         mc = self.get_workflow_client(context)
+        swift = self.get_object_client(context)
+
         identity_file = None
         try:
             env = mc.environments.get('ssh_keys')
             private_key = env.variables['private_key']
             identity_file = utils.write_identity_file(private_key)
 
-            stdout, stderr = utils.run_validation(self.validation,
+            stdout, stderr = utils.run_validation(swift,
+                                                  self.validation,
                                                   identity_file,
                                                   self.plan,
                                                   context)

@@ -22,6 +22,28 @@ from tripleo_common.tests import base
 from tripleo_common.utils import validations
 
 
+VALIDATION_DEFAULT = """---
+- hosts: overcloud
+  vars:
+    metadata:
+      name: First validation
+      description: Default validation
+  tasks:
+  - name: Ping the nodes
+    ping:
+"""
+
+VALIDATION_CUSTOM = """---
+- hosts: overcloud
+  vars:
+    metadata:
+      name: First validation
+      description: Custom validation
+  tasks:
+  - name: Ping the nodes
+    ping:
+"""
+
 VALIDATION_GROUP_1 = """---
 - hosts: overcloud
   vars:
@@ -138,45 +160,83 @@ class LoadValidationsTest(base.TestCase):
         value = validations.get_remaining_metadata(validation)
         self.assertEqual({}, value)
 
-    @mock.patch('glob.glob')
-    def test_load_validations_no_group(self, mock_glob):
-        mock_glob.return_value = ['VALIDATION_GROUP_1',
-                                  'VALIDATION_WITH_METADATA']
-        mock_open_context = mock.mock_open()
-        mock_open_context().read.side_effect = [VALIDATION_GROUP_1,
-                                                VALIDATION_WITH_METADATA]
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_load_validations_no_group(self, mock_get_object_client):
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        swiftclient.get_container.side_effect = (
+            ({}, []),  # no custom validations
+            ({},
+             [{'name': 'VALIDATION_GROUP_1.yaml', 'groups': ['group1']},
+              {'name': 'VALIDATION_WITH_METADATA.yaml'}]))
+        swiftclient.get_object.side_effect = (
+            ({}, VALIDATION_GROUP_1),
+            ({}, VALIDATION_WITH_METADATA),
+        )
+        mock_get_object_client.return_value = swiftclient
 
-        with mock.patch('tripleo_common.utils.validations.open',
-                        mock_open_context):
-            my_validations = validations.load_validations()
+        my_validations = validations.load_validations(
+            mock_get_object_client(), plan='overcloud')
 
         expected = [VALIDATION_GROUP_1_PARSED, VALIDATION_WITH_METADATA_PARSED]
         self.assertEqual(expected, my_validations)
 
-    @mock.patch('glob.glob')
-    def test_load_validations_group(self, mock_glob):
-        mock_glob.return_value = ['VALIDATION_GROUPS_1_2',
-                                  'VALIDATION_GROUP_1',
-                                  'VALIDATION_WITH_METADATA']
-        mock_open_context = mock.mock_open()
-        mock_open_context().read.side_effect = [VALIDATION_GROUPS_1_2,
-                                                VALIDATION_GROUP_1,
-                                                VALIDATION_WITH_METADATA]
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_load_validations_group(self, mock_get_object_client):
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        swiftclient.get_container.side_effect = (
+            ({}, []),  # no custom validations
+            ({},
+             [
+                {'name': 'VALIDATION_GROUPS_1_2.yaml',
+                 'groups': ['group1', 'group2']},
+                {'name': 'VALIDATION_GROUP_1.yaml', 'groups': ['group1']},
+                {'name': 'VALIDATION_WITH_METADATA.yaml'}
+                ]
+             )
+        )
+        swiftclient.get_object.side_effect = (
+            ({}, VALIDATION_GROUPS_1_2),
+            ({}, VALIDATION_GROUP_1),
+            ({}, VALIDATION_WITH_METADATA),
+        )
+        mock_get_object_client.return_value = swiftclient
 
-        with mock.patch('tripleo_common.utils.validations.open',
-                        mock_open_context):
-            my_validations = validations.load_validations(groups=['group1'])
+        my_validations = validations.load_validations(
+            mock_get_object_client(), plan='overcloud', groups=['group1'])
 
         expected = [VALIDATION_GROUPS_1_2_PARSED, VALIDATION_GROUP_1_PARSED]
         self.assertEqual(expected, my_validations)
 
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_load_validations_custom_gets_picked_over_default(
+            self, mock_get_object_client):
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        swiftclient.get_container.side_effect = (
+            ({}, [{'name': 'FIRST_VALIDATION.yaml'}]),
+            ({}, [{'name': 'FIRST_VALIDATION.yaml'}])
+        )
+        swiftclient.get_object.side_effect = (
+            ({}, VALIDATION_CUSTOM),
+            ({}, VALIDATION_DEFAULT)
+        )
+        mock_get_object_client.return_value = swiftclient
+
+        my_validations = validations.load_validations(
+            mock_get_object_client(), plan='overcloud')
+
+        self.assertEqual(len(my_validations), 1)
+        self.assertEqual('Custom validation', my_validations[0]['description'])
+
 
 class RunValidationTest(base.TestCase):
 
-    @mock.patch('tripleo_common.utils.validations.find_validation')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('tripleo_common.utils.validations.download_validation')
     @mock.patch('oslo_concurrency.processutils.execute')
     def test_run_validation(self, mock_execute,
-                            mock_find_validation):
+                            mock_download_validation, mock_get_object_client):
+        swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
+        mock_get_object_client.return_value = swiftclient
         Ctx = namedtuple('Ctx', 'auth_uri user_name auth_token project_name')
         mock_ctx = Ctx(
             auth_uri='auth_uri',
@@ -185,9 +245,10 @@ class RunValidationTest(base.TestCase):
             project_name='project_name'
         )
         mock_execute.return_value = 'output'
-        mock_find_validation.return_value = 'validation_path'
+        mock_download_validation.return_value = 'validation_path'
 
-        result = validations.run_validation('validation', 'identity_file',
+        result = validations.run_validation(mock_get_object_client(),
+                                            'validation', 'identity_file',
                                             'plan', mock_ctx)
         self.assertEqual('output', result)
         mock_execute.assert_called_once_with(
@@ -201,7 +262,8 @@ class RunValidationTest(base.TestCase):
             'identity_file',
             'plan'
         )
-        mock_find_validation.assert_called_once_with('validation')
+        mock_download_validation.assert_called_once_with(
+            mock_get_object_client(), 'plan', 'validation')
 
 
 class RunPatternValidatorTest(base.TestCase):
