@@ -754,6 +754,7 @@ class TestPrepare(base.TestCase):
     def test_build_service_filter(self):
         self.assertEqual(
             set([
+                'OS::TripleO::Services::HeatApi',
                 'OS::TripleO::Services::NovaApi',
                 'OS::TripleO::Services::NovaCompute',
                 'OS::TripleO::Services::OpenShift::Master',
@@ -782,6 +783,7 @@ class TestPrepare(base.TestCase):
                     'name': 'Controller',
                     'CountDefault': 1,
                     'ServicesDefault': [
+                        'OS::TripleO::Services::HeatApi',
                         'OS::TripleO::Services::NeutronApi',
                         'OS::TripleO::Services::NovaApi',
                         'OS::TripleO::Services::OpenShift::Master',
