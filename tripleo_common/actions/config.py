@@ -40,10 +40,13 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
 
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
                  config_dir=None,
-                 container_config=constants.CONFIG_CONTAINER_NAME):
+                 container_config=constants.CONFIG_CONTAINER_NAME,
+                 config_type=None):
         super(GetOvercloudConfig, self).__init__(container)
         self.container = container
         self.config_dir = config_dir
+        self.config_type = config_type
+
         if not self.config_dir:
             self.config_dir = tempfile.mkdtemp(prefix='tripleo-',
                                                suffix='-config')
@@ -72,6 +75,7 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
                    'Project: {project}'.format(user=context.user_name,
                                                project=context.project_name))
         config_path = config.download_config(self.container, self.config_dir,
+                                             self.config_type,
                                              preserve_config_dir=True,
                                              commit_message=message)
 
@@ -82,6 +86,11 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
                 self.get_object_client(context),
                 tmp_tarball.name,
                 self.container_config)
+            # Also upload the tarball to the container for use by export later
+            with open(tmp_tarball.name) as t:
+                swift.put_object(self.container_config,
+                                 '%s.tar.gz' % self.container_config,
+                                 t.read())
         if os.path.exists(config_path):
             shutil.rmtree(config_path)
 
