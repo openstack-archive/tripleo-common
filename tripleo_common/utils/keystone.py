@@ -63,26 +63,44 @@ def get_session_and_auth(context, **kwargs):
     if not context:
         raise AssertionError('context is mandatory')
 
-    project_endpoint = get_endpoint_for_project(context, **kwargs)
-    endpoint = format_url(
-        project_endpoint.url,
-        {
-            'tenant_id': context.project_id,
-            'project_id': context.project_id
-        }
-    )
+    if context.trust_id:
+        kwargs['project_name'] = None
+        kwargs['project_domain_name'] = None
+        kwargs['project_id'] = None
+        kwargs['trust_id'] = context.trust_id
+        kwargs.pop('service_name')
 
-    auth = Token(endpoint=endpoint, token=context.auth_token)
+        auth = loading.load_auth_from_conf_options(
+            CONF,
+            'keystone_authtoken',
+            **kwargs
+        )
+        session = loading.load_session_from_conf_options(
+            CONF,
+            'keystone',
+            auth=auth
+        )
+    else:
+        project_endpoint = get_endpoint_for_project(context, **kwargs)
+        endpoint = format_url(
+            project_endpoint.url,
+            {
+                'tenant_id': context.project_id,
+                'project_id': context.project_id
+            }
+        )
 
-    auth_uri = context.auth_uri or CONF.keystone_authtoken.auth_uri
-    ks_auth = Token(
-        endpoint=auth_uri,
-        token=context.auth_token
-    )
-    session = ks_session.Session(
-        auth=ks_auth,
-        verify=_determine_verify(context)
-    )
+        auth = Token(endpoint=endpoint, token=context.auth_token)
+
+        auth_uri = context.auth_uri or CONF.keystone_authtoken.auth_uri
+        ks_auth = Token(
+            endpoint=auth_uri,
+            token=context.auth_token
+        )
+        session = ks_session.Session(
+            auth=ks_auth,
+            verify=_determine_verify(context)
+        )
 
     return {
         "session": session,
@@ -117,6 +135,8 @@ def _admin_client(trust_id=None):
         if trust_id:
             # Remove project_name and project_id, since we need a trust scoped
             # auth object
+            kwargs['domain_id'] = None
+            kwargs['domain_name'] = None
             kwargs['project_name'] = None
             kwargs['project_domain_name'] = None
             kwargs['project_id'] = None
@@ -129,7 +149,7 @@ def _admin_client(trust_id=None):
         )
         sess = loading.load_session_from_conf_options(
             CONF,
-            'keystone_authtoken',
+            'keystone',
             auth=auth
         )
 
