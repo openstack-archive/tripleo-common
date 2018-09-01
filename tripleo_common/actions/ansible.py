@@ -50,6 +50,8 @@ def write_default_ansible_cfg(work_dir,
                os.path.join(work_dir, 'ansible.log'))
     config.set('defaults', 'forks', '25')
     config.set('defaults', 'timeout', '30')
+    config.set('defaults', 'bin_ansible_callbacks', 'True')
+    config.set('defaults', 'stdout_callback', 'yaml')
 
     # mistral user has no home dir set, so no place to save a known hosts file
     config.set('ssh_connection', 'ssh_args',
