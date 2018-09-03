@@ -15,7 +15,6 @@
 
 
 import jinja2
-import logging
 import os
 import re
 import subprocess
@@ -24,6 +23,8 @@ import tempfile
 import time
 import yaml
 
+from osc_lib.i18n import _
+from oslo_log import log as logging
 from tripleo_common.image import base
 from tripleo_common.image import image_uploader
 
@@ -57,6 +58,8 @@ DEFAULT_PREPARE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
 
 if os.path.isfile(DEFAULT_PREPARE_FILE):
     init_prepare_defaults(DEFAULT_PREPARE_FILE)
+
+LOG = logging.getLogger(__name__ + '.KollaImageBuilder')
 
 
 def get_enabled_services(environment, roles_data):
@@ -143,6 +146,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
     pd = environment.get('parameter_defaults', {})
     cip = pd.get('ContainerImagePrepare')
     if not cip:
+        LOG.info(_("No ContainerImagePrepare parameter defined."))
         return
 
     mirrors = {}
@@ -359,9 +363,6 @@ def detect_insecure_registries(params):
 class KollaImageBuilder(base.BaseImageManager):
     """Build images using kolla-build"""
 
-    logger = logging.getLogger(__name__ + '.KollaImageBuilder')
-    handler = logging.StreamHandler(sys.stdout)
-
     @staticmethod
     def imagename_to_regex(imagename):
         if not imagename:
@@ -473,12 +474,14 @@ class KollaImageBuilder(base.BaseImageManager):
             cmd.append('--work-dir')
             cmd.append(kolla_tmp_dir)
 
-        self.logger.info('Running %s' % ' '.join(cmd))
+        LOG.info(_('Running %s'), ' '.join(cmd))
         env = os.environ.copy()
         process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
                                    universal_newlines=True)
         out, err = process.communicate()
         if process.returncode != 0:
+            LOG.error(_('Building containers image process failed with %d rc'),
+                      process.returncode)
             raise subprocess.CalledProcessError(process.returncode, cmd, err)
 
         if template_only:
