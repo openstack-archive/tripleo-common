@@ -524,6 +524,7 @@ class TestDockerImageUploader(base.TestCase):
 
         mock_process.returncode = 1
         mock_popen.return_value = mock_process
+        mock_ansible.return_value.run.return_value = {}
 
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
         tag = 'latest'
@@ -568,7 +569,7 @@ class TestDockerImageUploader(base.TestCase):
         self.dockermock.return_value.pull.assert_called_once_with(
             image, tag=tag, stream=True)
         mock_ansible.assert_called_once_with(
-            playbook=playbook, work_dir=mock.ANY)
+            playbook=playbook, work_dir=mock.ANY, verbosity=3)
         self.dockermock.return_value.tag.assert_not_called()
         self.dockermock.return_value.push.assert_called_once_with(
             push_image,
@@ -594,7 +595,7 @@ class TestDockerImageUploader(base.TestCase):
         mock_ansible.return_value.run.side_effect = error
 
         self.assertRaises(
-            processutils.ProcessExecutionError,
+            ImageUploaderException,
             self.uploader.upload_image,
             image + ':' + tag, None, push_destination, set(), append_tag,
             'add-foo-plugin', {'foo_version': '1.0.1'}, False, 'full'

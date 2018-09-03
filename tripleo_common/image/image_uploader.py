@@ -222,7 +222,7 @@ class BaseImageUploader(ImageUploader):
         vars['source_image'] = source_image
         vars['target_image'] = target_image
         vars['modified_append_tag'] = append_tag
-        LOG.debug('Playbook variables: \n%s' % yaml.safe_dump(
+        LOG.info('Playbook variables: \n%s' % yaml.safe_dump(
             vars, default_flow_style=False))
         playbook = [{
             'hosts': 'localhost',
@@ -234,19 +234,26 @@ class BaseImageUploader(ImageUploader):
                 'vars': vars
             }]
         }]
-        LOG.debug('Playbook: \n%s' % yaml.safe_dump(
+        LOG.info('Playbook: \n%s' % yaml.safe_dump(
             playbook, default_flow_style=False))
         work_dir = tempfile.mkdtemp(prefix='tripleo-modify-image-playbook-')
         try:
             action = ansible.AnsiblePlaybookAction(
                 playbook=playbook,
-                work_dir=work_dir
+                work_dir=work_dir,
+                verbosity=3
             )
             result = action.run(None)
-            LOG.debug(result.get('stdout', ''))
-
-        finally:
+            log_path = result.get('log_path')
+            if log_path and os.path.isfile(log_path):
+                with open(log_path) as f:
+                    LOG.info(f.read())
             shutil.rmtree(work_dir)
+        except processutils.ProcessExecutionError as e:
+            LOG.error('%s\nError running playbook in directory: %s'
+                      % (e.stdout, work_dir))
+            raise ImageUploaderException(
+                'Modifying image %s failed' % target_image)
 
     @staticmethod
     def _images_match(image1, image2, insecure_registries):
