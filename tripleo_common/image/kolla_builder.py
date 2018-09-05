@@ -30,7 +30,7 @@ from tripleo_common.image import image_uploader
 CONTAINER_IMAGE_PREPARE_PARAM = [{
     'tag_from_label': 'rdo_version',
     'set': {
-        'namespace': 'docker.io/tripleomaster',
+        'namespace': 'docker.io/tripleorocky',
         'ceph_namespace': 'docker.io/ceph',
         'ceph_image': 'daemon',
         'ceph_tag': 'v3.0.3-stable-3.0-luminous-centos-7-x86_64',

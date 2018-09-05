@@ -34,14 +34,14 @@ TEMPLATE_PATH = os.path.join(os.path.dirname(__file__),
 
 
 filedata = six.u("""container_images:
-- imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
+- imagename: docker.io/tripleorocky/heat-docker-agents-centos:latest
   push_destination: localhost:8787
-- imagename: docker.io/tripleomaster/centos-binary-nova-compute:liberty
+- imagename: docker.io/tripleorocky/centos-binary-nova-compute:liberty
   uploader: docker
   push_destination: localhost:8787
-- imagename: docker.io/tripleomaster/centos-binary-nova-libvirt:liberty
+- imagename: docker.io/tripleorocky/centos-binary-nova-libvirt:liberty
   uploader: docker
-- imagename: docker.io/tripleomaster/image-with-missing-tag
+- imagename: docker.io/tripleorocky/image-with-missing-tag
   push_destination: localhost:8787
 """)
 
@@ -164,7 +164,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
         self.assertEqual(
             {
-                'namespace': 'docker.io/tripleomaster',
+                'namespace': 'docker.io/tripleorocky',
                 'ceph_namespace': 'docker.io/ceph',
                 'ceph_image': 'daemon',
                 'ceph_tag': 'v3.0.3-stable-3.0-luminous-centos-7-x86_64',
@@ -195,13 +195,13 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
         self.assertEqual(
             {
-                'namespace': '192.0.2.0:5000/tripleomaster',
+                'namespace': '192.0.2.0:5000/tripleorocky',
                 'ceph_namespace': 'docker.io/cephh',
                 'ceph_image': 'ceph-daemon',
                 'ceph_tag': 'latest',
                 'name_prefix': 'prefix-',
                 'name_suffix': '-suffix',
-                'tag': 'master',
+                'tag': 'rocky',
                 'neutron_driver': 'ovn',
                 'openshift_namespace': 'docker.io/openshift3',
                 'openshift_tag': 'v3.10.0',
@@ -224,13 +224,13 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_heketi_tag': 'heketi-tag',
             },
             builder.container_images_template_inputs(
-                namespace='192.0.2.0:5000/tripleomaster',
+                namespace='192.0.2.0:5000/tripleorocky',
                 ceph_namespace='docker.io/cephh',
                 ceph_image='ceph-daemon',
                 ceph_tag='latest',
                 name_prefix='prefix',
                 name_suffix='suffix',
-                tag='master',
+                tag='rocky',
                 neutron_driver='ovn',
                 openshift_namespace='docker.io/openshift3',
                 openshift_tag='v3.10.0',
@@ -269,17 +269,17 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             tag='liberty'
         )
         container_images = [{
-            'imagename': 'docker.io/tripleomaster/'
+            'imagename': 'docker.io/tripleorocky/'
                          'centos-binary-nova-compute:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
-            'imagename': 'docker.io/tripleomaster/'
+            'imagename': 'docker.io/tripleorocky/'
                          'centos-binary-nova-libvirt:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
-            'imagename': 'docker.io/tripleomaster/image-with-missing-tag',
+            'imagename': 'docker.io/tripleorocky/image-with-missing-tag',
             'push_destination': 'localhost:8787'
         }]
         self.assertEqual(container_images, result)
@@ -321,23 +321,23 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
     def test_container_images_yaml_in_sync(self):
         remove_images = [
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-opendaylight:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-base:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-opendaylight:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-northd:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'controller:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'nb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'sb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-metadata-agent-ovn:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
@@ -345,21 +345,21 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync_for_odl(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-base:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-northd:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'controller:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'nb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
+            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'sb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-metadata-agent-ovn:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='odl', remove_images=remove_images)
@@ -367,11 +367,11 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync_for_ovn(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-opendaylight:current-tripleo'},
-            {'imagename': 'docker.io/tripleomaster/centos-binary'
+            {'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-opendaylight:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
