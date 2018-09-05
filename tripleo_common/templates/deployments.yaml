@@ -18,6 +18,7 @@
     exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
   register: previous_deployment_result
   ignore_errors: true
+  failed_when: false
   when: deployed_file_stat.stat.exists
 
 - name: "Remove deployed file for {{ item }} when previous deployment failed"
@@ -25,7 +26,10 @@
     path: /var/lib/heat-config/deployed/{{ deployment_uuid }}.json
     state: absent
   become: true
-  when: deployed_file_stat.stat.exists and previous_deployment_result.rc != 0
+  when:
+    - not ansible_check_mode
+    - deployed_file_stat.stat.exists
+    - previous_deployment_result.rc != 0
 
 - name: "Force remove deployed file for {{ item }}"
   file:
@@ -54,12 +58,11 @@
   failed_when: deployment_result.rc != 0
   when: not ansible_check_mode
 
-- name: "Check-mode for Run deployment {{ item }}"
-  shell: |
-    [[ -e /var/lib/heat-config/deployed/{{ deployment_uuid }}.json ]]
+- name: "Check-mode for Run deployment {{ item }} (changed status indicates deployment would run)"
+  stat:
+    path: /var/lib/heat-config/deployed/{{ deployment_uuid }}.json
   become: true
   register: deploy_exists
-  changed_when: deploy_exists.rc != 0
+  changed_when: not deploy_exists.stat.exists
   when: ansible_check_mode
-  check_mode: no
   ignore_errors: yes
