@@ -1,0 +1,4 @@
+---
+other:
+  - Individual server deployments that are of type group:hiera now support
+    check mode, and when running under check mode, also support diff mode.
