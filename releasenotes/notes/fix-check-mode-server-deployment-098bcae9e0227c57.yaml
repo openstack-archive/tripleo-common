@@ -1,0 +1,5 @@
+---
+fixes:
+  - Previously, running ansible-playbook with --check would cause a failure
+    during the individual server deployments when checking the result of a
+    previous attempt.
