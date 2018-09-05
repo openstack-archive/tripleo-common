@@ -2,6 +2,103 @@
   set_fact:
     deployment_uuid: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.id')}}"
 
+- name: Lookup deployment group
+  set_fact:
+    deployment_group: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.group')}}"
+
+
+- name: Hiera check and diff mode
+  block:
+
+    - name: Create hiera check-mode directory
+      file:
+        path: /etc/puppet/check-mode/hieradata
+        state: directory
+      check_mode: no
+
+    - name: Create deployed check-mode directory
+      file:
+        path: /var/lib/heat-config/check-mode
+        state: directory
+      check_mode: no
+
+    - name: Create tripleo-config-download check-mode directory
+      file:
+        path: /var/lib/heat-config/tripleo-config-download/check-mode
+        state: directory
+      check_mode: no
+
+    - name: "Render deployment file for {{ item }} for check-mode"
+      copy:
+        content: "[ {{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item) }} ]"
+        dest: "/var/lib/heat-config/tripleo-config-download/check-mode/{{ item ~ '-' ~ deployment_uuid }}"
+      become: true
+      check_mode: no
+
+    - name: Run hiera deployment for check mode
+      shell: |
+        rm -f /var/lib/heat-config/check-mode/{{ deployment_uuid }}.json
+        /usr/libexec/os-refresh-config/configure.d/55-heat-config
+        exit $(jq .deploy_status_code /var/lib/heat-config/check-mode/{{ deployment_uuid }}.notify.json)
+      args:
+        warn: false
+      become: true
+      environment:
+        HEAT_SHELL_CONFIG: /var/lib/heat-config/tripleo-config-download/check-mode/{{ item ~ '-' ~ deployment_uuid }}
+        HEAT_PUPPET_HIERA_DATADIR: /etc/puppet/check-mode/hieradata
+        HEAT_HIERA_CONFIG: /etc/puppet/check-mode/hiera.yaml
+        HEAT_CONFIG_DEPLOYED: /var/lib/heat-config/check-mode
+      check_mode: no
+      ignore_errors: yes
+
+    - name: List hieradata files for check mode
+      find:
+        path: /etc/puppet/check-mode/hieradata
+      register: hieradata_files
+      check_mode: no
+
+    - name: diff hieradata changes for check mode
+      command:
+        diff -uN {{ hieradata_item.path | regex_replace('check-mode', '') }} {{ hieradata_item.path }}
+      with_items: "{{ hieradata_files.files }}"
+      check_mode: no
+      register: diff_results
+      changed_when: diff_results.rc == 1
+      loop_control:
+        loop_var: hieradata_item
+        label: "{{ hieradata_item.path }}"
+      failed_when: false
+      when: ansible_diff_mode
+
+    - name: diff hieradata changes for check mode
+      debug:
+        var: item.stdout_lines
+      with_items: "{{ diff_results.results }}"
+      changed_when: item.rc == 1
+      loop_control:
+        label: "{{ item._ansible_item_label }}"
+      when: ansible_diff_mode
+
+    - name: hiera.yaml changes for check mode
+      command:
+        diff -uN /etc/puppet/hiera.yaml /etc/puppet/check-mode/hiera.yaml
+      check_mode: no
+      register: diff_results
+      changed_when: diff_results.rc == 1
+      failed_when: false
+
+    - name: diff hiera.yaml changes for check mode
+      debug:
+        var: diff_results.stdout_lines
+      changed_when: diff_results.rc == 1
+      when: ansible_diff_mode
+
+  ignore_errors: yes
+  when:
+    - deployment_group == 'hiera'
+    - ansible_check_mode
+
+
 - name: "Render deployment file for {{ item }}"
   copy:
     content: "[ {{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item) }} ]"
