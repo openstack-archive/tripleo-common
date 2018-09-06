@@ -93,19 +93,21 @@ def build_service_filter(environment, roles_data):
     if not roles_data:
         return None
     enabled_services = get_enabled_services(environment, roles_data)
-    containerized_services = set()
     resource_registry = environment.get('resource_registry')
     if not resource_registry:
-        # no way to tell which services are containerized, so just filter by
-        # enabled services
+        # no way to tell which services are non-containerized, so
+        # filter by enabled services
         return enabled_services
 
     for service, env_path in environment.get('resource_registry', {}).items():
-        if not any(p in env_path for p in ['/puppet/services',
-                                           'OS::Heat::None']):
-            containerized_services.add(service)
+        if service not in enabled_services:
+            continue
+        if env_path == 'OS::Heat::None':
+            enabled_services.remove(service)
+        if '/puppet/services' in env_path:
+            enabled_services.remove(service)
 
-    return containerized_services.intersection(enabled_services)
+    return enabled_services
 
 
 def container_images_prepare_multi(environment, roles_data, dry_run=False,
