@@ -497,6 +497,10 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block rabbitmq_install_plugins %}
+# External rabbitmq plugins installation is disabled
+{% endblock %}
+
 {% set rabbitmq_packages_append = [
     'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block rabbitmq_footer %}
