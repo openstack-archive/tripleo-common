@@ -172,13 +172,46 @@ class ImageUploader(object):
         pass
 
 
-class DockerImageUploader(ImageUploader):
-    """Upload images using docker push"""
+class BaseImageUploader(ImageUploader):
 
     def __init__(self):
         self.upload_tasks = []
         self.secure_registries = set(SECURE_REGISTRIES)
         self.insecure_registries = set()
+
+    def cleanup(self):
+        pass
+
+    def run_tasks(self):
+        pass
+
+    @staticmethod
+    def source_target_names(image_name, pull_source, push_destination,
+                            append_tag):
+        if ':' in image_name:
+            image = image_name.rpartition(':')[0]
+            source_tag = image_name.rpartition(':')[2]
+        else:
+            image = image_name
+            source_tag = 'latest'
+        if pull_source:
+            repo = pull_source + '/' + image
+        else:
+            repo = image
+
+        target_image_no_tag = push_destination + '/' + repo.partition('/')[2]
+        append_tag = append_tag or ''
+        target_tag = source_tag + append_tag
+        return {
+            'repo': repo,
+            'source_tag': source_tag,
+            'source_image': repo + ':' + source_tag,
+            'target_image_no_tag': target_image_no_tag,
+            'append_tag': append_tag,
+            'target_tag': target_tag,
+            'target_image_source_tag': target_image_no_tag + ':' + source_tag,
+            'target_image': target_image_no_tag + ':' + target_tag,
+        }
 
     @staticmethod
     def run_modify_playbook(modify_role, modify_vars,
@@ -216,108 +249,14 @@ class DockerImageUploader(ImageUploader):
             shutil.rmtree(work_dir)
 
     @staticmethod
-    def upload_image(image_name, pull_source, push_destination,
-                     insecure_registries, append_tag, modify_role,
-                     modify_vars, dry_run, cleanup):
-        LOG.info('imagename: %s' % image_name)
-        if ':' in image_name:
-            image = image_name.rpartition(':')[0]
-            source_tag = image_name.rpartition(':')[2]
-        else:
-            image = image_name
-            source_tag = 'latest'
-        if pull_source:
-            repo = pull_source + '/' + image
-        else:
-            repo = image
-
-        source_image = repo + ':' + source_tag
-        target_image_no_tag = push_destination + '/' + repo.partition('/')[2]
-        append_tag = append_tag or ''
-        target_tag = source_tag + append_tag
-        target_image_source_tag = target_image_no_tag + ':' + source_tag
-        target_image = target_image_no_tag + ':' + target_tag
-
-        if dry_run:
-            return []
-
-        if modify_role:
-            if DockerImageUploader._image_exists(target_image,
-                                                 insecure_registries):
-                LOG.warning('Skipping upload for modified image %s' %
-                            target_image)
-                return []
-        else:
-            if DockerImageUploader._images_match(source_image, target_image,
-                                                 insecure_registries):
-                LOG.warning('Skipping upload for image %s' % image_name)
-                return []
-
-        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
-        DockerImageUploader._pull(dockerc, repo, tag=source_tag)
-
-        if modify_role:
-            DockerImageUploader.run_modify_playbook(
-                modify_role, modify_vars, source_image,
-                target_image_source_tag, append_tag)
-            # raise an exception if the playbook didn't tag
-            # the expected target image
-            dockerc.inspect_image(target_image)
-        else:
-            response = dockerc.tag(
-                image=source_image, repository=target_image_no_tag,
-                tag=target_tag, force=True
-            )
-            LOG.debug(response)
-
-        DockerImageUploader._push(dockerc, target_image_no_tag, tag=target_tag)
-
-        LOG.warning('Completed upload for image %s' % image_name)
-        if cleanup == CLEANUP_NONE:
-            return []
-        if cleanup == CLEANUP_PARTIAL:
-            return [source_image]
-        return [source_image, target_image]
-
-    @staticmethod
-    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
-        reraise=True,
-        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
-        stop=tenacity.stop_after_attempt(5)
-    )
-    def _pull(dockerc, image, tag=None):
-        LOG.info('Pulling %s' % image)
-
-        for line in dockerc.pull(image, tag=tag, stream=True):
-            status = json.loads(line)
-            if 'error' in status:
-                LOG.warning('docker pull failed: %s' % status['error'])
-                raise ImageUploaderException('Could not pull image %s' % image)
-
-    @staticmethod
-    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
-        reraise=True,
-        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
-        stop=tenacity.stop_after_attempt(5)
-    )
-    def _push(dockerc, image, tag=None):
-        LOG.info('Pushing %s' % image)
-
-        for line in dockerc.push(image, tag=tag, stream=True):
-            status = json.loads(line)
-            if 'error' in status:
-                LOG.warning('docker push failed: %s' % status['error'])
-                raise ImageUploaderException('Could not push image %s' % image)
-
-    @staticmethod
     def _images_match(image1, image2, insecure_registries):
         try:
-            image1_digest = DockerImageUploader._image_digest(
+            image1_digest = BaseImageUploader._image_digest(
                 image1, insecure_registries)
         except Exception:
             return False
         try:
-            image2_digest = DockerImageUploader._image_digest(
+            image2_digest = BaseImageUploader._image_digest(
                 image2, insecure_registries)
         except Exception:
             return False
@@ -329,21 +268,21 @@ class DockerImageUploader(ImageUploader):
 
     @staticmethod
     def _image_digest(image, insecure_registries):
-        image_url = DockerImageUploader._image_to_url(image)
+        image_url = BaseImageUploader._image_to_url(image)
         insecure = image_url.netloc in insecure_registries
-        i = DockerImageUploader._inspect(image_url.geturl(), insecure)
+        i = BaseImageUploader._inspect(image_url.geturl(), insecure)
         return i.get('Digest')
 
     @staticmethod
     def _image_labels(image, insecure):
-        image_url = DockerImageUploader._image_to_url(image)
-        i = DockerImageUploader._inspect(image_url.geturl(), insecure)
+        image_url = BaseImageUploader._image_to_url(image)
+        i = BaseImageUploader._inspect(image_url.geturl(), insecure)
         return i.get('Labels', {}) or {}
 
     @staticmethod
     def _image_exists(image, insecure_registries):
         try:
-            DockerImageUploader._image_digest(image, insecure_registries)
+            BaseImageUploader._image_digest(image, insecure_registries)
         except ImageNotFoundException:
             return False
         else:
@@ -473,6 +412,128 @@ class DockerImageUploader(ImageUploader):
 
         return images_with_labels
 
+    def add_upload_task(self, image_name, pull_source, push_destination,
+                        append_tag, modify_role, modify_vars, dry_run,
+                        cleanup):
+        # prime self.insecure_registries
+        if pull_source:
+            self.is_insecure_registry(self._image_to_url(pull_source).netloc)
+        else:
+            self.is_insecure_registry(self._image_to_url(image_name).netloc)
+        self.is_insecure_registry(self._image_to_url(push_destination).netloc)
+        self.upload_tasks.append((image_name, pull_source, push_destination,
+                                  self.insecure_registries, append_tag,
+                                  modify_role, modify_vars, dry_run, cleanup))
+
+    def is_insecure_registry(self, registry_host):
+        if registry_host in self.secure_registries:
+            return False
+        if registry_host in self.insecure_registries:
+            return True
+        try:
+            requests.get('https://%s/' % registry_host)
+        except requests.exceptions.SSLError:
+            self.insecure_registries.add(registry_host)
+            return True
+        except Exception:
+            # for any other error assume it is a secure registry, because:
+            # - it is secure registry
+            # - the host is not accessible
+            pass
+        self.secure_registries.add(registry_host)
+        return False
+
+
+class DockerImageUploader(BaseImageUploader):
+    """Upload images using docker pull/tag/push"""
+
+    @staticmethod
+    def upload_image(image_name, pull_source, push_destination,
+                     insecure_registries, append_tag, modify_role,
+                     modify_vars, dry_run, cleanup):
+        LOG.info('imagename: %s' % image_name)
+        names = BaseImageUploader.source_target_names(
+            image_name, pull_source, push_destination, append_tag)
+        source_tag = names['source_tag']
+        repo = names['repo']
+        source_image = names['source_image']
+        target_image_no_tag = names['target_image_no_tag']
+        append_tag = names['append_tag']
+        target_tag = names['target_tag']
+        target_image_source_tag = names['target_image_source_tag']
+        target_image = names['target_image']
+
+        if dry_run:
+            return []
+
+        if modify_role:
+            if BaseImageUploader._image_exists(target_image,
+                                               insecure_registries):
+                LOG.warning('Skipping upload for modified image %s' %
+                            target_image)
+                return []
+        else:
+            if BaseImageUploader._images_match(source_image, target_image,
+                                               insecure_registries):
+                LOG.warning('Skipping upload for image %s' % image_name)
+                return []
+
+        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
+        DockerImageUploader._pull(dockerc, repo, tag=source_tag)
+
+        if modify_role:
+            BaseImageUploader.run_modify_playbook(
+                modify_role, modify_vars, source_image,
+                target_image_source_tag, append_tag)
+            # raise an exception if the playbook didn't tag
+            # the expected target image
+            dockerc.inspect_image(target_image)
+        else:
+            response = dockerc.tag(
+                image=source_image, repository=target_image_no_tag,
+                tag=target_tag, force=True
+            )
+            LOG.debug(response)
+
+        DockerImageUploader._push(dockerc, target_image_no_tag, tag=target_tag)
+
+        LOG.warning('Completed upload for image %s' % image_name)
+        if cleanup == CLEANUP_NONE:
+            return []
+        if cleanup == CLEANUP_PARTIAL:
+            return [source_image]
+        return [source_image, target_image]
+
+    @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _pull(dockerc, image, tag=None):
+        LOG.info('Pulling %s' % image)
+
+        for line in dockerc.pull(image, tag=tag, stream=True):
+            status = json.loads(line)
+            if 'error' in status:
+                LOG.warning('docker pull failed: %s' % status['error'])
+                raise ImageUploaderException('Could not pull image %s' % image)
+
+    @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _push(dockerc, image, tag=None):
+        LOG.info('Pushing %s' % image)
+
+        for line in dockerc.push(image, tag=tag, stream=True):
+            status = json.loads(line)
+            if 'error' in status:
+                LOG.warning('docker push failed: %s' % status['error'])
+                raise ImageUploaderException('Could not push image %s' % image)
+
     def cleanup(self, local_images):
         if not local_images:
             return []
@@ -489,19 +550,6 @@ class DockerImageUploader(ImageUploader):
                     LOG.error(e.explanation)
                 else:
                     LOG.error(e)
-
-    def add_upload_task(self, image_name, pull_source, push_destination,
-                        append_tag, modify_role, modify_vars, dry_run,
-                        cleanup):
-        # prime self.insecure_registries
-        if pull_source:
-            self.is_insecure_registry(self._image_to_url(pull_source).netloc)
-        else:
-            self.is_insecure_registry(self._image_to_url(image_name).netloc)
-        self.is_insecure_registry(self._image_to_url(push_destination).netloc)
-        self.upload_tasks.append((image_name, pull_source, push_destination,
-                                  self.insecure_registries, append_tag,
-                                  modify_role, modify_vars, dry_run, cleanup))
 
     def run_tasks(self):
         if not self.upload_tasks:
@@ -526,24 +574,6 @@ class DockerImageUploader(ImageUploader):
         # repeatedly
         self.cleanup(local_images)
 
-    def is_insecure_registry(self, registry_host):
-        if registry_host in self.secure_registries:
-            return False
-        if registry_host in self.insecure_registries:
-            return True
-        try:
-            requests.get('https://%s/' % registry_host)
-        except requests.exceptions.SSLError:
-            self.insecure_registries.add(registry_host)
-            return True
-        except Exception:
-            # for any other error assume it is a secure registry, because:
-            # - it is secure registry
-            # - the host is not accessible
-            pass
-        self.secure_registries.add(registry_host)
-        return False
-
 
 def docker_upload(args):
     return DockerImageUploader.upload_image(*args)
@@ -551,9 +581,9 @@ def docker_upload(args):
 
 def discover_tag_from_inspect(args):
     image, tag_from_label, insecure_registries = args
-    image_url = DockerImageUploader._image_to_url(image)
+    image_url = BaseImageUploader._image_to_url(image)
     insecure = image_url.netloc in insecure_registries
-    i = DockerImageUploader._inspect(image_url.geturl(), insecure)
+    i = BaseImageUploader._inspect(image_url.geturl(), insecure)
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
         path = image.rpartition(':')
@@ -561,5 +591,5 @@ def discover_tag_from_inspect(args):
         image = path[0]
     else:
         fallback_tag = None
-    return image, DockerImageUploader._discover_tag_from_inspect(
+    return image, BaseImageUploader._discover_tag_from_inspect(
         i, image, tag_from_label, fallback_tag)
