@@ -22,7 +22,7 @@ import os
 import requests
 import shutil
 import six
-from six.moves import urllib
+from six.moves.urllib.parse import urlparse
 import subprocess
 import tempfile
 import tenacity
@@ -56,6 +56,9 @@ CLEANUP = (
 )
 
 
+DEFAULT_UPLOADER = 'docker'
+
+
 def get_undercloud_registry():
     addr = 'localhost'
     if 'br-ctlplane' in netifaces.interfaces():
@@ -82,7 +85,7 @@ class ImageUploadManager(BaseImageManager):
         self.cleanup = cleanup
 
     def discover_image_tag(self, image, tag_from_label=None):
-        uploader = self.uploader('docker')
+        uploader = self.uploader(DEFAULT_UPLOADER)
         return uploader.discover_image_tag(
             image, tag_from_label=tag_from_label)
 
@@ -113,7 +116,7 @@ class ImageUploadManager(BaseImageManager):
 
         for item in upload_images:
             image_name = item.get('imagename')
-            uploader = item.get('uploader', 'docker')
+            uploader = item.get('uploader', DEFAULT_UPLOADER)
             pull_source = item.get('pull_source')
             push_destination = self.get_push_destination(item)
 
@@ -142,6 +145,8 @@ class ImageUploader(object):
     def get_uploader(uploader):
         if uploader == 'docker':
             return DockerImageUploader()
+        if uploader == 'skopeo':
+            return SkopeoImageUploader()
         raise ImageUploaderException('Unknown image uploader type')
 
     @abc.abstractmethod
@@ -178,6 +183,9 @@ class BaseImageUploader(ImageUploader):
         self.upload_tasks = []
         self.secure_registries = set(SECURE_REGISTRIES)
         self.insecure_registries = set()
+        # A mapping of layer hashs to the image which first copied that
+        # layer to the target
+        self.image_layers = {}
 
     def cleanup(self):
         pass
@@ -215,13 +223,15 @@ class BaseImageUploader(ImageUploader):
 
     @staticmethod
     def run_modify_playbook(modify_role, modify_vars,
-                            source_image, target_image, append_tag):
+                            source_image, target_image, append_tag,
+                            container_build_tool='docker'):
         vars = {}
         if modify_vars:
             vars.update(modify_vars)
         vars['source_image'] = source_image
         vars['target_image'] = target_image
         vars['modified_append_tag'] = append_tag
+        vars['container_build_tool'] = container_build_tool
         LOG.info('Playbook variables: \n%s' % yaml.safe_dump(
             vars, default_flow_style=False))
         playbook = [{
@@ -241,7 +251,8 @@ class BaseImageUploader(ImageUploader):
             action = ansible.AnsiblePlaybookAction(
                 playbook=playbook,
                 work_dir=work_dir,
-                verbosity=3
+                verbosity=3,
+                extra_env_variables=dict(os.environ)
             )
             result = action.run(None)
             log_path = result.get('log_path')
@@ -277,13 +288,13 @@ class BaseImageUploader(ImageUploader):
     def _image_digest(image, insecure_registries):
         image_url = BaseImageUploader._image_to_url(image)
         insecure = image_url.netloc in insecure_registries
-        i = BaseImageUploader._inspect(image_url.geturl(), insecure)
+        i = BaseImageUploader._inspect(image_url, insecure)
         return i.get('Digest')
 
     @staticmethod
     def _image_labels(image, insecure):
         image_url = BaseImageUploader._image_to_url(image)
-        i = BaseImageUploader._inspect(image_url.geturl(), insecure)
+        i = BaseImageUploader._inspect(image_url, insecure)
         return i.get('Labels', {}) or {}
 
     @staticmethod
@@ -302,7 +313,8 @@ class BaseImageUploader(ImageUploader):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
-    def _inspect(image, insecure=False):
+    def _inspect(image_url, insecure=False):
+        image = image_url.geturl()
 
         cmd = ['skopeo', 'inspect']
 
@@ -333,7 +345,7 @@ class BaseImageUploader(ImageUploader):
     def _image_to_url(image):
         if '://' not in image:
             image = 'docker://' + image
-        return urllib.parse.urlparse(image)
+        return urlparse(image)
 
     @staticmethod
     def _discover_tag_from_inspect(i, image, tag_from_label=None,
@@ -403,7 +415,7 @@ class BaseImageUploader(ImageUploader):
                            fallback_tag=None):
         image_url = self._image_to_url(image)
         insecure = self.is_insecure_registry(image_url.netloc)
-        i = self._inspect(image_url.geturl(), insecure)
+        i = self._inspect(image_url, insecure)
         return self._discover_tag_from_inspect(i, image, tag_from_label,
                                                fallback_tag)
 
@@ -430,7 +442,8 @@ class BaseImageUploader(ImageUploader):
         self.is_insecure_registry(self._image_to_url(push_destination).netloc)
         self.upload_tasks.append((image_name, pull_source, push_destination,
                                   self.insecure_registries, append_tag,
-                                  modify_role, modify_vars, dry_run, cleanup))
+                                  modify_role, modify_vars, dry_run, cleanup,
+                                  self.image_layers))
 
     def is_insecure_registry(self, registry_host):
         if registry_host in self.secure_registries:
@@ -450,6 +463,29 @@ class BaseImageUploader(ImageUploader):
         self.secure_registries.add(registry_host)
         return False
 
+    @staticmethod
+    def _cross_repo_mount(target_image_url, image_layers,
+                          source_layers, insecure_registries):
+        netloc = target_image_url.netloc
+        name = target_image_url.path.split(':')[0][1:]
+        if netloc in insecure_registries:
+            scheme = 'http'
+        else:
+            scheme = 'https'
+        url = '%s://%s/v2/%s/blobs/uploads/' % (scheme, netloc, name)
+
+        for layer in source_layers:
+            if layer in image_layers:
+                existing_name = image_layers[layer].path.split(':')[0][1:]
+                LOG.info('Cross repository blob mount %s from %s' %
+                         (layer, existing_name))
+                data = {
+                    'mount': layer,
+                    'from': existing_name
+                }
+                r = requests.post(url, data=data)
+                LOG.debug('%s %s' % (r.status_code, r.reason))
+
 
 class DockerImageUploader(BaseImageUploader):
     """Upload images using docker pull/tag/push"""
@@ -457,7 +493,7 @@ class DockerImageUploader(BaseImageUploader):
     @staticmethod
     def upload_image(image_name, pull_source, push_destination,
                      insecure_registries, append_tag, modify_role,
-                     modify_vars, dry_run, cleanup):
+                     modify_vars, dry_run, cleanup, image_layers):
         LOG.info('imagename: %s' % image_name)
         names = BaseImageUploader.source_target_names(
             image_name, pull_source, push_destination, append_tag)
@@ -582,15 +618,184 @@ class DockerImageUploader(BaseImageUploader):
         self.cleanup(local_images)
 
 
+class SkopeoImageUploader(BaseImageUploader):
+    """Upload images using skopeo copy"""
+
+    @staticmethod
+    def upload_image(image_name, pull_source, push_destination,
+                     insecure_registries, append_tag, modify_role,
+                     modify_vars, dry_run, cleanup, image_layers):
+        LOG.info('imagename: %s' % image_name)
+        names = BaseImageUploader.source_target_names(
+            image_name, pull_source, push_destination, append_tag)
+
+        source_image = names['source_image']
+        source_image_url = BaseImageUploader._image_to_url(source_image)
+        source_image_local_url = urlparse('containers-storage:%s'
+                                          % source_image)
+        append_tag = names['append_tag']
+
+        target_image_source_tag = names['target_image_source_tag']
+        target_image = names['target_image']
+        target_image_url = BaseImageUploader._image_to_url(target_image)
+        target_image_local_url = urlparse('containers-storage:%s' %
+                                          target_image)
+
+        if dry_run:
+            return []
+
+        if modify_role and BaseImageUploader._image_exists(
+                target_image, insecure_registries):
+            LOG.warning('Skipping upload for modified image %s' %
+                        target_image)
+            return []
+
+        source_inspect = BaseImageUploader._inspect(source_image_url)
+        source_layers = source_inspect.get('Layers', [])
+        BaseImageUploader._cross_repo_mount(
+            target_image_url, image_layers, source_layers, insecure_registries)
+        to_cleanup = []
+
+        if modify_role:
+
+            # Copy from source registry to local storage
+            SkopeoImageUploader._copy(
+                source_image_url,
+                source_image_local_url,
+                insecure_registries
+            )
+            if cleanup in (CLEANUP_FULL, CLEANUP_PARTIAL):
+                to_cleanup = [source_image]
+
+            BaseImageUploader.run_modify_playbook(
+                modify_role, modify_vars, source_image,
+                target_image_source_tag, append_tag,
+                container_build_tool='buildah')
+            # Inspect to confirm the playbook created the target image
+            BaseImageUploader._inspect(target_image_local_url)
+            if cleanup == CLEANUP_FULL:
+                to_cleanup.append(target_image)
+
+            # Copy from local storage to target registry
+            SkopeoImageUploader._copy(
+                target_image_local_url,
+                target_image_url,
+                insecure_registries
+            )
+            for layer in source_layers:
+                image_layers.setdefault(layer, target_image_url)
+            LOG.warning('Completed modify and upload for image %s' %
+                        image_name)
+        else:
+            SkopeoImageUploader._copy(
+                source_image_url,
+                target_image_url,
+                insecure_registries
+            )
+            LOG.warning('Completed upload for image %s' % image_name)
+        for layer in source_layers:
+            image_layers.setdefault(layer, target_image_url)
+        return to_cleanup
+
+    @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _copy(source_url, target_url, insecure_registries):
+        source = source_url.geturl()
+        target = target_url.geturl()
+        LOG.info('Copying from %s to %s' % (source, target))
+        cmd = ['skopeo', 'copy']
+
+        if source_url.netloc in insecure_registries:
+            cmd.append('--src-tls-verify=false')
+
+        if target_url.netloc in insecure_registries:
+            cmd.append('--dest-tls-verify=false')
+
+        cmd.append(source)
+        cmd.append(target)
+        LOG.info('Running %s' % ' '.join(cmd))
+        env = os.environ.copy()
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+
+        out, err = process.communicate()
+        LOG.info(out)
+        if process.returncode != 0:
+            raise ImageUploaderException('Error copying image:\n%s\n%s' %
+                                         (' '.join(cmd), err))
+        return out
+
+    @staticmethod
+    def _delete(image_url, insecure=False):
+        image = image_url.geturl()
+        LOG.info('Deleting %s' % image)
+        cmd = ['skopeo', 'delete']
+
+        if insecure:
+            cmd.append('--tls-verify=false')
+        cmd.append(image)
+        LOG.info('Running %s' % ' '.join(cmd))
+        env = os.environ.copy()
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+
+        out, err = process.communicate()
+        LOG.info(out)
+        if process.returncode != 0:
+            raise ImageUploaderException('Error deleting image:\n%s\n%s' %
+                                         (' '.join(cmd), err))
+        return out
+
+    def cleanup(self, local_images):
+        if not local_images:
+            return []
+
+        for image in sorted(local_images):
+            if not image:
+                continue
+            LOG.warning('Removing local copy of %s' % image)
+            image_url = urlparse('containers-storage:%s' % image)
+            SkopeoImageUploader._delete(image_url)
+
+    def run_tasks(self):
+        if not self.upload_tasks:
+            return
+        local_images = []
+
+        # Pull a single image first, to avoid duplicate pulls of the
+        # same base layers
+        first = self.upload_tasks.pop()
+        result = self.upload_image(*first)
+        local_images.extend(result)
+
+        # workers will be half the CPU count, to a minimum of 2
+        workers = max(2, processutils.get_worker_count() // 2)
+        p = futures.ThreadPoolExecutor(max_workers=workers)
+
+        for result in p.map(skopeo_upload, self.upload_tasks):
+            local_images.extend(result)
+        LOG.info('result %s' % local_images)
+
+        # Do cleanup after all the uploads so common layers don't get deleted
+        # repeatedly
+        self.cleanup(local_images)
+
+
 def docker_upload(args):
     return DockerImageUploader.upload_image(*args)
+
+
+def skopeo_upload(args):
+    return SkopeoImageUploader.upload_image(*args)
 
 
 def discover_tag_from_inspect(args):
     image, tag_from_label, insecure_registries = args
     image_url = BaseImageUploader._image_to_url(image)
     insecure = image_url.netloc in insecure_registries
-    i = BaseImageUploader._inspect(image_url.geturl(), insecure)
+    i = BaseImageUploader._inspect(image_url, insecure)
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
         path = image.rpartition(':')

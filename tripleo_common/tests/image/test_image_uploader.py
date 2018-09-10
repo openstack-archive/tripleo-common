@@ -16,8 +16,11 @@
 import json
 import mock
 import operator
+import os
 import requests
 import six
+from six.moves.urllib.parse import urlparse
+import tempfile
 import urllib3
 
 from oslo_concurrency import processutils
@@ -47,6 +50,8 @@ class TestImageUploadManager(base.TestCase):
         files.append('testfile')
         self.filelist = files
 
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.image.base.open',
                 mock.mock_open(read_data=filedata), create=True)
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -61,8 +66,9 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.'
                 'get_undercloud_registry', return_value='192.0.2.0:8787')
     def test_file_parsing(self, mock_gur, mockdocker, mockioctl, mockpath,
-                          mock_images_match, mock_is_insecure):
+                          mock_images_match, mock_is_insecure, mock_inspect):
 
+        mock_inspect.return_value = {}
         manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
         parsed_data = manager.upload()
         mockpath(self.filelist[0])
@@ -433,7 +439,8 @@ class TestDockerImageUploader(base.TestCase):
                 None,
                 None,
                 False,
-                'full'
+                'full',
+                {}
             )
         )
 
@@ -465,7 +472,8 @@ class TestDockerImageUploader(base.TestCase):
                                    None,
                                    None,
                                    False,
-                                   'full')
+                                   'full',
+                                   {})
 
         self.dockermock.assert_called_once_with(
             base_url='unix://var/run/docker.sock', version='auto')
@@ -504,7 +512,8 @@ class TestDockerImageUploader(base.TestCase):
                 None,
                 None,
                 False,
-                'full'
+                'full',
+                {}
             )
         )
 
@@ -541,7 +550,8 @@ class TestDockerImageUploader(base.TestCase):
                     'target_image': '%s:%s' % (push_image, tag),
                     'modified_append_tag': append_tag,
                     'source_image': '%s:%s' % (image, tag),
-                    'foo_version': '1.0.1'
+                    'foo_version': '1.0.1',
+                    'container_build_tool': 'docker'
                 }
             }],
             'hosts': 'localhost'
@@ -559,7 +569,8 @@ class TestDockerImageUploader(base.TestCase):
                 'add-foo-plugin',
                 {'foo_version': '1.0.1'},
                 False,
-                'partial'
+                'partial',
+                {}
             )
         )
 
@@ -569,7 +580,11 @@ class TestDockerImageUploader(base.TestCase):
         self.dockermock.return_value.pull.assert_called_once_with(
             image, tag=tag, stream=True)
         mock_ansible.assert_called_once_with(
-            playbook=playbook, work_dir=mock.ANY, verbosity=3)
+            playbook=playbook,
+            work_dir=mock.ANY,
+            verbosity=3,
+            extra_env_variables=mock.ANY
+        )
         self.dockermock.return_value.tag.assert_not_called()
         self.dockermock.return_value.push.assert_called_once_with(
             push_image,
@@ -598,7 +613,8 @@ class TestDockerImageUploader(base.TestCase):
             ImageUploaderException,
             self.uploader.upload_image,
             image + ':' + tag, None, push_destination, set(), append_tag,
-            'add-foo-plugin', {'foo_version': '1.0.1'}, False, 'full'
+            'add-foo-plugin', {'foo_version': '1.0.1'}, False, 'full',
+            {}
         )
 
         self.dockermock.assert_called_once_with(
@@ -630,7 +646,8 @@ class TestDockerImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             True,
-            'full'
+            'full',
+            {}
         )
 
         self.dockermock.assert_not_called()
@@ -659,7 +676,8 @@ class TestDockerImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             False,
-            'full'
+            'full',
+            {}
         )
 
         self.dockermock.assert_not_called()
@@ -740,3 +758,276 @@ class TestDockerImageUploader(base.TestCase):
         dockerc.push.assert_has_calls([
             mock.call(image, tag=None, stream=True)
         ])
+
+
+class TestSkopeoImageUploader(base.TestCase):
+
+    def setUp(self):
+        super(TestSkopeoImageUploader, self).setUp()
+        self.uploader = image_uploader.SkopeoImageUploader()
+        self.uploader._copy.retry.sleep = mock.Mock()
+        self.uploader._inspect.retry.sleep = mock.Mock()
+
+    @mock.patch('os.environ')
+    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    def test_upload_image(self, mock_inspect, mock_popen, mock_environ):
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = ('copy complete', '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        mock_environ.copy.return_value = {}
+        mock_inspect.return_value = {}
+
+        image = 'docker.io/t/nova-api'
+        tag = 'latest'
+        push_destination = 'localhost:8787'
+
+        self.assertEqual(
+            [],
+            self.uploader.upload_image(
+                image + ':' + tag,
+                None,
+                push_destination,
+                set(),
+                None,
+                None,
+                None,
+                False,
+                'full',
+                {}
+            )
+        )
+        mock_popen.assert_called_once_with([
+            'skopeo',
+            'copy',
+            'docker://docker.io/t/nova-api:latest',
+            'docker://localhost:8787/t/nova-api:latest'],
+            env={}, stdout=-1
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'SkopeoImageUploader._copy')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._image_exists')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_upload_image(self, mock_ansible, mock_exists, mock_copy,
+                                 mock_inspect):
+        mock_exists.return_value = False
+        mock_inspect.return_value = {}
+        with tempfile.NamedTemporaryFile(delete=False) as logfile:
+            self.addCleanup(os.remove, logfile.name)
+            mock_ansible.return_value.run.return_value = {
+                'log_path': logfile.name
+            }
+
+        image = 'docker.io/t/nova-api'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+        push_image = 'localhost:8787/t/nova-api'
+        playbook = [{
+            'tasks': [{
+                'import_role': {
+                    'name': 'add-foo-plugin'
+                },
+                'name': 'Import role add-foo-plugin',
+                'vars': {
+                    'target_image': '%s:%s' % (push_image, tag),
+                    'modified_append_tag': append_tag,
+                    'source_image': '%s:%s' % (image, tag),
+                    'foo_version': '1.0.1',
+                    'container_build_tool': 'buildah'
+                }
+            }],
+            'hosts': 'localhost'
+        }]
+
+        # test response for a partial cleanup
+        self.assertEqual(
+            ['docker.io/t/nova-api:latest'],
+            self.uploader.upload_image(
+                image + ':' + tag,
+                None,
+                push_destination,
+                set(),
+                append_tag,
+                'add-foo-plugin',
+                {'foo_version': '1.0.1'},
+                False,
+                'partial',
+                {}
+            )
+        )
+
+        insecure = set()
+        mock_inspect.assert_has_calls([
+            mock.call(urlparse(
+                'docker://docker.io/t/nova-api:latest'
+            )),
+            mock.call(urlparse(
+                'containers-storage:localhost:8787/t/nova-api:latestmodify-123'
+            ))
+        ])
+        mock_copy.assert_has_calls([
+            mock.call(
+                urlparse('docker://docker.io/t/nova-api:latest'),
+                urlparse('containers-storage:docker.io/t/nova-api:latest'),
+                insecure
+            ),
+            mock.call(
+                urlparse('containers-storage:localhost:8787/'
+                         't/nova-api:latestmodify-123'),
+                urlparse('docker://localhost:8787/'
+                         't/nova-api:latestmodify-123'),
+                insecure
+            )
+        ])
+        mock_ansible.assert_called_once_with(
+            playbook=playbook,
+            work_dir=mock.ANY,
+            verbosity=3,
+            extra_env_variables=mock.ANY
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'SkopeoImageUploader._copy')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._image_exists')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_image_failed(self, mock_ansible, mock_exists, mock_copy,
+                                 mock_inspect):
+        mock_exists.return_value = False
+        mock_inspect.return_value = {}
+
+        image = 'docker.io/t/nova-api'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+        error = processutils.ProcessExecutionError(
+            '', 'ouch', -1, 'ansible-playbook')
+        mock_ansible.return_value.run.side_effect = error
+
+        self.assertRaises(
+            ImageUploaderException,
+            self.uploader.upload_image,
+            image + ':' + tag, None, push_destination, set(), append_tag,
+            'add-foo-plugin', {'foo_version': '1.0.1'}, False, 'full',
+            {}
+        )
+
+        insecure = set()
+        mock_copy.assert_called_once_with(
+            urlparse('docker://docker.io/t/nova-api:latest'),
+            urlparse('containers-storage:docker.io/t/nova-api:latest'),
+            insecure
+        )
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_upload_image_dry_run(self, mock_ansible, mock_popen):
+        mock_process = mock.Mock()
+        mock_popen.return_value = mock_process
+
+        image = 'docker.io/t/nova-api'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+
+        result = self.uploader.upload_image(
+            image + ':' + tag,
+            None,
+            push_destination,
+            set(),
+            append_tag,
+            'add-foo-plugin',
+            {'foo_version': '1.0.1'},
+            True,
+            'full',
+            {}
+        )
+
+        mock_ansible.assert_not_called()
+        mock_process.communicate.assert_not_called()
+        self.assertEqual([], result)
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    @mock.patch('tripleo_common.actions.'
+                'ansible.AnsiblePlaybookAction', autospec=True)
+    def test_modify_image_existing(self, mock_ansible, mock_inspect):
+        mock_inspect.return_value = {'Digest': 'a'}
+
+        image = 'docker.io/t/nova-api'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+
+        result = self.uploader.upload_image(
+            image + ':' + tag,
+            None,
+            push_destination,
+            set(),
+            append_tag,
+            'add-foo-plugin',
+            {'foo_version': '1.0.1'},
+            False,
+            'full',
+            {}
+        )
+
+        mock_ansible.assert_not_called()
+
+        self.assertEqual([], result)
+
+    @mock.patch('os.environ')
+    @mock.patch('subprocess.Popen')
+    def test_copy_retry(self, mock_popen, mock_environ):
+        mock_success = mock.Mock()
+        mock_success.communicate.return_value = ('copy complete', '')
+        mock_success.returncode = 0
+
+        mock_failure = mock.Mock()
+        mock_failure.communicate.return_value = ('', 'ouch')
+        mock_failure.returncode = 1
+        mock_popen.side_effect = [
+            mock_failure,
+            mock_failure,
+            mock_failure,
+            mock_failure,
+            mock_success
+        ]
+        mock_environ.copy.return_value = {}
+
+        source = urlparse('docker://docker.io/t/nova-api')
+        target = urlparse('containers_storage:docker.io/t/nova-api')
+
+        self.uploader._copy(source, target, set())
+
+        self.assertEqual(mock_failure.communicate.call_count, 4)
+        self.assertEqual(mock_success.communicate.call_count, 1)
+
+    @mock.patch('os.environ')
+    @mock.patch('subprocess.Popen')
+    def test_copy_retry_failure(self, mock_popen, mock_environ):
+        mock_failure = mock.Mock()
+        mock_failure.communicate.return_value = ('', 'ouch')
+        mock_failure.returncode = 1
+        mock_popen.return_value = mock_failure
+        mock_environ.copy.return_value = {}
+
+        source = urlparse('docker://docker.io/t/nova-api')
+        target = urlparse('containers_storage:docker.io/t/nova-api')
+
+        self.assertRaises(
+            ImageUploaderException, self.uploader._copy, source, target, set())
+
+        self.assertEqual(mock_failure.communicate.call_count, 5)
