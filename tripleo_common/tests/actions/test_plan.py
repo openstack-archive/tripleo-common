@@ -264,12 +264,10 @@ class DeletePlanActionTest(base.TestCase):
         self.assertRaises(exception.StackInUseError, action.run, self.ctx)
         heat.stacks.get.assert_called_with(self.container_name)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_service')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
-    def test_run(self, get_orchestration_client, get_obj_client_mock,
-                 get_obj_service_mock):
+    def test_run(self, get_orchestration_client, get_obj_client_mock):
 
         # setup swift
         swift = mock.MagicMock()
@@ -285,13 +283,8 @@ class DeletePlanActionTest(base.TestCase):
                 {'name': 'finally-another-name.yaml'}
             ]
         )
-        get_obj_client_mock.return_value = swift
 
-        swift_service = mock.MagicMock()
-        swift_service.delete.return_value = ([
-            {'success': True},
-        ])
-        get_obj_service_mock.return_value = swift_service
+        get_obj_client_mock.return_value = swift
 
         # setup heat
         heat = mock.MagicMock()
@@ -303,10 +296,15 @@ class DeletePlanActionTest(base.TestCase):
         action.run(self.ctx)
 
         mock_calls = [
-            mock.call(container='overcloud'),
+            mock.call('overcloud', 'some-name.yaml'),
+            mock.call('overcloud', 'some-other-name.yaml'),
+            mock.call('overcloud', 'yet-some-other-name.yaml'),
+            mock.call('overcloud', 'finally-another-name.yaml')
         ]
-        swift_service.delete.assert_has_calls(
+        swift.delete_object.assert_has_calls(
             mock_calls, any_order=True)
+
+        swift.delete_container.assert_called_with(self.container_name)
 
 
 class ListRolesActionTest(base.TestCase):

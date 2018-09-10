@@ -119,11 +119,11 @@ class DeletePlanAction(base.TripleOAction):
                 raise exception.StackInUseError(name=self.container)
 
         try:
-            swift_service = self.get_object_service(context)
-            swiftutils.delete_container(swift_service, self.container)
-            swiftutils.delete_container(swift_service,
+            swift = self.get_object_client(context)
+            swiftutils.delete_container(swift, self.container)
+            swiftutils.delete_container(swift,
                                         "%s-swift-rings" % self.container)
-            swiftutils.delete_container(swift_service,
+            swiftutils.delete_container(swift,
                                         "%s-messages" % self.container)
         except swiftexceptions.ClientException as ce:
             LOG.exception("Swift error deleting plan.")
