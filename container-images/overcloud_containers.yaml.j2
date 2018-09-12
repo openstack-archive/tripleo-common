@@ -827,6 +827,7 @@ container_images_template:
   params:
   - DockerOpenShiftDockerRegistryImage
   services:
+  - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
 
 - imagename: "{{openshift_namespace}}/{{openshift_base_image}}-haproxy-router:{{openshift_tag}}"
