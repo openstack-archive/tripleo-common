@@ -5,9 +5,13 @@ description: TripleO update workflows
 
 workflows:
 
-  # Updates a workload cloud stack
   package_update_plan:
-    description: Take a container and perform a package update with possible breakpoints
+    description: >-
+      Update the heat stack outputs for purposes of
+      update/upgrade. This workflow assumes that previously the
+      plan_management.update_deployment_plan workflow has already been
+      run to process the templates and environments (the same way as
+      'deploy' command processes them).
 
     input:
       - container
@@ -20,7 +24,16 @@ workflows:
       - tripleo-common-managed
 
     tasks:
-      update:
+      container_image_prepare_params:
+        action: tripleo.container_images.prepare_params
+        input:
+          container: <% $.container %>
+        publish-on-error:
+          message: <% task().result %>
+        on-success: update_stack
+        on-error: set_update_failed
+
+      update_stack:
         action: tripleo.package_update.update_stack
         input:
           timeout: <% $.timeout %>
