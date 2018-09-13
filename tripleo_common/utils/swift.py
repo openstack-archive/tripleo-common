@@ -27,21 +27,6 @@ from tripleo_common.utils import tarball
 LOG = logging.getLogger(__name__)
 
 
-def empty_container(swiftclient, name):
-    container_names = [container["name"] for container
-                       in swiftclient.get_account()[1]]
-    if name in container_names:
-        headers, objects = swiftclient.get_container(name)
-        # FIXME(rbrady): remove delete_object loop when
-        # LP#1615830 is fixed.  See LP#1615825 for more info.
-        # delete files from plan
-        for o in objects:
-            swiftclient.delete_object(name, o['name'])
-    else:
-        error_text = "The {name} container does not exist.".format(name=name)
-        raise ValueError(error_text)
-
-
 def delete_container(swiftservice, name):
     delres = swiftservice.delete(container=name)
     if delres is None:
