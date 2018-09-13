@@ -37,20 +37,28 @@ class SwiftTest(base.TestCase):
             ]
         )
 
-        self.swiftservice = mock.MagicMock()
-        self.swiftservice.delete.return_value = ([
-            {'success': True},
-        ])
-
     def test_delete_container_success(self):
-        swift_utils.delete_container(self.swiftservice,
-                                     self.container_name)
+        swift_utils.empty_container(self.swiftclient, self.container_name)
 
         mock_calls = [
-            mock.call(container=self.container_name),
+            mock.call('overcloud', 'some-name.yaml'),
+            mock.call('overcloud', 'some-other-name.yaml'),
+            mock.call('overcloud', 'yet-some-other-name.yaml'),
+            mock.call('overcloud', 'finally-another-name.yaml')
         ]
-        self.swiftservice.delete.assert_has_calls(
+        self.swiftclient.delete_object.assert_has_calls(
             mock_calls, any_order=True)
+
+        self.swiftclient.get_account.assert_called()
+        self.swiftclient.get_container.assert_called_with(self.container_name)
+
+    def test_delete_container_not_found(self):
+        self.assertRaises(ValueError,
+                          swift_utils.empty_container,
+                          self.swiftclient, 'idontexist')
+        self.swiftclient.get_account.assert_called()
+        self.swiftclient.get_container.assert_not_called()
+        self.swiftclient.delete_object.assert_not_called()
 
     def test_create_container(self):
         swift_utils.create_container(self.swiftclient, 'abc')

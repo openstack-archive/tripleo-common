@@ -58,15 +58,12 @@ class GetOvercloudConfigActionTest(base.TestCase):
         self.ctx = mock.MagicMock()
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_object_service')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('tripleo_common.utils.config.Config.download_config')
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
     def test_run(self, mock_create_tarball,
                  mock_config,
-                 mock_orchestration_client,
-                 mock_object_service):
+                 mock_orchestration_client):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = mock.MagicMock(
             stack_name='stack', id='stack_id')
