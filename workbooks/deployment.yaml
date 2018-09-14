@@ -451,8 +451,8 @@ workflows:
           deployment_status: <% yaml_parse(task().result.last()) %>
         on-complete: send_message
         publish-on-error:
-          status: FAILED
-          message: <% task().result %>
+          message: No deployment status found for plan <% $.plan %>
+          deployment_status: ""
 
       send_message:
         workflow: tripleo.messaging.v1.send
