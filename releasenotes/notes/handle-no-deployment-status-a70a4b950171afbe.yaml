@@ -1,0 +1,5 @@
+---
+fixes:
+  - The tripleo.deployment.v1.get_deployment_status workflow will no longer
+    error when requesting the deployment status for a non-existant plan. A
+    message is sent in the output instead of failing the workflow.
