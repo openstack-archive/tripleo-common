@@ -1,0 +1,8 @@
+---
+fixes:
+  - The tripleo-bootstrap ansible role will no longer fail if yum fails to
+    install the required packages. This fixed behavior aligns with previous
+    requirements where enabled package repositories and a working package
+    manager are not required on the initially deployed images. Errors are
+    ignored on the package install task, and then a subsequent task will cause
+    a failure indicating the required packages are not present.
