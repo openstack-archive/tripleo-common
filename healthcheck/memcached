@@ -4,7 +4,7 @@ listen_addr=$(awk 'match($0, /-l +([0-9a-fA-F\.\:]+) /, a) {print a[1]}' /etc/sy
 
 # Add brackets if IPv6
 if [[ $listen_addr =~ ":" ]]; then
-  listen_addr="[${listen_addr}]"
+    listen_addr="[${listen_addr}]"
 fi
 
 echo "stats" | socat - TCP:$listen_addr:11211
