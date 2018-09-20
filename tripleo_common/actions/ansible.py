@@ -56,7 +56,9 @@ def write_default_ansible_cfg(work_dir,
                '-o UserKnownHostsFile=/dev/null '
                '-o StrictHostKeyChecking=no '
                '-o ControlMaster=auto '
-               '-o ControlPersist=30m')
+               '-o ControlPersist=30m '
+               '-o ServerAliveInterval=5 '
+               '-o ServerAliveCountMax=5')
     config.set('ssh_connection', 'control_path_dir',
                os.path.join(work_dir, 'ansible-ssh'))
     config.set('ssh_connection', 'retries', '8')
