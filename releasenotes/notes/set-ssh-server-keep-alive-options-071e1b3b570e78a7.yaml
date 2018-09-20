@@ -1,0 +1,5 @@
+---
+fixes:
+  - The ServerAliveInterval and ServerAliveCountMax SSH options are now set in
+    the mistral ansible action so that when networking configuration is
+    performed on the overcloud nodes SSH will not drop the connection.
