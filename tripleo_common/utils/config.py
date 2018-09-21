@@ -305,9 +305,23 @@ class Config(object):
                 [i for i in config_dict['inputs']
                  if i['name'] == 'deploy_server_id'].pop()
             deploy_server_id_input['value'] = server_id
-            server_deployments.setdefault(
-                server_names[server_id],
-                []).append(config_dict)
+
+            # We don't want to fail if server_id can't be found, as it's
+            # most probably due to blacklisted nodes. However we fail for
+            # other errors.
+            try:
+                server_deployments.setdefault(
+                    server_names[server_id],
+                    []).append(config_dict)
+            except KeyError:
+                self.log.warning('Server with id %s is ignored from config '
+                                 '(may be blacklisted)' % server_id)
+                # continue the loop as this server_id is probably excluded
+                continue
+            except Exception as err:
+                err_msg = ('Error retrieving server name from this server_id: '
+                           '%s with this error: %s' % server_id, err)
+                raise Exception(err_msg)
 
             role = self.get_role_from_server_id(stack, server_id)
             role_deployments = role_deployment_names.setdefault(role, {})
