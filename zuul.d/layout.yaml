@@ -1,14 +1,15 @@
 - project:
     templates:
-      - tripleo-undercloud-jobs
-      - tripleo-multinode-baremetal-minimal
-      - tripleo-multinode-container-minimal
       - check-requirements
-      - publish-openstack-docs-pti
+      - openstack-cover-jobs
       - openstack-python-jobs
       - openstack-python35-jobs
       - openstack-python36-jobs
+      - publish-openstack-docs-pti
       - release-notes-jobs-python3
+      - tripleo-multinode-baremetal-minimal
+      - tripleo-multinode-container-minimal
+      - tripleo-undercloud-jobs
     check:
       jobs:
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
@@ -47,9 +48,6 @@
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
-        - openstack-tox-cover:
-            voting: false
-
     gate:
       queue: tripleo
       jobs:
