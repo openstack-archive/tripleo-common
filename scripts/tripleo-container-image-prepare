@@ -90,6 +90,13 @@ def get_args():
              'The environment file will still be populated as if these '
              'operations were performed.'
     )
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        action='store_true',
+        help="Enable debug logging. By default logging is set to INFO."
+    )
+
     args = parser.parse_args(sys.argv[1:])
     return args
 
@@ -104,7 +111,11 @@ if __name__ == '__main__':
     log = logging.getLogger()
     if args.log_file:
         log.addHandler(logging.FileHandler(filename=args.log_file))
-    log.setLevel(logging.INFO)
+    if args.debug:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+    log.setLevel(log_level)
 
     if args.cleanup not in image_uploader.CLEANUP:
         raise RuntimeError('--cleanup must be one of: %s' %
