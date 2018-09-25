@@ -221,7 +221,9 @@ class ProcessTemplatesActionTest(base.TestCase):
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run(self, mock_get_object_client,
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_run(self, mock_get_heat_client, mock_get_object_client,
                  mock_get_template_contents,
                  mock_process_multiple_environments_and_files):
 
@@ -289,8 +291,10 @@ class ProcessTemplatesActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._heat_resource_exists')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_process_custom_roles(self, get_obj_client_mock,
-                                  resource_exists_mock):
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_process_custom_roles(self, get_heat_client_mock,
+                                  get_obj_client_mock, resource_exists_mock):
         resource_exists_mock.return_value = False
         swift = self._custom_roles_mock_objclient(
             'foo.j2.yaml', JINJA_SNIPPET)
@@ -323,8 +327,11 @@ class ProcessTemplatesActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._heat_resource_exists')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
     def _process_custom_roles_disable_constraints(
-            self, snippet, get_obj_client_mock, resource_exists_mock):
+            self, snippet, get_heat_client_mock, get_obj_client_mock,
+            resource_exists_mock):
         resource_exists_mock.return_value = False
         swift = self._custom_roles_mock_objclient(
             'disable-constraints.role.j2.yaml', snippet,
@@ -363,8 +370,10 @@ class ProcessTemplatesActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._heat_resource_exists')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_custom_roles_networks(self, get_obj_client_mock,
-                                   resource_exists_mock):
+    @mock.patch('tripleo_common.actions.base.TripleOAction'
+                '.get_orchestration_client')
+    def test_custom_roles_networks(self, get_heat_client_mock,
+                                   get_obj_client_mock, resource_exists_mock):
         resource_exists_mock.return_value = False
         swift = self._custom_roles_mock_objclient(
             'role-networks.role.j2.yaml', JINJA_SNIPPET_ROLE_NETWORKS,
@@ -509,8 +518,7 @@ class ProcessTemplatesActionTest(base.TestCase):
     def test_heat_resource_exists(self, client_mock):
         mock_ctx = mock.MagicMock()
         heat_client = mock.MagicMock()
-        heat_client.stacks.get.return_value = mock.MagicMock(
-            stack_name='overcloud')
+        stack = mock.MagicMock(stack_name='overcloud')
         heat_client.resources.get.return_value = mock.MagicMock(
             links=[{'rel': 'stack',
                     'href': 'http://192.0.2.1:8004/v1/'
@@ -525,15 +533,14 @@ class ProcessTemplatesActionTest(base.TestCase):
         action = templates.ProcessTemplatesAction()
         self.assertTrue(
             action._heat_resource_exists(
-                'Networks', 'InternalNetwork', mock_ctx))
+                heat_client, stack, 'Networks', 'InternalNetwork', mock_ctx))
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     def test_no_heat_resource_exists(self, client_mock):
         mock_ctx = mock.MagicMock()
         heat_client = mock.MagicMock()
-        heat_client.stacks.get.return_value = mock.MagicMock(
-            stack_name='overcloud')
+        stack = mock.MagicMock(stack_name='overcloud')
 
         def return_not_found(*args):
             raise heat_exc.HTTPNotFound()
@@ -543,14 +550,17 @@ class ProcessTemplatesActionTest(base.TestCase):
         action = templates.ProcessTemplatesAction()
         self.assertFalse(
             action._heat_resource_exists(
-                'Networks', 'InternalNetwork', mock_ctx))
+                heat_client, stack, 'Networks', 'InternalNetwork', mock_ctx))
 
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._heat_resource_exists')
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._j2_render_and_put')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_legacy_api_network_exists(self, get_obj_client_mock, j2_mock,
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_legacy_api_network_exists(self, get_heat_client_mock,
+                                       get_obj_client_mock, j2_mock,
                                        resource_exists_mock):
         resource_exists_mock.return_value = True
         swift = self._custom_roles_mock_objclient(
@@ -576,7 +586,10 @@ class ProcessTemplatesActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._j2_render_and_put')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_no_legacy_api_network_exists(self, get_obj_client_mock, j2_mock,
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_no_legacy_api_network_exists(self, get_heat_client_mock,
+                                          get_obj_client_mock, j2_mock,
                                           resource_exists_mock):
         resource_exists_mock.return_value = False
         swift = self._custom_roles_mock_objclient(
