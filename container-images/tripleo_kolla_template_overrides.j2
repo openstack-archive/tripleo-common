@@ -20,7 +20,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
 {% set cinder_volume_packages_remove = ['scsi-target-utils'] %}
 {% set ironic_conductor_packages_remove = ['shellinabox'] %}
-{% set barbican_api_packages_remove = ['uwsgi-plugin-python'] %}
+{% set barbican_api_packages_remove = ['uwsgi-plugin-python2'] %}
 {% block cinder_volume_redhat_setup %}
 # RUN sed -i '1 i include /var/lib/cinder/volumes/*' /etc/tgt/tgtd.conf
 {% endblock %}
