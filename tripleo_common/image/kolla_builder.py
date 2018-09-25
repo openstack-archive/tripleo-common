@@ -110,6 +110,21 @@ def build_service_filter(environment, roles_data):
     return enabled_services
 
 
+def set_neutron_driver(pd, mapping_args):
+    """Set the neutron_driver images variable based on parameters
+
+    :param pd: Parameter defaults from the environment
+    :param mapping_args: Dict to set neutron_driver value on
+    """
+    if not pd or 'NeutronMechanismDrivers' not in pd:
+        return
+    nmd = pd['NeutronMechanismDrivers']
+    if 'opendaylight_v2' in nmd:
+        mapping_args['neutron_driver'] = 'odl'
+    elif 'ovn' in nmd:
+        mapping_args['neutron_driver'] = 'ovn'
+
+
 def container_images_prepare_multi(environment, roles_data, dry_run=False,
                                    cleanup=image_uploader.CLEANUP_FULL):
     """Perform multiple container image prepares and merge result
@@ -135,7 +150,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
     service_filter = build_service_filter(environment, roles_data)
 
     for cip_entry in cip:
-        mapping_args = cip_entry.get('set')
+        mapping_args = cip_entry.get('set', {})
+        set_neutron_driver(pd, mapping_args)
         push_destination = cip_entry.get('push_destination')
         # use the configured registry IP as the discovered registry
         # if it is available
@@ -231,12 +247,6 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
     if mapping_args is None:
         mapping_args = {}
-
-    if service_filter:
-        if 'OS::TripleO::Services::OpenDaylightApi' in service_filter:
-            mapping_args['neutron_driver'] = 'odl'
-        elif 'OS::TripleO::Services::OVNController' in service_filter:
-            mapping_args['neutron_driver'] = 'ovn'
 
     def ffunc(entry):
         imagename = entry.get('imagename', '')
