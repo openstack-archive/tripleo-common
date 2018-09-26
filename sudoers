@@ -11,4 +11,5 @@ mistral ALL = NOPASSWD: /usr/bin/tar --xattrs --ignore-failed-read -C / -cf /var
 mistral ALL = NOPASSWD: /usr/bin/chown mistral. /var/tmp/undercloud-backup-*/filesystem-*.tar
 mistral ALL = NOPASSWD: /usr/bin/yum -y install octavia-amphora-image
 mistral ALL = NOPASSWD: /usr/bin/tripleo-container-image-prepare *
+mistral ALL = NOPASSWD: /usr/bin/tripleo-deploy-openshift *
 validations ALL = NOPASSWD: ALL
