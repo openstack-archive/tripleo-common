@@ -109,10 +109,10 @@ container_images:
 - imagename: docker.io/openshift/origin:v3.10.0
 - imagename: docker.io/openshift/node:v3.10.0
 - imagename: docker.io/openshift/origin-deployer:v3.10.0
+- imagename: docker.io/openshift/origin-docker-builder:v3.10.0
 - imagename: docker.io/openshift/origin-docker-registry:v3.10.0
 - imagename: docker.io/openshift/origin-haproxy-router:v3.10.0
 - imagename: docker.io/openshift/origin-pod:v3.10.0
-- imagename: docker.io/openshift/origin-sti-builder:v3.10.0
 - imagename: docker.io/openshift/origin-web-console:v3.10.0
 - imagename: docker.io/cockpit/kubernetes:latest
 - imagename: registry.fedoraproject.org/latest/etcd:latest
