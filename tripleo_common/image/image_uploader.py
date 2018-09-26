@@ -569,8 +569,8 @@ class DockerImageUploader(BaseImageUploader):
         result = self.upload_image(*first)
         local_images.extend(result)
 
-        # workers will be half the CPU count, to a minimum of 2
-        workers = max(2, processutils.get_worker_count() // 2)
+        # workers will be based on CPU count with a min 4, max 12
+        workers = min(12, max(4, processutils.get_worker_count()))
         p = futures.ThreadPoolExecutor(max_workers=workers)
 
         for result in p.map(docker_upload, self.upload_tasks):
