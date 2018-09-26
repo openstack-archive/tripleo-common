@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fixes `bug 1793605 <https://bugs.launchpad.net/tripleo/+bug/1793605>`__ so
+    when nodes are blacklisted, they are not included in the Overcloud config.
+    A warning will show that the server_id that was ignored if the it can't
+    be found in the stack.
