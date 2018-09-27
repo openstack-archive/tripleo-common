@@ -110,6 +110,7 @@ workflows:
             auth_username: <% $.auth_username %>
             auth_password: <% $.auth_password %>
             auth_project_name: <% $.auth_project_name %>
+          execution_id: <% execution().id %>
         on-success: config_octavia
 
       config_octavia:
@@ -150,6 +151,7 @@ workflows:
             generate_certs: <% $.generate_certs %>
             mgmt_port_dev: <% $.mgmt_port_dev %>
             auth_project_name: <% $.auth_project_name %>
+          execution_id: <% execution().id %>
         on-complete: purge_local_temp_dir
       purge_local_temp_dir:
         action: tripleo.files.remove_temp_dir path=<% $.undercloud_local_dir %>

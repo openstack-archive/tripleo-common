@@ -388,6 +388,7 @@ workflows:
           reproduce_command: true
           trash_output: true
           blacklisted_hostnames: <% $.blacklisted_hostnames %>
+          execution_id: <% execution().id %>
         publish:
           log_path: <% task(run_ansible).result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS
