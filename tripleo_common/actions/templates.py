@@ -150,11 +150,9 @@ class ProcessTemplatesAction(base.TripleOAction):
                      "the J2 excludes list to: %s" % j2_excl_data)
         return j2_excl_data
 
-    def _heat_resource_exists(self, nested_stack_name, resource_name, context):
-        heatclient = self.get_orchestration_client(context)
-        try:
-            stack = heatclient.stacks.get(self.container)
-        except heat_exc.HTTPNotFound:
+    def _heat_resource_exists(self, heatclient, stack, nested_stack_name,
+                              resource_name, context):
+        if stack is None:
             LOG.debug("Resource does not exist because stack does not exist")
             return False
 
@@ -217,6 +215,14 @@ class ProcessTemplatesAction(base.TripleOAction):
             r_map[r.get('name')] = r
         excl_templates = j2_excl_data.get('name')
 
+        heatclient = self.get_orchestration_client(context)
+        stack = None
+        try:
+            stack = heatclient.stacks.get(self.container,
+                                          resolve_outputs=False)
+        except heat_exc.HTTPNotFound:
+            LOG.debug("Stack does not exist")
+
         n_map = {}
         for n in network_data:
             if n.get('enabled') is not False:
@@ -228,7 +234,8 @@ class ProcessTemplatesAction(base.TripleOAction):
                 # Check to see if legacy named API network exists
                 # and if so we need to set compat_name
                 api_net = "{}Network".format(constants.LEGACY_API_NETWORK)
-                if self._heat_resource_exists('Networks', api_net, context):
+                if self._heat_resource_exists(heatclient, stack, 'Networks',
+                                              api_net, context):
                     n['compat_name'] = 'Internal'
                     LOG.info("Upgrade compatibility enabled for legacy "
                              "network resource Internal.")
