@@ -53,14 +53,6 @@
     gate:
       queue: tripleo
       jobs:
-        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
-            files:
-              - workbooks/package_update.yaml
-              - workbooks/baremetal.yaml
-              - ^container-images/.*$
-              - tripleo_common/actions/deployment.py
-              - tripleo_common/actions/container_images.py
-              - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario001-multinode-oooq-container
         - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
             files:
@@ -75,8 +67,4 @@
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
               - tripleo_common/actions/ansible.py
-              - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
-            files:
-              - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
