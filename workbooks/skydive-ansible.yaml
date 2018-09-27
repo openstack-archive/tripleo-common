@@ -69,5 +69,6 @@ workflows:
           ssh_private_key: <% $.private_key %>
           extra_env_variables: <% $.ansible_extra_env_variables %>
           extra_vars: <% $.extra_vars %>
+          execution_id: <% execution().id %>
         publish:
           output: <% task().result %>

@@ -27,3 +27,4 @@ workflows:
           playbook: /usr/share/tripleo-common/playbooks/swift_ring_rebalance.yaml
           inventory: /usr/bin/tripleo-ansible-inventory
           use_openstack_credentials: true
+          execution_id: <% execution().id %>
