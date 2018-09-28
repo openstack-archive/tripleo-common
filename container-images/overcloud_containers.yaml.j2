@@ -808,6 +808,7 @@ container_images_template:
   params:
   - DockerOpenShiftNodeImage
   services:
+  - OS::TripleO::Services::OpenShift::Infra
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
 
@@ -815,7 +816,9 @@ container_images_template:
   params:
   - DockerOpenShiftDeployerImage
   services:
+  - OS::TripleO::Services::OpenShift::Infra
   - OS::TripleO::Services::OpenShift::Master
+  - OS::TripleO::Services::OpenShift::Worker
 
 - imagename: "{{openshift_namespace}}/{{openshift_base_image}}-docker-builder:{{openshift_tag}}"
   params:
@@ -827,20 +830,19 @@ container_images_template:
   params:
   - DockerOpenShiftDockerRegistryImage
   services:
-  - OS::TripleO::Services::OpenShift::Master
-  - OS::TripleO::Services::OpenShift::Worker
+  - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/{{openshift_base_image}}-haproxy-router:{{openshift_tag}}"
   params:
   - DockerOpenShiftHAProxyRouterImage
   services:
-  - OS::TripleO::Services::OpenShift::Master
-  - OS::TripleO::Services::OpenShift::Worker
+  - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/{{openshift_base_image}}-pod:{{openshift_tag}}"
   params:
   - DockerOpenShiftPodImage
   services:
+  - OS::TripleO::Services::OpenShift::Infra
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
 
