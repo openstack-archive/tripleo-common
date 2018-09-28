@@ -103,7 +103,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
 
         mock_write_cfg.assert_called_once_with(action.work_dir,
                                                self.remote_user,
-                                               ssh_private_key=None)
+                                               ssh_private_key=None,
+                                               override_ansible_cfg=None)
 
         pb = os.path.join(action.work_dir, 'playbook.yaml')
         env = {
@@ -207,3 +208,51 @@ class CopyConfigFileTest(base.TestCase):
         log_path = config.get('defaults', 'log_path')
         self.assertEqual(log_path,
                          os.path.join(work_dir, 'ansible.log'))
+
+    def test_override_ansible_cfg(self):
+        with tempfile.NamedTemporaryFile() as ansible_cfg_file:
+            ansible_cfg_path = ansible_cfg_file.name
+            work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action-test')
+            # Needed for the configparser to be able to read this file.
+            ansible_cfg_file.write(b'[defaults]\n')
+            ansible_cfg_file.write(b'[ssh_connection]\n')
+            ansible_cfg_file.flush()
+
+            override_ansible_cfg = (
+                "[defaults]\n"
+                "forks=10\n"
+                "[ssh_connection]\n"
+                "custom_option=custom_value\n"
+            )
+
+            resulting_ansible_config = ansible.write_default_ansible_cfg(
+                work_dir, None, None, None, base_ansible_cfg=ansible_cfg_path,
+                override_ansible_cfg=override_ansible_cfg)
+
+            ansible_cfg = configparser.ConfigParser()
+            ansible_cfg.read(resulting_ansible_config)
+
+            self.assertEqual('10', ansible_cfg.get('defaults', 'forks'))
+            self.assertEqual('custom_value',
+                             ansible_cfg.get('ssh_connection',
+                                             'custom_option'))
+
+    def test_override_ansible_cfg_empty(self):
+        with tempfile.NamedTemporaryFile() as ansible_cfg_file:
+            ansible_cfg_path = ansible_cfg_file.name
+            work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action-test')
+            # Needed for the configparser to be able to read this file.
+            ansible_cfg_file.write(b'[defaults]\n')
+            ansible_cfg_file.write(b'[ssh_connection]\n')
+            ansible_cfg_file.flush()
+
+            override_ansible_cfg = ""
+
+            resulting_ansible_config = ansible.write_default_ansible_cfg(
+                work_dir, None, None, None, base_ansible_cfg=ansible_cfg_path,
+                override_ansible_cfg=override_ansible_cfg)
+
+            ansible_cfg = configparser.ConfigParser()
+            ansible_cfg.read(resulting_ansible_config)
+
+            self.assertEqual('25', ansible_cfg.get('defaults', 'forks'))
