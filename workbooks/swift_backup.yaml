@@ -1,45 +1,40 @@
 ---
 version: '2.0'
-name: tripleo.swift_rings_backup.v1
-description: TripleO Swift Rings backup container Deployment Workflow v1
+name: tripleo.swift_backup.v1
+description: TripleO Swift backup container Deployment Workflow v1
 
 workflows:
 
-  create_swift_rings_backup_container_plan:
+  create_swift_backup_container_plan:
     description: >
-      This plan ensures existence of container for Swift Rings backup.
+      Ensures the existence of containers for backups, e.g. swift_rings
     input:
       - container
       - queue_name: tripleo
+      - container_suffix: "-swift-rings"
+      - swift_tar: "swift-rings.tar.gz"
+      - get_url_parm: SwiftRingGetTempurl
+      - put_url_parm: SwiftRingPutTempurl
     tags:
       - tripleo-common-managed
     tasks:
 
-      swift_rings_container:
+      swift_container:
         publish:
-          swift_rings_container: "<% $.container %>-swift-rings"
-          swift_rings_tar: "swift-rings.tar.gz"
-        on-complete: check_container
-
-      check_container:
-        workflow: tripleo.swift.v1.container_exists container=<% $.swift_rings_container %>
-        input:
-          create_container: true
-        on-success: get_tempurl
-        on-error: set_create_container_failed
+          swift_container: "<% $.container %><% $.container_suffix %>"
+        on-complete: get_tempurl
 
       get_tempurl:
         action: tripleo.swift.tempurl
         on-success: set_get_tempurl
         input:
-          container: <% $.swift_rings_container %>
-          obj: <% $.swift_rings_tar %>
+          container: <% $.swift_container %>
+          obj: <% $.swift_tar %>
 
       set_get_tempurl:
         action: tripleo.parameters.update
         input:
-          parameters:
-            SwiftRingGetTempurl: <% task(get_tempurl).result %>
+          parameters: <% {$.get_url_parm => task(get_tempurl).result} %>
           container: <% $.container %>
         on-success: put_tempurl
 
@@ -47,15 +42,14 @@ workflows:
         action: tripleo.swift.tempurl
         on-success: set_put_tempurl
         input:
-          container: <% $.swift_rings_container %>
-          obj: <% $.swift_rings_tar %>
+          container: <% $.swift_container %>
+          obj: <% $.swift_tar %>
           method: "PUT"
 
       set_put_tempurl:
         action: tripleo.parameters.update
         input:
-          parameters:
-            SwiftRingPutTempurl: <% task(put_tempurl).result %>
+          parameters: <% {$.put_url_parm => task(put_tempurl).result} %>
           container: <% $.container %>
         on-success: set_status_success
         on-error: set_put_tempurl_failed
@@ -71,12 +65,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(set_put_tempurl).result %>
-
-      set_create_container_failed:
-        on-success: notify_zaqar
-        publish:
-          status: FAILED
-          message: <% task(create_container).result %>
 
       notify_zaqar:
         workflow: tripleo.messaging.v1.send
