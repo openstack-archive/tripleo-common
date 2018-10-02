@@ -380,6 +380,9 @@ RUN mkdir -p /openstack && \
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-executor /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
+USER root
+RUN useradd validations
+USER mistral
 {% endblock %}
 
 {% block mistral_event_engine_footer %}

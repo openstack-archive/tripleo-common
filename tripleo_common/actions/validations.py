@@ -111,8 +111,19 @@ class RunValidationAction(base.TripleOAction):
     def run(self, context):
         mc = self.get_workflow_client(context)
         identity_file = None
+
+        # Make sure the ssh_keys environment exists
         try:
             env = mc.environments.get('ssh_keys')
+        except Exception:
+            workflow_env = {
+                'name': 'ssh_keys',
+                'description': 'SSH keys for TripleO validations',
+                'variables': password_utils.create_ssh_keypair()
+            }
+            env = mc.environments.create(**workflow_env)
+
+        try:
             private_key = env.variables['private_key']
             identity_file = utils.write_identity_file(private_key)
 
