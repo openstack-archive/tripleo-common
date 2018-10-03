@@ -122,6 +122,7 @@ container_images_template:
   params:
   - DockerCinderVolumeImage
   services:
+  - OS::TripleO::Services::BlockStorageCinderVolume
   - OS::TripleO::Services::CinderVolume
   - OS::TripleO::Services::UndercloudCinderVolume
 
