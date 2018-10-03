@@ -150,7 +150,9 @@ class Config(object):
     def snapshot_config_dir(self, repo, commit_message):
         if repo.is_dirty(untracked_files=True):
             self.log.info('Snapshotting {}'.format(repo.working_dir))
-            repo.index.add('*')
+            # Use repo.git.add directly as repo.index.add defaults to forcing
+            # commit of ignored files, which we don't want.
+            repo.git.add('.')
             commit = repo.index.commit(commit_message)
             self.log.info('Created commit {}'.format(commit.hexsha))
         else:
