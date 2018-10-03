@@ -9,7 +9,11 @@
 {% block opendaylight_header %}
 RUN echo $'[opendaylight-8-devel]\n\
 name=OpenDaylight Oxygen repository\n\
-baseurl=https://nexus.opendaylight.org/content/repositories/opendaylight-oxygen-epel-7-$basearch-devel/\n\
+# The opendaylight packages are currently built noarch, but the repo hosting
+# them is hard-coded as an x86_64 repository.  To enable multiarch use of the
+# packages, we can hard-code x86_64 below, and update when the repository
+# definitions are archful.
+baseurl=https://nexus.opendaylight.org/content/repositories/opendaylight-oxygen-epel-7-x86_64-devel/\n\
 enabled=1\n\
 gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% endblock %}
