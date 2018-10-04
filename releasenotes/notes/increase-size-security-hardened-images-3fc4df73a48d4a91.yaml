@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Increase the size of the security hardened images to 40G. With the move
+    to containers more disk space is needed and the disk layout has been
+    modified. It needs a global size of 40G to work.
+
