@@ -812,6 +812,12 @@ container_images_template:
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
 
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-ansible:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftAnsibleImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
 - imagename: "{{openshift_namespace}}/{{openshift_base_image}}-deployer:{{openshift_tag}}"
   params:
   - DockerOpenShiftDeployerImage
