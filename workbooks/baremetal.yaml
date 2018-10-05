@@ -130,13 +130,21 @@ workflows:
           message: <% task(set_provision_state).result %>
 
       wait_for_provision_state:
-        on-success: send_message
         action: ironic.node_get node_id=<% $.node_uuid %>
         timeout: <% $.timeout %>
         retry:
           delay: <% $.retry_delay %>
           count: <% $.retry_count %>
           continue-on: <% task().result.provision_state != 'manageable' %>
+        on-complete:
+          - send_message: <% task().result.provision_state = 'manageable' %>
+          - state_not_reached: <% task().result.provision_state != 'manageable' %>
+
+      state_not_reached:
+        publish:
+          status: FAILED
+          message: Cleaning of node <% $.node_uuid %> timed out.
+        on-complete: send_message
 
       send_message:
         action: zaqar.queue_post
