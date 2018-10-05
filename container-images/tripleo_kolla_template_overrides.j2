@@ -382,6 +382,11 @@ RUN mkdir -p /openstack && \
 HEALTHCHECK CMD /openstack/healthcheck
 {% endblock %}
 
+
+{% block rabbitmq_install_plugins %}
+# External rabbitmq plugins installation is disabled
+{% endblock %}
+
 {% block rabbitmq_footer %}
 RUN yum install -y pacemaker pacemaker-remote pcs libqb resource-agents && mkdir /etc/libqb
 
