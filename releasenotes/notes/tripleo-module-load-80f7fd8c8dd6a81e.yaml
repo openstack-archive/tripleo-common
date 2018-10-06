@@ -1,0 +1,3 @@
+---
+features:
+  - Loads and persist kernel modules from the host directly.
