@@ -87,10 +87,9 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
                 tmp_tarball.name,
                 self.container_config)
             # Also upload the tarball to the container for use by export later
-            with open(tmp_tarball.name) as t:
+            with open(tmp_tarball.name, 'rb') as t:
                 swift.put_object(self.container_config,
-                                 '%s.tar.gz' % self.container_config,
-                                 t.read())
+                                 '%s.tar.gz' % self.container_config, t)
         if os.path.exists(config_path):
             shutil.rmtree(config_path)
 
