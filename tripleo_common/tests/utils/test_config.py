@@ -12,6 +12,7 @@
 
 import datetime
 import fixtures
+import git
 import mock
 import os
 import uuid
@@ -32,6 +33,7 @@ class TestConfig(base.TestCase):
     def setUp(self):
         super(TestConfig, self).setUp()
 
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
     @patch.object(ooo_config.Config, '_open_file')
@@ -40,7 +42,8 @@ class TestConfig(base.TestCase):
                                               mock_rmtree,
                                               mock_open,
                                               mock_mkdir,
-                                              mock_copyfile):
+                                              mock_copyfile,
+                                              mock_git_init):
         config_type_list = ['config_settings', 'global_config_settings',
                             'logging_sources', 'monitoring_subscriptions',
                             'service_config_settings',
@@ -56,6 +59,7 @@ class TestConfig(base.TestCase):
         self.config = ooo_config.Config(heat)
         self.config.download_config('overcloud', '/tmp/tht', config_type_list)
 
+        mock_git_init.assert_called_once_with('/tmp/tht')
         expected_mkdir_calls = [call('/tmp/tht/%s' % r) for r in fake_role]
         mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
         expected_calls = []
@@ -71,6 +75,7 @@ class TestConfig(base.TestCase):
                                             (role, config))]
         mock_open.assert_has_calls(expected_calls, any_order=True)
 
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
     @patch.object(ooo_config.Config, '_open_file')
@@ -79,7 +84,8 @@ class TestConfig(base.TestCase):
                                               mock_rmtree,
                                               mock_open,
                                               mock_mkdir,
-                                              mock_copyfile):
+                                              mock_copyfile,
+                                              mock_git_init):
 
         expected_config_type = 'config_settings'
         fake_role = [role for role in
@@ -96,6 +102,7 @@ class TestConfig(base.TestCase):
                           for r in fake_role]
         mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
         mock_open.assert_has_calls(expected_calls, any_order=True)
+        mock_git_init.assert_called_once_with('/tmp/tht')
 
     @patch.object(ooo_config.git, 'Repo')
     @mock.patch('os.mkdir')
@@ -239,9 +246,11 @@ class TestConfig(base.TestCase):
             file_name)
         return yaml.safe_load(open(file_path).read())
 
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
-    def test_config_download(self, mock_deployment_data, mock_config_dict):
+    def test_config_download(self, mock_deployment_data, mock_config_dict,
+                             mock_git_init):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
         stack = mock.MagicMock()
@@ -277,6 +286,7 @@ class TestConfig(base.TestCase):
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         tmp_path = self.config.download_config(stack, self.tmp_dir)
 
+        mock_git_init.assert_called_once_with(self.tmp_dir)
         for f in ['Controller',
                   'Compute', ]:
 
@@ -335,10 +345,11 @@ class TestConfig(base.TestCase):
                                     'overcloud-novacompute-2',
                                     d)))
 
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
     def test_config_download_os_apply_config(
-        self, mock_deployment_data, mock_config_dict):
+        self, mock_deployment_data, mock_config_dict, mock_git_init):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
         stack = mock.MagicMock()
@@ -393,12 +404,15 @@ class TestConfig(base.TestCase):
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         with warnings.catch_warnings(record=True) as w:
             self.config.download_config(stack, self.tmp_dir)
+            mock_git_init.assert_called_once_with(self.tmp_dir)
             self.assertEqual(1, len(w))
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "group:os-apply-config is deprecated" in str(w[-1].message)
 
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
-    def test_config_download_no_deployment_name(self, mock_deployment_data):
+    def test_config_download_no_deployment_name(self, mock_deployment_data,
+                                                mock_git_init):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
         stack = mock.MagicMock()
@@ -415,7 +429,9 @@ class TestConfig(base.TestCase):
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         self.assertRaises(ValueError,
                           self.config.download_config, stack, self.tmp_dir)
+        mock_git_init.assert_called_once_with(self.tmp_dir)
 
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.git, 'Repo')
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
@@ -428,7 +444,8 @@ class TestConfig(base.TestCase):
                                                    mock_open,
                                                    mock_mkdir,
                                                    mock_copyfile,
-                                                   mock_repo):
+                                                   mock_repo,
+                                                   mock_git_init):
         config_type_list = ['config_settings', 'global_config_settings',
                             'logging_sources', 'monitoring_subscriptions',
                             'service_config_settings',
@@ -446,6 +463,7 @@ class TestConfig(base.TestCase):
         self.config.download_config('overcloud', '/tmp/tht', config_type_list,
                                     False)
 
+        mock_git_init.assert_called_once_with('/tmp/tht')
         expected_rmtree_calls = [call('/tmp/tht')]
         mock_rmtree.assert_has_calls(expected_rmtree_calls)
 
@@ -474,6 +492,14 @@ class TestConfig(base.TestCase):
         self.config.create_config_dir('/tmp/tht', False)
         expected_rmtree_calls = [call('/tmp/tht')]
         mock_rmtree.assert_has_calls(expected_rmtree_calls)
+
+    def test_initialize_git_repo(self):
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = fakes.create_tht_stack()
+        self.config = ooo_config.Config(heat)
+        self.tmp_dir = self.useFixture(fixtures.TempDir()).path
+        repo = self.config.initialize_git_repo(self.tmp_dir)
+        self.assertIsInstance(repo, git.Repo)
 
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
