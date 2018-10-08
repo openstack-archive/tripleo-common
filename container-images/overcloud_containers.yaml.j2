@@ -1,4 +1,5 @@
-{% set namespace=namespace or "tripleopike" %}
+{# LP #1796664 remove namespace reference when 608648 gets merged #}
+{% set namespace=docker_namespace|default(namespace) or "tripleopike" %}
 
 {% set ceph_namespace=ceph_namespace or "docker.io/ceph" %}
 {% set ceph_image=ceph_image or "daemon" %}
