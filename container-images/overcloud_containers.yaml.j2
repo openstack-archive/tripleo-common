@@ -817,6 +817,12 @@ container_images_template:
   services:
   - OS::TripleO::Services::OpenShift::Master
 
+- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-docker-builder:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftDockerBuilderImage
+  services:
+  - OS::TripleO::Services::OpenShift::Worker
+
 - imagename: "{{openshift_namespace}}/{{openshift_base_image}}-docker-registry:{{openshift_tag}}"
   params:
   - DockerOpenShiftDockerRegistryImage
@@ -835,12 +841,6 @@ container_images_template:
   - DockerOpenShiftPodImage
   services:
   - OS::TripleO::Services::OpenShift::Master
-  - OS::TripleO::Services::OpenShift::Worker
-
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-sti-builder:{{openshift_tag}}"
-  params:
-  - DockerOpenShiftStiBuilderImage
-  services:
   - OS::TripleO::Services::OpenShift::Worker
 
 - imagename: "{{openshift_namespace}}/{{openshift_base_image}}-web-console:{{openshift_tag}}"
