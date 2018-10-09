@@ -57,6 +57,6 @@ workflows:
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
-          status: <% $.status %>
+          status: <% $.get('status', 'SUCCESS') %>
           execution: <% execution() %>
           message: <% $.get('message', '') %>
