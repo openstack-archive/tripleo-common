@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright 2018 Red Hat, Inc.
 # All Rights Reserved.
 #
@@ -77,14 +77,33 @@ def get_args():
              "images. 'partial' will leave images required for "
              "deployment on this host. 'none' will do no cleanup."
     )
+    parser.add_argument(
+        '--log-file', dest='log_file',
+        help='Log file to write prepare output to'
+    )
+    parser.add_argument(
+        '--dry-run',
+        dest='dry_run',
+        action='store_true',
+        default=False,
+        help='Do not perform any pull, modify, or push operations. '
+             'The environment file will still be populated as if these '
+             'operations were performed.'
+    )
     args = parser.parse_args(sys.argv[1:])
     return args
 
 if __name__ == '__main__':
     args = get_args()
 
-    logging.basicConfig()
+    logging.basicConfig(
+        datefmt='%Y-%m-%d %H:%M:%S',
+        format=('%(asctime)s.%(msecs)03d %(process)d %(levelname)s '
+                '%(name)s [  ] %(message)s')
+    )
     log = logging.getLogger()
+    if args.log_file:
+        log.addHandler(logging.FileHandler(filename=args.log_file))
     log.setLevel(logging.INFO)
 
     if args.cleanup not in image_uploader.CLEANUP:
@@ -97,5 +116,7 @@ if __name__ == '__main__':
         env = yaml.safe_load(f)
 
     params = kolla_builder.container_images_prepare_multi(
-        env, roles_data, cleanup=args.cleanup)
-    print(yaml.safe_dump(params, default_flow_style=False))
+        env, roles_data, cleanup=args.cleanup, dry_run=args.dry_run)
+    result = yaml.safe_dump(params, default_flow_style=False)
+    log.info(result)
+    print(result)
