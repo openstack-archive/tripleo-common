@@ -44,7 +44,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 
 # Required for mistral-db-populate to load tripleo custom actions on
 # the undercloud
-{% set mistral_base_packages_append = ['openstack-tripleo-common', 'ceph-ansible', 'skydive-ansible'] %}
+{% set mistral_base_packages_append = ['openstack-tripleo-common', 'skydive-ansible'] %}
 
 # NOTE: Mistral executor needs to run nova-manage cells_v2 commands on
 # the undercloud baremetal workflows. Undercloud mistral executor needs to run
