@@ -1,0 +1,4 @@
+---
+fixes:
+  - tripleo.access.v1.enable_ssh_admin now honors the server blacklist if one
+    is set. Servers in the blacklist will not be used by the workflow.
