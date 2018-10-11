@@ -32,7 +32,7 @@ SAMPLE_ROLE = """
     - InternalApi
   HostnameFormatDefault: '%stackname%-sample-%index%'
   ServicesDefault:
-    - OS::TripleO::Services::Ntp
+    - OS::TripleO::Services::Timesync
 """
 SAMPLE_ROLE_NETWORK_DICT = """
 ###############################################################################
@@ -46,7 +46,7 @@ SAMPLE_ROLE_NETWORK_DICT = """
       subnet: internal_api_subnet
   HostnameFormatDefault: '%stackname%-sample-%index%'
   ServicesDefault:
-    - OS::TripleO::Services::Ntp
+    - OS::TripleO::Services::Timesync
 """
 SAMPLE_GENERATED_ROLE = """
 ###############################################################################
@@ -59,18 +59,18 @@ SAMPLE_GENERATED_ROLE = """
     - InternalApi
   HostnameFormatDefault: '%stackname%-sample-%index%'
   ServicesDefault:
-    - OS::TripleO::Services::Ntp
+    - OS::TripleO::Services::Timesync
 """
 SAMPLE_ROLE_OBJ = {
     'HostnameFormatDefault': '%stackname%-sample-%index%',
-    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'ServicesDefault': ['OS::TripleO::Services::Timesync'],
     'description': 'Sample!\n',
     'name': 'sample',
     'networks': ['InternalApi']
 }
 SAMPLE_ROLE_OBJ_NETWORK_DICT = {
     'HostnameFormatDefault': '%stackname%-sample-%index%',
-    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'ServicesDefault': ['OS::TripleO::Services::Timesync'],
     'description': 'Sample!\n',
     'name': 'sample',
     'networks': {

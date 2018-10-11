@@ -710,7 +710,7 @@ class TestPrepare(base.TestCase):
                 }, {
                     'name': 'BlockStorage',
                     'ServicesDefault': [
-                        'OS::TripleO::Services::Ntp'
+                        'OS::TripleO::Services::Timesync'
                     ]
                 }
             ])
@@ -750,7 +750,7 @@ class TestPrepare(base.TestCase):
                 }, {
                     'name': 'BlockStorage',
                     'ServicesDefault': [
-                        'OS::TripleO::Services::Ntp'
+                        'OS::TripleO::Services::Timesync'
                     ]
                 }
             ])
@@ -805,7 +805,7 @@ class TestPrepare(base.TestCase):
                 }, {
                     'name': 'BlockStorage',
                     'ServicesDefault': [
-                        'OS::TripleO::Services::Ntp'
+                        'OS::TripleO::Services::Timesync'
                     ]
                 }
             ])
