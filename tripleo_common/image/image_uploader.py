@@ -19,10 +19,12 @@ from concurrent import futures
 import json
 import netifaces
 import os
+import re
 import requests
+from requests import auth as requests_auth
 import shutil
 import six
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib import parse
 import subprocess
 import tempfile
 import tenacity
@@ -47,6 +49,7 @@ LOG = logging.getLogger(__name__)
 SECURE_REGISTRIES = (
     'trunk.registry.rdoproject.org',
     'docker.io',
+    'registry-1.docker.io',
 )
 
 CLEANUP = (
@@ -84,10 +87,12 @@ class ImageUploadManager(BaseImageManager):
         self.dry_run = dry_run
         self.cleanup = cleanup
 
-    def discover_image_tag(self, image, tag_from_label=None):
+    def discover_image_tag(self, image, tag_from_label=None,
+                           username=None, password=None):
         uploader = self.uploader(DEFAULT_UPLOADER)
         return uploader.discover_image_tag(
-            image, tag_from_label=tag_from_label)
+            image, tag_from_label=tag_from_label,
+            username=username, password=password)
 
     def uploader(self, uploader):
         if uploader not in self.uploaders:
@@ -162,7 +167,8 @@ class ImageUploader(object):
         pass
 
     @abc.abstractmethod
-    def discover_image_tag(self, image, tag_from_label=None):
+    def discover_image_tag(self, image, tag_from_label=None,
+                           username=None, password=None):
         """Discover a versioned tag for an image"""
         pass
 
@@ -267,10 +273,10 @@ class BaseImageUploader(ImageUploader):
                 'Modifying image %s failed' % target_image)
 
     @staticmethod
-    def _images_match(image1, image2, insecure_registries):
+    def _images_match(image1, image2, insecure_registries, session1=None):
         try:
             image1_digest = BaseImageUploader._image_digest(
-                image1, insecure_registries)
+                image1, insecure_registries, session=session1)
         except Exception:
             return False
         try:
@@ -285,26 +291,73 @@ class BaseImageUploader(ImageUploader):
         return image1_digest == image2_digest
 
     @staticmethod
-    def _image_digest(image, insecure_registries):
+    def _image_digest(image, insecure_registries, session=None):
         image_url = BaseImageUploader._image_to_url(image)
         insecure = image_url.netloc in insecure_registries
-        i = BaseImageUploader._inspect(image_url, insecure)
+        i = BaseImageUploader._inspect(image_url, insecure, session)
         return i.get('Digest')
 
     @staticmethod
-    def _image_labels(image, insecure):
-        image_url = BaseImageUploader._image_to_url(image)
-        i = BaseImageUploader._inspect(image_url, insecure)
+    def _image_labels(image_url, insecure, session=None):
+        i = BaseImageUploader._inspect(image_url, insecure, session)
         return i.get('Labels', {}) or {}
 
     @staticmethod
-    def _image_exists(image, insecure_registries):
+    def _image_exists(image, insecure_registries, session=None):
         try:
-            BaseImageUploader._image_digest(image, insecure_registries)
+            BaseImageUploader._image_digest(
+                image, insecure_registries, session=session)
         except ImageNotFoundException:
             return False
         else:
             return True
+
+    @staticmethod
+    def authenticate(image_url, username=None, password=None, insecure=False):
+        image_url = BaseImageUploader._fix_dockerio_url(image_url)
+        netloc = image_url.netloc
+        if insecure:
+            scheme = 'http'
+        else:
+            scheme = 'https'
+        image, tag = image_url.path.split(':')
+        url = '%s://%s/v2/' % (scheme, netloc)
+        session = requests.Session()
+        r = session.get(url, timeout=30)
+        LOG.debug('%s status code %s' % (url, r.status_code))
+        if r.status_code != 401:
+            return session
+        if 'www-authenticate' not in r.headers:
+            raise ImageUploaderException(
+                'Unknown authentication method for headers: %s' % r.headers)
+
+        www_auth = r.headers['www-authenticate']
+        if not www_auth.startswith('Bearer '):
+            raise ImageUploaderException(
+                'Unknown www-authenticate value: %s' % www_auth)
+        token_param = {}
+
+        realm = re.search('realm="(.*?)"', www_auth).group(1)
+        token_param['service'] = re.search(
+            'service="(.*?)"', www_auth).group(1)
+        token_param['scope'] = 'repository:%s:pull' % image[1:]
+        auth = None
+        if username:
+            auth = requests_auth.HTTPBasicAuth(username, password)
+        rauth = session.get(realm, params=token_param, auth=auth, timeout=30)
+        rauth.raise_for_status()
+        session.headers['Authorization'] = 'Bearer %s' % rauth.json()['token']
+        return session
+
+    @staticmethod
+    def _fix_dockerio_url(url):
+        one = 'docker.io'
+        two = 'registry-1.docker.io'
+        if url.netloc != one:
+            return url
+        return parse.ParseResult(url.scheme, two,
+                                 url.path, url.params,
+                                 url.query, url.fragment)
 
     @staticmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -313,39 +366,79 @@ class BaseImageUploader(ImageUploader):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
-    def _inspect(image_url, insecure=False):
-        image = image_url.geturl()
-
-        cmd = ['skopeo', 'inspect']
-
+    def _inspect(image_url, insecure=False, session=None):
+        original_image_url = image_url
+        image_url = BaseImageUploader._fix_dockerio_url(image_url)
+        parts = {
+            'netloc': image_url.netloc
+        }
         if insecure:
-            cmd.append('--tls-verify=false')
-        cmd.append(image)
+            parts['scheme'] = 'http'
+        else:
+            parts['scheme'] = 'https'
+        image, tag = image_url.path.split(':')
+        parts['image'] = image
+        parts['tag'] = tag
 
-        LOG.info('Running %s' % ' '.join(cmd))
-        env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+        manifest_url = ('%(scheme)s://%(netloc)s/v2'
+                        '%(image)s/manifests/%(tag)s' % parts)
+        tags_url = ('%(scheme)s://%(netloc)s/v2'
+                    '%(image)s/tags/list' % parts)
+        manifest_headers = {
+            'Accept': 'application/vnd.docker.distribution.manifest.v2+json'
+        }
 
-        out, err = process.communicate()
-        if process.returncode != 0:
-            not_found_msgs = (
-                u'manifest unknown',
-                # returned by docker.io
-                u'requested access to the resource is denied'
-            )
-            if any(n in err for n in not_found_msgs):
-                raise ImageNotFoundException('Not found image: %s\n%s' %
-                                             (image, err))
-            raise ImageUploaderException('Error inspecting image: %s\n%s' %
-                                         (image, err))
-        return json.loads(out)
+        p = futures.ThreadPoolExecutor(max_workers=2)
+        manifest_f = p.submit(
+            session.get, manifest_url, headers=manifest_headers, timeout=30)
+        tags_f = p.submit(session.get, tags_url, timeout=30)
+
+        manifest_r = manifest_f.result()
+        tags_r = tags_f.result()
+
+        if manifest_r.status_code == 404:
+            raise ImageNotFoundException('Not found image: %s' %
+                                         image_url.geturl())
+        manifest_r.raise_for_status()
+        tags_r.raise_for_status()
+
+        manifest = manifest_r.json()
+        layers = [l['digest'] for l in manifest['layers']]
+
+        parts['config_digest'] = manifest['config']['digest']
+        config_headers = {
+            'Accept': manifest['config']['mediaType']
+        }
+        config_url = ('%(scheme)s://%(netloc)s/v2'
+                      '%(image)s/blobs/%(config_digest)s' % parts)
+        config_f = p.submit(
+            session.get, config_url, headers=config_headers, timeout=30)
+        config_r = config_f.result()
+        config_r.raise_for_status()
+
+        tags = tags_r.json()['tags']
+        digest = manifest_r.headers['Docker-Content-Digest']
+        config = config_r.json()
+        name = '%s%s' % (original_image_url.netloc, image)
+
+        return {
+            'Name': name,
+            'Digest': digest,
+            'RepoTags': tags,
+            'Created': config['created'],
+            'DockerVersion': config['docker_version'],
+            'Labels': config['config']['Labels'],
+            'Architecture': config['architecture'],
+            'Os': config['os'],
+            'Layers': layers,
+        }
 
     @staticmethod
     def _image_to_url(image):
         if '://' not in image:
             image = 'docker://' + image
-        return urlparse(image)
+        url = parse.urlparse(image)
+        return url
 
     @staticmethod
     def _discover_tag_from_inspect(i, image, tag_from_label=None,
@@ -412,20 +505,25 @@ class BaseImageUploader(ImageUploader):
         return versioned_images
 
     def discover_image_tag(self, image, tag_from_label=None,
-                           fallback_tag=None):
+                           fallback_tag=None, username=None, password=None):
         image_url = self._image_to_url(image)
         insecure = self.is_insecure_registry(image_url.netloc)
-        i = self._inspect(image_url, insecure)
+        session = self.authenticate(
+            image_url, insecure=insecure, username=username, password=password)
+        i = self._inspect(image_url, insecure, session)
         return self._discover_tag_from_inspect(i, image, tag_from_label,
                                                fallback_tag)
 
-    def filter_images_with_labels(self, images, labels):
+    def filter_images_with_labels(self, images, labels,
+                                  username=None, password=None):
         images_with_labels = []
         for image in images:
             url = self._image_to_url(image)
-            image_labels = self._image_labels(url.geturl(),
-                                              self.is_insecure_registry(
-                                                  url.netloc))
+            insecure = self.is_insecure_registry(url.netloc)
+            session = self.authenticate(
+                url, insecure=insecure, username=username, password=password)
+            image_labels = self._image_labels(
+                url, insecure=insecure, session=session)
             if set(labels).issubset(set(image_labels)):
                 images_with_labels.append(image)
 
@@ -465,7 +563,7 @@ class BaseImageUploader(ImageUploader):
 
     @staticmethod
     def _cross_repo_mount(target_image_url, image_layers,
-                          source_layers, insecure_registries):
+                          source_layers, insecure_registries, session):
         netloc = target_image_url.netloc
         name = target_image_url.path.split(':')[0][1:]
         if netloc in insecure_registries:
@@ -483,7 +581,7 @@ class BaseImageUploader(ImageUploader):
                     'mount': layer,
                     'from': existing_name
                 }
-                r = requests.post(url, data=data)
+                r = session.post(url, data=data)
                 LOG.debug('%s %s' % (r.status_code, r.reason))
 
 
@@ -500,24 +598,34 @@ class DockerImageUploader(BaseImageUploader):
         source_tag = names['source_tag']
         repo = names['repo']
         source_image = names['source_image']
+        source_image_url = BaseImageUploader._image_to_url(source_image)
+        source_insecure = source_image_url.netloc in insecure_registries
         target_image_no_tag = names['target_image_no_tag']
         append_tag = names['append_tag']
         target_tag = names['target_tag']
         target_image_source_tag = names['target_image_source_tag']
         target_image = names['target_image']
+        target_image_url = BaseImageUploader._image_to_url(target_image)
+        target_insecure = target_image_url.netloc in insecure_registries
 
         if dry_run:
             return []
 
         if modify_role:
+            target_session = BaseImageUploader.authenticate(
+                target_image_url, insecure=target_insecure)
             if BaseImageUploader._image_exists(target_image,
-                                               insecure_registries):
+                                               insecure_registries,
+                                               session=target_session):
                 LOG.warning('Skipping upload for modified image %s' %
                             target_image)
                 return []
         else:
+            source_session = BaseImageUploader.authenticate(
+                source_image_url, insecure=source_insecure)
             if BaseImageUploader._images_match(source_image, target_image,
-                                               insecure_registries):
+                                               insecure_registries,
+                                               session1=source_session):
                 LOG.warning('Skipping upload for image %s' % image_name)
                 return []
 
@@ -631,29 +739,40 @@ class SkopeoImageUploader(BaseImageUploader):
 
         source_image = names['source_image']
         source_image_url = BaseImageUploader._image_to_url(source_image)
-        source_image_local_url = urlparse('containers-storage:%s'
-                                          % source_image)
+        source_image_local_url = parse.urlparse('containers-storage:%s'
+                                                % source_image)
+        source_insecure = source_image_url.netloc in insecure_registries
+
         append_tag = names['append_tag']
 
         target_image_source_tag = names['target_image_source_tag']
         target_image = names['target_image']
         target_image_url = BaseImageUploader._image_to_url(target_image)
-        target_image_local_url = urlparse('containers-storage:%s' %
-                                          target_image)
+        target_image_local_url = parse.urlparse('containers-storage:%s' %
+                                                target_image)
+        target_insecure = target_image_local_url.netloc in insecure_registries
 
         if dry_run:
             return []
 
+        target_session = BaseImageUploader.authenticate(
+            target_image_url, insecure=target_insecure)
+
         if modify_role and BaseImageUploader._image_exists(
-                target_image, insecure_registries):
+                target_image, insecure_registries, target_session):
             LOG.warning('Skipping upload for modified image %s' %
                         target_image)
             return []
 
-        source_inspect = BaseImageUploader._inspect(source_image_url)
+        source_session = BaseImageUploader.authenticate(
+            source_image_url, insecure=source_insecure)
+
+        source_inspect = BaseImageUploader._inspect(
+            source_image_url, insecure=source_insecure, session=source_session)
         source_layers = source_inspect.get('Layers', [])
         BaseImageUploader._cross_repo_mount(
-            target_image_url, image_layers, source_layers, insecure_registries)
+            target_image_url, image_layers, source_layers, insecure_registries,
+            session=source_session)
         to_cleanup = []
 
         if modify_role:
@@ -671,8 +790,6 @@ class SkopeoImageUploader(BaseImageUploader):
                 modify_role, modify_vars, source_image,
                 target_image_source_tag, append_tag,
                 container_build_tool='buildah')
-            # Inspect to confirm the playbook created the target image
-            BaseImageUploader._inspect(target_image_local_url)
             if cleanup == CLEANUP_FULL:
                 to_cleanup.append(target_image)
 
@@ -756,7 +873,7 @@ class SkopeoImageUploader(BaseImageUploader):
             if not image:
                 continue
             LOG.warning('Removing local copy of %s' % image)
-            image_url = urlparse('containers-storage:%s' % image)
+            image_url = parse.urlparse('containers-storage:%s' % image)
             SkopeoImageUploader._delete(image_url)
 
     def run_tasks(self):
@@ -795,7 +912,9 @@ def discover_tag_from_inspect(args):
     image, tag_from_label, insecure_registries = args
     image_url = BaseImageUploader._image_to_url(image)
     insecure = image_url.netloc in insecure_registries
-    i = BaseImageUploader._inspect(image_url, insecure)
+    session = BaseImageUploader.authenticate(image_url, insecure=insecure)
+    i = BaseImageUploader._inspect(image_url, insecure=insecure,
+                                   session=session)
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
         path = image.rpartition(':')
