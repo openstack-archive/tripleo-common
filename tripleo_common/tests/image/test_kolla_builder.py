@@ -603,12 +603,15 @@ class TestPrepare(base.TestCase):
                 template_file=TEMPLATE_PATH,
                 output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
-                service_filter=['OS::TripleO::Services::NeutronServer'],
+                service_filter=[
+                    'OS::TripleO::Services::NeutronServer'
+                ],
                 mapping_args={
                     'namespace': 't',
                     'name_prefix': 'p',
                     'name_suffix': '',
                     'tag': 'l',
+                    'neutron_driver': None
                 }
             )
         )
@@ -639,6 +642,7 @@ class TestPrepare(base.TestCase):
                     'name_prefix': 'p',
                     'name_suffix': '',
                     'tag': 'l',
+                    'neutron_driver': 'ovn'
                 }
             )
         )
@@ -669,6 +673,7 @@ class TestPrepare(base.TestCase):
                     'name_prefix': '',
                     'name_suffix': '',
                     'tag': 'l',
+                    'neutron_driver': 'odl'
                 }
             )
         )
@@ -1005,3 +1010,32 @@ class TestPrepare(base.TestCase):
             },
             image_params
         )
+
+    def test_set_neutron_driver(self):
+        mapping_args = {}
+        kb.set_neutron_driver(None, mapping_args)
+        self.assertNotIn('neutron_driver', mapping_args)
+
+        mapping_args = {}
+        kb.set_neutron_driver({}, mapping_args)
+        self.assertNotIn('neutron_driver', mapping_args)
+
+        mapping_args = {}
+        kb.set_neutron_driver(
+            {'NeutronMechanismDrivers': ['sriovnicswitch', 'openvswitch']},
+            mapping_args
+        )
+        self.assertNotIn('neutron_driver', mapping_args)
+
+        mapping_args = {}
+        kb.set_neutron_driver(
+            {'NeutronMechanismDrivers': ['ovn']},
+            mapping_args
+        )
+        self.assertEqual('ovn', mapping_args['neutron_driver'])
+        mapping_args = {}
+        kb.set_neutron_driver(
+            {'NeutronMechanismDrivers': ['sriovnicswitch', 'opendaylight_v2']},
+            mapping_args
+        )
+        self.assertEqual('odl', mapping_args['neutron_driver'])
