@@ -198,6 +198,7 @@ class Config(object):
         # Get role data:
         role_data = self.stack_outputs.get('RoleData', {})
         role_group_vars = self.stack_outputs.get('RoleGroupVars', {})
+        allnodes_vars = self.stack_outputs.get('AllNodesConfig', {})
         for role_name, role in six.iteritems(role_data):
             role_path = os.path.join(config_dir, role_name)
             self._mkdir(role_path)
@@ -370,6 +371,13 @@ class Config(object):
 
         group_vars_dir = os.path.join(config_dir, 'group_vars')
         self._mkdir(group_vars_dir)
+        # Write allnodes_vars to 'overcloud' group as it doesn't apply
+        # to the undercloud, and 'overcloud' is the inventory group
+        # for all overcloud nodes, regardless of the --stack name.
+        filepath = os.path.join(group_vars_dir, 'overcloud.yaml')
+        with self._open_file(filepath) as vars_file:
+            yaml.safe_dump(allnodes_vars, vars_file, default_flow_style=False)
+
         host_vars_dir = os.path.join(config_dir, 'host_vars')
         self._mkdir(host_vars_dir)
 
