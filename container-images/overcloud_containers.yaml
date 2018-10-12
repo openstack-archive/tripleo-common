@@ -16,6 +16,7 @@ container_images:
 - imagename: docker.io/tripleomaster/centos-binary-cinder-volume:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-collectd:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-congress-api:current-tripleo
+- imagename: docker.io/tripleomaster/centos-binary-crane:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-cron:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-designate-api:current-tripleo
 - imagename: docker.io/tripleomaster/centos-binary-designate-backend-bind9:current-tripleo
