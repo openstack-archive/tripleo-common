@@ -431,6 +431,23 @@ class TestBaseImageUploader(base.TestCase):
             auth(url1).headers['Authorization']
         )
 
+    def test_authenticate_with_no_service(self):
+        req = self.requests
+        auth = image_uploader.BaseImageUploader.authenticate
+        url1 = urlparse('docker://docker.io/t/nova-api:latest')
+
+        headers = {
+            'www-authenticate': 'Bearer '
+                                'realm="https://auth.docker.io/token",'
+        }
+        req.get('https://registry-1.docker.io/v2/', status_code=401,
+                headers=headers)
+        req.get('https://auth.docker.io/token', json={"token": "asdf1234"})
+        self.assertEqual(
+            'Bearer asdf1234',
+            auth(url1).headers['Authorization']
+        )
+
     def test_fix_dockerio_url(self):
         url1 = urlparse('docker://docker.io/t/nova-api:latest')
         url2 = urlparse('docker://registry-1.docker.io/t/nova-api:latest')

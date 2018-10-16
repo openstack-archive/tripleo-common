@@ -338,8 +338,9 @@ class BaseImageUploader(ImageUploader):
         token_param = {}
 
         realm = re.search('realm="(.*?)"', www_auth).group(1)
-        token_param['service'] = re.search(
-            'service="(.*?)"', www_auth).group(1)
+        if 'service=' in www_auth:
+            token_param['service'] = re.search(
+                'service="(.*?)"', www_auth).group(1)
         token_param['scope'] = 'repository:%s:pull' % image[1:]
         auth = None
         if username:
