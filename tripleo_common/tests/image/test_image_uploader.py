@@ -13,11 +13,11 @@
 #   under the License.
 #
 
-import json
 import mock
 import operator
 import os
 import requests
+from requests_mock.contrib import fixture as rm_fixture
 import six
 from six.moves.urllib.parse import urlparse
 import tempfile
@@ -51,6 +51,8 @@ class TestImageUploadManager(base.TestCase):
         self.filelist = files
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.image.base.open',
                 mock.mock_open(read_data=filedata), create=True)
@@ -66,7 +68,8 @@ class TestImageUploadManager(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.'
                 'get_undercloud_registry', return_value='192.0.2.0:8787')
     def test_file_parsing(self, mock_gur, mockdocker, mockioctl, mockpath,
-                          mock_images_match, mock_is_insecure, mock_inspect):
+                          mock_images_match, mock_is_insecure, mock_inspect,
+                          mock_auth):
 
         mock_inspect.return_value = {}
         manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
@@ -171,89 +174,101 @@ class TestBaseImageUploader(base.TestCase):
         super(TestBaseImageUploader, self).setUp()
         self.uploader = image_uploader.BaseImageUploader()
         self.uploader._inspect.retry.sleep = mock.Mock()
+        self.requests = self.useFixture(rm_fixture.Fixture())
 
-    @mock.patch('requests.get')
-    def test_is_insecure_registry_known(self, mock_get):
+    def test_is_insecure_registry_known(self):
         self.assertFalse(
             self.uploader.is_insecure_registry('docker.io'))
 
-    @mock.patch('requests.get')
-    def test_is_insecure_registry_secure(self, mock_get):
+    def test_is_insecure_registry_secure(self):
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+        self.assertEqual(
+            'https://192.0.2.0:8787/',
+            self.requests.request_history[0].url
+        )
 
-    @mock.patch('requests.get')
-    def test_is_insecure_registry_timeout(self, mock_get):
-        mock_get.side_effect = requests.exceptions.ReadTimeout('ouch')
+    def test_is_insecure_registry_timeout(self):
+        self.requests.get(
+            'https://192.0.2.0:8787/',
+            exc=requests.exceptions.ReadTimeout('ouch'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+        self.assertEqual(
+            'https://192.0.2.0:8787/',
+            self.requests.request_history[0].url
+        )
 
-    @mock.patch('requests.get')
-    def test_is_insecure_registry_insecure(self, mock_get):
-        mock_get.side_effect = requests.exceptions.SSLError('ouch')
+    def test_is_insecure_registry_insecure(self):
+        self.requests.get(
+            'https://192.0.2.0:8787/',
+            exc=requests.exceptions.SSLError('ouch'))
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+        self.assertEqual(
+            'https://192.0.2.0:8787/',
+            self.requests.request_history[0].url
+        )
 
-    @mock.patch('subprocess.Popen')
-    def test_discover_image_tag(self, mock_popen):
-        result = {
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    def test_discover_image_tag(self, mock_inspect, mock_auth):
+        mock_inspect.return_value = {
             'Labels': {
                 'rdo_version': 'a',
                 'build_version': '4.0.0'
             },
             'RepoTags': ['a']
         }
-        mock_process = mock.Mock()
-        mock_process.communicate.return_value = (json.dumps(result), '')
-        mock_process.returncode = 0
-        mock_popen.return_value = mock_process
 
         self.assertEqual(
             'a',
-            self.uploader.discover_image_tag('docker.io/t/foo', 'rdo_version')
+            self.uploader.discover_image_tag('docker.io/t/foo:b',
+                                             'rdo_version')
         )
 
         # no tag_from_label specified
         self.assertRaises(
             ImageUploaderException,
             self.uploader.discover_image_tag,
-            'docker.io/t/foo')
+            'docker.io/t/foo:b')
 
         # missing RepoTags entry
         self.assertRaises(
             ImageUploaderException,
             self.uploader.discover_image_tag,
-            'docker.io/t/foo',
+            'docker.io/t/foo:b',
             'build_version')
 
         # missing Labels entry
         self.assertRaises(
             ImageUploaderException,
             self.uploader.discover_image_tag,
-            'docker.io/t/foo',
+            'docker.io/t/foo:b',
             'version')
 
         # inspect call failed
-        mock_process.returncode = 1
-        mock_process.communicate.return_value = ('', 'manifest unknown')
+        mock_inspect.side_effect = ImageNotFoundException()
         self.assertRaises(
             ImageNotFoundException,
             self.uploader.discover_image_tag,
-            'docker.io/t/foo',
+            'docker.io/t/foo:b',
             'rdo_version')
 
-    @mock.patch('subprocess.Popen')
-    def test_discover_tag_from_inspect(self, mock_popen):
-        result = {
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    def test_discover_tag_from_inspect(self, mock_inspect, mock_auth):
+        mock_inspect.return_value = {
             'Labels': {
                 'rdo_version': 'a',
                 'build_version': '4.0.0',
@@ -262,10 +277,6 @@ class TestBaseImageUploader(base.TestCase):
             },
             'RepoTags': ['a', '1.0.0-20180125']
         }
-        mock_process = mock.Mock()
-        mock_process.communicate.return_value = (json.dumps(result), '')
-        mock_process.returncode = 0
-        mock_popen.return_value = mock_process
 
         sr = image_uploader.SECURE_REGISTRIES
         # simple label -> tag
@@ -332,7 +343,7 @@ class TestBaseImageUploader(base.TestCase):
         )
 
         # inspect call failed
-        mock_process.returncode = 1
+        mock_inspect.side_effect = ImageUploaderException()
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
@@ -388,6 +399,119 @@ class TestBaseImageUploader(base.TestCase):
         mock_inspect.side_effect = ImageUploaderException()
         self.assertFalse(self.uploader._images_match('foo', 'bar', set()))
 
+    def test_authenticate(self):
+        req = self.requests
+        auth = image_uploader.BaseImageUploader.authenticate
+        url1 = urlparse('docker://docker.io/t/nova-api:latest')
+
+        # no auth required
+        req.get('https://registry-1.docker.io/v2/', status_code=200)
+        self.assertNotIn('Authorization', auth(url1).headers)
+
+        # missing 'www-authenticate' header
+        req.get('https://registry-1.docker.io/v2/', status_code=401)
+        self.assertRaises(ImageUploaderException, auth, url1)
+
+        # unknown 'www-authenticate' header
+        req.get('https://registry-1.docker.io/v2/', status_code=401,
+                headers={'www-authenticate': 'Foo'})
+        self.assertRaises(ImageUploaderException, auth, url1)
+
+        # successful auth requests
+        headers = {
+            'www-authenticate': 'Bearer '
+                                'realm="https://auth.docker.io/token",'
+                                'service="registry.docker.io"'
+        }
+        req.get('https://registry-1.docker.io/v2/', status_code=401,
+                headers=headers)
+        req.get('https://auth.docker.io/token', json={"token": "asdf1234"})
+        self.assertEqual(
+            'Bearer asdf1234',
+            auth(url1).headers['Authorization']
+        )
+
+    def test_fix_dockerio_url(self):
+        url1 = urlparse('docker://docker.io/t/nova-api:latest')
+        url2 = urlparse('docker://registry-1.docker.io/t/nova-api:latest')
+        url3 = urlparse('docker://192.0.2.1:8787/t/nova-api:latest')
+        fix = image_uploader.BaseImageUploader._fix_dockerio_url
+        # fix urls
+        self.assertEqual(url2, fix(url1))
+
+        # no change urls
+        self.assertEqual(url2, fix(url2))
+        self.assertEqual(url3, fix(url3))
+
+    def test_inspect(self):
+        req = self.requests
+        session = requests.Session()
+        session.headers['Authorization'] = 'Bearer asdf1234'
+        inspect = image_uploader.BaseImageUploader._inspect
+
+        url1 = urlparse('docker://docker.io/t/nova-api:latest')
+
+        manifest_resp = {
+            'config': {
+                'mediaType': 'text/html',
+                'digest': 'abcdef'
+            },
+            'layers': [
+                {'digest': 'aaa'},
+                {'digest': 'bbb'},
+                {'digest': 'ccc'},
+            ]
+        }
+        manifest_headers = {'Docker-Content-Digest': 'eeeeee'}
+        tags_resp = {'tags': ['one', 'two', 'latest']}
+        config_resp = {
+            'created': '2018-10-02T11:13:45.567533229Z',
+            'docker_version': '1.13.1',
+            'config': {
+                'Labels': {
+                    'build-date': '20181002',
+                    'build_id': '1538477701',
+                    'kolla_version': '7.0.0'
+                }
+            },
+            'architecture': 'amd64',
+            'os': 'linux',
+        }
+
+        req.get('https://registry-1.docker.io/v2/t/nova-api/tags/list',
+                json=tags_resp)
+        req.get('https://registry-1.docker.io/v2/t/nova-api/blobs/abcdef',
+                json=config_resp)
+
+        # test 404 response
+        req.get('https://registry-1.docker.io/v2/t/nova-api/manifests/latest',
+                status_code=404)
+        self.assertRaises(ImageNotFoundException, inspect, url1,
+                          session=session)
+
+        # test full response
+        req.get('https://registry-1.docker.io/v2/t/nova-api/manifests/latest',
+                json=manifest_resp, headers=manifest_headers)
+
+        self.assertEqual(
+            {
+                'Architecture': 'amd64',
+                'Created': '2018-10-02T11:13:45.567533229Z',
+                'Digest': 'eeeeee',
+                'DockerVersion': '1.13.1',
+                'Labels': {
+                    'build-date': '20181002',
+                    'build_id': '1538477701',
+                    'kolla_version': '7.0.0'
+                },
+                'Layers': ['aaa', 'bbb', 'ccc'],
+                'Name': 'docker.io/t/nova-api',
+                'Os': 'linux',
+                'RepoTags': ['one', 'two', 'latest']
+            },
+            inspect(url1, session=session)
+        )
+
 
 class TestDockerImageUploader(base.TestCase):
 
@@ -405,22 +529,18 @@ class TestDockerImageUploader(base.TestCase):
         super(TestDockerImageUploader, self).tearDown()
         self.patcher.stop()
 
-    @mock.patch('subprocess.Popen')
-    def test_upload_image(self, mock_popen):
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    def test_upload_image(self, mock_inspect, mock_auth):
         result1 = {
             'Digest': 'a'
         }
         result2 = {
             'Digest': 'b'
         }
-        mock_process = mock.Mock()
-        mock_process.communicate.side_effect = [
-            (json.dumps(result1), ''),
-            (json.dumps(result2), ''),
-        ]
-
-        mock_process.returncode = 0
-        mock_popen.return_value = mock_process
+        mock_inspect.side_effect = [result1, result2]
 
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
         tag = 'latest'
@@ -457,46 +577,14 @@ class TestDockerImageUploader(base.TestCase):
             push_image,
             tag=tag, stream=True)
 
-    @mock.patch('subprocess.Popen')
-    def test_upload_image_missing_tag(self, mock_popen):
-        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
-        expected_tag = 'latest'
-        push_destination = 'localhost:8787'
-        push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
-
-        self.uploader.upload_image(image,
-                                   None,
-                                   push_destination,
-                                   set(),
-                                   None,
-                                   None,
-                                   None,
-                                   False,
-                                   'full',
-                                   {})
-
-        self.dockermock.assert_called_once_with(
-            base_url='unix://var/run/docker.sock', version='auto')
-
-        self.dockermock.return_value.pull.assert_called_once_with(
-            image, tag=expected_tag, stream=True)
-        self.dockermock.return_value.tag.assert_called_once_with(
-            image=image + ':' + expected_tag,
-            repository=push_image,
-            tag=expected_tag, force=True)
-        self.dockermock.return_value.push.assert_called_once_with(
-            push_image,
-            tag=expected_tag, stream=True)
-
-    @mock.patch('subprocess.Popen')
-    def test_upload_image_existing(self, mock_popen):
-        result = {
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
+    def test_upload_image_existing(self, mock_inspect, mock_auth):
+        mock_inspect.return_value = {
             'Digest': 'a'
         }
-        mock_process = mock.Mock()
-        mock_process.communicate.return_value = (json.dumps(result), '')
-        mock_process.returncode = 0
-        mock_popen.return_value = mock_process
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
@@ -523,16 +611,14 @@ class TestDockerImageUploader(base.TestCase):
         self.dockermock.return_value.tag.assert_not_called()
         self.dockermock.return_value.push.assert_not_called()
 
-    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
-    def test_modify_upload_image(self, mock_ansible, mock_popen):
-        mock_process = mock.Mock()
-        mock_process.communicate.return_value = (
-            '', 'FATA[0000] Error reading manifest: manifest unknown')
-
-        mock_process.returncode = 1
-        mock_popen.return_value = mock_process
+    def test_modify_upload_image(self, mock_ansible, mock_inspect, mock_auth):
+        mock_inspect.side_effect = ImageNotFoundException()
         mock_ansible.return_value.run.return_value = {}
 
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
@@ -591,15 +677,14 @@ class TestDockerImageUploader(base.TestCase):
             tag=tag + append_tag,
             stream=True)
 
-    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
-    def test_modify_image_failed(self, mock_ansible, mock_popen):
-        mock_process = mock.Mock()
-        mock_process.communicate.return_value = ('', 'manifest unknown')
-
-        mock_process.returncode = 1
-        mock_popen.return_value = mock_process
+    def test_modify_image_failed(self, mock_ansible, mock_inspect, mock_auth):
+        mock_inspect.side_effect = ImageNotFoundException()
 
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
         tag = 'latest'
@@ -656,10 +741,13 @@ class TestDockerImageUploader(base.TestCase):
         self.assertEqual([], result)
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
-    def test_modify_image_existing(self, mock_ansible, mock_inspect):
+    def test_modify_image_existing(self, mock_ansible, mock_inspect,
+                                   mock_auth):
         mock_inspect.return_value = {'Digest': 'a'}
 
         image = 'docker.io/tripleomaster/heat-docker-agents-centos'
@@ -772,7 +860,10 @@ class TestSkopeoImageUploader(base.TestCase):
     @mock.patch('subprocess.Popen')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
-    def test_upload_image(self, mock_inspect, mock_popen, mock_environ):
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    def test_upload_image(self, mock_auth, mock_inspect,
+                          mock_popen, mock_environ):
         mock_process = mock.Mock()
         mock_process.communicate.return_value = ('copy complete', '')
         mock_process.returncode = 0
@@ -808,6 +899,8 @@ class TestSkopeoImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'SkopeoImageUploader._copy')
@@ -816,7 +909,7 @@ class TestSkopeoImageUploader(base.TestCase):
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
     def test_modify_upload_image(self, mock_ansible, mock_exists, mock_copy,
-                                 mock_inspect):
+                                 mock_inspect, mock_auth):
         mock_exists.return_value = False
         mock_inspect.return_value = {}
         with tempfile.NamedTemporaryFile(delete=False) as logfile:
@@ -868,10 +961,7 @@ class TestSkopeoImageUploader(base.TestCase):
         mock_inspect.assert_has_calls([
             mock.call(urlparse(
                 'docker://docker.io/t/nova-api:latest'
-            )),
-            mock.call(urlparse(
-                'containers-storage:localhost:8787/t/nova-api:latestmodify-123'
-            ))
+            ), insecure=False, session=mock.ANY)
         ])
         mock_copy.assert_has_calls([
             mock.call(
@@ -895,6 +985,8 @@ class TestSkopeoImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'SkopeoImageUploader._copy')
@@ -903,7 +995,7 @@ class TestSkopeoImageUploader(base.TestCase):
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
     def test_modify_image_failed(self, mock_ansible, mock_exists, mock_copy,
-                                 mock_inspect):
+                                 mock_inspect, mock_auth):
         mock_exists.return_value = False
         mock_inspect.return_value = {}
 
@@ -960,10 +1052,13 @@ class TestSkopeoImageUploader(base.TestCase):
         self.assertEqual([], result)
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
     @mock.patch('tripleo_common.actions.'
                 'ansible.AnsiblePlaybookAction', autospec=True)
-    def test_modify_image_existing(self, mock_ansible, mock_inspect):
+    def test_modify_image_existing(self, mock_ansible, mock_inspect,
+                                   mock_auth):
         mock_inspect.return_value = {'Digest': 'a'}
 
         image = 'docker.io/t/nova-api'
