@@ -24,6 +24,7 @@ import tempfile
 import yaml
 
 from tripleo_common import constants
+from tripleo_common.image import image_uploader
 from tripleo_common.image import kolla_builder as kb
 from tripleo_common.tests import base
 
@@ -387,6 +388,7 @@ class TestPrepare(base.TestCase):
 
     def setUp(self):
         super(TestPrepare, self).setUp()
+        image_uploader.BaseImageUploader.init_registries_cache()
         with tempfile.NamedTemporaryFile(delete=False) as imagefile:
             self.addCleanup(os.remove, imagefile.name)
             self.filelist = [imagefile.name]
@@ -404,18 +406,26 @@ class TestPrepare(base.TestCase):
             kb.detect_insecure_registries(
                 {'foo': 'tripleo'}))
 
+    @mock.patch('requests.get')
+    def test_detect_insecure_registry_readtimeout(self, mock_get):
+
         mock_get.side_effect = requests.exceptions.ReadTimeout('ouch')
         self.assertEqual(
             {},
             kb.detect_insecure_registries(
                 {'foo': '192.0.2.0:8787/tripleo'}))
 
+    @mock.patch('requests.get')
+    def test_detect_insecure_registry_sslerror(self, mock_get):
         mock_get.side_effect = requests.exceptions.SSLError('ouch')
         self.assertEqual(
             {'DockerInsecureRegistryAddress': ['192.0.2.0:8787']},
             kb.detect_insecure_registries(
                 {'foo': '192.0.2.0:8787/tripleo'}))
 
+    @mock.patch('requests.get')
+    def test_detect_insecure_registry_multi(self, mock_get):
+        mock_get.side_effect = requests.exceptions.SSLError('ouch')
         self.assertEqual(
             {'DockerInsecureRegistryAddress': [
                 '192.0.2.0:8787',
@@ -1004,8 +1014,7 @@ class TestPrepare(base.TestCase):
             )
         ])
 
-        mock_im.assert_called_once_with(mock.ANY, dry_run=True, verbose=True,
-                                        cleanup='full')
+        mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full')
 
         self.assertEqual(
             {
