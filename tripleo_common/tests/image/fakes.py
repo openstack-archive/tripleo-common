@@ -29,16 +29,16 @@ def create_disk_images():
 
 def create_parsed_upload_images():
     uploads = [
-        {'imagename': 'docker.io/tripleomaster/'
+        {'imagename': 'docker.io/tripleoqueens/'
                       'heat-docker-agents-centos:latest',
          'push_destination': 'localhost:8787'},
-        {'imagename': 'docker.io/tripleomaster/'
+        {'imagename': 'docker.io/tripleoqueens/'
                       'centos-binary-nova-compute:liberty',
          'push_destination': 'localhost:8787'},
-        {'imagename': 'docker.io/tripleomaster/'
+        {'imagename': 'docker.io/tripleoqueens/'
                       'centos-binary-nova-libvirt:liberty',
          'push_destination': 'localhost:8787'},
-        {'imagename': 'docker.io/tripleomaster/'
+        {'imagename': 'docker.io/tripleoqueens/'
                       'image-with-missing-tag',
          'push_destination': 'localhost:8787'},
     ]

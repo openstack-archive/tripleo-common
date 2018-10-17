@@ -28,12 +28,12 @@ from tripleo_common.tests.image import fakes
 
 filedata = six.u(
     """container_images:
-    - imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
+    - imagename: docker.io/tripleoqueens/heat-docker-agents-centos:latest
       push_destination: localhost:8787
-    - imagename: docker.io/tripleomaster/centos-binary-nova-compute:liberty
+    - imagename: docker.io/tripleoqueens/centos-binary-nova-compute:liberty
       push_destination: localhost:8787
-    - imagename: docker.io/tripleomaster/centos-binary-nova-libvirt:liberty
-    - imagename: docker.io/tripleomaster/image-with-missing-tag
+    - imagename: docker.io/tripleoqueens/centos-binary-nova-libvirt:liberty
+    - imagename: docker.io/tripleoqueens/image-with-missing-tag
       push_destination: localhost:8787
 """)
 
@@ -71,22 +71,22 @@ class TestImageUploadManager(base.TestCase):
 
         dockerc = mockdocker.return_value
         dockerc.remove_image.assert_has_calls([
-            mock.call('docker.io/tripleomaster'
+            mock.call('docker.io/tripleoqueens'
                       '/centos-binary-nova-compute:liberty'),
-            mock.call('docker.io/tripleomaster'
+            mock.call('docker.io/tripleoqueens'
                       '/centos-binary-nova-libvirt:liberty'),
-            mock.call('docker.io/tripleomaster'
+            mock.call('docker.io/tripleoqueens'
                       '/heat-docker-agents-centos:latest'),
-            mock.call('docker.io/tripleomaster'
+            mock.call('docker.io/tripleoqueens'
                       '/image-with-missing-tag:latest'),
 
-            mock.call('localhost:8787/tripleomaster'
+            mock.call('localhost:8787/tripleoqueens'
                       '/centos-binary-nova-compute:liberty'),
-            mock.call('localhost:8787/tripleomaster'
+            mock.call('localhost:8787/tripleoqueens'
                       '/centos-binary-nova-libvirt:liberty'),
-            mock.call('localhost:8787/tripleomaster'
+            mock.call('localhost:8787/tripleoqueens'
                       '/heat-docker-agents-centos:latest'),
-            mock.call('localhost:8787/tripleomaster/'
+            mock.call('localhost:8787/tripleoqueens/'
                       'image-with-missing-tag:latest'),
         ])
 

@@ -27,7 +27,7 @@ from tripleo_common.image import image_uploader
 
 
 CONTAINER_IMAGES_DEFAULTS = {
-    'namespace': 'docker.io/tripleomaster',
+    'namespace': 'docker.io/tripleoqueens',
     'ceph_namespace': 'docker.io/ceph',
     'ceph_image': 'daemon',
     'ceph_tag': 'v3.1.0-stable-3.1-luminous-centos-7-x86_64',
