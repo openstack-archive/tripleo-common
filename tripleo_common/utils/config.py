@@ -252,6 +252,21 @@ class Config(object):
         server_roles = {}
 
         for deployment in deployments_data:
+            # Check if the deployment value is the resource name. If that's the
+            # case, Heat did not create a physical_resource_id for this
+            # deployment since it does not trigger on this stack action. Such
+            # as a deployment that only triggers on DELETE, but this is a stack
+            # create. If that's the case, just skip this deployment, otherwise
+            # it will result in a Not found error if we try and query the
+            # deployment API for this deployment.
+            if deployment.attributes['value'].get('deployment') == \
+                    'TripleOSoftwareDeployment':
+                warnings.warn('Skipping deployment %s because it has no '
+                              'valid uuid (physical_resource_id) '
+                              'associated.' %
+                              deployment.physical_resource_id)
+                continue
+
             server_id = deployment.attributes['value']['server']
             config_dict = self.get_config_dict(deployment)
 
