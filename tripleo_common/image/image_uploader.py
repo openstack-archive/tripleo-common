@@ -313,6 +313,14 @@ class BaseImageUploader(ImageUploader):
             return True
 
     @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def authenticate(image_url, username=None, password=None, insecure=False):
         image_url = BaseImageUploader._fix_dockerio_url(image_url)
         netloc = image_url.netloc
@@ -325,8 +333,10 @@ class BaseImageUploader(ImageUploader):
         session = requests.Session()
         r = session.get(url, timeout=30)
         LOG.debug('%s status code %s' % (url, r.status_code))
-        if r.status_code != 401:
+        if r.status_code == 200:
             return session
+        if r.status_code != 401:
+            r.raise_for_status()
         if 'www-authenticate' not in r.headers:
             raise ImageUploaderException(
                 'Unknown authentication method for headers: %s' % r.headers)
@@ -363,7 +373,9 @@ class BaseImageUploader(ImageUploader):
     @staticmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
         reraise=True,
-        retry=tenacity.retry_if_exception_type(ImageUploaderException),
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
