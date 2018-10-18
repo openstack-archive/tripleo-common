@@ -27,41 +27,36 @@ import yaml
 from tripleo_common.image import base
 from tripleo_common.image import image_uploader
 
-CONTAINER_IMAGE_PREPARE_PARAM = [{
-    'tag_from_label': 'rdo_version',
-    'set': {
-        'namespace': 'docker.io/tripleorocky',
-        'ceph_namespace': 'docker.io/ceph',
-        'ceph_image': 'daemon',
-        'ceph_tag': 'v3.1.0-stable-3.1-luminous-centos-7-x86_64',
-        'name_prefix': 'centos-binary-',
-        'name_suffix': '',
-        'tag': 'current-tripleo',
-        'neutron_driver': None,
-        'openshift_namespace': 'docker.io/openshift',
-        'openshift_tag': 'v3.10.0',
-        'openshift_base_image': 'origin',
-        'openshift_cockpit_namespace': 'docker.io/cockpit',
-        'openshift_cockpit_image': 'kubernetes',
-        'openshift_cockpit_tag': 'latest',
-        'openshift_etcd_namespace': 'registry.fedoraproject.org/latest',
-        'openshift_etcd_image': 'etcd',
-        'openshift_etcd_tag': 'latest',
-        'openshift_gluster_namespace': 'docker.io/gluster',
-        'openshift_gluster_image': 'gluster-centos',
-        'openshift_gluster_block_image': 'glusterblock-provisioner',
-        'openshift_gluster_tag': 'latest',
-        'openshift_heketi_namespace': 'docker.io/heketi',
-        'openshift_heketi_image': 'heketi',
-        'openshift_heketi_tag': 'latest',
-    }
-}]
+CONTAINER_IMAGE_PREPARE_PARAM_STR = None
 
-CONTAINER_IMAGES_DEFAULTS = CONTAINER_IMAGE_PREPARE_PARAM[0]['set']
+CONTAINER_IMAGE_PREPARE_PARAM = None
+
+CONTAINER_IMAGES_DEFAULTS = None
+
+
+def init_prepare_defaults(defaults_file):
+    global CONTAINER_IMAGE_PREPARE_PARAM_STR
+    with open(defaults_file) as f:
+        CONTAINER_IMAGE_PREPARE_PARAM_STR = f.read()
+
+    global CONTAINER_IMAGE_PREPARE_PARAM
+    p = yaml.safe_load(CONTAINER_IMAGE_PREPARE_PARAM_STR)
+    CONTAINER_IMAGE_PREPARE_PARAM = p[
+        'parameter_defaults']['ContainerImagePrepare']
+
+    global CONTAINER_IMAGES_DEFAULTS
+    CONTAINER_IMAGES_DEFAULTS = CONTAINER_IMAGE_PREPARE_PARAM[0]['set']
 
 DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                      'container-images',
                                      'overcloud_containers.yaml.j2')
+
+DEFAULT_PREPARE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
+                                    'container-images',
+                                    'container_image_prepare_defaults.yaml')
+
+if os.path.isfile(DEFAULT_PREPARE_FILE):
+    init_prepare_defaults(DEFAULT_PREPARE_FILE)
 
 
 def get_enabled_services(environment, roles_data):
