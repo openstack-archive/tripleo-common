@@ -411,12 +411,12 @@ class Config(object):
                                "config-download." % d['deployment_name'])
                     warnings.warn(message, DeprecationWarning)
 
-                with open(deployment_path, 'w') as f:
+                with open(deployment_path, 'wb') as f:
                     template_data = deployment_template.render(
                         deployment=d,
                         server_id=server_ids[server])
                     self.validate_config(template_data, deployment_path)
-                    f.write(template_data)
+                    f.write(template_data.encode('utf-8'))
 
         for role, deployments in role_deployment_names.items():
             group_var_role_path = os.path.join(group_vars_dir, role)
