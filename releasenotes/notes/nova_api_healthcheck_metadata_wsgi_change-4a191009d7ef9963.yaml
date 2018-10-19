@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    While we have a dedicated nova_metadata healthcheck script, the
+    nova_metadata and nova_api container the same image and the current nova
+    api healtcheck script still checks the non wsgi implementation. This
+    changes the nova_api healthcheck script to check the metadata wsgi vhost
+    config for details instead of the details in nova.conf.
