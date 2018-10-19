@@ -787,7 +787,7 @@ workflows:
       set_deployment_failed:
         on-success: send_message
         publish:
-          status: FAILED
+          status: SUCCESS
           deployment_status: DEPLOY_FAILED
 
       send_message:
@@ -822,7 +822,7 @@ workflows:
       set_deployment_failed:
         on-success: send_message
         publish:
-          status: RUNNING
+          status: SUCCESS
           deployment_status: DEPLOYING
 
       send_message:
