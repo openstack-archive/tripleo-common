@@ -450,6 +450,61 @@ class TestConfig(base.TestCase):
         mock_git_init.assert_called_once_with(self.tmp_dir)
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
+    @patch('tripleo_common.utils.config.Config.get_config_dict')
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    def test_config_download_no_deployment_uuid(self, mock_deployment_data,
+                                                mock_config_dict,
+                                                mock_git_init):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+        stack = mock.MagicMock()
+        heat.stacks.get.return_value = stack
+        stack.outputs = [
+            {'output_key': 'RoleNetHostnameMap',
+             'output_value': {
+                 'Controller': {
+                     'ctlplane': [
+                         'overcloud-controller-0.ctlplane.localdomain']},
+                 'Compute': {
+                     'ctlplane': [
+                         'overcloud-novacompute-0.ctlplane.localdomain',
+                         'overcloud-novacompute-1.ctlplane.localdomain',
+                         'overcloud-novacompute-2.ctlplane.localdomain']}}},
+            {'output_key': 'ServerIdData',
+             'output_value': {
+                 'server_ids': {
+                     'Controller': [
+                         '00b3a5e1-5e8e-4b55-878b-2fa2271f15ad'],
+                     'Compute': [
+                         'a7db3010-a51f-4ae0-a791-2364d629d20d',
+                         '8b07cd31-3083-4b88-a433-955f72039e2c',
+                         '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
+            {'output_key': 'RoleGroupVars',
+             'output_value': {
+                 'Controller': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+                 'Compute': {
+                     'any_errors_fatal': 'yes',
+                     'max_fail_percentage': 15},
+             }}]
+        deployment_data, configs = self._get_config_data('config_data.yaml')
+
+        # Set the deployment to TripleOSoftwareDeployment for the first
+        # deployment
+        deployment_data[0].attributes['value']['deployment'] = \
+            'TripleOSoftwareDeployment'
+
+        self.configs = configs
+        mock_deployment_data.return_value = deployment_data
+        mock_config_dict.side_effect = self._get_config_dict
+
+        self.tmp_dir = self.useFixture(fixtures.TempDir()).path
+        with warnings.catch_warnings(record=True) as w:
+            self.config.download_config(stack, self.tmp_dir)
+            assert "Skipping deployment" in str(w[-1].message)
+
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.git, 'Repo')
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
