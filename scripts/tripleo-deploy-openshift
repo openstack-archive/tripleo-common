@@ -1,0 +1,55 @@
+#!/bin/bash
+
+: ${CONFIG_DOWNLOAD_DIR:=}
+: ${OPENSHIFT_ANSIBLE_IMAGE:=docker.io/openshift/origin-ansible:latest}
+
+usage () {
+    echo "Usage: $0 [options]"
+    echo ""
+    echo "Options:"
+    echo "  -i, --image                the openshift-ansible image tag to use. Default to"
+    echo "                             docker.io/openshift/origin-ansible:latest"
+    echo "  -d, --config-download-dir  the path to the config-download directory for openshift"
+    echo "  -h, --help                 print this help and exit"
+}
+
+OPTS=`getopt -o hd:i: --long help,config-download-dir:,image: -- "$@"`
+eval set -- "$OPTS"
+
+while true; do
+  case "$1" in
+    -h | --help)
+      usage; exit ;;
+    -d | --config-download-dir)
+      shift
+      export CONFIG_DOWNLOAD_DIR=$1; shift ;;
+    -i | --image)
+      shift
+      export OPENSHIFT_ANSIBLE_IMAGE=$1; shift ;;
+    --) shift ; break ;;
+    * ) break ;;
+  esac
+done
+
+if [[ -z $CONFIG_DOWNLOAD_DIR ]]; then
+  echo "Missing required --config-download-dir option"
+  usage
+  exit
+fi
+
+ANSIBLE_OPTS="-e @${CONFIG_DOWNLOAD_DIR}/openshift/global_vars.yml"
+if [[ -f ${CONFIG_DOWNLOAD_DIR}/openshift/global_gluster_vars.yml ]]; then
+  ANSIBLE_OPTS="${ANSIBLE_OPTS} -e @${CONFIG_DOWNLOAD_DIR}/openshift/global_gluster_vars.yml"
+fi
+
+docker run \
+        --net=host \
+        -u `id -u` \
+        -v ${CONFIG_DOWNLOAD_DIR}:${CONFIG_DOWNLOAD_DIR} \
+        -w ${CONFIG_DOWNLOAD_DIR} \
+        -e ANSIBLE_HOST_KEY_CHECKING=False \
+        -e ANSIBLE_CONFIG=${CONFIG_DOWNLOAD_DIR}/ansible.cfg \
+        -e INVENTORY_DIR=${CONFIG_DOWNLOAD_DIR}/openshift/inventory \
+        -e PLAYBOOK_FILE=${CONFIG_DOWNLOAD_DIR}/openshift/playbook.yml \
+        -e OPTS="${ANSIBLE_OPTS}" \
+        -t ${OPENSHIFT_ANSIBLE_IMAGE}
