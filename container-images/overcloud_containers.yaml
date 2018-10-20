@@ -108,6 +108,7 @@ container_images:
 - imagename: docker.io/tripleorocky/centos-binary-rsyslog-base:current-tripleo
 - imagename: docker.io/openshift/origin:v3.10.0
 - imagename: docker.io/openshift/node:v3.10.0
+- imagename: docker.io/openshift/origin-ansible:v3.10.0
 - imagename: docker.io/openshift/origin-deployer:v3.10.0
 - imagename: docker.io/openshift/origin-docker-builder:v3.10.0
 - imagename: docker.io/openshift/origin-docker-registry:v3.10.0
