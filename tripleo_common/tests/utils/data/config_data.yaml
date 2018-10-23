@@ -52,6 +52,8 @@ deployments:
     deployment: 5096a321-64f9-4f07-a74c-53f2b029e62e
     config: 9ccb2f66-7cd8-4e3e-a034-4c1cfafd037e
     name: MyExtraConfigPost
+
+  # Only applies to overcloud-novacompute-2
   - server: 169b46f8-1965-4d90-a7de-f36fb4a830fe
     deployment: 05c94b5d-59ad-484e-b120-e271c2e100ed
     config: 391263ba-3d06-43b6-a47e-481808aaff20

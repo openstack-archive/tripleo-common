@@ -245,10 +245,10 @@ class Config(object):
         # server_names is a dict of server id to server_name for easier lookup
         server_names = self.get_server_names()
         server_ids = dict([(v, k) for (k, v) in server_names.items()])
-        # role_deployment_names is a dict of role names to deployment names for
-        # that role. The deployment names are further separated in their own
-        # dict with keys of pre_deployment/post_deployment.
-        role_deployment_names = {}
+        # server_deployment_names is a dict of server names to deployment names
+        # for that role. The deployment names are further separated in their
+        # own dict with keys of pre_deployment/post_deployment.
+        server_deployment_names = {}
         # server_roles is a dict of server name to server role for easier
         # lookup
         server_roles = {}
@@ -325,10 +325,11 @@ class Config(object):
                 raise Exception(err_msg)
 
             role = self.get_role_from_server_id(stack, server_id)
-            role_deployments = role_deployment_names.setdefault(role, {})
-            role_pre_deployments = role_deployments.setdefault(
+            server_pre_deployments = server_deployment_names.setdefault(
+                server_names[server_id], {}).setdefault(
                 'pre_deployments', [])
-            role_post_deployments = role_deployments.setdefault(
+            server_post_deployments = server_deployment_names.setdefault(
+                server_names[server_id], {}).setdefault(
                 'post_deployments', [])
 
             server_roles[server_names[server_id]] = role
@@ -339,11 +340,11 @@ class Config(object):
             # they are consistent interfaces in our templates.
             if 'ExtraConfigPost' in deployment.physical_resource_id or \
                     'PostConfig' in deployment.physical_resource_id:
-                if deployment_name not in role_post_deployments:
-                    role_post_deployments.append(deployment_name)
+                if deployment_name not in server_post_deployments:
+                    server_post_deployments.append(deployment_name)
             else:
-                if deployment_name not in role_pre_deployments:
-                    role_pre_deployments.append(deployment_name)
+                if deployment_name not in server_pre_deployments:
+                    server_pre_deployments.append(deployment_name)
 
         env, templates_path = self.get_jinja_env(config_dir)
 
@@ -412,17 +413,29 @@ class Config(object):
                     self.validate_config(template_data, deployment_path)
                     f.write(template_data)
 
-        for role, deployments in role_deployment_names.items():
+        # Render group_vars
+        for role in set(server_roles.values()):
             group_var_role_path = os.path.join(group_vars_dir, role)
             group_var_role_template = env.get_template('group_var_role.j2')
 
             with open(group_var_role_path, 'w') as f:
                 template_data = group_var_role_template.render(
                     role=role,
-                    pre_deployments=deployments['pre_deployments'],
-                    post_deployments=deployments['post_deployments'],
                     role_group_vars=role_group_vars[role])
                 self.validate_config(template_data, group_var_role_path)
+                f.write(template_data)
+
+        # Render host_vars
+        for server, deployments in server_deployment_names.items():
+            host_var_server_path = os.path.join(host_vars_dir, server)
+            host_var_server_template = env.get_template('host_var_server.j2')
+
+            with open(host_var_server_path, 'w') as f:
+                template_data = host_var_server_template.render(
+                    role=server_roles[server],
+                    pre_deployments=deployments['pre_deployments'],
+                    post_deployments=deployments['post_deployments'])
+                self.validate_config(template_data, host_var_server_path)
                 f.write(template_data)
 
         shutil.copyfile(
