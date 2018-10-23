@@ -465,15 +465,6 @@ class Config(object):
             os.path.join(templates_path, 'deployments.yaml'),
             os.path.join(config_dir, 'deployments.yaml'))
 
-        # Also copy deployments.yaml to the role dir for temporary backwards
-        # compatibility until https://review.openstack.org/574474 merges.
-        for role_name, role in six.iteritems(role_data):
-            role_path = os.path.join(config_dir, role_name)
-
-            shutil.copyfile(
-                os.path.join(templates_path, 'deployments.yaml'),
-                os.path.join(role_path, 'deployments.yaml'))
-
         self.log.info("The TripleO configuration has been successfully "
                       "generated into: %s" % config_dir)
         return config_dir
