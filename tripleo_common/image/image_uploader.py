@@ -364,34 +364,45 @@ class BaseImageUploader(object):
         tags_r.raise_for_status()
 
         manifest = manifest_r.json()
-        layers = [l['digest'] for l in manifest['layers']]
+        digest = manifest_r.headers['Docker-Content-Digest']
+        if manifest['schemaVersion'] == 1:
+            config = json.loads(manifest['history'][0]['v1Compatibility'])
+            layers = list(reversed([l['blobSum']
+                                    for l in manifest['fsLayers']]))
+        else:
+            layers = [l['digest'] for l in manifest['layers']]
 
-        parts['config_digest'] = manifest['config']['digest']
-        config_headers = {
-            'Accept': manifest['config']['mediaType']
-        }
-        config_url = cls._build_url(
-            image_url, '%(image)s/blobs/%(config_digest)s' % parts,
-            insecure, mirrors)
-        config_f = p.submit(
-            session.get, config_url, headers=config_headers, timeout=30)
-        config_r = config_f.result()
-        config_r.raise_for_status()
+            parts['config_digest'] = manifest['config']['digest']
+            config_headers = {
+                'Accept': manifest['config']['mediaType']
+            }
+            config_url = cls._build_url(
+                image_url, '%(image)s/blobs/%(config_digest)s' % parts,
+                insecure, mirrors)
+            config_f = p.submit(
+                session.get, config_url, headers=config_headers, timeout=30)
+            config_r = config_f.result()
+            config_r.raise_for_status()
+            config = config_r.json()
 
         tags = tags_r.json()['tags']
-        digest = manifest_r.headers['Docker-Content-Digest']
-        config = config_r.json()
         name = '%s%s' % (image_url.netloc, image)
+        created = config['created']
+        docker_version = config['docker_version']
+        labels = config['config']['Labels']
+        architecture = config['architecture']
+        image_os = config['os']
 
         return {
             'Name': name,
+            'Tag': tag,
             'Digest': digest,
             'RepoTags': tags,
-            'Created': config['created'],
-            'DockerVersion': config['docker_version'],
-            'Labels': config['config']['Labels'],
-            'Architecture': config['architecture'],
-            'Os': config['os'],
+            'Created': created,
+            'DockerVersion': docker_version,
+            'Labels': labels,
+            'Architecture': architecture,
+            'Os': image_os,
             'Layers': layers,
         }
 
