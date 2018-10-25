@@ -33,6 +33,12 @@ TEMPLATE_PATH = os.path.join(os.path.dirname(__file__),
                              'overcloud_containers.yaml.j2')
 
 
+DEFAULTS_PATH = os.path.join(os.path.dirname(__file__),
+                             '..', '..', '..', 'container-images',
+                             'container_image_prepare_defaults.yaml')
+kb.init_prepare_defaults(DEFAULTS_PATH)
+
+
 filedata = six.u("""container_images:
 - imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
   push_destination: localhost:8787
