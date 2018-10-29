@@ -195,11 +195,21 @@ class DeployStackAction(templates.ProcessTemplatesAction):
             except swiftexceptions.ClientException:
                 pass
             LOG.info("Perfoming Heat stack create")
-            return heat.stacks.create(**stack_args)
+            try:
+                return heat.stacks.create(**stack_args)
+            except heat_exc.HTTPException as err:
+                err_msg = "Error during stack creation: %s" % (err,)
+                LOG.exception(err_msg)
+                return actions.Result(error=err_msg)
 
         LOG.info("Performing Heat stack update")
         stack_args['existing'] = 'true'
-        return heat.stacks.update(stack.id, **stack_args)
+        try:
+            return heat.stacks.update(stack.id, **stack_args)
+        except heat_exc.HTTPException as err:
+            err_msg = "Error during stack update: %s" % (err,)
+            LOG.exception(err_msg)
+            return actions.Result(error=err_msg)
 
 
 class OvercloudRcAction(base.TripleOAction):
