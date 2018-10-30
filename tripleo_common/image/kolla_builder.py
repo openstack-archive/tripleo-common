@@ -186,7 +186,6 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
                 }, f)
                 uploader = image_uploader.ImageUploadManager(
                     [f.name],
-                    verbose=True,
                     dry_run=dry_run,
                     cleanup=cleanup
                 )

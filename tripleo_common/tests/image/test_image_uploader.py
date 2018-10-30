@@ -72,7 +72,7 @@ class TestImageUploadManager(base.TestCase):
                           mock_auth):
 
         mock_inspect.return_value = {}
-        manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
+        manager = image_uploader.ImageUploadManager(self.filelist)
         parsed_data = manager.upload()
         mockpath(self.filelist[0])
 
@@ -129,7 +129,7 @@ class TestImageUploadManager(base.TestCase):
         mock_addresses.return_value = {
             2: [{'addr': '192.0.2.0'}]
         }
-        manager = image_uploader.ImageUploadManager(self.filelist, debug=True)
+        manager = image_uploader.ImageUploadManager(self.filelist)
         self.assertEqual(
             '192.0.2.0:8787',
             manager.get_push_destination({})
@@ -152,19 +152,20 @@ class TestImageUploadManager(base.TestCase):
             manager.get_push_destination({'push_destination': None})
         )
 
-
-class TestImageUploader(base.TestCase):
-
-    def setUp(self):
-        super(TestImageUploader, self).setUp()
-
     def test_get_uploader_docker(self):
-        uploader = image_uploader.ImageUploader.get_uploader('docker')
+        manager = image_uploader.ImageUploadManager(self.filelist)
+        uploader = manager.get_uploader('docker')
         assert isinstance(uploader, image_uploader.DockerImageUploader)
 
+    def test_get_uploader_skopeo(self):
+        manager = image_uploader.ImageUploadManager(self.filelist)
+        uploader = manager.get_uploader('skopeo')
+        assert isinstance(uploader, image_uploader.SkopeoImageUploader)
+
     def test_get_builder_unknown(self):
+        manager = image_uploader.ImageUploadManager(self.filelist)
         self.assertRaises(ImageUploaderException,
-                          image_uploader.ImageUploader.get_uploader,
+                          manager.get_uploader,
                           'unknown')
 
 
@@ -173,6 +174,7 @@ class TestBaseImageUploader(base.TestCase):
     def setUp(self):
         super(TestBaseImageUploader, self).setUp()
         self.uploader = image_uploader.BaseImageUploader()
+        self.uploader.init_registries_cache()
         self.uploader._inspect.retry.sleep = mock.Mock()
         self.requests = self.useFixture(rm_fixture.Fixture())
 
@@ -567,17 +569,15 @@ class TestDockerImageUploader(base.TestCase):
         self.assertEqual(
             ['docker.io/tripleomaster/heat-docker-agents-centos:latest',
              'localhost:8787/tripleomaster/heat-docker-agents-centos:latest'],
-            self.uploader.upload_image(
+            self.uploader.upload_image(image_uploader.UploadTask(
                 image + ':' + tag,
                 None,
                 push_destination,
-                set(),
                 None,
                 None,
                 None,
                 False,
-                'full',
-                {}
+                'full')
             )
         )
 
@@ -608,17 +608,15 @@ class TestDockerImageUploader(base.TestCase):
 
         self.assertEqual(
             [],
-            self.uploader.upload_image(
+            self.uploader.upload_image(image_uploader.UploadTask(
                 image + ':' + tag,
                 None,
                 push_destination,
-                set(),
                 None,
                 None,
                 None,
                 False,
-                'full',
-                {}
+                'full')
             )
         )
 
@@ -663,17 +661,15 @@ class TestDockerImageUploader(base.TestCase):
         # test response for a partial cleanup
         self.assertEqual(
             ['docker.io/tripleomaster/heat-docker-agents-centos:latest'],
-            self.uploader.upload_image(
+            self.uploader.upload_image(image_uploader.UploadTask(
                 image + ':' + tag,
                 None,
                 push_destination,
-                set(),
                 append_tag,
                 'add-foo-plugin',
                 {'foo_version': '1.0.1'},
                 False,
-                'partial',
-                {}
+                'partial')
             )
         )
 
@@ -713,10 +709,10 @@ class TestDockerImageUploader(base.TestCase):
 
         self.assertRaises(
             ImageUploaderException,
-            self.uploader.upload_image,
-            image + ':' + tag, None, push_destination, set(), append_tag,
-            'add-foo-plugin', {'foo_version': '1.0.1'}, False, 'full',
-            {}
+            self.uploader.upload_image, image_uploader.UploadTask(
+                image + ':' + tag, None, push_destination,
+                append_tag, 'add-foo-plugin', {'foo_version': '1.0.1'},
+                False, 'full')
         )
 
         self.dockermock.assert_called_once_with(
@@ -739,17 +735,15 @@ class TestDockerImageUploader(base.TestCase):
         append_tag = 'modify-123'
         push_destination = 'localhost:8787'
 
-        result = self.uploader.upload_image(
+        result = self.uploader.upload_image(image_uploader.UploadTask(
             image + ':' + tag,
             None,
             push_destination,
-            set(),
             append_tag,
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             True,
-            'full',
-            {}
+            'full')
         )
 
         self.dockermock.assert_not_called()
@@ -772,17 +766,15 @@ class TestDockerImageUploader(base.TestCase):
         append_tag = 'modify-123'
         push_destination = 'localhost:8787'
 
-        result = self.uploader.upload_image(
+        result = self.uploader.upload_image(image_uploader.UploadTask(
             image + ':' + tag,
             None,
             push_destination,
-            set(),
             append_tag,
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             False,
-            'full',
-            {}
+            'full')
         )
 
         self.dockermock.assert_not_called()
@@ -894,17 +886,15 @@ class TestSkopeoImageUploader(base.TestCase):
 
         self.assertEqual(
             [],
-            self.uploader.upload_image(
+            self.uploader.upload_image(image_uploader.UploadTask(
                 image + ':' + tag,
                 None,
                 push_destination,
-                set(),
                 None,
                 None,
                 None,
                 False,
-                'full',
-                {}
+                'full')
             )
         )
         mock_popen.assert_called_once_with([
@@ -960,21 +950,18 @@ class TestSkopeoImageUploader(base.TestCase):
         # test response for a partial cleanup
         self.assertEqual(
             ['docker.io/t/nova-api:latest'],
-            self.uploader.upload_image(
+            self.uploader.upload_image(image_uploader.UploadTask(
                 image + ':' + tag,
                 None,
                 push_destination,
-                set(),
                 append_tag,
                 'add-foo-plugin',
                 {'foo_version': '1.0.1'},
                 False,
-                'partial',
-                {}
+                'partial')
             )
         )
 
-        insecure = set()
         mock_inspect.assert_has_calls([
             mock.call(urlparse(
                 'docker://docker.io/t/nova-api:latest'
@@ -983,15 +970,13 @@ class TestSkopeoImageUploader(base.TestCase):
         mock_copy.assert_has_calls([
             mock.call(
                 urlparse('docker://docker.io/t/nova-api:latest'),
-                urlparse('containers-storage:docker.io/t/nova-api:latest'),
-                insecure
+                urlparse('containers-storage:docker.io/t/nova-api:latest')
             ),
             mock.call(
                 urlparse('containers-storage:localhost:8787/'
                          't/nova-api:latestmodify-123'),
                 urlparse('docker://localhost:8787/'
-                         't/nova-api:latestmodify-123'),
-                insecure
+                         't/nova-api:latestmodify-123')
             )
         ])
         mock_ansible.assert_called_once_with(
@@ -1026,17 +1011,15 @@ class TestSkopeoImageUploader(base.TestCase):
 
         self.assertRaises(
             ImageUploaderException,
-            self.uploader.upload_image,
-            image + ':' + tag, None, push_destination, set(), append_tag,
-            'add-foo-plugin', {'foo_version': '1.0.1'}, False, 'full',
-            {}
+            self.uploader.upload_image, image_uploader.UploadTask(
+                image + ':' + tag, None, push_destination,
+                append_tag, 'add-foo-plugin', {'foo_version': '1.0.1'},
+                False, 'full')
         )
 
-        insecure = set()
         mock_copy.assert_called_once_with(
             urlparse('docker://docker.io/t/nova-api:latest'),
-            urlparse('containers-storage:docker.io/t/nova-api:latest'),
-            insecure
+            urlparse('containers-storage:docker.io/t/nova-api:latest')
         )
 
     @mock.patch('subprocess.Popen')
@@ -1051,17 +1034,15 @@ class TestSkopeoImageUploader(base.TestCase):
         append_tag = 'modify-123'
         push_destination = 'localhost:8787'
 
-        result = self.uploader.upload_image(
+        result = self.uploader.upload_image(image_uploader.UploadTask(
             image + ':' + tag,
             None,
             push_destination,
-            set(),
             append_tag,
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             True,
-            'full',
-            {}
+            'full')
         )
 
         mock_ansible.assert_not_called()
@@ -1083,17 +1064,15 @@ class TestSkopeoImageUploader(base.TestCase):
         append_tag = 'modify-123'
         push_destination = 'localhost:8787'
 
-        result = self.uploader.upload_image(
+        result = self.uploader.upload_image(image_uploader.UploadTask(
             image + ':' + tag,
             None,
             push_destination,
-            set(),
             append_tag,
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             False,
-            'full',
-            {}
+            'full')
         )
 
         mock_ansible.assert_not_called()
@@ -1122,7 +1101,7 @@ class TestSkopeoImageUploader(base.TestCase):
         source = urlparse('docker://docker.io/t/nova-api')
         target = urlparse('containers_storage:docker.io/t/nova-api')
 
-        self.uploader._copy(source, target, set())
+        self.uploader._copy(source, target)
 
         self.assertEqual(mock_failure.communicate.call_count, 4)
         self.assertEqual(mock_success.communicate.call_count, 1)
@@ -1140,6 +1119,6 @@ class TestSkopeoImageUploader(base.TestCase):
         target = urlparse('containers_storage:docker.io/t/nova-api')
 
         self.assertRaises(
-            ImageUploaderException, self.uploader._copy, source, target, set())
+            ImageUploaderException, self.uploader._copy, source, target)
 
         self.assertEqual(mock_failure.communicate.call_count, 5)
