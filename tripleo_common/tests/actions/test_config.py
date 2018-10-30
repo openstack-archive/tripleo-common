@@ -45,7 +45,10 @@ class GetOvercloudConfigActionTest(base.TestCase):
         self.swift = mock.MagicMock()
         self.swift.get_container.return_value = (
             {'x-container-meta-usage-tripleo': 'plan'}, [
-                {'name': tf} for tf in self.template_files
+                {
+                    'name': tf,
+                    'last_modified': '2018-11-05'
+                } for tf in self.template_files
             ]
         )
         self.swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
