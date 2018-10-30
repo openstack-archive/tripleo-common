@@ -110,8 +110,7 @@ class DeletePlanAction(base.TripleOAction):
         # heat throws HTTPNotFound if the stack is not found
         try:
             stack = self.get_orchestration_client(context).stacks.get(
-                self.container
-            )
+                self.container, resolve_outputs=False)
         except heatexceptions.HTTPNotFound:
             pass
         else:
