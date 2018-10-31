@@ -1,0 +1,8 @@
+---
+upgrade:
+  - |
+    Package octavia-amphora-image (RHEL) will no longer be installed by role
+    octavia-undercloud, and it now installs image files in directory
+    /usr/share/openstack-octavia-amphora-images/. Please ensure you have the
+    latest package version installed in the undercloud node beforehand
+    deploying or updating the overcloud.
