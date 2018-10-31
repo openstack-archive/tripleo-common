@@ -300,9 +300,19 @@ class TestConfig(base.TestCase):
                   'Compute', ]:
 
             self.assertEqual(
+                self._get_yaml_file(f),
                 yaml.safe_load(
-                    open(os.path.join(tmp_path, 'group_vars', f)).read()),
-                self._get_yaml_file(f))
+                    open(os.path.join(tmp_path, 'group_vars', f)).read()))
+
+        for f in ['overcloud-controller-0',
+                  'overcloud-novacompute-0',
+                  'overcloud-novacompute-1',
+                  'overcloud-novacompute-2']:
+
+            self.assertEqual(
+                self._get_yaml_file(os.path.join('host_vars', f)),
+                yaml.safe_load(
+                    open(os.path.join(tmp_path, 'host_vars', f)).read()))
 
         for d in ['ControllerHostEntryDeployment',
                   'NetworkDeployment',

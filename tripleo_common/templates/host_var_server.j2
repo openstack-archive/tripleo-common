@@ -1,0 +1,10 @@
+{{ role }}_pre_deployments:
+{% for deployment in pre_deployments %}
+  - {{ deployment }}
+{% endfor %}
+
+{{ role }}_post_deployments: {% if not post_deployments %} [] {% endif %}
+
+{% for deployment in post_deployments %}
+  - {{ deployment }}
+{% endfor %}

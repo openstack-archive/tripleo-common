@@ -1,0 +1,7 @@
+---
+fixes:
+  - The list of pre and post deployment names generated with config-download
+    are now written per server instead of per role. This change handles the
+    case where a deployment may apply to only an individual or set of servers
+    within a role, and not all servers in that role. host_vars are used to set
+    the variable of deployment names per server instead of group_vars.
