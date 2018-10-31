@@ -50,19 +50,3 @@
               - tripleo_common/image/kolla_builder.py
     gate:
       queue: tripleo
-      jobs:
-        - tripleo-ci-centos-7-scenario001-multinode-oooq-container
-        - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
-            files:
-              - ^container-images/.*$
-              - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-scenario003-multinode-oooq-container:
-            files:
-              - ^container-images/.*$
-              - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-scenario004-multinode-oooq-container:
-            files:
-              - workbooks/ceph-ansible.yaml
-              - ^container-images/.*$
-              - tripleo_common/actions/ansible.py
-              - tripleo_common/image/kolla_builder.py
