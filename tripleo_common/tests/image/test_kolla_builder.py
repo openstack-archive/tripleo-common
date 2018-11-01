@@ -840,6 +840,7 @@ class TestPrepare(base.TestCase):
         env = {
             'parameter_defaults': {
                 'LocalContainerRegistry': '192.0.2.1',
+                'DockerRegistryMirror': 'http://192.0.2.2/reg/',
                 'ContainerImagePrepare': [{
                     'set': mapping_args,
                     'tag_from_label': 'foo',
@@ -896,7 +897,10 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role=None,
                 modify_only_with_labels=None,
-                modify_vars=None
+                modify_vars=None,
+                mirrors={
+                    'docker.io': 'http://192.0.2.2/reg/'
+                }
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -911,7 +915,10 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role='add-foo-plugin',
                 modify_only_with_labels=['kolla_version'],
-                modify_vars={'foo_version': '1.0.1'}
+                modify_vars={'foo_version': '1.0.1'},
+                mirrors={
+                    'docker.io': 'http://192.0.2.2/reg/'
+                }
             )
         ])
 
@@ -995,7 +1002,8 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role=None,
                 modify_only_with_labels=None,
-                modify_vars=None
+                modify_vars=None,
+                mirrors={}
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -1010,11 +1018,13 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role='add-foo-plugin',
                 modify_only_with_labels=['kolla_version'],
-                modify_vars={'foo_version': '1.0.1'}
+                modify_vars={'foo_version': '1.0.1'},
+                mirrors={}
             )
         ])
 
-        mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full')
+        mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full',
+                                        mirrors={})
 
         self.assertEqual(
             {

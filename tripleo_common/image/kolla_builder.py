@@ -141,6 +141,11 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
     if not cip:
         return
 
+    mirrors = {}
+    mirror = pd.get('DockerRegistryMirror')
+    if mirror:
+        mirrors['docker.io'] = mirror
+
     env_params = {}
     service_filter = build_service_filter(environment, roles_data)
 
@@ -176,6 +181,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             modify_role=modify_role,
             modify_vars=modify_vars,
             modify_only_with_labels=modify_only_with_labels,
+            mirrors=mirrors
         )
         env_params.update(prepare_data['image_params'])
 
@@ -187,7 +193,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
                 uploader = image_uploader.ImageUploadManager(
                     [f.name],
                     dry_run=dry_run,
-                    cleanup=cleanup
+                    cleanup=cleanup,
+                    mirrors=mirrors
                 )
                 uploader.upload()
     return env_params
@@ -209,7 +216,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              mapping_args=None, output_env_file=None,
                              output_images_file=None, tag_from_label=None,
                              append_tag=None, modify_role=None,
-                             modify_vars=None, modify_only_with_labels=None):
+                             modify_vars=None, modify_only_with_labels=None,
+                             mirrors=None):
     """Perform container image preparation
 
     :param template_file: path to Jinja2 file containing all image entries
@@ -235,6 +243,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     :param modify_vars: dict of variables to pass to modify_role
     :param modify_only_with_labels: only modify the container images with the
                                     given labels
+    :param mirrors: dict of registry netloc values to mirror urls
     :returns: dict with entries for the supplied output_env_file or
               output_images_file
     """
@@ -269,7 +278,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
     if tag_from_label:
         image_version_tags = uploader.discover_image_tags(
-            images, tag_from_label)
+            images, tag_from_label, mirrors=mirrors)
         for entry in result:
             imagename = entry.get('imagename', '')
             image_no_tag = imagename.rpartition(':')[0]
@@ -279,7 +288,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
     if modify_only_with_labels:
         images_with_labels = uploader.filter_images_with_labels(
-            images, modify_only_with_labels)
+            images, modify_only_with_labels, mirrors=mirrors)
 
     params = {}
     modify_append_tag = append_tag

@@ -77,7 +77,8 @@ class ImageUploadManager(BaseImageManager):
        """
 
     def __init__(self, config_files=None,
-                 dry_run=False, cleanup=CLEANUP_FULL):
+                 dry_run=False, cleanup=CLEANUP_FULL,
+                 mirrors=None):
         if config_files is None:
             config_files = []
         super(ImageUploadManager, self).__init__(config_files)
@@ -87,13 +88,14 @@ class ImageUploadManager(BaseImageManager):
         }
         self.dry_run = dry_run
         self.cleanup = cleanup
+        self.mirrors = mirrors
 
     def discover_image_tag(self, image, tag_from_label=None,
                            username=None, password=None):
         uploader = self.uploader(DEFAULT_UPLOADER)
         return uploader.discover_image_tag(
             image, tag_from_label=tag_from_label,
-            username=username, password=password)
+            username=username, password=password, mirrors=self.mirrors)
 
     def uploader(self, uploader):
         if uploader not in self.uploaders:
@@ -136,7 +138,7 @@ class ImageUploadManager(BaseImageManager):
             task = UploadTask(
                 image_name, pull_source, push_destination,
                 append_tag, modify_role, modify_vars, self.dry_run,
-                self.cleanup)
+                self.cleanup, self.mirrors)
             uploader.add_upload_task(task)
 
         for uploader in self.uploaders.values():
@@ -221,13 +223,14 @@ class BaseImageUploader(object):
                 'Modifying image %s failed' % target_image)
 
     @classmethod
-    def _images_match(cls, image1, image2, session1=None):
+    def _images_match(cls, image1, image2, session1=None, mirrors=None):
         try:
-            image1_digest = cls._image_digest(image1, session=session1)
+            image1_digest = cls._image_digest(image1, session=session1,
+                                              mirrors=mirrors)
         except Exception:
             return False
         try:
-            image2_digest = cls._image_digest(image2)
+            image2_digest = cls._image_digest(image2, mirrors=mirrors)
         except Exception:
             return False
 
@@ -237,22 +240,22 @@ class BaseImageUploader(object):
         return image1_digest == image2_digest
 
     @classmethod
-    def _image_digest(cls, image, session=None):
+    def _image_digest(cls, image, session=None, mirrors=None):
         image_url = cls._image_to_url(image)
         insecure = image_url.netloc in cls.insecure_registries
-        i = cls._inspect(image_url, insecure, session)
+        i = cls._inspect(image_url, insecure, session, mirrors=mirrors)
         return i.get('Digest')
 
     @classmethod
-    def _image_labels(cls, image_url, insecure, session=None):
-        i = cls._inspect(image_url, insecure, session)
+    def _image_labels(cls, image_url, insecure, session=None, mirrors=None):
+        i = cls._inspect(image_url, insecure, session, mirrors=mirrors)
         return i.get('Labels', {}) or {}
 
     @classmethod
-    def _image_exists(cls, image, session=None):
+    def _image_exists(cls, image, session=None, mirrors=None):
         try:
             cls._image_digest(
-                image, session=session)
+                image, session=session, mirrors=mirrors)
         except ImageNotFoundException:
             return False
         else:
@@ -268,15 +271,11 @@ class BaseImageUploader(object):
         stop=tenacity.stop_after_attempt(5)
     )
     def authenticate(cls, image_url, username=None, password=None,
-                     insecure=False):
-        image_url = cls._fix_dockerio_url(image_url)
-        netloc = image_url.netloc
-        if insecure:
-            scheme = 'http'
-        else:
-            scheme = 'https'
+                     insecure=False, mirrors=None):
         image, tag = image_url.path.split(':')
-        url = '%s://%s/v2/' % (scheme, netloc)
+        url = cls._build_url(image_url, path='/',
+                             insecure=insecure,
+                             mirrors=mirrors)
         session = requests.Session()
         r = session.get(url, timeout=30)
         LOG.debug('%s status code %s' % (url, r.status_code))
@@ -308,14 +307,19 @@ class BaseImageUploader(object):
         return session
 
     @classmethod
-    def _fix_dockerio_url(cls, url):
-        one = 'docker.io'
-        two = 'registry-1.docker.io'
-        if url.netloc != one:
-            return url
-        return parse.ParseResult(url.scheme, two,
-                                 url.path, url.params,
-                                 url.query, url.fragment)
+    def _build_url(cls, url, path, insecure=False, mirrors=None):
+        netloc = url.netloc
+        if mirrors and netloc in mirrors:
+            mirror = mirrors[netloc]
+            return '%sv2%s' % (mirror, path)
+        else:
+            if insecure:
+                scheme = 'http'
+            else:
+                scheme = 'https'
+            if netloc == 'docker.io':
+                netloc = 'registry-1.docker.io'
+            return '%s://%s/v2%s' % (scheme, netloc, path)
 
     @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -326,24 +330,21 @@ class BaseImageUploader(object):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
-    def _inspect(cls, image_url, insecure=False, session=None):
-        original_image_url = image_url
-        image_url = cls._fix_dockerio_url(image_url)
-        parts = {
-            'netloc': image_url.netloc
-        }
-        if insecure:
-            parts['scheme'] = 'http'
-        else:
-            parts['scheme'] = 'https'
+    def _inspect(cls, image_url, insecure=False, session=None, mirrors=None):
         image, tag = image_url.path.split(':')
-        parts['image'] = image
-        parts['tag'] = tag
+        parts = {
+            'image': image,
+            'tag': tag
+        }
 
-        manifest_url = ('%(scheme)s://%(netloc)s/v2'
-                        '%(image)s/manifests/%(tag)s' % parts)
-        tags_url = ('%(scheme)s://%(netloc)s/v2'
-                    '%(image)s/tags/list' % parts)
+        manifest_url = cls._build_url(
+            image_url, '%(image)s/manifests/%(tag)s' % parts,
+            insecure, mirrors
+        )
+        tags_url = cls._build_url(
+            image_url, '%(image)s/tags/list' % parts,
+            insecure, mirrors
+        )
         manifest_headers = {
             'Accept': 'application/vnd.docker.distribution.manifest.v2+json'
         }
@@ -369,8 +370,9 @@ class BaseImageUploader(object):
         config_headers = {
             'Accept': manifest['config']['mediaType']
         }
-        config_url = ('%(scheme)s://%(netloc)s/v2'
-                      '%(image)s/blobs/%(config_digest)s' % parts)
+        config_url = cls._build_url(
+            image_url, '%(image)s/blobs/%(config_digest)s' % parts,
+            insecure, mirrors)
         config_f = p.submit(
             session.get, config_url, headers=config_headers, timeout=30)
         config_r = config_f.result()
@@ -379,7 +381,7 @@ class BaseImageUploader(object):
         tags = tags_r.json()['tags']
         digest = manifest_r.headers['Docker-Content-Digest']
         config = config_r.json()
-        name = '%s%s' % (original_image_url.netloc, image)
+        name = '%s%s' % (image_url.netloc, image)
 
         return {
             'Name': name,
@@ -445,7 +447,7 @@ class BaseImageUploader(object):
             )
         return tag_label
 
-    def discover_image_tags(self, images, tag_from_label=None):
+    def discover_image_tags(self, images, tag_from_label=None, mirrors=None):
         image_urls = [self._image_to_url(i) for i in images]
 
         # prime self.insecure_registries by testing every image
@@ -455,7 +457,7 @@ class BaseImageUploader(object):
         discover_args = []
         for image in images:
             discover_args.append((image, tag_from_label,
-                                  self.insecure_registries))
+                                  self.insecure_registries, mirrors))
         p = futures.ThreadPoolExecutor(max_workers=16)
 
         versioned_images = {}
@@ -465,25 +467,28 @@ class BaseImageUploader(object):
         return versioned_images
 
     def discover_image_tag(self, image, tag_from_label=None,
-                           fallback_tag=None, username=None, password=None):
+                           fallback_tag=None, username=None, password=None,
+                           mirrors=None):
         image_url = self._image_to_url(image)
         insecure = self.is_insecure_registry(image_url.netloc)
         session = self.authenticate(
-            image_url, insecure=insecure, username=username, password=password)
-        i = self._inspect(image_url, insecure, session)
+            image_url, insecure=insecure, username=username, password=password,
+            mirrors=mirrors)
+        i = self._inspect(image_url, insecure, session, mirrors=mirrors)
         return self._discover_tag_from_inspect(i, image, tag_from_label,
                                                fallback_tag)
 
     def filter_images_with_labels(self, images, labels,
-                                  username=None, password=None):
+                                  username=None, password=None, mirrors=None):
         images_with_labels = []
         for image in images:
             url = self._image_to_url(image)
             insecure = self.is_insecure_registry(url.netloc)
             session = self.authenticate(
-                url, insecure=insecure, username=username, password=password)
+                url, insecure=insecure, username=username, password=password,
+                mirrors=mirrors)
             image_labels = self._image_labels(
-                url, insecure=insecure, session=session)
+                url, insecure=insecure, session=session, mirrors=mirrors)
             if set(labels).issubset(set(image_labels)):
                 images_with_labels.append(image)
 
@@ -558,17 +563,20 @@ class DockerImageUploader(BaseImageUploader):
 
         if t.modify_role:
             target_session = self.authenticate(
-                t.target_image_url, insecure=target_insecure)
+                t.target_image_url, insecure=target_insecure,
+                mirrors=t.mirrors)
             if self._image_exists(t.target_image,
-                                  session=target_session):
+                                  session=target_session,
+                                  mirrors=t.mirrors):
                 LOG.warning('Skipping upload for modified image %s' %
                             t.target_image)
                 return []
         else:
             source_session = self.authenticate(
-                t.source_image_url, insecure=source_insecure)
+                t.source_image_url, insecure=source_insecure,
+                mirrors=t.mirrors)
             if self._images_match(t.source_image, t.target_image,
-                                  session1=source_session):
+                                  session1=source_session, mirrors=t.mirrors):
                 LOG.warning('Skipping upload for image %s' % t.image_name)
                 return []
 
@@ -689,21 +697,25 @@ class SkopeoImageUploader(BaseImageUploader):
             return []
 
         target_session = self.authenticate(
-            t.target_image_url, insecure=target_insecure)
+            t.target_image_url, insecure=target_insecure,
+            mirrors=t.mirrors)
 
         if t.modify_role and self._image_exists(
-                t.target_image, target_session):
+                t.target_image, target_session,
+                mirrors=t.mirrors):
             LOG.warning('Skipping upload for modified image %s' %
                         t.target_image)
             return []
 
         source_session = self.authenticate(
-            t.source_image_url, insecure=source_insecure)
+            t.source_image_url, insecure=source_insecure,
+            mirrors=t.mirrors)
 
         source_inspect = self._inspect(
             t.source_image_url,
             insecure=source_insecure,
-            session=source_session)
+            session=source_session,
+            mirrors=t.mirrors)
         source_layers = source_inspect.get('Layers', [])
         self._cross_repo_mount(
             t.target_image_url, self.image_layers, source_layers,
@@ -835,7 +847,8 @@ class SkopeoImageUploader(BaseImageUploader):
 class UploadTask(object):
 
     def __init__(self, image_name, pull_source, push_destination,
-                 append_tag, modify_role, modify_vars, dry_run, cleanup):
+                 append_tag, modify_role, modify_vars, dry_run, cleanup,
+                 mirrors):
         self.image_name = image_name
         self.pull_source = pull_source
         self.push_destination = push_destination
@@ -844,6 +857,7 @@ class UploadTask(object):
         self.modify_vars = modify_vars
         self.dry_run = dry_run
         self.cleanup = cleanup
+        self.mirrors = mirrors
 
         if ':' in image_name:
             image = image_name.rpartition(':')[0]
@@ -875,12 +889,13 @@ def upload_task(args):
 
 
 def discover_tag_from_inspect(args):
-    image, tag_from_label, insecure_registries = args
+    image, tag_from_label, insecure_registries, mirrors = args
     image_url = BaseImageUploader._image_to_url(image)
     insecure = image_url.netloc in insecure_registries
-    session = BaseImageUploader.authenticate(image_url, insecure=insecure)
+    session = BaseImageUploader.authenticate(image_url, insecure=insecure,
+                                             mirrors=mirrors)
     i = BaseImageUploader._inspect(image_url, insecure=insecure,
-                                   session=session)
+                                   session=session, mirrors=mirrors)
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
         path = image.rpartition(':')
