@@ -13,6 +13,8 @@
 #   under the License.
 #
 
+import hashlib
+import io
 import json
 import mock
 import operator
@@ -23,6 +25,7 @@ import six
 from six.moves.urllib.parse import urlparse
 import tempfile
 import urllib3
+import zlib
 
 from oslo_concurrency import processutils
 from tripleo_common.image.exception import ImageNotFoundException
@@ -627,6 +630,25 @@ class TestBaseImageUploader(base.TestCase):
             inspect(url1, session=session)
         )
 
+    def test_image_tag_from_url(self):
+        u = self.uploader
+        self.assertEqual(
+            ('/t/foo', 'bar'),
+            u._image_tag_from_url(urlparse(
+                'docker://docker.io/t/foo:bar'))
+        )
+        self.assertEqual(
+            ('/foo', 'bar'),
+            u._image_tag_from_url(urlparse(
+                'docker://192.168.2.1:5000/foo:bar'))
+
+        )
+        self.assertEqual(
+            ('/foo', 'bar'),
+            u._image_tag_from_url(urlparse(
+                'containers-storage:/foo:bar'))
+        )
+
 
 class TestDockerImageUploader(base.TestCase):
 
@@ -1228,3 +1250,873 @@ class TestSkopeoImageUploader(base.TestCase):
             ImageUploaderException, self.uploader._copy, source, target)
 
         self.assertEqual(mock_failure.communicate.call_count, 5)
+
+
+class TestPythonImageUploader(base.TestCase):
+
+    def setUp(self):
+        super(TestPythonImageUploader, self).setUp()
+        self.uploader = image_uploader.PythonImageUploader()
+        u = self.uploader
+        u._fetch_manifest.retry.sleep = mock.Mock()
+        u._upload_url.retry.sleep = mock.Mock()
+        u._copy_layer_local_to_registry.retry.sleep = mock.Mock()
+        u._copy_layer_registry_to_registry.retry.sleep = mock.Mock()
+        u._copy_registry_to_registry.retry.sleep = mock.Mock()
+        u._copy_registry_to_local.retry.sleep = mock.Mock()
+        u._copy_local_to_registry.retry.sleep = mock.Mock()
+        self.requests = self.useFixture(rm_fixture.Fixture())
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._cross_repo_mount')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_registry_to_registry')
+    def test_upload_image(
+            self, _copy_registry_to_registry, _cross_repo_mount,
+            _fetch_manifest, authenticate):
+
+        target_session = mock.Mock()
+        source_session = mock.Mock()
+        authenticate.side_effect = [
+            target_session,
+            source_session
+        ]
+        manifest = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+            },
+            'layers': [
+                {'digest': 'sha256:aaa'},
+                {'digest': 'sha256:bbb'},
+                {'digest': 'sha256:ccc'}
+            ],
+        })
+        _fetch_manifest.return_value = manifest
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        push_destination = 'localhost:8787'
+        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        task = image_uploader.UploadTask(
+            image_name=image + ':' + tag,
+            pull_source=None,
+            push_destination=push_destination,
+            append_tag=None,
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup='full',
+            mirrors={}
+        )
+
+        self.assertEqual(
+            [],
+            self.uploader.upload_image(task)
+        )
+        source_url = urlparse('docker://docker.io/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+
+        authenticate.assert_has_calls([
+            mock.call(
+                target_url,
+                insecure=False,
+                mirrors={}
+            ),
+            mock.call(
+                source_url,
+                insecure=False,
+                mirrors={}
+            ),
+        ])
+
+        _fetch_manifest.assert_called_once_with(
+            source_url,
+            insecure=False,
+            mirrors={}, session=source_session)
+
+        _cross_repo_mount.assert_called_once_with(
+            target_url,
+            {
+                'sha256:aaa': target_url,
+                'sha256:bbb': target_url,
+                'sha256:ccc': target_url,
+            },
+            ['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+            session=target_session)
+
+        _copy_registry_to_registry.assert_called_once_with(
+            source_url,
+            target_url,
+            source_manifest=manifest,
+            source_session=source_session,
+            target_session=target_session,
+            mirrors={}
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._image_exists')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._cross_repo_mount')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_registry_to_registry')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_registry_to_local')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.run_modify_playbook')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_local_to_registry')
+    def test_upload_image_modify(
+            self, _copy_local_to_registry, run_modify_playbook,
+            _copy_registry_to_local, _copy_registry_to_registry,
+            _cross_repo_mount, _fetch_manifest, _image_exists, authenticate):
+
+        _image_exists.return_value = False
+        target_session = mock.Mock()
+        source_session = mock.Mock()
+        authenticate.side_effect = [
+            target_session,
+            source_session
+        ]
+        manifest = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+            },
+            'layers': [
+                {'digest': 'sha256:aaa'},
+                {'digest': 'sha256:bbb'},
+                {'digest': 'sha256:ccc'}
+            ],
+        })
+        _fetch_manifest.return_value = manifest
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        append_tag = 'modify-123'
+        push_destination = 'localhost:8787'
+        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        task = image_uploader.UploadTask(
+            image_name=image + ':' + tag,
+            pull_source=None,
+            push_destination=push_destination,
+            append_tag=append_tag,
+            modify_role='add-foo-plugin',
+            modify_vars={'foo_version': '1.0.1'},
+            dry_run=False,
+            cleanup='full',
+            mirrors={}
+        )
+
+        source_url = urlparse(
+            'docker://docker.io/tripleomaster/'
+            'heat-docker-agents-centos:latest')
+        unmodified_target_url = urlparse(
+            'docker://localhost:8787/tripleomaster/'
+            'heat-docker-agents-centos:latest')
+        local_modified_url = urlparse(
+            'containers-storage:localhost:8787/tripleomaster/'
+            'heat-docker-agents-centos:latestmodify-123')
+        target_url = urlparse(
+            'docker://localhost:8787/tripleomaster/'
+            'heat-docker-agents-centos:latestmodify-123')
+
+        self.assertEqual([
+            'localhost:8787/tripleomaster/'
+            'heat-docker-agents-centos:latest',
+            'localhost:8787/tripleomaster/'
+            'heat-docker-agents-centos:latestmodify-123'],
+            self.uploader.upload_image(task)
+        )
+        authenticate.assert_has_calls([
+            mock.call(
+                target_url,
+                insecure=False,
+                mirrors={}
+            ),
+            mock.call(
+                source_url,
+                insecure=False,
+                mirrors={}
+            ),
+        ])
+
+        _fetch_manifest.assert_called_once_with(
+            source_url,
+            insecure=False,
+            mirrors={}, session=source_session)
+
+        _cross_repo_mount.assert_has_calls([
+            mock.call(
+                unmodified_target_url,
+                {
+                    'sha256:aaa': target_url,
+                    'sha256:bbb': target_url,
+                    'sha256:ccc': target_url,
+                },
+                ['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+                session=target_session
+            ),
+            mock.call(
+                target_url,
+                {
+                    'sha256:aaa': target_url,
+                    'sha256:bbb': target_url,
+                    'sha256:ccc': target_url,
+                },
+                ['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+                session=target_session
+            )
+        ])
+
+        _copy_registry_to_registry.assert_called_once_with(
+            source_url,
+            unmodified_target_url,
+            source_manifest=manifest,
+            source_session=source_session,
+            target_session=target_session,
+            mirrors={}
+        )
+        _copy_registry_to_local.assert_called_once_with(unmodified_target_url)
+        run_modify_playbook.assert_called_once_with(
+            'add-foo-plugin',
+            {'foo_version': '1.0.1'},
+            'localhost:8787/tripleomaster/'
+            'heat-docker-agents-centos:latest',
+            'localhost:8787/tripleomaster/'
+            'heat-docker-agents-centos:latest',
+            'modify-123',
+            container_build_tool='buildah'
+        )
+        _copy_local_to_registry.assert_called_once_with(
+            local_modified_url,
+            target_url,
+            mirrors={},
+            session=target_session
+        )
+
+    def test_fetch_manifest(self):
+        url = urlparse('docker://docker.io/t/nova-api:tripleo-current')
+        manifest = '{"layers": []}'
+        session = mock.Mock()
+        session.get.return_value.text = manifest
+        self.assertEqual(
+            manifest,
+            self.uploader._fetch_manifest(url, session, False, {})
+        )
+
+        session.get.assert_called_once_with(
+            'https://registry-1.docker.io/v2/t/'
+            'nova-api/manifests/tripleo-current',
+            timeout=30,
+            headers={
+                'Accept': 'application/vnd.docker.distribution'
+                          '.manifest.v2+json'
+            }
+        )
+
+    def test_upload_url(self):
+        # test with previous request
+        previous_request = mock.Mock()
+        previous_request.headers = {
+            'Location': 'http://192.168.2.1/v2/upload?foo=bar'
+        }
+        url = urlparse('docker://192.168.2.1/t/nova-api:latest')
+        session = mock.Mock()
+        self.assertEqual(
+            'http://192.168.2.1/v2/upload?foo=bar',
+            self.uploader._upload_url(
+                url,
+                insecure=False,
+                session=session,
+                previous_request=previous_request,
+                mirrors={})
+        )
+        session.post.assert_not_called()
+
+        # test with requesting an upload url
+        session.post.return_value.headers = {
+            'Location': 'http://192.168.2.1/v2/upload?foo=baz'
+        }
+        self.assertEqual(
+            'http://192.168.2.1/v2/upload?foo=baz',
+            self.uploader._upload_url(
+                url,
+                insecure=False,
+                session=session,
+                previous_request=None,
+                mirrors={})
+        )
+        session.post.assert_called_once_with(
+            'https://192.168.2.1/v2/t/nova-api/blobs/uploads/',
+            timeout=30
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._upload_url')
+    def test_copy_layer_registry_to_registry(self, _upload_url):
+        _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
+        source_url = urlparse('docker://docker.io/t/nova-api:latest')
+        target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
+        layer = {
+            'digest': 'sha256:aaaa',
+            'size': 8,
+            'mediaType': 'application/vnd.docker.image.rootfs.diff.tar'
+        }
+        source_session = requests.Session()
+        target_session = requests.Session()
+
+        blob_data = six.b('The Blob')
+        calc_digest = hashlib.sha256()
+        calc_digest.update(blob_data)
+        blob_digest = 'sha256:' + calc_digest.hexdigest()
+
+        # layer already exists at destination
+        self.requests.head(
+            'https://192.168.2.1:5000/v2/t/nova-api/blobs/sha256:aaaa',
+            status_code=200
+        )
+        self.assertIsNone(
+            self.uploader._copy_layer_registry_to_registry(
+                source_url,
+                target_url,
+                layer,
+                source_session=source_session,
+                target_session=target_session,
+                mirrors=None
+            )
+        )
+
+        # layer needs transferring
+        self.requests.head(
+            'https://192.168.2.1:5000/v2/t/nova-api/blobs/sha256:aaaa',
+            status_code=404
+        )
+        self.requests.put(
+            'https://192.168.2.1:5000/v2/upload',
+        )
+        self.requests.patch(
+            'https://192.168.2.1:5000/v2/upload',
+        )
+        self.requests.get(
+            'https://registry-1.docker.io/v2/t/nova-api/blobs/sha256:aaaa',
+            content=blob_data
+        )
+
+        self.assertEqual(
+            blob_digest,
+            self.uploader._copy_layer_registry_to_registry(
+                source_url,
+                target_url,
+                layer,
+                source_session=source_session,
+                target_session=target_session,
+                mirrors=None
+            )
+        )
+        self.assertEqual(
+            {
+                'digest': blob_digest,
+                'mediaType': 'application/'
+                             'vnd.docker.image.rootfs.diff.tar.gzip',
+                'size': 8
+            },
+            layer
+        )
+
+    def test_assert_scheme(self):
+        self.uploader._assert_scheme(
+            urlparse('docker://docker.io/foo/bar:latest'),
+            'docker'
+        )
+        self.uploader._assert_scheme(
+            urlparse('containers-storage:foo/bar:latest'),
+            'containers-storage'
+        )
+        self.assertRaises(
+            ImageUploaderException,
+            self.uploader._assert_scheme,
+            urlparse('containers-storage:foo/bar:latest'),
+            'docker'
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._upload_url')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.'
+                '_copy_layer_registry_to_registry')
+    def test_copy_registry_to_registry(self, _copy_layer, _upload_url):
+        source_url = urlparse('docker://docker.io/t/nova-api:latest')
+        target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
+        _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
+
+        source_session = mock.Mock()
+        target_session = mock.Mock()
+
+        source_session.get.return_value.text = '{}'
+
+        manifest = json.dumps({
+            'config': {
+                'digest': 'sha256:1234'
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ]
+        })
+        _copy_layer.side_effect = [
+            'sha256:aaaa',
+            'sha256:bbbb'
+        ]
+
+        self.uploader._copy_registry_to_registry(
+            source_url, target_url, manifest,
+            source_session=source_session,
+            target_session=target_session,
+            mirrors={}
+        )
+
+        source_session.get.assert_called_once_with(
+            'https://registry-1.docker.io/v2/t/nova-api/blobs/sha256:1234',
+            timeout=30
+        )
+        target_manifest = {
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ],
+            'mediaType': 'application/vnd.docker.'
+                         'distribution.manifest.v2+json',
+        }
+
+        target_session.put.assert_has_calls([
+            mock.call(
+                'https://192.168.2.1:5000/v2/upload',
+                data='{}'.encode('utf-8'),
+                headers={
+                    'Content-Length':
+                    '2',
+                    'Content-Type':
+                    'application/octet-stream'
+                },
+                params={'digest': 'sha256:1234'},
+                timeout=30
+            ),
+            mock.call().raise_for_status(),
+            mock.call(
+                'https://192.168.2.1:5000/v2/t/nova-api/manifests/latest',
+                data=mock.ANY,
+                headers={
+                    'Content-Type': 'application/vnd.docker.'
+                                    'distribution.manifest.v2+json'
+                },
+                timeout=30
+            ),
+            mock.call().raise_for_status(),
+        ])
+        put_manifest = json.loads(
+            target_session.put.call_args[1]['data'].decode('utf-8')
+        )
+        self.assertEqual(target_manifest, put_manifest)
+
+    @mock.patch('os.environ')
+    @mock.patch('subprocess.Popen')
+    def test_copy_registry_to_local(self, mock_popen, mock_environ):
+        mock_success = mock.Mock()
+        mock_success.communicate.return_value = (
+            six.b('pull complete'),
+            six.b('')
+        )
+        mock_success.returncode = 0
+
+        mock_failure = mock.Mock()
+        mock_failure.communicate.return_value = ('', 'ouch')
+        mock_failure.returncode = 1
+        mock_popen.side_effect = [
+            mock_failure,
+            mock_failure,
+            mock_failure,
+            mock_failure,
+            mock_success
+        ]
+        mock_environ.copy.return_value = {}
+
+        source = urlparse('docker://docker.io/t/nova-api')
+
+        self.uploader._copy_registry_to_local(source)
+
+        self.assertEqual(mock_failure.communicate.call_count, 4)
+        self.assertEqual(mock_success.communicate.call_count, 1)
+
+    @mock.patch('os.path.exists')
+    @mock.patch('subprocess.Popen')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._upload_url')
+    def test_copy_layer_local_to_registry(self, _upload_url, mock_popen,
+                                          mock_exists):
+        mock_exists.return_value = True
+        _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
+        target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
+        layer = {'digest': 'sha256:aaaa'}
+        target_session = requests.Session()
+
+        blob_data = six.b('The Blob')
+        calc_digest = hashlib.sha256()
+        calc_digest.update(blob_data)
+        blob_digest = 'sha256:' + calc_digest.hexdigest()
+
+        blob_compressed = zlib.compress(blob_data)
+        calc_digest = hashlib.sha256()
+        calc_digest.update(blob_compressed)
+        compressed_digest = 'sha256:' + calc_digest.hexdigest()
+        layer_entry = {
+            'compressed-diff-digest': compressed_digest,
+            'compressed-size': len(compressed_digest),
+            'diff-digest': blob_digest,
+            'diff-size': len(blob_data),
+            'id': 'aaaa'
+        }
+
+        # layer already exists at destination
+        self.requests.head(
+            'https://192.168.2.1:5000/v2/t/'
+            'nova-api/blobs/%s' % compressed_digest,
+            status_code=404
+        )
+        self.requests.head(
+            'https://192.168.2.1:5000/v2/t/nova-api/blobs/%s' % blob_digest,
+            status_code=200
+        )
+        self.assertIsNone(
+            self.uploader._copy_layer_local_to_registry(
+                target_url,
+                session=target_session,
+                layer=layer,
+                layer_entry=layer_entry,
+                mirrors=None
+            )
+        )
+
+        # layer needs uploading
+        mock_success = mock.Mock()
+        mock_success.stdout = io.BytesIO(blob_compressed)
+        mock_success.returncode = 0
+        mock_popen.return_value = mock_success
+
+        target_session = requests.Session()
+        self.requests.head(
+            'https://192.168.2.1:5000/v2/t/'
+            'nova-api/blobs/%s' % compressed_digest,
+            status_code=404
+        )
+        self.requests.head(
+            'https://192.168.2.1:5000/v2/t/nova-api/blobs/%s' % blob_digest,
+            status_code=404
+        )
+        self.requests.patch(
+            'https://192.168.2.1:5000/v2/upload',
+            status_code=200
+        )
+        self.requests.put(
+            'https://192.168.2.1:5000/v2/upload?digest=%s' % compressed_digest,
+            status_code=200
+        )
+        self.assertEqual(
+            compressed_digest,
+            self.uploader._copy_layer_local_to_registry(
+                target_url,
+                session=target_session,
+                layer=layer,
+                layer_entry=layer_entry,
+                mirrors=None
+            )
+        )
+        # test tar-split assemble call
+        mock_popen.assert_called_once_with([
+            'tar-split', 'asm',
+            '--input',
+            '/var/lib/containers/storage/overlay-layers/aaaa.tar-split.gz',
+            '--path',
+            '/var/lib/containers/storage/overlay/aaaa/diff',
+            '--compress'
+        ], stdout=-1)
+
+        # test side-effect of layer being fully populated
+        self.assertEqual({
+            'digest': compressed_digest,
+            'mediaType': 'application/vnd.docker.image.rootfs.diff.tar.gzip',
+            'size': len(blob_compressed)},
+            layer
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._image_manifest_config')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_layer_local_to_registry')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._containers_json')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._upload_url')
+    def test_copy_local_to_registry(self, _upload_url, _containers_json,
+                                    _copy_layer_local_to_registry,
+                                    _image_manifest_config):
+        source_url = urlparse('containers-storage:/t/nova-api:latest')
+        target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
+        target_session = requests.Session()
+        _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
+        layers = [{
+            "compressed-diff-digest": "sha256:aeb786",
+            "compressed-size": 74703002,
+            "compression": 2,
+            "created": "2018-11-07T02:45:16.760488331Z",
+            "diff-digest": "sha256:f972d1",
+            "diff-size": 208811520,
+            "id": "f972d1"
+        }, {
+            "compressed-diff-digest": "sha256:4dc536",
+            "compressed-size": 23400,
+            "compression": 2,
+            "created": "2018-11-07T02:45:21.59385649Z",
+            "diff-digest": "sha256:26deb2",
+            "diff-size": 18775552,
+            "id": "97397b",
+            "parent": "f972d1"
+        }]
+        _containers_json.return_value = layers
+
+        config_str = '{"config": {}}'
+        config_digest = 'sha256:1234'
+
+        manifest = {
+            'config': {
+                'digest': config_digest,
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [
+                {'digest': 'sha256:aeb786'},
+                {'digest': 'sha256:4dc536'},
+            ],
+            'mediaType': 'application/vnd.docker.'
+                         'distribution.manifest.v2+json',
+        }
+        _image_manifest_config.return_value = (
+            't/nova-api:latest',
+            manifest,
+            config_str
+        )
+        put_config = self.requests.put(
+            'https://192.168.2.1:5000/v2/upload?digest=%s' % config_digest,
+            status_code=200
+        )
+        put_manifest = self.requests.put(
+            'https://192.168.2.1:5000/v2/t/nova-api/manifests/latest',
+            status_code=200
+        )
+
+        self.uploader._copy_local_to_registry(
+            source_url=source_url,
+            target_url=target_url,
+            session=target_session
+        )
+
+        _containers_json.assert_called_once_with(
+            'overlay-layers', 'layers.json')
+        _image_manifest_config.assert_called_once_with('/t/nova-api:latest')
+        _copy_layer_local_to_registry.assert_any_call(
+            target_url,
+            target_session,
+            {'digest': 'sha256:aeb786'},
+            layers[0]
+        )
+        _copy_layer_local_to_registry.assert_any_call(
+            target_url,
+            target_session,
+            {'digest': 'sha256:4dc536'},
+            layers[1]
+        )
+        self.assertTrue(put_config.called)
+        self.assertTrue(put_manifest.called)
+
+    @mock.patch('os.path.exists')
+    def test_containers_file_path(self, mock_exists):
+        mock_exists.side_effect = [False, True]
+
+        self.assertRaises(
+            ImageUploaderException,
+            self.uploader._containers_file_path,
+            'overlay-layers',
+            'layers.json'
+        )
+        self.assertEqual(
+            '/var/lib/containers/storage/overlay-layers/layers.json',
+            self.uploader._containers_file_path(
+                'overlay-layers', 'layers.json')
+        )
+
+    @mock.patch('os.path.exists')
+    def test_containers_file(self, mock_exists):
+        mock_exists.return_value = True
+
+        data = '{"config": {}}'
+        mock_open = mock.mock_open(read_data=data)
+        open_func = 'tripleo_common.image.image_uploader.open'
+
+        with mock.patch(open_func, mock_open):
+            self.assertEqual(
+                '{"config": {}}',
+                self.uploader._containers_file(
+                    'overlay-layers', 'layers.json')
+            )
+
+    @mock.patch('os.path.exists')
+    def test_containers_json(self, mock_exists):
+        mock_exists.return_value = True
+
+        data = '{"config": {}}'
+        mock_open = mock.mock_open(read_data=data)
+        open_func = 'tripleo_common.image.image_uploader.open'
+
+        with mock.patch(open_func, mock_open):
+            self.assertEqual(
+                {'config': {}},
+                self.uploader._containers_json(
+                    'overlay-layers', 'layers.json')
+            )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._containers_json')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._containers_file')
+    def test_image_manifest_config(self, _containers_file, _containers_json):
+        _containers_file.return_value = '{"config": {}}'
+        images_not_found = [{
+            'id': 'aaaa',
+            'names': ['192.168.2.1:5000/t/heat-api:latest']
+        }, {
+            'id': 'bbbb',
+            'names': ['192.168.2.1:5000/t/heat-engine:latest']
+        }]
+        images = [{
+            'id': 'cccc',
+            'names': ['192.168.2.1:5000/t/nova-api:latest']
+        }]
+        man = {
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [],
+        }
+        _containers_json.side_effect = [images_not_found, images, man]
+
+        self.assertRaises(
+            ImageNotFoundException,
+            self.uploader._image_manifest_config,
+            '192.168.2.1:5000/t/nova-api:latest'
+        )
+
+        image, manifest, config_str = self.uploader._image_manifest_config(
+            '192.168.2.1:5000/t/nova-api:latest'
+        )
+        self.assertEqual(images[0], image)
+        self.assertEqual(man, manifest)
+        self.assertEqual('{"config": {}}', config_str)
+        _containers_json.assert_has_calls([
+            mock.call('overlay-images', 'images.json'),
+            mock.call('overlay-images', 'images.json'),
+            mock.call('overlay-images', 'cccc', 'manifest')
+        ])
+        _containers_file.assert_called_once_with(
+            'overlay-images', 'cccc', '=c2hhMjU2OjEyMzQ='
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._image_manifest_config')
+    def test_inspect(self, _image_manifest_config):
+        url = urlparse('containers-storage:/t/nova-api:latest')
+        config = {
+            'config': {
+                'Labels': ['one', 'two']
+            },
+            'architecture': 'x86_64',
+            'os': 'linux'
+        }
+        _image_manifest_config.return_value = (
+            {
+                'id': 'cccc',
+                'digest': 'sha256:ccccc',
+                'names': ['192.168.2.1:5000/t/nova-api:latest'],
+                'created': '2018-10-02T11:13:45.567533229Z'
+            }, {
+                'config': {
+                    'digest': 'sha256:1234',
+                },
+                'layers': [
+                    {'digest': 'sha256:aaa'},
+                    {'digest': 'sha256:bbb'},
+                    {'digest': 'sha256:ccc'}
+                ],
+            },
+            json.dumps(config)
+        )
+
+        self.assertEqual(
+            {
+                'Name': '/t/nova-api',
+                'Architecture': 'x86_64',
+                'Created': '2018-10-02T11:13:45.567533229Z',
+                'Digest': 'sha256:ccccc',
+                'DockerVersion': '',
+                'Labels': ['one', 'two'],
+                'Layers': ['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+                'Os': 'linux',
+                'RepoTags': []
+            },
+            self.uploader._inspect(url)
+        )
+
+    @mock.patch('os.environ')
+    @mock.patch('subprocess.Popen')
+    def test_delete(self, mock_popen, mock_environ):
+        url = urlparse('containers-storage:/t/nova-api:latest')
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = ('image deleted', '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        mock_environ.copy.return_value = {}
+
+        self.assertEqual(
+            'image deleted',
+            self.uploader._delete(url)
+        )
+        mock_popen.assert_called_once_with([
+            'podman',
+            'rmi',
+            '/t/nova-api:latest'],
+            env={}, stdout=-1
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._delete')
+    def test_cleanup(self, _delete):
+        self.uploader.cleanup(['foo', 'bar', 'baz'])
+        _delete.assert_has_calls([
+            mock.call(urlparse('containers-storage:bar')),
+            mock.call(urlparse('containers-storage:baz')),
+            mock.call(urlparse('containers-storage:foo'))
+        ])

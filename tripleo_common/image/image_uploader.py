@@ -13,8 +13,9 @@
 #   under the License.
 #
 
-
+import base64
 from concurrent import futures
+import hashlib
 import json
 import netifaces
 import os
@@ -22,6 +23,7 @@ import re
 import requests
 from requests import auth as requests_auth
 import shutil
+import six
 from six.moves.urllib import parse
 import subprocess
 import tempfile
@@ -56,6 +58,35 @@ CLEANUP = (
     'full', 'partial', 'none'
 )
 
+CALL_TYPES = (
+    CALL_PING,
+    CALL_MANIFEST,
+    CALL_BLOB,
+    CALL_UPLOAD,
+    CALL_TAGS,
+) = (
+    '/',
+    '%(image)s/manifests/%(tag)s',
+    '%(image)s/blobs/%(digest)s',
+    '%(image)s/blobs/uploads/',
+    '%(image)s/tags/list',
+)
+
+MEDIA_TYPES = (
+    MEDIA_MANIFEST_V1,
+    MEDIA_MANIFEST_V1_SIGNED,
+    MEDIA_MANIFEST_V2,
+    MEDIA_CONFIG,
+    MEDIA_BLOB,
+    MEDIA_BLOB_COMPRESSED
+) = (
+    'application/vnd.docker.distribution.manifest.v1+json',
+    'application/vnd.docker.distribution.manifest.v1+prettyjws',
+    'application/vnd.docker.distribution.manifest.v2+json',
+    'application/vnd.docker.container.image.v1+json',
+    'application/vnd.docker.image.rootfs.diff.tar',
+    'application/vnd.docker.image.rootfs.diff.tar.gzip'
+)
 
 DEFAULT_UPLOADER = 'docker'
 
@@ -84,7 +115,8 @@ class ImageUploadManager(BaseImageManager):
         super(ImageUploadManager, self).__init__(config_files)
         self.uploaders = {
             'docker': DockerImageUploader(),
-            'skopeo': SkopeoImageUploader()
+            'skopeo': SkopeoImageUploader(),
+            'python': PythonImageUploader()
         }
         self.dry_run = dry_run
         self.cleanup = cleanup
@@ -272,7 +304,7 @@ class BaseImageUploader(object):
     )
     def authenticate(cls, image_url, username=None, password=None,
                      insecure=False, mirrors=None):
-        image, tag = image_url.path.split(':')
+        image, tag = cls._image_tag_from_url(image_url)
         url = cls._build_url(image_url, path='/',
                              insecure=insecure,
                              mirrors=mirrors)
@@ -322,6 +354,13 @@ class BaseImageUploader(object):
             return '%s://%s/v2%s' % (scheme, netloc, path)
 
     @classmethod
+    def _image_tag_from_url(cls, image_url):
+        parts = image_url.path.split(':')
+        tag = parts[-1]
+        image = ':'.join(parts[:-1])
+        return image, tag
+
+    @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
         reraise=True,
         retry=tenacity.retry_if_exception_type(
@@ -331,23 +370,21 @@ class BaseImageUploader(object):
         stop=tenacity.stop_after_attempt(5)
     )
     def _inspect(cls, image_url, insecure=False, session=None, mirrors=None):
-        image, tag = image_url.path.split(':')
+        image, tag = cls._image_tag_from_url(image_url)
         parts = {
             'image': image,
             'tag': tag
         }
 
         manifest_url = cls._build_url(
-            image_url, '%(image)s/manifests/%(tag)s' % parts,
+            image_url, CALL_MANIFEST % parts,
             insecure, mirrors
         )
         tags_url = cls._build_url(
-            image_url, '%(image)s/tags/list' % parts,
+            image_url, CALL_TAGS % parts,
             insecure, mirrors
         )
-        manifest_headers = {
-            'Accept': 'application/vnd.docker.distribution.manifest.v2+json'
-        }
+        manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
 
         p = futures.ThreadPoolExecutor(max_workers=2)
         manifest_f = p.submit(
@@ -365,19 +402,19 @@ class BaseImageUploader(object):
 
         manifest = manifest_r.json()
         digest = manifest_r.headers['Docker-Content-Digest']
-        if manifest['schemaVersion'] == 1:
+        if manifest.get('schemaVersion', 2) == 1:
             config = json.loads(manifest['history'][0]['v1Compatibility'])
             layers = list(reversed([l['blobSum']
                                     for l in manifest['fsLayers']]))
         else:
             layers = [l['digest'] for l in manifest['layers']]
 
-            parts['config_digest'] = manifest['config']['digest']
+            parts['digest'] = manifest['config']['digest']
             config_headers = {
                 'Accept': manifest['config']['mediaType']
             }
             config_url = cls._build_url(
-                image_url, '%(image)s/blobs/%(config_digest)s' % parts,
+                image_url, CALL_BLOB % parts,
                 insecure, mirrors)
             config_f = p.submit(
                 session.get, config_url, headers=config_headers, timeout=30)
@@ -386,9 +423,11 @@ class BaseImageUploader(object):
             config = config_r.json()
 
         tags = tags_r.json()['tags']
+
+        image, tag = cls._image_tag_from_url(image_url)
         name = '%s%s' % (image_url.netloc, image)
         created = config['created']
-        docker_version = config['docker_version']
+        docker_version = config.get('docker_version', '')
         labels = config['config']['Labels']
         architecture = config['architecture']
         image_os = config['os']
@@ -523,7 +562,7 @@ class BaseImageUploader(object):
         if registry_host in self.insecure_registries:
             return True
         try:
-            requests.get('https://%s/v2' % registry_host)
+            requests.get('https://%s/v2' % registry_host, timeout=30)
         except requests.exceptions.SSLError:
             self.insecure_registries.add(registry_host)
             return True
@@ -536,6 +575,14 @@ class BaseImageUploader(object):
         return False
 
     @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def _cross_repo_mount(cls, target_image_url, image_layers,
                           source_layers, session):
         netloc = target_image_url.netloc
@@ -555,7 +602,8 @@ class BaseImageUploader(object):
                     'mount': layer,
                     'from': existing_name
                 }
-                r = session.post(url, data=data)
+                r = session.post(url, data=data, timeout=30)
+                r.raise_for_status()
                 LOG.debug('%s %s' % (r.status_code, r.reason))
 
 
@@ -730,7 +778,7 @@ class SkopeoImageUploader(BaseImageUploader):
         source_layers = source_inspect.get('Layers', [])
         self._cross_repo_mount(
             t.target_image_url, self.image_layers, source_layers,
-            session=source_session)
+            session=target_session)
         to_cleanup = []
 
         if t.modify_role:
@@ -738,7 +786,7 @@ class SkopeoImageUploader(BaseImageUploader):
             # Copy from source registry to local storage
             self._copy(
                 t.source_image_url,
-                source_image_local_url
+                source_image_local_url,
             )
             if t.cleanup in (CLEANUP_FULL, CLEANUP_PARTIAL):
                 to_cleanup = [t.source_image]
@@ -753,7 +801,7 @@ class SkopeoImageUploader(BaseImageUploader):
             # Copy from local storage to target registry
             self._copy(
                 target_image_local_url,
-                t.target_image_url
+                t.target_image_url,
             )
             for layer in source_layers:
                 self.image_layers.setdefault(layer, t.target_image_url)
@@ -762,7 +810,7 @@ class SkopeoImageUploader(BaseImageUploader):
         else:
             self._copy(
                 t.source_image_url,
-                t.target_image_url
+                t.target_image_url,
             )
             LOG.warning('Completed upload for image %s' % t.image_name)
         for layer in source_layers:
@@ -814,10 +862,713 @@ class SkopeoImageUploader(BaseImageUploader):
         process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
 
         out, err = process.communicate()
-        LOG.info(out)
+        LOG.info(out.decode('utf-8'))
         if process.returncode != 0:
             raise ImageUploaderException('Error deleting image:\n%s\n%s' %
                                          (' '.join(cmd), err))
+        return out
+
+    def cleanup(self, local_images):
+        if not local_images:
+            return []
+
+        for image in sorted(local_images):
+            if not image:
+                continue
+            LOG.warning('Removing local copy of %s' % image)
+            image_url = parse.urlparse('containers-storage:%s' % image)
+            self._delete(image_url)
+
+    def run_tasks(self):
+        if not self.upload_tasks:
+            return
+        local_images = []
+
+        # Pull a single image first, to avoid duplicate pulls of the
+        # same base layers
+        uploader, first_task = self.upload_tasks.pop()
+        result = uploader.upload_image(first_task)
+        local_images.extend(result)
+
+        # workers will be half the CPU count, to a minimum of 2
+        workers = max(2, processutils.get_worker_count() // 2)
+        p = futures.ThreadPoolExecutor(max_workers=workers)
+
+        for result in p.map(upload_task, self.upload_tasks):
+            local_images.extend(result)
+        LOG.info('result %s' % local_images)
+
+        # Do cleanup after all the uploads so common layers don't get deleted
+        # repeatedly
+        self.cleanup(local_images)
+
+
+class PythonImageUploader(BaseImageUploader):
+    """Upload images using a direct implementation of the registry API"""
+
+    def upload_image(self, task):
+        t = task
+        LOG.info('imagename: %s' % t.image_name)
+        insecure_registries = self.insecure_registries
+
+        source_insecure = t.source_image_url.netloc in insecure_registries
+
+        target_image_local_url = parse.urlparse('containers-storage:%s' %
+                                                t.target_image)
+        target_insecure = t.target_image_url.netloc in insecure_registries
+
+        if t.dry_run:
+            return []
+
+        target_session = self.authenticate(
+            t.target_image_url, insecure=target_insecure,
+            mirrors=t.mirrors)
+
+        if t.modify_role:
+            if self._image_exists(
+                    t.target_image, target_session,
+                    mirrors=t.mirrors):
+                LOG.warning('Skipping upload for modified image %s' %
+                            t.target_image)
+                return []
+            copy_target_url = t.target_image_source_tag_url
+        else:
+            copy_target_url = t.target_image_url
+
+        source_session = self.authenticate(
+            t.source_image_url, insecure=source_insecure,
+            mirrors=t.mirrors)
+
+        manifest_str = self._fetch_manifest(
+            t.source_image_url,
+            session=source_session,
+            insecure=source_insecure,
+            mirrors=t.mirrors
+        )
+        manifest = json.loads(manifest_str)
+        source_layers = [l['digest'] for l in manifest['layers']]
+
+        self._cross_repo_mount(
+            copy_target_url, self.image_layers, source_layers,
+            session=target_session)
+        to_cleanup = []
+
+        # Copy unmodified images from source to target
+        self._copy_registry_to_registry(
+            t.source_image_url,
+            copy_target_url,
+            source_manifest=manifest_str,
+            source_session=source_session,
+            target_session=target_session,
+            mirrors=t.mirrors
+        )
+
+        if not t.modify_role:
+            LOG.warning('Completed upload for image %s' % t.image_name)
+        else:
+            # Copy ummodified from target to local
+            self._copy_registry_to_local(t.target_image_source_tag_url)
+
+            if t.cleanup in (CLEANUP_FULL, CLEANUP_PARTIAL):
+                to_cleanup.append(t.target_image_source_tag)
+
+            self.run_modify_playbook(
+                t.modify_role,
+                t.modify_vars,
+                t.target_image_source_tag,
+                t.target_image_source_tag,
+                t.append_tag,
+                container_build_tool='buildah')
+            if t.cleanup == CLEANUP_FULL:
+                to_cleanup.append(t.target_image)
+
+            # cross-repo mount the unmodified image to the modified image
+            self._cross_repo_mount(
+                t.target_image_url, self.image_layers, source_layers,
+                session=target_session)
+
+            # Copy from local storage to target registry
+            self._copy_local_to_registry(
+                target_image_local_url,
+                t.target_image_url,
+                session=target_session,
+                mirrors=t.mirrors
+            )
+
+            for layer in source_layers:
+                self.image_layers.setdefault(layer, t.target_image_url)
+            LOG.warning('Completed modify and upload for image %s' %
+                        t.image_name)
+        for layer in source_layers:
+            self.image_layers.setdefault(layer, t.target_image_url)
+        return to_cleanup
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _fetch_manifest(cls, url, session, insecure, mirrors=None):
+        image, tag = cls._image_tag_from_url(url)
+        parts = {
+            'image': image,
+            'tag': tag
+        }
+        url = cls._build_url(
+            url, CALL_MANIFEST % parts,
+            insecure=insecure,
+            mirrors=mirrors
+        )
+        manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
+        r = session.get(url, headers=manifest_headers, timeout=30)
+        if r.status_code == 404:
+            raise ImageNotFoundException('Not found image: %s' %
+                                         url.geturl())
+        r.raise_for_status()
+        return r.text
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _upload_url(cls, image_url, insecure, session, previous_request=None,
+                    mirrors=None):
+        if previous_request and 'Location' in previous_request.headers:
+            return previous_request.headers['Location']
+
+        image, tag = cls._image_tag_from_url(image_url)
+        upload_req_url = cls._build_url(
+            image_url,
+            path=CALL_UPLOAD % {'image': image},
+            insecure=insecure,
+            mirrors=mirrors)
+        r = session.post(upload_req_url, timeout=30)
+        r.raise_for_status()
+        return r.headers['Location']
+
+    @classmethod
+    def _layer_stream_registry(cls, digest, source_url, calc_digest,
+                               session, mirrors):
+        LOG.debug('Fetching layer: %s' % digest)
+        image, tag = cls._image_tag_from_url(source_url)
+        parts = {
+            'image': image,
+            'tag': tag,
+            'digest': digest
+        }
+        insecure = source_url.netloc in cls.insecure_registries
+        source_blob_url = cls._build_url(
+            source_url, CALL_BLOB % parts,
+            insecure=insecure, mirrors=mirrors)
+
+        chunk_size = 2 ** 20
+        with session.get(
+                source_blob_url, stream=True, timeout=30) as blob_req:
+            blob_req.raise_for_status()
+            for data in blob_req.iter_content(chunk_size):
+                if not data:
+                    break
+                calc_digest.update(data)
+                yield data
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _copy_layer_registry_to_registry(cls, source_url, target_url,
+                                         layer,
+                                         source_session=None,
+                                         target_session=None,
+                                         mirrors=None):
+        if cls._target_layer_exists_registry(target_url, layer, [layer],
+                                             target_session, mirrors):
+            return
+
+        digest = layer['digest']
+        LOG.debug('Uploading layer: %s' % digest)
+
+        calc_digest = hashlib.sha256()
+        layer_stream = cls._layer_stream_registry(
+            digest, source_url, calc_digest, source_session, mirrors)
+        return cls._copy_stream_to_registry(target_url, layer, calc_digest,
+                                            layer_stream, target_session,
+                                            mirrors)
+
+    @classmethod
+    def _assert_scheme(cls, url, scheme):
+        if url.scheme != scheme:
+            raise ImageUploaderException(
+                'Expected %s scheme: %s' % (scheme, url.geturl()))
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _copy_registry_to_registry(cls, source_url, target_url,
+                                   source_manifest,
+                                   source_session=None,
+                                   target_session=None,
+                                   mirrors=None):
+        cls._assert_scheme(source_url, 'docker')
+        cls._assert_scheme(target_url, 'docker')
+        source_insecure = source_url.netloc in cls.insecure_registries
+
+        image, tag = cls._image_tag_from_url(source_url)
+        parts = {
+            'image': image,
+            'tag': tag
+        }
+
+        manifest = json.loads(source_manifest)
+        v1manifest = manifest.get('schemaVersion', 2) == 1
+        # config = json.loads(manifest['history'][0]['v1Compatibility'])
+        if v1manifest:
+            layers = list(reversed([{'digest': l['blobSum']}
+                                    for l in manifest['fsLayers']]))
+            config_str = None
+        else:
+            layers = manifest['layers']
+            config_digest = manifest['config']['digest']
+            LOG.debug('Uploading config with digest: %s' % config_digest)
+
+            parts['digest'] = config_digest
+            source_config_url = cls._build_url(
+                source_url, CALL_BLOB % parts,
+                insecure=source_insecure, mirrors=mirrors)
+
+            r = source_session.get(source_config_url, timeout=30)
+            r.raise_for_status()
+            config_str = r.text
+
+        # Upload all layers
+        copy_jobs = []
+        p = futures.ThreadPoolExecutor(max_workers=4)
+        for layer in layers:
+            copy_jobs.append(p.submit(
+                cls._copy_layer_registry_to_registry,
+                source_url, target_url,
+                layer=layer,
+                source_session=source_session,
+                target_session=target_session,
+                mirrors=mirrors
+            ))
+        for job in copy_jobs:
+            image = job.result()
+            if image:
+                LOG.debug('Upload complete for layer: %s' % image)
+        cls._copy_manifest_config_to_registry(
+            target_url=target_url,
+            manifest_str=source_manifest,
+            config_str=config_str,
+            target_session=target_session,
+            mirrors=mirrors
+        )
+
+    @classmethod
+    def _copy_manifest_config_to_registry(cls, target_url,
+                                          manifest_str,
+                                          config_str,
+                                          target_session=None,
+                                          mirrors=None):
+        target_insecure = target_url.netloc in cls.insecure_registries
+        manifest = json.loads(manifest_str)
+        if config_str is not None:
+            manifest['config']['size'] = len(config_str)
+            manifest['config']['mediaType'] = MEDIA_CONFIG
+            manifest['mediaType'] = MEDIA_MANIFEST_V2
+            manifest_type = MEDIA_MANIFEST_V2
+            manifest_str = json.dumps(manifest, indent=3)
+        else:
+            if 'signatures' in manifest:
+                manifest_type = MEDIA_MANIFEST_V1_SIGNED
+            else:
+                manifest_type = MEDIA_MANIFEST_V1
+
+        if config_str is not None:
+            config_digest = manifest['config']['digest']
+            # Upload the config json as a blob
+            upload_url = cls._upload_url(
+                target_url,
+                insecure=target_insecure,
+                session=target_session,
+                mirrors=mirrors)
+            r = target_session.put(
+                upload_url,
+                timeout=30,
+                params={
+                    'digest': config_digest
+                },
+                data=config_str.encode('utf-8'),
+                headers={
+                    'Content-Length': str(len(config_str)),
+                    'Content-Type': 'application/octet-stream'
+                }
+            )
+            r.raise_for_status(),
+
+        # Upload the manifest
+        image, tag = cls._image_tag_from_url(target_url)
+        parts = {
+            'image': image,
+            'tag': tag
+        }
+        manifest_url = cls._build_url(
+            target_url, CALL_MANIFEST % parts,
+            insecure=target_insecure, mirrors=mirrors)
+
+        LOG.debug('Uploading manifest of type %s to: %s' % (
+            manifest_type, manifest_url))
+
+        r = target_session.put(
+            manifest_url,
+            timeout=30,
+            data=manifest_str.encode('utf-8'),
+            headers={
+                'Content-Type': manifest_type
+            }
+        )
+        if r.status_code == 400:
+            LOG.error(r.text)
+            raise ImageUploaderException('Pushing manifest failed')
+        r.raise_for_status()
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _copy_registry_to_local(cls, source_url):
+        cls._assert_scheme(source_url, 'docker')
+        pull_source = source_url.netloc + source_url.path
+        LOG.info('Pulling %s' % pull_source)
+        cmd = ['podman', 'pull']
+
+        if source_url.netloc in cls.insecure_registries:
+            cmd.append('--tls-verify=false')
+
+        cmd.append(pull_source)
+        LOG.info('Running %s' % ' '.join(cmd))
+        env = os.environ.copy()
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+
+        out, err = process.communicate()
+        LOG.info(out)
+        if process.returncode != 0:
+            raise ImageUploaderException('Error pulling image:\n%s\n%s' %
+                                         (' '.join(cmd), err))
+        return out
+
+    @classmethod
+    def _target_layer_exists_registry(cls, target_url, layer, check_layers,
+                                      session, mirrors):
+        image, tag = cls._image_tag_from_url(target_url)
+        parts = {
+            'image': image,
+            'tag': tag
+        }
+        insecure = target_url.netloc in cls.insecure_registries
+        # Do a HEAD call for the supplied digests
+        # to see if the layer is already in the registry
+        for l in check_layers:
+            if not l:
+                continue
+            parts['digest'] = l['digest']
+            blob_url = cls._build_url(
+                target_url, CALL_BLOB % parts,
+                insecure=insecure, mirrors=mirrors)
+            if session.head(blob_url, timeout=30).status_code == 200:
+                LOG.debug('Layer already exists: %s' % l['digest'])
+                layer['digest'] = l['digest']
+                if 'size' in l:
+                    layer['size'] = l['size']
+                if 'mediaType' in l:
+                    layer['mediaType'] = l['mediaType']
+                return True
+        return False
+
+    @classmethod
+    def _layer_stream_local(cls, layer_id, calc_digest):
+        LOG.debug('Exporting layer: %s' % layer_id)
+
+        tar_split_path = cls._containers_file_path(
+            'overlay-layers',
+            '%s.tar-split.gz' % layer_id
+        )
+        overlay_path = cls._containers_file_path(
+            'overlay', layer_id, 'diff'
+        )
+        cmd = [
+            'tar-split', 'asm',
+            '--input', tar_split_path,
+            '--path', overlay_path,
+            '--compress'
+        ]
+        LOG.debug(' '.join(cmd))
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
+        chunk_size = 2 ** 20
+
+        while True:
+            data = p.stdout.read(chunk_size)
+            if not data:
+                break
+            calc_digest.update(data)
+            yield data
+        p.wait()
+        if p.returncode != 0:
+            raise ImageUploaderException('Extracting layer failed')
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _copy_layer_local_to_registry(cls, target_url,
+                                      session, layer, layer_entry,
+                                      mirrors=None):
+
+        # Do a HEAD call for the compressed-diff-digest and diff-digest
+        # to see if the layer is already in the registry
+        check_layers = []
+        compressed_digest = layer_entry.get('compressed-diff-digest')
+        if compressed_digest:
+            check_layers.append({
+                'digest': compressed_digest,
+                'size': layer_entry.get('compressed-size'),
+                'mediaType': MEDIA_BLOB_COMPRESSED,
+            })
+
+        digest = layer_entry.get('diff-digest')
+        if digest:
+            check_layers.append({
+                'digest': digest,
+                'size': layer_entry.get('diff-size'),
+                'mediaType': MEDIA_BLOB,
+            })
+        if cls._target_layer_exists_registry(target_url, layer, check_layers,
+                                             session, mirrors):
+            return
+
+        layer_id = layer_entry['id']
+        LOG.debug('Uploading layer: %s' % layer_id)
+
+        calc_digest = hashlib.sha256()
+        layer_stream = cls._layer_stream_local(layer_id, calc_digest)
+        return cls._copy_stream_to_registry(target_url, layer, calc_digest,
+                                            layer_stream, session, mirrors)
+
+    @classmethod
+    def _copy_stream_to_registry(cls, target_url, layer, calc_digest,
+                                 layer_stream, session, mirrors):
+        layer['mediaType'] = MEDIA_BLOB_COMPRESSED
+        length = 0
+        upload_resp = None
+        insecure = target_url.netloc in cls.insecure_registries
+
+        for chunk in layer_stream:
+            if not chunk:
+                break
+
+            chunk_length = len(chunk)
+            upload_url = cls._upload_url(
+                target_url, insecure, session, upload_resp, mirrors=mirrors)
+            upload_resp = session.patch(
+                upload_url,
+                timeout=30,
+                data=chunk,
+                headers={
+                    'Content-Length': str(chunk_length),
+                    'Content-Range': '%d-%d' % (
+                        length, length + chunk_length - 1),
+                    'Content-Type': 'application/octet-stream'
+                }
+            )
+            upload_resp.raise_for_status()
+            length += chunk_length
+
+        layer_digest = 'sha256:%s' % calc_digest.hexdigest()
+        LOG.debug('Calculated layer digest: %s' % layer_digest)
+        upload_url = cls._upload_url(
+            target_url, insecure, session, upload_resp, mirrors=mirrors)
+        upload_resp = session.put(
+            upload_url,
+            timeout=30,
+            params={
+                'digest': layer_digest
+            },
+        )
+        upload_resp.raise_for_status()
+        layer['digest'] = layer_digest
+        layer['size'] = length
+        return layer_digest
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _copy_local_to_registry(cls, source_url, target_url, session,
+                                mirrors=None):
+        cls._assert_scheme(source_url, 'containers-storage')
+        cls._assert_scheme(target_url, 'docker')
+
+        name = '%s%s' % (source_url.netloc, source_url.path)
+        image, manifest, config_str = cls._image_manifest_config(name)
+        all_layers = cls._containers_json('overlay-layers', 'layers.json')
+        layers_by_digest = {}
+        for l in all_layers:
+            if 'diff-digest' in l:
+                layers_by_digest[l['diff-digest']] = l
+            if 'compressed-diff-digest' in l:
+                layers_by_digest[l['compressed-diff-digest']] = l
+
+        # Upload all layers
+        copy_jobs = []
+        p = futures.ThreadPoolExecutor(max_workers=4)
+        for layer in manifest['layers']:
+            layer_entry = layers_by_digest[layer['digest']]
+
+            copy_jobs.append(p.submit(
+                cls._copy_layer_local_to_registry,
+                target_url, session, layer, layer_entry
+            ))
+        for job in copy_jobs:
+            e = job.exception()
+            if e:
+                raise e
+            image = job.result()
+            if image:
+                LOG.debug('Upload complete for layer: %s' % image)
+
+        manifest_str = json.dumps(manifest, indent=3)
+        cls._copy_manifest_config_to_registry(
+            target_url=target_url,
+            manifest_str=manifest_str,
+            config_str=config_str,
+            target_session=session,
+            mirrors=mirrors
+        )
+
+    @classmethod
+    def _containers_file_path(cls, *path):
+        full_path = os.path.join('/var/lib/containers/storage/', *path)
+        if not os.path.exists(full_path):
+            raise ImageUploaderException('Missing file %s' % full_path)
+        return full_path
+
+    @classmethod
+    def _containers_file(cls, *path):
+        full_path = cls._containers_file_path(*path)
+
+        try:
+            with open(full_path, 'r') as f:
+                return f.read()
+        except Exception as e:
+            raise ImageUploaderException(e)
+
+    @classmethod
+    def _containers_json(cls, *path):
+        return json.loads(cls._containers_file(*path))
+
+    @classmethod
+    def _image_manifest_config(cls, name):
+        image = None
+        images = cls._containers_json('overlay-images', 'images.json')
+        for i in images:
+            for n in i.get('names', []):
+                if name == n:
+                    image = i
+                    break
+            if image:
+                break
+        if not image:
+            raise ImageNotFoundException('Not found image: %s' % name)
+        image_id = image['id']
+        manifest = cls._containers_json('overlay-images', image_id, 'manifest')
+        config_digest = manifest['config']['digest']
+
+        config_id = '=' + base64.b64encode(
+            six.b(config_digest)).decode("utf-8")
+        config_str = cls._containers_file('overlay-images', image_id,
+                                          config_id)
+        return image, manifest, config_str
+
+    @classmethod
+    def _inspect(cls, image_url, insecure=False, session=None, mirrors=None):
+        if image_url.scheme == 'docker':
+            return super(PythonImageUploader, cls)._inspect(
+                image_url, insecure=insecure, session=session, mirrors=mirrors)
+        if image_url.scheme != 'containers-storage':
+            raise ImageUploaderException('Inspect not implemented for %s' %
+                                         image_url.geturl())
+
+        name = '%s%s' % (image_url.netloc, image_url.path)
+        image, manifest, config_str = cls._image_manifest_config(name)
+        config = json.loads(config_str)
+
+        layers = [l['digest'] for l in manifest['layers']]
+        i, tag = cls._image_tag_from_url(image_url)
+        digest = image['digest']
+        created = image['created']
+        labels = config['config']['Labels']
+        architecture = config['architecture']
+        image_os = config['os']
+        return {
+            'Name': i,
+            'Digest': digest,
+            'RepoTags': [],
+            'Created': created,
+            'DockerVersion': '',
+            'Labels': labels,
+            'Architecture': architecture,
+            'Os': image_os,
+            'Layers': layers,
+        }
+
+    @classmethod
+    def _delete(cls, image_url, insecure=False):
+        image = image_url.geturl()
+        LOG.info('Deleting %s' % image)
+        if image_url.scheme != 'containers-storage':
+            raise ImageUploaderException('Delete not implemented for %s' %
+                                         image_url.geturl())
+        cmd = ['podman', 'rmi', image_url.path]
+        LOG.info('Running %s' % ' '.join(cmd))
+        env = os.environ.copy()
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+
+        out, err = process.communicate()
+        LOG.info(out)
+        if process.returncode != 0:
+            LOG.warning('Error deleting image:\n%s\n%s' % (' '.join(cmd), err))
         return out
 
     def cleanup(self, local_images):
@@ -892,6 +1643,8 @@ class UploadTask(object):
         image_to_url = BaseImageUploader._image_to_url
         self.source_image_url = image_to_url(self.source_image)
         self.target_image_url = image_to_url(self.target_image)
+        self.target_image_source_tag_url = image_to_url(
+            self.target_image_source_tag)
 
 
 def upload_task(args):
