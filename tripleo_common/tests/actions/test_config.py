@@ -60,13 +60,17 @@ class GetOvercloudConfigActionTest(base.TestCase):
 
         self.ctx = mock.MagicMock()
 
+    @mock.patch('tripleo_common.utils.swift.delete_container')
+    @mock.patch('tripleo_common.utils.swift.download_container')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('tripleo_common.utils.config.Config.download_config')
     @mock.patch('tripleo_common.utils.tarball.create_tarball')
     def test_run(self, mock_create_tarball,
                  mock_config,
-                 mock_orchestration_client):
+                 mock_orchestration_client,
+                 mock_swift_download,
+                 mock_swift_delete):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = mock.MagicMock(
             stack_name='stack', id='stack_id')
@@ -77,6 +81,11 @@ class GetOvercloudConfigActionTest(base.TestCase):
                                            self.config_container)
         action.run(self.ctx)
 
+        mock_swift_download.assert_called_once_with(self.swift,
+                                                    self.config_container,
+                                                    '/tmp/fake-path')
+        mock_swift_delete.assert_called_once_with(self.swift,
+                                                  self.config_container)
         self.assertEqual(2, self.swift.put_object.call_count)
         self.assertEqual(mock.call(
             'config-overcloud', 'config-overcloud.tar.gz',
