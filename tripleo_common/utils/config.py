@@ -441,14 +441,12 @@ class Config(object):
         # Render group_vars
         for role in set(server_roles.values()):
             group_var_role_path = os.path.join(group_vars_dir, role)
-            group_var_role_template = env.get_template('group_var_role.j2')
-
-            with open(group_var_role_path, 'w') as f:
-                template_data = group_var_role_template.render(
-                    role=role,
-                    role_group_vars=role_group_vars[role])
-                self.validate_config(template_data, group_var_role_path)
-                f.write(template_data)
+            # NOTE(aschultz): we just use yaml.safe_dump for the vars because
+            # the vars should already bein a hash for for ansible.
+            # See LP#1801162 for previous issues around using jinja for this
+            with open(group_var_role_path, 'w') as group_vars_file:
+                yaml.safe_dump(role_group_vars[role], group_vars_file,
+                               default_flow_style=False)
 
         # Render host_vars
         for server, deployments in server_deployment_names.items():
