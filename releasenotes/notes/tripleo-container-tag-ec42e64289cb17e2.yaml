@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    A new Ansible role to tag containers managed by Pacemaker.
+    This role will be consummed by services managed by Pacemaker.
