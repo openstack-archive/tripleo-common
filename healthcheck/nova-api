@@ -3,10 +3,10 @@
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
 
-if ps -ef | grep --quiet nova-metadata; then
-  check_url=$(get_url_from_vhost /etc/httpd/conf.d/10-nova_metadata_wsgi.conf)
+if pgrep -f nova-metadata; then
+    check_url=$(get_url_from_vhost /etc/httpd/conf.d/10-nova_metadata_wsgi.conf)
 else
-  check_url=$(get_url_from_vhost /etc/httpd/conf.d/10-nova_api_wsgi.conf)
+    check_url=$(get_url_from_vhost /etc/httpd/conf.d/10-nova_api_wsgi.conf)
 fi
 
 healthcheck_curl ${check_url}
