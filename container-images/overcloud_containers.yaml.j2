@@ -140,13 +140,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::Congress
 
-- imagename: "{{namespace}}/{{name_prefix}}crane{{name_suffix}}:{{tag}}"
-  params:
-  - DockerCraneConfigImage
-  - DockerCraneImage
-  services:
-  - OS::TripleO::Services::Crane
-
 - imagename: "{{namespace}}/{{name_prefix}}cron{{name_suffix}}:{{tag}}"
   params:
   - DockerCrondConfigImage
