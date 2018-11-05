@@ -279,10 +279,10 @@ class TestConfig(base.TestCase):
             {'output_key': 'RoleGroupVars',
              'output_value': {
                  'Controller': {
-                     'any_errors_fatal': 'yes',
+                     'any_errors_fatal': True,
                      'max_fail_percentage': 15},
                  'Compute': {
-                     'any_errors_fatal': 'yes',
+                     'any_errors_fatal': True,
                      'max_fail_percentage': 15},
                  }}]
         deployment_data, configs = \
@@ -615,10 +615,10 @@ class TestConfig(base.TestCase):
             {'output_key': 'RoleGroupVars',
              'output_value': {
                  'Controller': {
-                     'any_errors_fatal': 'yes',
+                     'any_errors_fatal': True,
                      'max_fail_percentage': 15},
                  'Compute': {
-                     'any_errors_fatal': 'yes',
+                     'any_errors_fatal': True,
                      'max_fail_percentage': 15},
              }}]
         deployment_data, configs = \
