@@ -69,12 +69,16 @@ def download_container(swiftclient, container, dest,
         already_exists = os.path.exists(path)
 
         if already_exists:
-            last_mod_swift = int(dateutil.parser.parse(
-                obj['last_modified']).strftime('%s'))
-            last_mod_disk = int(os.path.getmtime(path))
+            last_modified = obj.get('last_modified', None)
 
-            if last_mod_swift > last_mod_disk:
-                is_newer = True
+            if last_modified is not None:
+                last_mod_swift = int(dateutil.parser.parse(
+                    obj['last_modified']).strftime('%s'))
+
+                last_mod_disk = int(os.path.getmtime(path))
+
+                if last_mod_swift > last_mod_disk:
+                    is_newer = True
 
         # write file if `overwrite_only_newer` is not set,
         # or if file does not exist at destination,
