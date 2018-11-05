@@ -372,7 +372,6 @@ workflows:
       Configure the overcloud with config-download.
 
     input:
-      - timeout: 240
       - queue_name: tripleo
       - plan_name: overcloud
       - ssh_network: ctlplane
@@ -493,7 +492,6 @@ workflows:
 
       run_ansible:
         action: tripleo.ansible-playbook
-        timeout: <% $.config_download_timeout %>
         input:
           inventory: <% $.inventory %>
           playbook: <% $.get('work_dir') %>/<% $.get('plan_name') %>/deploy_steps_playbook.yaml
@@ -504,19 +502,20 @@ workflows:
           use_openstack_credentials: true
           verbosity: <% $.get('verbosity') %>
           become: true
-          timeout: <% $.timeout %>
           work_dir: <% $.get('work_dir') %>/<% $.get('plan_name') %>
           queue_name: <% $.queue_name %>
           reproduce_command: true
           trash_output: true
           blacklisted_hostnames: <% $.blacklisted_hostnames %>
           override_ansible_cfg: <% $.override_ansible_cfg %>
+          command_timeout: <% $.config_download_timeout %>
         publish:
           log_path: <% task().result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS
         on-success:
           - ansible_passed: <% task().result.returncode = 0 %>
-          - ansible_failed: <% task().result.returncode != 0 %>
+          - ansible_timeout: <% task().result.returncode = 124 %>
+          - ansible_failed: <% not task().result.returncode in [0, 124] %>
         on-error: send_message
         publish-on-error:
           status: FAILED
@@ -529,6 +528,13 @@ workflows:
           status: SUCCESS
           message: Ansible passed.
           deployment_status: DEPLOY_SUCCESS
+
+      ansible_timeout:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: Ansible timed out at <% $.config_download_timeout %> seconds.
+          deployment_status: DEPLOY_FAILED
 
       ansible_failed:
         on-success: send_message

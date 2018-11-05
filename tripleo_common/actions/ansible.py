@@ -318,6 +318,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
             'blacklisted_hostnames', [])
         self.override_ansible_cfg = self._kwargs_for_run.pop(
             'override_ansible_cfg', None)
+        self.command_timeout = self._kwargs_for_run.pop(
+            'command_timeout', None)
 
     @property
     def work_dir(self):
@@ -524,6 +526,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     'OS_USERNAME': security_ctx.user_name,
                     'OS_AUTH_TOKEN': security_ctx.auth_token,
                     'OS_PROJECT_NAME': security_ctx.project_name})
+
+            if self.command_timeout:
+                command = ['timeout', self.command_timeout] + command
 
             command = [str(c) for c in command]
 
