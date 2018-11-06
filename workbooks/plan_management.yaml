@@ -263,12 +263,29 @@ workflows:
 
       upload_templates_directory:
         action: tripleo.templates.upload container=<% $.container %> dir_to_upload=<% task(clone_git_repo).result %>
-        on-success: create_swift_rings_backup_plan
+        on-success: update_plan
         on-complete: cleanup_temporary_files
         on-error: upload_templates_directory_set_status_failed
 
       cleanup_temporary_files:
         action: tripleo.git.clean container=<% $.container %>
+
+      update_plan:
+        on-success:
+          - ensure_passwords_exist: <% $.generate_passwords = true %>
+          - container_images_prepare: <% $.generate_passwords != true %>
+
+      ensure_passwords_exist:
+        action: tripleo.parameters.generate_passwords container=<% $.container %>
+        on-success: container_images_prepare
+        on-error: ensure_passwords_exist_set_status_failed
+
+      container_images_prepare:
+        description: >
+          Populate all container image parameters with default values.
+        action: tripleo.container_images.prepare container=<% $.container %>
+        on-success: create_swift_rings_backup_plan
+        on-error: container_images_prepare_set_status_failed
 
       create_swift_rings_backup_plan:
         workflow: tripleo.swift_backup.v1.create_swift_backup_container_plan
@@ -298,30 +315,13 @@ workflows:
 
       does_ceph_ansible_fetch_directory_backup_need_rename:
         workflow: tripleo.rename_ceph_ansible_fetch_directory.v1.check_and_rename
-        on-success: update_plan
+        on-success: process_templates
         on-error: does_ceph_ansible_fetch_directory_backup_need_rename_set_status_failed
         input:
           container: <% $.container %>
           queue_name: <% $.queue_name %>
           container_suffix: "_ceph_ansible_fetch_dir"
           swift_tar: "temporary_dir.tar.gz"
-
-      update_plan:
-        on-success:
-          - ensure_passwords_exist: <% $.generate_passwords = true %>
-          - container_images_prepare: <% $.generate_passwords != true %>
-
-      ensure_passwords_exist:
-        action: tripleo.parameters.generate_passwords container=<% $.container %>
-        on-success: container_images_prepare
-        on-error: ensure_passwords_exist_set_status_failed
-
-      container_images_prepare:
-        description: >
-          Populate all container image parameters with default values.
-        action: tripleo.container_images.prepare container=<% $.container %>
-        on-success: process_templates
-        on-error: container_images_prepare_set_status_failed
 
       process_templates:
         action: tripleo.templates.process container=<% $.container %>
