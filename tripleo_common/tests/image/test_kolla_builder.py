@@ -41,26 +41,40 @@ kb.init_prepare_defaults(DEFAULTS_PATH)
 
 filedata = six.u("""container_images:
 - imagename: docker.io/tripleorocky/heat-docker-agents-centos:latest
+  image_source: kolla
   push_destination: localhost:8787
 - imagename: docker.io/tripleorocky/centos-binary-nova-compute:liberty
+  image_source: kolla
   uploader: docker
   push_destination: localhost:8787
 - imagename: docker.io/tripleorocky/centos-binary-nova-libvirt:liberty
+  image_source: kolla
   uploader: docker
 - imagename: docker.io/tripleorocky/image-with-missing-tag
+  image_source: kolla
+  push_destination: localhost:8787
+- imagename: docker.io/tripleorocky/skip-build
+  image_source: foo
   push_destination: localhost:8787
 """)
 
 template_filedata = six.u("""
 container_images_template:
 - imagename: "{{namespace}}/heat-docker-agents-centos:latest"
+  image_source: kolla
   push_destination: "{{push_destination}}"
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute{{name_suffix}}:{{tag}}"
+  image_source: kolla
   uploader: "docker"
   push_destination: "{{push_destination}}"
 - imagename: "{{namespace}}/{{name_prefix}}nova-libvirt{{name_suffix}}:{{tag}}"
+  image_source: kolla
   uploader: "docker"
 - imagename: "{{namespace}}/image-with-missing-tag"
+  image_source: kolla
+  push_destination: "{{push_destination}}"
+- imagename: "{{namespace}}/skip-build"
+  image_source: foo
   push_destination: "{{push_destination}}"
 """)
 
@@ -385,17 +399,24 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             tag='liberty'
         )
         container_images = [{
+            'image_source': 'kolla',
             'imagename': 'docker.io/tripleorocky/'
                          'centos-binary-nova-compute:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
+            'image_source': 'kolla',
             'imagename': 'docker.io/tripleorocky/'
                          'centos-binary-nova-libvirt:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
+            'image_source': 'kolla',
             'imagename': 'docker.io/tripleorocky/image-with-missing-tag',
+            'push_destination': 'localhost:8787'
+        }, {
+            'image_source': 'foo',
+            'imagename': 'docker.io/tripleorocky/skip-build',
             'push_destination': 'localhost:8787'
         }]
         self.assertEqual(container_images, result)
@@ -437,23 +458,32 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
     def test_container_images_yaml_in_sync(self):
         remove_images = [
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-opendaylight:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-base:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-opendaylight:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-northd:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'controller:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'nb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'sb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-metadata-agent-ovn:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
@@ -461,21 +491,29 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync_for_odl(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-base:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-ovn-northd:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'controller:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'nb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary-ovn-'
                           'sb-db-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-metadata-agent-ovn:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='odl', remove_images=remove_images)
@@ -483,11 +521,14 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync_for_ovn(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-neutron-server-opendaylight:current-tripleo'},
-            {'imagename': 'docker.io/tripleorocky/centos-binary'
+            {'image_source': 'kolla',
+             'imagename': 'docker.io/tripleorocky/centos-binary'
                           '-opendaylight:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
@@ -547,7 +588,8 @@ class TestPrepare(base.TestCase):
     def test_prepare_simple(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': '192.0.2.0:8787/t/p-nova-compute:l'}
+                {'image_source': 'kolla',
+                 'imagename': '192.0.2.0:8787/t/p-nova-compute:l'}
             ],
             'environments/containers-default-parameters.yaml': {
                 'DockerNovaComputeImage': '192.0.2.0:8787/t/p-nova-compute:l',
@@ -573,7 +615,8 @@ class TestPrepare(base.TestCase):
     def test_prepare_includes(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
+                {'image_source': 'kolla',
+                 'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
             ],
             'environments/containers-default-parameters.yaml': {
                 'DockerNovaLibvirtImage': '192.0.2.0:8787/t/p-nova-libvirt:l'
@@ -597,7 +640,8 @@ class TestPrepare(base.TestCase):
         # assert same result as includes only. includes trumps excludes
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
+                {'image_source': 'kolla',
+                 'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
             ],
             'environments/containers-default-parameters.yaml': {
                 'DockerNovaLibvirtImage': '192.0.2.0:8787/t/p-nova-libvirt:l'
@@ -621,6 +665,7 @@ class TestPrepare(base.TestCase):
     def test_prepare_push_dest(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [{
+                'image_source': 'kolla',
                 'imagename': 'docker.io/t/p-nova-api:l',
                 'push_destination': '192.0.2.0:8787',
             }],
@@ -655,6 +700,7 @@ class TestPrepare(base.TestCase):
         mock_gur.return_value = '192.0.2.0:8787'
         self.assertEqual({
             'container_images.yaml': [{
+                'image_source': 'kolla',
                 'imagename': 'docker.io/t/p-nova-api:l',
                 'push_destination': '192.0.2.0:8787',
             }],
@@ -687,6 +733,7 @@ class TestPrepare(base.TestCase):
     def test_prepare_ceph(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [{
+                'image_source': 'ceph',
                 'imagename': '192.0.2.0:8787/t/ceph:l',
             }],
             'environments/containers-default-parameters.yaml': {
@@ -709,7 +756,8 @@ class TestPrepare(base.TestCase):
     def test_prepare_neutron_driver_default(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': 't/p-neutron-server:l'}
+                {'image_source': 'kolla',
+                 'imagename': 't/p-neutron-server:l'}
             ],
             'environments/containers-default-parameters.yaml': {
                 'DockerNeutronApiImage': 't/p-neutron-server:l',
@@ -736,8 +784,10 @@ class TestPrepare(base.TestCase):
     def test_prepare_neutron_driver_ovn(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': 't/p-neutron-server-ovn:l'},
-                {'imagename': 't/p-ovn-controller:l'}
+                {'image_source': 'kolla',
+                 'imagename': 't/p-neutron-server-ovn:l'},
+                {'image_source': 'kolla',
+                 'imagename': 't/p-ovn-controller:l'}
             ],
             'environments/containers-default-parameters.yaml': {
                 'DockerNeutronApiImage': 't/p-neutron-server-ovn:l',
@@ -767,8 +817,10 @@ class TestPrepare(base.TestCase):
     def test_prepare_neutron_driver_odl(self, mock_get):
         self.assertEqual({
             'container_images.yaml': [
-                {'imagename': 't/neutron-server-opendaylight:l'},
-                {'imagename': 't/opendaylight:l'}
+                {'image_source': 'kolla',
+                 'imagename': 't/neutron-server-opendaylight:l'},
+                {'image_source': 'kolla',
+                 'imagename': 't/opendaylight:l'}
             ],
             'environments/containers-default-parameters.yaml': {
                 'DockerNeutronApiImage': 't/neutron-server-opendaylight:l',
