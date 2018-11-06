@@ -88,7 +88,7 @@ MEDIA_TYPES = (
     'application/vnd.docker.image.rootfs.diff.tar.gzip'
 )
 
-DEFAULT_UPLOADER = 'docker'
+DEFAULT_UPLOADER = 'python'
 
 
 def get_undercloud_registry():
