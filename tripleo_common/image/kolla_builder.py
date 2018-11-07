@@ -442,6 +442,9 @@ class KollaImageBuilder(base.BaseImageManager):
         container_images = self.load_config_files(self.CONTAINER_IMAGES) or []
         container_images.sort(key=lambda i: i.get('imagename'))
         for i in container_images:
+            # Do not attempt to build containers that are not from kolla
+            if not i.get('image_source', '') == 'kolla':
+                continue
             image = self.imagename_to_regex(i.get('imagename'))
             if image:
                 cmd.append(image)
