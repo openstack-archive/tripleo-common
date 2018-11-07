@@ -1,0 +1,3 @@
+---
+- name: Tag {{ container_image_latest }} to latest {{ container_image }} image
+  shell: "{{ container_cli }} tag {{container_image}} {{container_image_latest}}"
