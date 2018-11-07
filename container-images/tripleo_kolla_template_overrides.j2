@@ -32,7 +32,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # This installs the puppet dependency in the base container and includes helper scripts
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
-{% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini', 'openstack-selinux', 'ansible', 'python-shade', 'puppet-tripleo', 'python2-kubernetes'] %}
+{% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini', 'puppet-tripleo'] %}
 
 # This installs the novajoin package in the nova container images; This is
 # required for TLS everywhere, as nova-api will use the cloud-init script
@@ -44,7 +44,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 
 # Required for mistral-db-populate to load tripleo custom actions on
 # the undercloud
-{% set mistral_base_packages_append = ['openstack-tripleo-common', 'skydive-ansible'] %}
+{% set mistral_base_packages_append = ['openstack-tripleo-common', 'ansible', 'python-shade', 'skydive-ansible'] %}
 
 # NOTE: Mistral executor needs:
 #   openstack-tripleo-validations: validations
@@ -121,7 +121,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'python-vitrageclient',
 ] %}
 # Pick up the proper packages for python2-crypto and python2-msgpack
-{% set openstack_base_packages_append = ['python-crypto', 'python-msgpack'] %}
+{% set openstack_base_packages_append = ['python-crypto', 'python-msgpack', 'openstack-selinux'] %}
 
 # Use mariadb-server-galera and xinetd for galera and clustercheck
 {#  'percona-xtrabackup', # EPEL
