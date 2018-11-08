@@ -121,14 +121,18 @@ workflows:
     tasks:
       get_servers:
         action: nova.servers_list
-        on-success: create_admin
+        with-items: server in <% $.ssh_servers %>
+        input:
+          search_opts:
+            ip: <% $.server %>
         publish:
-          servers: <% let(root => $) -> task().result._info.where($.addresses.ctlplane.addr.any($ in $root.ssh_servers)) %>
+          servers: <% task().result._info %>
+        on-success: create_admin
 
       create_admin:
         workflow: tripleo.deployment.v1.deploy_on_server
         on-success: get_privkey
-        with-items: server in <% $.servers %>
+        with-items: server in <% $.servers.flatten() %>
         input:
           server_name: <% $.server.name %>
           server_uuid: <% $.server.id %>
