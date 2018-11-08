@@ -490,7 +490,6 @@ _NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
                                     '/driver_info/rescue_kernel'],
                       'ramdisk_id': ['/driver_info/deploy_ramdisk',
                                      '/driver_info/rescue_ramdisk'],
-                      'capabilities': '/properties/capabilities',
                       'platform': '/extra/tripleo_platform',
                       }
 
@@ -515,6 +514,10 @@ def _update_or_register_ironic_node(node, node_map, client):
                 value = node.pop(field)
                 for path in paths:
                     patched[path] = value
+
+        if 'capabilities' in node:
+            patched['/properties/capabilities'] = dict_to_capabilities(
+                node.pop('capabilities'))
 
         driver_info = handler.convert(node)
         for key, value in driver_info.items():
@@ -579,6 +582,10 @@ def register_all_nodes(nodes_list, client, remove=False, glance_client=None,
     _clean_up_extra_nodes(seen, client, remove=remove)
 
     return seen
+
+
+# These fields are treated specially during enrolling/updating
+_SPECIAL_NON_DRIVER_FIELDS = {'ports', 'pm_type', 'capabilities'}
 
 
 def validate_nodes(nodes_list):
@@ -650,7 +657,7 @@ def validate_nodes(nodes_list):
         for field in node:
             converted = handler.convert_key(field)
             if (converted is None and field not in _NON_DRIVER_FIELDS and
-                    field not in ('ports', 'pm_type')):
+                    field not in _SPECIAL_NON_DRIVER_FIELDS):
                 failures.append((index, 'Unknown field %s' % field))
 
     if failures:
@@ -660,8 +667,14 @@ def validate_nodes(nodes_list):
 
 def dict_to_capabilities(caps_dict):
     """Convert a dictionary into a string with the capabilities syntax."""
+    if isinstance(caps_dict, six.string_types):
+        return caps_dict
+
+    # NOTE(dtantsur): sort capabilities so that their order does not change
+    # between updates.
+    items = sorted(caps_dict.items(), key=lambda tpl: tpl[0])
     return ','.join(["%s:%s" % (key, value)
-                     for key, value in caps_dict.items()
+                     for key, value in items
                      if value is not None])
 
 
