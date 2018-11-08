@@ -33,6 +33,8 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-congress-api:current-tripleo
   image_source: kolla
+- imagename: docker.io/tripleomaster/centos-binary-crane:current-tripleo
+  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-cron:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-designate-api:current-tripleo
