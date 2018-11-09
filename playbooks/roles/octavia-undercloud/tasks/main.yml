@@ -10,14 +10,9 @@
     when: ansible_distribution == 'CentOS' and not image_filename is defined
 
   - block:
-      - name: install Octavia amphora image if Red Hat
-        package:
-          name: octavia-amphora-image
-          state: present
-        become: true
       - name: set location if Red Hat
         set_fact:
-          image_filename: "/usr/share/rhosp-director-images/octavia-amphora.qcow2"
+          image_filename: "/usr/share/openstack-octavia-amphora-images/octavia-amphora.qcow2"
     when: ansible_distribution == 'RedHat' and not image_filename is defined
 
   - name: check if amphora image file exists
