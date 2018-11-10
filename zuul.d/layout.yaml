@@ -10,6 +10,7 @@
       - tripleo-multinode-baremetal-minimal
       - tripleo-multinode-container-minimal
       - tripleo-undercloud-jobs
+      - tripleo-build-containers-jobs
     check:
       jobs:
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
