@@ -63,7 +63,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(need_rename).result %>
+          message: <% switch($.need_rename = true => "The backup of the ceph-ansible fetch directory was renamed", $.need_rename != true => "The backup of the ceph-ansible fetch directory did not need to be renamed") %>
 
       verify_container_exists_set_status_failed:
         on-success: notify_zaqar
