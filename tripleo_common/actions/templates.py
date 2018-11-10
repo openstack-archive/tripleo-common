@@ -122,9 +122,6 @@ class ProcessTemplatesAction(base.TripleOAction):
         try:
             # write the template back to the plan container
             LOG.info("Writing rendered template %s" % yaml_f)
-            self.cache_delete(context,
-                              self.container,
-                              "tripleo.parameters.get")
             swift.put_object(
                 self.container, yaml_f, r_template)
         except swiftexceptions.ClientException as ex:
@@ -242,6 +239,10 @@ class ProcessTemplatesAction(base.TripleOAction):
             else:
                 LOG.info("skipping %s network: network is disabled." %
                          n.get('name'))
+
+        self.cache_delete(context,
+                          self.container,
+                          "tripleo.parameters.get")
 
         for f in [f.get('name') for f in container_files[1]]:
             # We do three templating passes here:
