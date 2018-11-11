@@ -12,6 +12,7 @@ workflows:
     input:
       - plan
       - role_name
+      - heat_resource_tree
       - hw_data # introspection data
       - user_inputs
       - derived_parameters: {}
@@ -117,13 +118,65 @@ workflows:
         publish:
           sock_mem: <% task().result %>
         on-success:
-          - get_dpdk_parameters: <% $.sock_mem %>
+          - get_neutron_bridge_mappings: <% $.sock_mem %>
           - set_status_failed_get_sock_mem: <% not $.sock_mem %>
         on-error: set_status_failed_on_error_get_sock_mem
+
+      get_neutron_bridge_mappings:
+        publish:
+          neutron_bridge_mappings: <% $.heat_resource_tree.parameters.get('NeutronBridgeMappings', {}).get('default', '') %>
+        on-success:
+          - get_phy_nw_bridge_mappings: <% $.neutron_bridge_mappings %>
+          - get_neutron_network_type: <% not $.neutron_bridge_mappings %>
+
+      # Gets the physical network and ovs bridge mappings
+      get_phy_nw_bridge_mappings:
+        publish:
+          phy_nw_bridge_mappings: <% $.neutron_bridge_mappings.split(',').select(let(mapping => $.split(':')) -> dict($mapping[0] => $mapping[1])).sum() %>
+        on-success: get_bridge_numa_nodes_mappings
+
+      # Gets the ovs bridge and NUMA nodes mappings
+      get_bridge_numa_nodes_mappings:
+        publish:
+          bridge_numa_nodes_mappings: <% $.dpdk_nics_numa_info.groupBy($.bridge_name).select(dict($[0]=>$[1].select($.numa_node).distinct())).sum() %>
+        on-success: get_phy_nw_numa_nodes_mappings
+
+      # Gets the physical network and NUMA nodes mappings
+      get_phy_nw_numa_nodes_mappings:
+        publish:
+          phy_nw_numa_nodes_mappings: <% let(br_numa_mappings => bridge_numa_nodes_mappings) -> $.phy_nw_bridge_mappings.items().select(dict($[0]=>$br_numa_mappings.get($[1], []))).sum() %>
+        on-success: get_neutron_network_type
+
+      get_neutron_network_type:
+        publish:
+          neutron_network_type: <% $.heat_resource_tree.parameters.get('NeutronNetworkType', {}).get('default', '') %>
+        on-success:
+          - get_tunnel_numa_nodes_mappings: <% 'vxlan' in $.neutron_network_type %>
+          - get_dpdk_parameters: <% not 'vxlan' in $.neutron_network_type %>
+
+      # Gets the list of NUMA nodes associated to all tunneled networks
+      # OVS-DPDK on VxLAN tunnel requires Tenant Network IP to be applied on the OVS User Bridge itself.
+      # With this assumption, if the IP is set on the OVS User Bridge, then OVS-DPDK is used for VxLAN tunnels also.
+      # Here dpdk_nics_numa_info will have the OVS User Bridges with DPDK ports only.
+      get_tunnel_numa_nodes_mappings:
+        publish:
+          tunnel_numa_nodes_mappings: <% $.dpdk_nics_numa_info.where($.addresses.any($.ip_netmask)).select($.numa_node).distinct() %>
+        on-success: get_dpdk_parameters
 
       get_dpdk_parameters:
         publish:
           dpdk_parameters: <% dict(concat($.role_name, 'Parameters') => dict('OvsPmdCoreList' => $.get('pmd_cpus', ''), 'OvsDpdkCoreList' => $.get('host_cpus', ''), 'OvsDpdkSocketMemory' => $.get('sock_mem', ''))) %>
+        on-success:
+          - add_phy_nw_numa_nodes_mappings: <% $.get('phy_nw_numa_nodes_mappings', {}) %>
+          - add_tunnel_numa_nodes_mappings: <% $.get('tunnel_numa_nodes_mappings', []) %>
+
+      add_phy_nw_numa_nodes_mappings:
+        publish:
+          dpdk_parameters: <% $.dpdk_parameters.mergeWith(dict(concat($.role_name, 'Parameters') => dict('NeutronPhysnetNUMANodesMapping' => $.get('phy_nw_numa_nodes_mappings', {})))) %>
+
+      add_tunnel_numa_nodes_mappings:
+        publish:
+          dpdk_parameters: <% $.dpdk_parameters.mergeWith(dict(concat($.role_name, 'Parameters') => dict('NeutronTunnelNUMANodes' => $.get('tunnel_numa_nodes_mappings', [])))) %>
 
       set_status_failed_get_network_config:
         publish:

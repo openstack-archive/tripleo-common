@@ -32,7 +32,8 @@ class GetDpdkNicsNumaInfoActionTest(base.TestCase):
                 "mtu": 8192,
                 "rx_queue": 4}],
             "name": "br-link",
-            "type": "ovs_user_bridge"}]
+            "type": "ovs_user_bridge",
+            "addresses": [{"ip_netmask": ""}]}]
 
         inspect_data = {
             "numa_topology": {
@@ -63,7 +64,9 @@ class GetDpdkNicsNumaInfoActionTest(base.TestCase):
                 }
             }
 
-        expected_result = [{'name': 'ens802f1', 'mtu': 8192, 'numa_node': 1}]
+        expected_result = [{'bridge_name': 'br-link', 'name': 'ens802f1',
+                            'mtu': 8192, 'numa_node': 1,
+                            'addresses': [{'ip_netmask': ''}]}]
 
         mock_ctx = mock.MagicMock()
         action = derive_params.GetDpdkNicsNumaInfoAction(network_configs,
@@ -84,7 +87,8 @@ class GetDpdkNicsNumaInfoActionTest(base.TestCase):
                                       "members": [{"type": "interface",
                                                    "name": "nic5"}]}]}],
             "name": "br-link",
-            "type": "ovs_user_bridge"}]
+            "type": "ovs_user_bridge",
+            "addresses": [{"ip_netmask": "172.16.10.0/24"}]}]
         inspect_data = {
             "numa_topology": {
                 "nics": [{"name": "ens802f1", "numa_node": 1},
@@ -113,8 +117,12 @@ class GetDpdkNicsNumaInfoActionTest(base.TestCase):
                                 "name": "enp13s0f1"}]
                 }
             }
-        expected_result = [{'mtu': 9000, 'numa_node': 1, 'name': 'ens802f0'},
-                           {'mtu': 9000, 'numa_node': 1, 'name': 'ens802f1'}]
+        expected_result = [{'bridge_name': 'br-link', 'mtu': 9000,
+                            'numa_node': 1, 'name': 'ens802f0',
+                            'addresses': [{'ip_netmask': '172.16.10.0/24'}]},
+                           {'bridge_name': 'br-link', 'mtu': 9000,
+                            'numa_node': 1, 'name': 'ens802f1',
+                            'addresses': [{'ip_netmask': '172.16.10.0/24'}]}]
 
         mock_ctx = mock.MagicMock()
         action = derive_params.GetDpdkNicsNumaInfoAction(network_configs,
