@@ -142,6 +142,8 @@ class GetDpdkNicsNumaInfoAction(base.TripleOAction):
         # with mtu and numa node id
         for config in self.network_configs:
             if config.get('type', '') == 'ovs_user_bridge':
+                bridge_name = config.get('name', '')
+                addresses = config.get('addresses', [])
                 members = config.get('members', [])
                 dpdk_ifaces, mtu = self.get_dpdk_interfaces(members)
                 for dpdk_iface in dpdk_ifaces:
@@ -156,7 +158,9 @@ class GetDpdkNicsNumaInfoAction(base.TripleOAction):
 
                     dpdk_nic_info = {'name': phy_name,
                                      'numa_node': node,
-                                     'mtu': mtu}
+                                     'mtu': mtu,
+                                     'bridge_name': bridge_name,
+                                     'addresses': addresses}
                     dpdk_nics_numa_info.append(dpdk_nic_info)
         return dpdk_nics_numa_info
 
