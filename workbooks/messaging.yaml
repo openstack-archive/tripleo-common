@@ -143,4 +143,4 @@ workflows:
         # that zaqar and swift (if enabled) will all be finished.
         join: all
         on-complete:
-          - fail(msg="Workflow failed due to message status"): <% $.get('status') = "FAILED" %>
+          - fail(msg=<% "Workflow failed due to message status. Status:{} Message:{}".format($.get('status'), $.get('message')) %>): <% $.get('status') = "FAILED" %>
