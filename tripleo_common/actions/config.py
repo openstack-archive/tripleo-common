@@ -69,6 +69,13 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
             if err.http_status != 404:
                 raise
 
+        # Delete downloaded tarball as it will be recreated later and we don't
+        # want to include the old tarball in the new tarball.
+        old_tarball_path = os.path.join(
+            self.config_dir, '%s.tar.gz' % self.container_config)
+        if os.path.exists(old_tarball_path):
+            os.unlink(old_tarball_path)
+
         config = ooo_config.Config(heat)
         message = ('Automatic commit by Mistral GetOvercloudConfig action.\n\n'
                    'User: {user}\n'
