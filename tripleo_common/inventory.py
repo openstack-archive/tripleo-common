@@ -83,7 +83,7 @@ class StackOutputs(object):
 
 
 class TripleoInventory(object):
-    def __init__(self, configs=None, session=None, hclient=None,
+    def __init__(self, session=None, hclient=None,
                  plan_name=None, auth_url=None, project_name=None,
                  cacert=None, username=None, ansible_ssh_user=None,
                  host_network=None, ansible_python_interpreter=None):
@@ -91,25 +91,13 @@ class TripleoInventory(object):
         self.hclient = hclient
         self.hosts_format_dict = False
         self.host_network = host_network or HOST_NETWORK
-        if configs is not None:
-            # FIXME(shardy) backwards compatibility until we switch
-            # tripleo-validations to pass the individual values
-            self.auth_url = configs.auth_url
-            self.cacert = configs.cacert
-            self.project_name = configs.project_name
-            self.username = configs.username
-            self.ansible_ssh_user = configs.ansible_ssh_user
-            self.plan_name = configs.plan
-            self.ansible_python_interpreter = \
-                configs.ansible_python_interpreter
-        else:
-            self.auth_url = auth_url
-            self.cacert = cacert
-            self.project_name = project_name
-            self.username = username
-            self.ansible_ssh_user = ansible_ssh_user
-            self.plan_name = plan_name
-            self.ansible_python_interpreter = ansible_python_interpreter
+        self.auth_url = auth_url
+        self.cacert = cacert
+        self.project_name = project_name
+        self.username = username
+        self.ansible_ssh_user = ansible_ssh_user
+        self.plan_name = plan_name
+        self.ansible_python_interpreter = ansible_python_interpreter
         self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
         self.hostvars = {}
 
