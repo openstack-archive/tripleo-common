@@ -181,6 +181,7 @@ class TestInventory(base.TestCase):
         configs.project_name = 'admin'
         configs.username = 'admin'
         configs.ansible_ssh_user = 'heat-admin'
+        configs.ansible_python_interpreter = None
         inventory = TripleoInventory(
             configs, self.session, self.hclient)
         self._inventory_list(inventory)
@@ -253,24 +254,28 @@ class TestInventory(base.TestCase):
             project_name='admin',
             username='admin',
             cacert='acacert',
-            ansible_ssh_user=ansible_ssh_user)
+            ansible_ssh_user=ansible_ssh_user,
+            ansible_python_interpreter='foo')
 
         self.inventory.stack_outputs = self.outputs
 
         expected = {
             'Compute': {
                 'hosts': ['cp-0'],
-                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                'vars': {'ansible_python_interpreter': 'foo',
+                         'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'tripleo_role_name': 'Compute'}},
             'Controller': {
                 'hosts': ['c-0', 'c-1', 'c-2'],
-                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                'vars': {'ansible_python_interpreter': 'foo',
+                         'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'tripleo_role_name': 'Controller'}},
             'CustomRole': {
                 'hosts': ['cs-0'],
-                'vars': {'ansible_ssh_user': ansible_ssh_user,
+                'vars': {'ansible_python_interpreter': 'foo',
+                         'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'tripleo_role_name': 'CustomRole'}},
             'overcloud': {
