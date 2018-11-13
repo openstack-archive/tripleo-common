@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    The ``ironic-staging-drivers`` are now installed in the ironic-conductor
+    container so that these drivers can be used without rebuilding the
+    container. The `Ironic Staging Drivers
+    <https://ironic-staging-drivers.readthedocs.io/en/latest/>`_ is used to
+    hold out-of-tree Ironic drivers which doesn't have means to provide a 3rd
+    Party CI at this point in time which is required by Ironic.

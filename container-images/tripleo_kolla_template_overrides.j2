@@ -55,6 +55,9 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 #   tripleo-heat-templates: to load the default plan from the CLI/UI
 {% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'docker', 'podman', 'libseccomp', 'openstack-tripleo-heat-templates'] %}
 
+# Include the ironic-staging-drivers
+{% set ironic_conductor_packages_append = ['openstack-ironic-staging-drivers'] %}
+
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
 # NOTE(mandre) Apache cleanup done below in swift_proxy_server_footer block
