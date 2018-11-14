@@ -253,7 +253,7 @@ class GetHostCpusListAction(base.TripleOAction):
             numa_nodes_threads[cpu['numa_node']].extend(
                 cpu['thread_siblings'])
 
-        for numa_node in numa_nodes_threads.keys():
+        for numa_node in sorted(numa_nodes_threads.keys()):
             node = int(numa_node)
             # Gets least thread in NUMA node
             numa_node_min = min(numa_nodes_threads[numa_node])
