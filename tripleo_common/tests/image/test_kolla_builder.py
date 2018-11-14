@@ -179,8 +179,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'current-tripleo',
                 'neutron_driver': None,
                 'openshift_namespace': 'docker.io/openshift',
-                'openshift_tag': 'v3.10.0',
-                'openshift_base_image': 'origin',
+                'openshift_tag': 'v3.11.0',
+                'openshift_prefix': 'origin',
                 'openshift_cockpit_namespace': 'docker.io/cockpit',
                 'openshift_cockpit_image': 'kubernetes',
                 'openshift_cockpit_tag': 'latest',
@@ -195,6 +195,40 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_heketi_namespace': 'docker.io/heketi',
                 'openshift_heketi_image': 'heketi',
                 'openshift_heketi_tag': 'latest',
+                'openshift_cluster_monitoring_namespace':
+                    'docker.io/tripleorocky',
+                'openshift_cluster_monitoring_image':
+                    'coreos-cluster-monitoring-operator',
+                'openshift_cluster_monitoring_tag': 'v0.1.1',
+                'openshift_configmap_reload_namespace':
+                    'docker.io/tripleorocky',
+                'openshift_configmap_reload_image': 'coreos-configmap-reload',
+                'openshift_configmap_reload_tag': 'latest',
+                'openshift_prometheus_operator_namespace':
+                    'docker.io/tripleorocky',
+                'openshift_prometheus_operator_image':
+                    'coreos-prometheus-operator',
+                'openshift_prometheus_operator_tag': 'latest',
+                'openshift_prometheus_config_reload_namespace':
+                    'docker.io/tripleorocky',
+                'openshift_prometheus_config_reload_image':
+                    'coreos-prometheus-config-reloader',
+                'openshift_prometheus_config_reload_tag': 'v0.24.0',
+                'openshift_prometheus_tag': 'latest',
+                'openshift_prometheus_alertmanager_tag': 'latest',
+                'openshift_prometheus_node_exporter_tag': 'latest',
+                'openshift_oauth_proxy_tag': 'latest',
+                'openshift_kube_rbac_proxy_namespace':
+                    'docker.io/tripleorocky',
+                'openshift_kube_rbac_proxy_image': 'coreos-kube-rbac-proxy',
+                'openshift_kube_rbac_proxy_tag': 'v0.3.1',
+                'openshift_kube_state_metrics_namespace':
+                    'docker.io/tripleorocky',
+                'openshift_kube_state_metrics_image':
+                    'coreos-kube-state-metrics',
+                'openshift_kube_state_metrics_tag': 'latest',
+                'openshift_grafana_namespace': 'docker.io/grafana',
+                'openshift_grafana_tag': 'latest',
             },
             builder.container_images_template_inputs()
         )
@@ -210,8 +244,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'rocky',
                 'neutron_driver': 'ovn',
                 'openshift_namespace': 'docker.io/openshift3',
-                'openshift_tag': 'v3.10.0',
-                'openshift_base_image': 'ose',
+                'openshift_tag': 'v3.11.0',
+                'openshift_prefix': 'ose',
                 'openshift_cockpit_namespace': 'docker.io/openshift-cockpit',
                 'openshift_cockpit_image': 'cockpit',
                 'openshift_cockpit_tag': 'cockpit-tag',
@@ -219,15 +253,49 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_etcd_image': 'openshift-etcd',
                 'openshift_etcd_tag': 'etcd-tag',
                 'openshift_gluster_namespace':
-                'registry.access.redhat.com/rhgs3',
+                    'registry.access.redhat.com/rhgs3',
                 'openshift_gluster_image': 'rhgs-server-rhel7',
                 'openshift_gluster_block_image':
-                'rhgs-gluster-block-prov-rhel7',
+                    'rhgs-gluster-block-prov-rhel7',
                 'openshift_gluster_tag': 'gluster-tag',
                 'openshift_heketi_namespace':
-                'registry.access.redhat.com/rhgs3',
+                    'registry.access.redhat.com/rhgs3',
                 'openshift_heketi_image': 'rhgs-volmanager-rhel7',
                 'openshift_heketi_tag': 'heketi-tag',
+                'openshift_cluster_monitoring_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_cluster_monitoring_image':
+                    'ose-cluster-monitoring-operator',
+                'openshift_cluster_monitoring_tag': 'v3.11',
+                'openshift_configmap_reload_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_configmap_reload_image': 'ose-configmap-reloader',
+                'openshift_configmap_reload_tag': 'v3.11',
+                'openshift_prometheus_operator_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_prometheus_operator_image':
+                    'ose-prometheus-operator',
+                'openshift_prometheus_operator_tag': 'v3.11',
+                'openshift_prometheus_config_reload_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_prometheus_config_reload_image':
+                    'ose-prometheus-config-reloader',
+                'openshift_prometheus_config_reload_tag': 'v3.11',
+                'openshift_prometheus_tag': 'v3.11',
+                'openshift_prometheus_alertmanager_tag': 'v3.11',
+                'openshift_prometheus_node_exporter_tag': 'v3.11',
+                'openshift_oauth_proxy_tag': 'v3.11',
+                'openshift_kube_rbac_proxy_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_kube_rbac_proxy_image': 'ose-kube-rbac-proxy',
+                'openshift_kube_rbac_proxy_tag': 'v3.11',
+                'openshift_kube_state_metrics_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_kube_state_metrics_image': 'ose-kube-state-metrics',
+                'openshift_kube_state_metrics_tag': 'v3.11',
+                'openshift_grafana_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_grafana_tag': 'v3.11',
             },
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleorocky',
@@ -239,8 +307,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 tag='rocky',
                 neutron_driver='ovn',
                 openshift_namespace='docker.io/openshift3',
-                openshift_tag='v3.10.0',
-                openshift_base_image='ose',
+                openshift_tag='v3.11.0',
+                openshift_prefix='ose',
                 openshift_cockpit_namespace='docker.io/openshift-cockpit',
                 openshift_cockpit_image='cockpit',
                 openshift_cockpit_tag='cockpit-tag',
@@ -254,6 +322,40 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 openshift_heketi_namespace='registry.access.redhat.com/rhgs3',
                 openshift_heketi_image='rhgs-volmanager-rhel7',
                 openshift_heketi_tag='heketi-tag',
+                openshift_cluster_monitoring_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_cluster_monitoring_image='ose-'
+                    'cluster-monitoring-operator',
+                openshift_cluster_monitoring_tag='v3.11',
+                openshift_configmap_reload_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_configmap_reload_image='ose-configmap-reloader',
+                openshift_configmap_reload_tag='v3.11',
+                openshift_prometheus_operator_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_prometheus_operator_image='ose-'
+                    'prometheus-operator',
+                openshift_prometheus_operator_tag='v3.11',
+                openshift_prometheus_config_reload_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_prometheus_config_reload_image='ose-'
+                    'prometheus-config-reloader',
+                openshift_prometheus_config_reload_tag='v3.11',
+                openshift_prometheus_tag='v3.11',
+                openshift_prometheus_alertmanager_tag='v3.11',
+                openshift_prometheus_node_exporter_tag='v3.11',
+                openshift_oauth_proxy_tag='v3.11',
+                openshift_kube_rbac_proxy_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_kube_rbac_proxy_image='ose-kube-rbac-proxy',
+                openshift_kube_rbac_proxy_tag='v3.11',
+                openshift_kube_state_metrics_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_kube_state_metrics_image='ose-kube-state-metrics',
+                openshift_kube_state_metrics_tag='v3.11',
+                openshift_grafana_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_grafana_tag='v3.11',
             )
         )
 

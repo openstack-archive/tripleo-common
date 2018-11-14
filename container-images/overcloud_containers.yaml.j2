@@ -798,27 +798,25 @@ container_images_template:
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftStorage
 
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}:{{openshift_tag}}"
-  params:
-  - DockerOpenShiftBaseImage
-  services:
-  - OS::TripleO::Services::OpenShift::Master
-
-- imagename: "{{openshift_namespace}}/node:{{openshift_tag}}"
-  params:
-  - DockerOpenShiftNodeImage
-  services:
-  - OS::TripleO::Services::OpenShift::Infra
-  - OS::TripleO::Services::OpenShift::Master
-  - OS::TripleO::Services::OpenShift::Worker
-
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-ansible:{{openshift_tag}}"
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-ansible:{{openshift_tag}}"
   params:
   - DockerOpenShiftAnsibleImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-deployer:{{openshift_tag}}"
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-console:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftConsoleImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-control-plane:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftControlPlaneImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-deployer:{{openshift_tag}}"
   params:
   - DockerOpenShiftDeployerImage
   services:
@@ -826,25 +824,33 @@ container_images_template:
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
 
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-docker-builder:{{openshift_tag}}"
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-docker-builder:{{openshift_tag}}"
   params:
   - DockerOpenShiftDockerBuilderImage
   services:
   - OS::TripleO::Services::OpenShift::Worker
 
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-docker-registry:{{openshift_tag}}"
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-docker-registry:{{openshift_tag}}"
   params:
   - DockerOpenShiftDockerRegistryImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-haproxy-router:{{openshift_tag}}"
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-haproxy-router:{{openshift_tag}}"
   params:
   - DockerOpenShiftHAProxyRouterImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-pod:{{openshift_tag}}"
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-node:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftNodeImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+  - OS::TripleO::Services::OpenShift::Master
+  - OS::TripleO::Services::OpenShift::Worker
+
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-pod:{{openshift_tag}}"
   params:
   - DockerOpenShiftPodImage
   services:
@@ -852,7 +858,7 @@ container_images_template:
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
 
-- imagename: "{{openshift_namespace}}/{{openshift_base_image}}-web-console:{{openshift_tag}}"
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-web-console:{{openshift_tag}}"
   params:
   - DockerOpenShiftWebConsoleImage
   services:
@@ -887,3 +893,72 @@ container_images_template:
   - DockerOpenShiftGlusterFSHeketiImage
   services:
   - OS::TripleO::Services::OpenShift::GlusterFS
+
+- imagename: "{{openshift_cluster_monitoring_namespace}}/{{openshift_cluster_monitoring_image}}:{{openshift_cluster_monitoring_tag}}"
+  params:
+  - DockerOpenShiftClusterMonitorOperatorImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_configmap_reload_namespace}}/{{openshift_configmap_reload_image}}:{{openshift_configmap_reload_tag}}"
+  params:
+  - DockerOpenShiftConfigmapReloaderImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_prometheus_operator_namespace}}/{{openshift_prometheus_operator_image}}:{{openshift_prometheus_operator_tag}}"
+  params:
+  - DockerOpenShiftPrometheusOperatorImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_prometheus_config_reload_namespace}}/{{openshift_prometheus_config_reload_image}}:{{openshift_prometheus_config_reload_tag}}"
+  params:
+  - DockerOpenShiftPrometheusConfigReloaderImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_namespace}}/prometheus:{{openshift_prometheus_tag}}"
+  params:
+  - DockerOpenShiftPrometheusImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_namespace}}/prometheus-alertmanager:{{openshift_prometheus_alertmanager_tag}}"
+  params:
+  - DockerOpenShiftPrometheusAlertmanagerImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_namespace}}/prometheus-node-exporter:{{openshift_prometheus_node_exporter_tag}}"
+  params:
+  - DockerOpenShiftPrometheusNodeExporterImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+  - OS::TripleO::Services::OpenShift::Worker
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_namespace}}/oauth-proxy:{{openshift_oauth_proxy_tag}}"
+  params:
+  - DockerOpenShiftOauthProxyImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_kube_rbac_proxy_namespace}}/{{openshift_kube_rbac_proxy_image}}:{{openshift_kube_rbac_proxy_tag}}"
+  params:
+  - DockerOpenShiftKubeRbacProxyImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+  - OS::TripleO::Services::OpenShift::Worker
+
+- imagename: "{{openshift_kube_state_metrics_namespace}}/{{openshift_kube_state_metrics_image}}:{{openshift_kube_state_metrics_tag}}"
+  params:
+  - DockerOpenShiftKubeStateMetricsImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
+- imagename: "{{openshift_grafana_namespace}}/grafana:{{openshift_grafana_tag}}"
+  params:
+  - DockerOpenShiftGrafanaImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
