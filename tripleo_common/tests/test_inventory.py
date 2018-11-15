@@ -171,21 +171,6 @@ class TestInventory(base.TestCase):
     def test_inventory_list(self):
         self._inventory_list(self.inventory)
 
-    def test_inventory_list_backwards_compat_configs(self):
-        # FIXME(shardy) backwards compatibility until we switch
-        # tripleo-validations to pass the individual values
-        configs = MagicMock()
-        configs.plan = self.plan_name
-        configs.auth_url = 'xyz://keystone.local'
-        configs.cacert = 'acacert'
-        configs.project_name = 'admin'
-        configs.username = 'admin'
-        configs.ansible_ssh_user = 'heat-admin'
-        configs.ansible_python_interpreter = None
-        inventory = TripleoInventory(
-            configs, self.session, self.hclient)
-        self._inventory_list(inventory)
-
     def _inventory_list(self, inventory):
         ansible_ssh_user = 'heat-admin'
         expected = {

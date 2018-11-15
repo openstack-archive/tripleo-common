@@ -1,0 +1,6 @@
+---
+other:
+  - |
+    TripleoInventory class no longer supports the parameters being passed in as
+    as config object. This was added to support transition in in
+    tripleo-validations that was corrected in Queens.
