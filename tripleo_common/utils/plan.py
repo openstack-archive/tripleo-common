@@ -99,8 +99,14 @@ def process_environments_and_files(swift, env_paths):
     def _env_path_is_object(env_path):
         return env_path.startswith(swift.url)
 
+    # XXX this should belong in heatclient, but for the time being and backport
+    # purposes, let's do that here for now.
+    _cache = {}
+
     def _object_request(method, url, token=swift.token):
-        return object_request(method, url, token)
+        if url not in _cache:
+            _cache[url] = object_request(method, url, token)
+        return _cache[url]
 
     return template_utils.process_multiple_environments_and_files(
         env_paths=env_paths,
