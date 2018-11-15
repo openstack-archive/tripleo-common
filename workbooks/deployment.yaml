@@ -232,7 +232,7 @@ workflows:
           message: <% task().result %>
         on-success:
           - wait_for_stack_complete: <% $.config_download %>
-          - set_deployment_success: <% not $.config_download %>
+          - set_deployment_deploying: <% not $.config_download %>
         on-error: set_deployment_failed
 
       wait_for_stack_complete:
@@ -315,6 +315,12 @@ workflows:
         publish:
           status: SUCCESS
           deployment_status: DEPLOY_SUCCESS
+
+      set_deployment_deploying:
+        on-success: send_message
+        publish:
+          status: SUCCESS
+          deployment_status: DEPLOYING
 
       send_message:
         workflow: tripleo.messaging.v1.send
@@ -702,7 +708,8 @@ workflows:
 
   get_deployment_status:
     description: >
-      Get deployment status
+      Get deployment status and update it if needed based on stack and
+      config_downlooad status.
 
     tags:
       - tripleo-common-managed
@@ -717,6 +724,32 @@ workflows:
     tasks:
 
       get_deployment_status:
+        action: tripleo.deployment.get_deployment_status
+        input:
+          plan: <% $.plan %>
+        publish:
+          status_update: <% yaml_parse(coalesce(task().result.status_update, '')) %>
+          deployment_status: <% task().result.deployment_status %>
+        on-complete:
+          - reload_deployment_status: <% $.status_update = null and $.deployment_status != null %>
+          - update_status: <% $.status_update != null and $.deployment_status != null %>
+          - send_message: <% $.deployment_status = null %>
+        publish-on-error:
+          message: No deployment status found for plan <% $.plan %>
+          deployment_status: ""
+
+      update_status:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: RUNNING
+          execution: <% execution() %>
+          plan_name: <% $.plan %>
+          deployment_status: <% $.status_update %>
+        on-complete: reload_deployment_status
+
+      reload_deployment_status:
         action: swift.get_object
         input:
           container: <% $.plan %>-messages
@@ -724,9 +757,6 @@ workflows:
         publish:
           deployment_status: <% yaml_parse(task().result.last()) %>
         on-complete: send_message
-        publish-on-error:
-          message: No deployment status found for plan <% $.plan %>
-          deployment_status: ""
 
       send_message:
         workflow: tripleo.messaging.v1.send
@@ -735,7 +765,6 @@ workflows:
           type: <% execution().name %>
           execution: <% execution() %>
           status: <% $.get("status", "SUCCESS") %>
-          message: <% $.get("message", "") %>
           payload:
             deployment_status: <% $.get(deployment_status, "") %>
 
