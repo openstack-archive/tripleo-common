@@ -143,7 +143,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         # check to see if the stack exists
         heat = self.get_orchestration_client(context)
         try:
-            stack = heat.stacks.get(self.container)
+            stack = heat.stacks.get(self.container, resolve_outputs=False)
         except heat_exc.HTTPNotFound:
             stack = None
 

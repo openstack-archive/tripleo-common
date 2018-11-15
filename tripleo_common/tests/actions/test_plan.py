@@ -262,7 +262,8 @@ class DeletePlanActionTest(base.TestCase):
         # test that stack exists
         action = plan.DeletePlanAction(self.container_name)
         self.assertRaises(exception.StackInUseError, action.run, self.ctx)
-        heat.stacks.get.assert_called_with(self.container_name)
+        heat.stacks.get.assert_called_with(
+            self.container_name, resolve_outputs=False)
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch(
