@@ -126,6 +126,7 @@ workflows:
       - queue_name: tripleo
       - config_download: False
       - ssh_network: ctlplane
+      - deployment_options: {}
 
     tags:
       - tripleo-common-managed
@@ -457,6 +458,7 @@ workflows:
         action: tripleo.ansible-generate-inventory
         input:
           ansible_ssh_user: tripleo-admin
+          ansible_python_interpreter: <% $.get('deployment_options', {}).get('ansible_python_interpreter', null) %>
           work_dir: <% $.get('work_dir') %>/<% $.get('plan_name') %>
           plan_name: <% $.get('plan_name') %>
           ssh_network: <% $.get('ssh_network') %>

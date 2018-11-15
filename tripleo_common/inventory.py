@@ -86,7 +86,7 @@ class TripleoInventory(object):
     def __init__(self, configs=None, session=None, hclient=None,
                  plan_name=None, auth_url=None, project_name=None,
                  cacert=None, username=None, ansible_ssh_user=None,
-                 host_network=None):
+                 host_network=None, ansible_python_interpreter=None):
         self.session = session
         self.hclient = hclient
         self.hosts_format_dict = False
@@ -100,6 +100,8 @@ class TripleoInventory(object):
             self.username = configs.username
             self.ansible_ssh_user = configs.ansible_ssh_user
             self.plan_name = configs.plan
+            self.ansible_python_interpreter = \
+                configs.ansible_python_interpreter
         else:
             self.auth_url = auth_url
             self.cacert = cacert
@@ -107,6 +109,7 @@ class TripleoInventory(object):
             self.username = username
             self.ansible_ssh_user = ansible_ssh_user
             self.plan_name = plan_name
+            self.ansible_python_interpreter = ansible_python_interpreter
         self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
         self.hostvars = {}
 
@@ -248,6 +251,10 @@ class TripleoInventory(object):
 
                 }
 
+                if self.ansible_python_interpreter:
+                    ret[role]['vars']['ansible_python_interpreter'] = \
+                        self.ansible_python_interpreter
+
                 self.hostvars.update(hosts)
 
         if children:
@@ -273,6 +280,9 @@ class TripleoInventory(object):
                         'ansible_ssh_user': self.ansible_ssh_user
                     }
                 }
+                if self.ansible_python_interpreter:
+                    ret[role]['vars']['ansible_python_interpreter'] = \
+                        self.ansible_python_interpreter
 
         if not self.hosts_format_dict:
             # Prevent Ansible from repeatedly calling us to get empty host
