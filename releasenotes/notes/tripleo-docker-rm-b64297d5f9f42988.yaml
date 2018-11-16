@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    The new tripleo-docker-rm will be useful to remove the containers that
+    were managed by Docker and that are now managed by Podman.

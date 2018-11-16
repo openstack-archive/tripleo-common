@@ -1,0 +1,17 @@
+---
+- name: Check if docker is installed
+  stat:
+    path: /usr/bin/docker
+  register: docker_path_stat
+
+- set_fact:
+    docker_installed: "{{ docker_path_stat.results | map(attribute='stat') | map(attribute='exists') is any }}"
+
+- name: remove "{{ containers_to_rm|join(', ') }}" containers
+  docker_container:
+    name: "{{ item }}"
+    state: absent
+  when:
+    - container_cli == 'podman'
+    - docker_installed
+  with_items: "{{ containers_to_rm }}"
