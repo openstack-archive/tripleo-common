@@ -9,6 +9,7 @@ workflows:
 
     input:
       - container
+      - work_dir: /var/lib/mistral
       - queue_name: tripleo
       - ansible_extra_env_variables:
             ANSIBLE_HOST_KEY_CHECKING: 'False'
@@ -20,14 +21,6 @@ workflows:
 
       rotate_keys:
         action: tripleo.parameters.rotate_fernet_keys container=<% $.container %>
-        on-success: deploy_ssh_key
-        on-error: send_message
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-
-      deploy_ssh_key:
-        workflow: tripleo.validations.v1.copy_ssh_key
         on-success: get_privkey
         on-error: send_message
         publish-on-error:
@@ -46,11 +39,11 @@ workflows:
         action: tripleo.ansible-playbook
         input:
           hosts: keystone
-          inventory: /usr/bin/tripleo-ansible-inventory
+          inventory: <% $.get('work_dir') %>/<% $.get('container') %>/tripleo-ansible-inventory.yaml
           ssh_private_key: <% task(get_privkey).result %>
           extra_env_variables: <% $.ansible_extra_env_variables + dict(TRIPLEO_PLAN_NAME=>$.container) %>
           verbosity: 0
-          remote_user: heat-admin
+          remote_user: tripleo-admin
           become: true
           extra_vars:
             fernet_keys: <% task(rotate_keys).result %>
