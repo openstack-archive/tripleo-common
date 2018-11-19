@@ -44,7 +44,7 @@ class RegisterOrUpdateNodes(base.TripleOAction):
     """
 
     def __init__(self, nodes_json, remove=False, kernel_name=None,
-                 ramdisk_name=None, instance_boot_option='local'):
+                 ramdisk_name=None, instance_boot_option=None):
         super(RegisterOrUpdateNodes, self).__init__()
         self.nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
         self.remove = remove
@@ -56,7 +56,8 @@ class RegisterOrUpdateNodes(base.TripleOAction):
         for node in self.nodes_json:
             caps = node.get('capabilities', {})
             caps = nodes.capabilities_to_dict(caps)
-            caps.setdefault('boot_option', self.instance_boot_option)
+            if self.instance_boot_option is not None:
+                caps.setdefault('boot_option', self.instance_boot_option)
             node['capabilities'] = nodes.dict_to_capabilities(caps)
 
         baremetal_client = self.get_baremetal_client(context)
@@ -130,10 +131,6 @@ class ConfigureBootAction(base.TripleOAction):
             capabilities = nodes.capabilities_to_dict(capabilities)
             if self.instance_boot_option is not None:
                 capabilities['boot_option'] = self.instance_boot_option
-            else:
-                # Add boot option capability if it didn't exist
-                capabilities.setdefault(
-                    'boot_option', self.instance_boot_option or 'local')
             capabilities = nodes.dict_to_capabilities(capabilities)
 
             baremetal_client.node.update(node.uuid, [
