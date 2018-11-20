@@ -58,7 +58,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: SUCCESS
-          message: <% task(set_put_tempurl).result %>
+          message: 'Temporary Swift GET/PUT URL parameters have successfully been updated.'
 
       set_put_tempurl_failed:
         on-success: notify_zaqar
