@@ -793,8 +793,30 @@ workflows:
 
       publish_logs:
         workflow: tripleo.plan_management.v1.publish_ui_logs_to_swift
-        on-success: prepare_log_download
+        on-success: check_if_logging_container_present
         on-error: publish_logs_set_status_failed
+
+      check_if_logging_container_present:
+        workflow: tripleo.swift.v1.container_exists
+        input:
+          container: <% $.logging_container %>
+        on-error: set_container_empty_error
+        on-success: check_if_logging_files_present
+
+      check_if_logging_files_present:
+        action: swift.get_container
+        input:
+          container: <% $.logging_container %>
+        on-success:
+          - prepare_log_download: <% task().result[1].len() > 0 %>
+          - set_container_empty_error: <% task().result[1].len() = 0 %>
+        on-error: set_container_empty_error
+
+      set_container_empty_error:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: "There are no logs to download."
 
       prepare_log_download:
         action: tripleo.logging_to_swift.prepare_log_download
