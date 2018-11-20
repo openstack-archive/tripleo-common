@@ -1,0 +1,51 @@
+---
+version: '2.0'
+name: tripleo.container_images.v1
+description: TripleO Container Images Workflows v1
+
+workflows:
+  container_image_prepare_default:
+    description: >
+      Populate the ContainerImagePrepare parameter
+
+    tags:
+      - tripleo-common-managed
+
+    input:
+      - container
+      - container_image_values: {}
+      - update_parameters: true
+      - queue_name: tripleo
+
+    tasks:
+      format_data:
+        action: tripleo.container_images.container_image_prepare_defaults values=<% $.container_image_values %>
+        publish:
+          status: SUCCESS
+          params: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: send_message
+        on-success:
+          - update_parameters: <% $.update_parameters %>
+          - send_message: <% not $.update_parameters %>
+
+      update_parameters:
+        action: tripleo.parameters.update
+        input:
+          container: <% $.container %>
+          parameters: <% $.params %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-complete: send_message
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.status %>
+          execution: <% execution() %>
+          message: <% $.get('message', '') %>
