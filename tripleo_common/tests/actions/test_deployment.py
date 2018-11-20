@@ -404,7 +404,7 @@ class DeployStackActionTest(base.TestCase):
 
         action = deployment.DeployStackAction(1, 'overcloud')
         expected = actions.Result(
-            error="Error during stack creation: ERROR: Oops")
+            error="Error during stack creation: ERROR: Oops\n")
         self.assertEqual(expected, action.run(mock_ctx))
 
     @mock.patch('tripleo_common.actions.deployment.time')
@@ -451,7 +451,7 @@ class DeployStackActionTest(base.TestCase):
 
         action = deployment.DeployStackAction(1, 'overcloud')
         expected = actions.Result(
-            error="Error during stack update: ERROR: Oops")
+            error="Error during stack update: ERROR: Oops\n")
         self.assertEqual(expected, action.run(mock_ctx))
 
     def test_set_tls_parameters_no_ca_found(self):
