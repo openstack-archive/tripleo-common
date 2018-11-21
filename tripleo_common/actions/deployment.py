@@ -289,7 +289,9 @@ class OvercloudRcAction(base.TripleOAction):
                      "environment.")
             return actions.Result(error=error)
 
-        return overcloudrc.create_overcloudrc(stack, self.no_proxy, admin_pass)
+        region_name = parameter_defaults.get('KeystoneRegion')
+        return overcloudrc.create_overcloudrc(stack, self.no_proxy, admin_pass,
+                                              region_name)
 
 
 class DeploymentFailuresAction(base.TripleOAction):
