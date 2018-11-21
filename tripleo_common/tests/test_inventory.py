@@ -14,6 +14,7 @@
 
 import fixtures
 import os
+import sys
 import yaml
 
 from heatclient.exc import HTTPNotFound
@@ -199,6 +200,7 @@ class TestInventory(base.TestCase):
                 'hosts': ['undercloud'],
                 'vars': {'ansible_connection': 'local',
                          'ansible_host': 'localhost',
+                         'ansible_python_interpreter': sys.executable,
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
                          'auth_url': 'xyz://keystone.local',
                          'cacert': 'acacert',
@@ -272,6 +274,7 @@ class TestInventory(base.TestCase):
                 'hosts': ['undercloud'],
                 'vars': {'ansible_connection': 'local',
                          'ansible_host': 'localhost',
+                         'ansible_python_interpreter': 'foo',
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
                          'auth_url': 'xyz://keystone.local',
                          'cacert': 'acacert',
@@ -369,6 +372,8 @@ class TestInventory(base.TestCase):
             'Undercloud': {'hosts': {'undercloud': {}},
                            'vars': {'ansible_connection': 'local',
                                     'ansible_host': 'localhost',
+                                    'ansible_python_interpreter':
+                                        sys.executable,
                                     'ansible_remote_tmp':
                                         '/tmp/ansible-${USER}',
                                     'auth_url': 'xyz://keystone.local',

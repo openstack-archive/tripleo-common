@@ -17,6 +17,7 @@
 
 from collections import OrderedDict
 import os.path
+import sys
 import yaml
 
 from heatclient.exc import HTTPNotFound
@@ -150,6 +151,7 @@ class TripleoInventory(object):
                 'vars': {
                     'ansible_host': 'localhost',
                     'ansible_connection': 'local',
+                    'ansible_python_interpreter': sys.executable,
                     # see https://github.com/ansible/ansible/issues/41808
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
                     'auth_url': self.auth_url,
@@ -162,6 +164,10 @@ class TripleoInventory(object):
                 },
             }
         })
+
+        if self.ansible_python_interpreter:
+            ret['Undercloud']['vars']['ansible_python_interpreter'] = \
+                self.ansible_python_interpreter
 
         swift_url = None
         if self.session:
