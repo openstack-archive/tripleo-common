@@ -73,7 +73,7 @@ fi
 """
 
 
-def create_overcloudrc(stack, no_proxy, admin_password):
+def create_overcloudrc(stack, no_proxy, admin_password, region_name):
     """Given the stack and proxy settings, create the overcloudrc
 
     stack: Heat stack containing the deployed overcloud
@@ -104,6 +104,7 @@ def create_overcloudrc(stack, no_proxy, admin_password):
         'OS_IDENTITY_API_VERSION': '3',
         'OS_IMAGE_API_VERSION': constants.DEFAULT_IMAGE_API_VERSION,
         'OS_VOLUME_API_VERSION': constants.DEFAULT_VOLUME_API_VERSION,
+        'OS_REGION_NAME': region_name or 'regionOne'
     }
 
     overcloudrc = CLEAR_ENV
