@@ -389,10 +389,15 @@ def register_ironic_node(node, client):
         extra = dict(tripleo_platform=platform)
 
     if 'capabilities' in node:
-        caps = node['capabilities']
-        if isinstance(caps, dict):
-            caps = dict_to_capabilities(caps)
-        properties.update({"capabilities": six.text_type(caps)})
+        caps = capabilities_to_dict(node['capabilities'])
+    else:
+        caps = {}
+
+    if 'profile' in node:
+        caps['profile'] = node['profile']
+
+    if caps:
+        properties["capabilities"] = dict_to_capabilities(caps)
 
     driver = node['pm_type']
     if handler.hardware_type and handler.hardware_type != driver:
@@ -516,8 +521,15 @@ def _update_or_register_ironic_node(node, node_map, client):
                     patched[path] = value
 
         if 'capabilities' in node:
-            patched['/properties/capabilities'] = dict_to_capabilities(
-                node.pop('capabilities'))
+            caps = capabilities_to_dict(node.pop('capabilities'))
+        else:
+            caps = {}
+
+        if 'profile' in node:
+            caps['profile'] = node.pop('profile')
+
+        if caps:
+            patched['/properties/capabilities'] = dict_to_capabilities(caps)
 
         driver_info = handler.convert(node)
         for key, value in driver_info.items():

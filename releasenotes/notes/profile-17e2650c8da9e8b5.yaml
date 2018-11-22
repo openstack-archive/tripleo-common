@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Node's profile can now be specified as a separate ``profile`` field in
+    the ``instackenv.json`` instead of inside capabilities.
+deprecations:
+  - |
+    Specifying profile in capabilities when enrolling nodes is deprecated.
+    Please use the new ``profile`` field instead.
