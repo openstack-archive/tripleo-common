@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
+import time
 
 from heatclient.common import template_utils
 from heatclient import exc as heat_exc
@@ -52,7 +53,11 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        update_env = {}
+        update_env = {
+            'parameter_defaults': {
+                'DeployIdentifier': int(time.time()),
+            },
+        }
 
         noop_env = {
             'resource_registry': {
@@ -72,6 +77,13 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
                     noop_env['resource_registry'].update(role_env)
         update_env.update(noop_env)
         template_utils.deep_update(env, update_env)
+        try:
+            plan_utils.put_env(swift, env)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error updating environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return actions.Result(error=err_msg)
 
         # process all plan files and create or update a stack
         processed_data = super(UpdateStackAction, self).run(context)
