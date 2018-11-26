@@ -34,7 +34,8 @@ class OvercloudRcTest(base.TestCase):
             ]
         }
 
-        result = overcloudrc.create_overcloudrc(stack, "", "AdminPassword")
+        result = overcloudrc.create_overcloudrc(stack, "", "AdminPassword",
+                                                "regionTwo")
 
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc'])
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc.v3'])
@@ -48,3 +49,5 @@ class OvercloudRcTest(base.TestCase):
                       result['overcloudrc'])
         self.assertIn("OS_AUTH_URL=http://foo.com:8000/",
                       result['overcloudrc.v3'])
+        self.assertIn("OS_REGION_NAME=regionTwo",
+                      result['overcloudrc'])
