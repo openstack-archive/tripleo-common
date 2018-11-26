@@ -189,7 +189,7 @@ class TestBaseImageUploader(base.TestCase):
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertEqual(
-            'https://192.0.2.0:8787/',
+            'https://192.0.2.0:8787/v2',
             self.requests.request_history[0].url
         )
 
@@ -202,20 +202,20 @@ class TestBaseImageUploader(base.TestCase):
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertEqual(
-            'https://192.0.2.0:8787/',
+            'https://192.0.2.0:8787/v2',
             self.requests.request_history[0].url
         )
 
     def test_is_insecure_registry_insecure(self):
         self.requests.get(
-            'https://192.0.2.0:8787/',
+            'https://192.0.2.0:8787/v2',
             exc=requests.exceptions.SSLError('ouch'))
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertEqual(
-            'https://192.0.2.0:8787/',
+            'https://192.0.2.0:8787/v2',
             self.requests.request_history[0].url
         )
 

@@ -523,7 +523,7 @@ class BaseImageUploader(object):
         if registry_host in self.insecure_registries:
             return True
         try:
-            requests.get('https://%s/' % registry_host)
+            requests.get('https://%s/v2' % registry_host)
         except requests.exceptions.SSLError:
             self.insecure_registries.add(registry_host)
             return True
