@@ -94,7 +94,7 @@ class AnsibleAction(actions.Action):
         self.hosts = self._kwargs_for_run.pop('hosts', None)
         self.module = self._kwargs_for_run.pop('module', None)
         self.module_args = self._kwargs_for_run.pop('module_args', None)
-        if self.module_args:
+        if self.module_args and isinstance(self.module_args, dict):
             self.module_args = json.dumps(self.module_args)
         self.limit_hosts = self._kwargs_for_run.pop('limit_hosts', None)
         self.remote_user = self._kwargs_for_run.pop('remote_user', None)
