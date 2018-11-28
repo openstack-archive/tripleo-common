@@ -562,7 +562,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 lines = []
                 for line in iter(process.stdout.readline, b''):
                     lines.append(line)
-                    stdout.append(line)
+                    if not self.trash_output:
+                        stdout.append(line)
                     if time.time() - start > 30:
                         self.post_message(queue, ''.join(lines))
                         lines = []
@@ -574,9 +575,6 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 # stdout we don't know the difference. To keep the return dict
                 # similar there is an empty stderr. We can use the return code
                 # to determine if there was an error.
-                if self.trash_output:
-                    stdout = []
-                    stderr = ""
                 return {"stdout": "".join(stdout), "returncode": returncode,
                         "stderr": ""}
 
