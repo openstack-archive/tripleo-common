@@ -29,40 +29,39 @@ class UpdateStackActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_compute_client')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.utils.plan.put_env')
     @mock.patch('tripleo_common.utils.plan.get_env')
     @mock.patch('tripleo_common.utils.plan.update_in_env')
-    @mock.patch('heatclient.common.template_utils.deep_update')
-    def test_run(self, mock_deepupdate,
+    def test_run(self,
                  mock_updateinenv,
                  mock_getenv,
+                 mock_putenv,
                  mock_template_contents,
-                 mock_compute_client,
-                 mock_orchestration_client,
-                 mock_object_client,
+                 mock_get_orchestration_client,
+                 mock_get_object_client,
                  mock_templates_run):
         mock_ctx = mock.MagicMock()
 
         heat = mock.MagicMock()
         heat.stacks.get.return_value = mock.MagicMock(
-            stack_name='stack', id='stack_id')
-        mock_orchestration_client.return_value = heat
+            stack_name='mycloud', id='stack_id')
+        mock_get_orchestration_client.return_value = heat
 
         mock_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
         })
         mock_swift = mock.MagicMock()
         env = {
-            'parameters': {
+            'name': 'mycloud',
+            'parameter_defaults': {
                 'ControllerCount': 1,
                 'ComputeCount': 1,
                 'ObjectStorageCount': 0,
                 'BlockStorageCount': 0,
                 'CephStorageCount': 0,
             },
-            'stack_name': 'overcloud',
+            'stack_name': 'mycloud',
             'stack_status': "CREATE_COMPLETE",
             'outputs': [
                 {'output_key': 'RoleConfig',
@@ -95,15 +94,29 @@ class UpdateStackActionTest(base.TestCase):
                                             'when': ['existing', 'list']}]
                          }}}]}
 
-        update_env = {'resource_registry':
-                      {'OS::TripleO::DeploymentSteps': 'OS::Heat::None'}}
         mock_getenv.return_value = env
         mock_swift.get_object.return_value = ({}, env)
-        mock_object_client.return_value = mock_swift
+        mock_get_object_client.return_value = mock_swift
 
         action = package_update.UpdateStackAction(self.timeout,
                                                   container=self.container)
         action.run(mock_ctx)
-        mock_deepupdate.assert_called_once_with(env, update_env)
+        mock_putenv.assert_called_once_with(mock_swift, {
+            'name': env['name'],
+            'resource_registry': {
+                'OS::TripleO::DeploymentSteps': 'OS::Heat::None',
+            },
+            'parameter_defaults': {
+                'DeployIdentifier': mock.ANY,
+                'ControllerCount': 1,
+                'ComputeCount': 1,
+                'ObjectStorageCount': 0,
+                'BlockStorageCount': 0,
+                'CephStorageCount': 0,
+            },
+            'stack_name': env['stack_name'],
+            'stack_status': env['stack_status'],
+            'outputs': env['outputs'],
+        })
 
         heat.stacks.update.assert_called_once_with('stack_id')
