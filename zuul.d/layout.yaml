@@ -15,25 +15,20 @@
             files:
               - ^container-images/.*$
         - tripleo-ci-centos-7-scenario001-multinode-oooq-container:
-            voting: true
             files:
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
         - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
-            voting: true
             files:
               - ^container-images/.*$
         - tripleo-ci-centos-7-scenario003-multinode-oooq-container:
-            voting: true
             files:
               - ^container-images/.*$
         - tripleo-ci-centos-7-scenario004-multinode-oooq-container:
-            voting: true
             files:
               - workbooks/ceph-ansible.yaml
               - ^container-images/.*$
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
-            voting: true
             files:
               - ^container-images/.*$
         - openstack-tox-cover:
@@ -43,28 +38,6 @@
       queue: tripleo
       jobs:
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
-            voting: true
-            files:
-              - ^container-images/.*$
-        - tripleo-ci-centos-7-scenario001-multinode-oooq-container:
-            voting: true
-            files:
-              - workbooks/ceph-ansible.yaml
-              - ^container-images/.*$
-        - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
-            voting: true
-            files:
-              - ^container-images/.*$
-        - tripleo-ci-centos-7-scenario003-multinode-oooq-container:
-            voting: true
-            files:
-              - ^container-images/.*$
-        - tripleo-ci-centos-7-scenario004-multinode-oooq-container:
-            voting: true
-            files:
-              - workbooks/ceph-ansible.yaml
-              - ^container-images/.*$
-        - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             voting: true
             files:
               - ^container-images/.*$
