@@ -49,7 +49,7 @@ workflows:
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
-          status: <% $.get('status', 'SUCCESS')
+          status: <% $.get('status', 'SUCCESS') %>
           execution: <% execution() %>
           messages: <% $.get('message', '') %>
           payload:
@@ -90,7 +90,7 @@ workflows:
         input:
           queue_name: <% $.queue_name %>
           type: <% execution().name %>
-          status: <% $.get('status', 'SUCCESS')
+          status: <% $.get('status', 'SUCCESS') %>
           execution: <% execution() %>
           messages: <% $.get('message', '') %>
           payload:
