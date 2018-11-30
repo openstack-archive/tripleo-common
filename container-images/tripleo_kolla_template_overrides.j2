@@ -53,7 +53,8 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 #           executor needs to run container image operations during overcloud
 #           deploy.
 #   tripleo-heat-templates: to load the default plan from the CLI/UI
-{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'docker', 'podman', 'libseccomp', 'openstack-tripleo-heat-templates'] %}
+#   python-notario: ceph-ansible depends on this but it is bind mounted from host
+{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'docker', 'podman', 'libseccomp', 'openstack-tripleo-heat-templates', 'python2-notario'] %}
 
 # Include the ironic-staging-drivers
 {% set ironic_conductor_packages_append = ['openstack-ironic-staging-drivers'] %}
