@@ -749,7 +749,7 @@ workflows:
         publish:
           status: SUCCESS
           messages: <% task().result %>
-          message_ids: <% task().result.select($._id) %>
+          message_ids: <% task().result.select($.id) %>
 
       format_messages:
         action: tripleo.logging_to_swift.format_messages
