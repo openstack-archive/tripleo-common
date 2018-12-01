@@ -190,7 +190,7 @@ workflows:
      - queue_name: tripleo
      - kernel_name: null
      - ramdisk_name: null
-     - instance_boot_option: local
+     - instance_boot_option: null
      - initial_state: manageable
 
     tags:
@@ -1158,7 +1158,7 @@ workflows:
       - ports: [623]
       - kernel_name: null
       - ramdisk_name: null
-      - instance_boot_option: local
+      - instance_boot_option: null
       - initial_state: manageable
       - queue_name: tripleo
 

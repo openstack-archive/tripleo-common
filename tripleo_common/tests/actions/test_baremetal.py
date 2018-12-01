@@ -80,7 +80,7 @@ class TestConfigureBootAction(base.TestCase):
         result = action.run(self.context)
         self.assertIsNone(result)
 
-        self.node_update[0].update({'value': 'boot_option:local'})
+        self.node_update[0].update({'value': ''})
         self.ironic.node.update.assert_called_once_with(mock.ANY,
                                                         self.node_update)
 
@@ -124,6 +124,7 @@ class TestConfigureBootAction(base.TestCase):
 
         self.assertIsNone(result)
 
+        self.node_update[0].update({'value': ''})
         self.node_update[1:] = [{'op': 'add',
                                  'path': '/driver_info/deploy_ramdisk',
                                  'value': 'test_ramdisk_id'},
