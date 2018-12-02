@@ -449,7 +449,7 @@ class TestDockerImageUploader(base.TestCase):
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+        mock_get.assert_called_once_with('https://192.0.2.0:8787/v2')
 
     @mock.patch('requests.get')
     def test_is_insecure_registry_timeout(self, mock_get):
@@ -458,7 +458,7 @@ class TestDockerImageUploader(base.TestCase):
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+        mock_get.assert_called_once_with('https://192.0.2.0:8787/v2')
 
     @mock.patch('requests.get')
     def test_is_insecure_registry_insecure(self, mock_get):
@@ -467,7 +467,7 @@ class TestDockerImageUploader(base.TestCase):
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        mock_get.assert_called_once_with('https://192.0.2.0:8787/')
+        mock_get.assert_called_once_with('https://192.0.2.0:8787/v2')
 
     @mock.patch('subprocess.Popen')
     def test_discover_image_tag(self, mock_popen):
