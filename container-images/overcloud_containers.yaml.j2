@@ -858,6 +858,24 @@ container_images_template:
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
 
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-service-catalog:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftServiceCatalogImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_namespace}}/{{openshift_prefix}}-template-service-broker:{{openshift_tag}}"
+  params:
+  - DockerOpenShiftTemplateServiceBrokerImage
+  services:
+  - OS::TripleO::Services::OpenShift::Master
+
+- imagename: "{{openshift_asb_namespace}}/{{openshift_prefix}}-ansible-service-broker:{{openshift_asb_tag}}"
+  params:
+  - DockerOpenShiftAnsibleServiceBrokerImage
+  services:
+  - OS::TripleO::Services::OpenShift::Infra
+
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-web-console:{{openshift_tag}}"
   params:
   - DockerOpenShiftWebConsoleImage
