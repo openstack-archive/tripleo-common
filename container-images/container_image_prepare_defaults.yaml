@@ -47,6 +47,8 @@ parameter_defaults:
       openshift_heketi_namespace: docker.io/heketi
       openshift_heketi_image: heketi
       openshift_heketi_tag: latest
+      openshift_asb_namespace: docker.io/ansibleplaybookbundle
+      openshift_asb_tag: latest
       openshift_cluster_monitoring_namespace: quay.io/coreos
       openshift_cluster_monitoring_image: cluster-monitoring-operator
       openshift_cluster_monitoring_tag: v0.1.1

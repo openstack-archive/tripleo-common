@@ -233,6 +233,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_heketi_namespace': 'docker.io/heketi',
                 'openshift_heketi_image': 'heketi',
                 'openshift_heketi_tag': 'latest',
+                'openshift_asb_namespace': 'docker.io/ansibleplaybookbundle',
+                'openshift_asb_tag': 'latest',
                 'openshift_cluster_monitoring_namespace': 'quay.io/coreos',
                 'openshift_cluster_monitoring_image':
                     'cluster-monitoring-operator',
@@ -293,6 +295,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                     'registry.access.redhat.com/rhgs3',
                 'openshift_heketi_image': 'rhgs-volmanager-rhel7',
                 'openshift_heketi_tag': 'heketi-tag',
+                'openshift_asb_namespace':
+                    'registry.access.redhat.com/openshift3',
+                'openshift_asb_tag': 'v3.11',
                 'openshift_cluster_monitoring_namespace':
                     'registry.access.redhat.com/openshift3',
                 'openshift_cluster_monitoring_image':
@@ -353,6 +358,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 openshift_heketi_namespace='registry.access.redhat.com/rhgs3',
                 openshift_heketi_image='rhgs-volmanager-rhel7',
                 openshift_heketi_tag='heketi-tag',
+                openshift_asb_namespace='registry.'
+                    'access.redhat.com/openshift3',
+                openshift_asb_tag='v3.11',
                 openshift_cluster_monitoring_namespace='registry.'
                     'access.redhat.com/openshift3',
                 openshift_cluster_monitoring_image='ose-'
