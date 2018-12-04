@@ -511,6 +511,52 @@ class NodesTest(base.TestCase):
         nodes._update_or_register_ironic_node(node, node_map, client=ironic)
         ironic.node.update.assert_called_once_with(1, mock.ANY)
 
+    def test_register_update_caps_dict(self):
+        interfaces = {'boot_interface': 'pxe',
+                      'console_interface': 'ipmitool-socat',
+                      'deploy_interface': 'direct',
+                      'inspect_interface': 'inspector',
+                      'management_interface': 'ipmitool',
+                      'network_interface': 'neutron',
+                      'power_interface': 'ipmitool',
+                      'raid_interface': 'agent',
+                      'storage_interface': 'cinder',
+                      'vendor_interface': 'ipmitool'}
+
+        node = self._get_node()
+        node.update(interfaces)
+        node['root_device'] = {'serial': 'abcdef'}
+        node['capabilities'] = {'profile': 'compute', 'num_nics': 6}
+        ironic = mock.MagicMock()
+        node_map = {'mac': {'aaa': 1}}
+
+        def side_effect(*args, **kwargs):
+            update_patch = [
+                {'path': '/name', 'value': 'node1'},
+                {'path': '/driver_info/ipmi_password', 'value': 'random'},
+                {'path': '/driver_info/ipmi_address', 'value': 'foo.bar'},
+                {'path': '/properties/memory_mb', 'value': '2048'},
+                {'path': '/properties/local_gb', 'value': '30'},
+                {'path': '/properties/cpu_arch', 'value': 'amd64'},
+                {'path': '/properties/cpus', 'value': '1'},
+                {'path': '/properties/capabilities',
+                 'value': 'num_nics:6,profile:compute'},
+                {'path': '/properties/root_device',
+                 'value': {'serial': 'abcdef'}},
+                {'path': '/driver_info/ipmi_username', 'value': 'test'}]
+            for iface, value in interfaces.items():
+                update_patch.append({'path': '/%s' % iface, 'value': value})
+            for key in update_patch:
+                key['op'] = 'add'
+            self.assertThat(update_patch,
+                            matchers.MatchesSetwise(*(map(matchers.Equals,
+                                                          args[1]))))
+            return mock.Mock(uuid='uuid1')
+
+        ironic.node.update.side_effect = side_effect
+        nodes._update_or_register_ironic_node(node, node_map, client=ironic)
+        ironic.node.update.assert_called_once_with(1, mock.ANY)
+
     def test_register_update_with_images(self):
         node = self._get_node()
         node['kernel_id'] = 'image-k'
