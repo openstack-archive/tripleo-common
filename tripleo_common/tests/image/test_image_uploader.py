@@ -284,68 +284,67 @@ class TestBaseImageUploader(base.TestCase):
             'RepoTags': ['a', '1.0.0-20180125']
         }
 
-        sr = image_uploader.SECURE_REGISTRIES
         # simple label -> tag
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo', 'rdo_version', sr, None))
+                ('docker.io/t/foo', 'rdo_version'))
         )
 
         # templated labels -> tag
         self.assertEqual(
             ('docker.io/t/foo', '1.0.0-20180125'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo', '{release}-{version}', sr, None))
+                ('docker.io/t/foo', '{release}-{version}'))
         )
 
         # simple label -> tag with fallback
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo:a', 'bar', sr, None))
+                ('docker.io/t/foo:a', 'bar'))
         )
 
         # templated labels -> tag with fallback
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo:a', '{releases}-{versions}', sr, None))
+                ('docker.io/t/foo:a', '{releases}-{versions}'))
         )
 
         # Invalid template
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', '{release}-{version', sr, None)
+            ('docker.io/t/foo', '{release}-{version')
         )
 
         # Missing label in template
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', '{releases}-{version}', sr, None)
+            ('docker.io/t/foo', '{releases}-{version}')
         )
 
         # no tag_from_label specified
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', None, sr, None)
+            ('docker.io/t/foo', None)
         )
 
         # missing RepoTags entry
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', 'build_version', sr, None)
+            ('docker.io/t/foo', 'build_version')
         )
 
         # missing Labels entry
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', 'version', sr, None)
+            ('docker.io/t/foo', 'version')
         )
 
         # inspect call failed
@@ -353,7 +352,7 @@ class TestBaseImageUploader(base.TestCase):
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', 'rdo_version', sr, None)
+            ('docker.io/t/foo', 'rdo_version')
         )
 
     @mock.patch('concurrent.futures.ThreadPoolExecutor')
@@ -379,9 +378,9 @@ class TestBaseImageUploader(base.TestCase):
         mock_pool.return_value.map.assert_called_once_with(
             image_uploader.discover_tag_from_inspect,
             [
-                ('docker.io/t/foo', 'rdo_release', set(), None),
-                ('docker.io/t/bar', 'rdo_release', set(), None),
-                ('docker.io/t/baz', 'rdo_release', set(), None)
+                ('docker.io/t/foo', 'rdo_release'),
+                ('docker.io/t/bar', 'rdo_release'),
+                ('docker.io/t/baz', 'rdo_release')
             ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -459,6 +458,9 @@ class TestBaseImageUploader(base.TestCase):
         url2 = urlparse('docker://registry-1.docker.io/t/nova-api:latest')
         url3 = urlparse('docker://192.0.2.1:8787/t/nova-api:latest')
         build = image_uploader.BaseImageUploader._build_url
+        insecure_reg = image_uploader.BaseImageUploader.insecure_registries
+        secure_reg = image_uploader.BaseImageUploader.secure_registries
+        mirrors = image_uploader.BaseImageUploader.mirrors
         # fix urls
         self.assertEqual(
             'https://registry-1.docker.io/v2/',
@@ -466,10 +468,11 @@ class TestBaseImageUploader(base.TestCase):
         )
 
         # no change urls
+        insecure_reg.add('registry-1.docker.io')
+        secure_reg.add('192.0.2.1:8787')
         self.assertEqual(
             'http://registry-1.docker.io/v2/t/nova-api/manifests/latest',
-            build(url2, '/t/nova-api/manifests/latest',
-                  insecure=True)
+            build(url2, '/t/nova-api/manifests/latest')
         )
         self.assertEqual(
             'https://192.0.2.1:8787/v2/t/nova-api/tags/list',
@@ -477,14 +480,11 @@ class TestBaseImageUploader(base.TestCase):
         )
 
         # test mirrors
-        mirrors = {
-            'docker.io': 'http://192.0.2.2:8081/registry-1.docker/'
-        }
+        mirrors['docker.io'] = 'http://192.0.2.2:8081/registry-1.docker/'
         self.assertEqual(
             'http://192.0.2.2:8081/registry-1.docker/v2/'
             't/nova-api/blobs/asdf1234',
-            build(url1, '/t/nova-api/blobs/asdf1234',
-                  mirrors=mirrors)
+            build(url1, '/t/nova-api/blobs/asdf1234')
         )
 
     def test_inspect(self):
@@ -695,8 +695,7 @@ class TestDockerImageUploader(base.TestCase):
                 None,
                 None,
                 False,
-                'full',
-                None)
+                'full')
             )
         )
 
@@ -735,8 +734,7 @@ class TestDockerImageUploader(base.TestCase):
                 None,
                 None,
                 False,
-                'full',
-                None)
+                'full')
             )
         )
 
@@ -789,8 +787,7 @@ class TestDockerImageUploader(base.TestCase):
                 'add-foo-plugin',
                 {'foo_version': '1.0.1'},
                 False,
-                'partial',
-                None)
+                'partial')
             )
         )
 
@@ -833,8 +830,7 @@ class TestDockerImageUploader(base.TestCase):
             self.uploader.upload_image, image_uploader.UploadTask(
                 image + ':' + tag, None, push_destination,
                 append_tag, 'add-foo-plugin', {'foo_version': '1.0.1'},
-                False, 'full',
-                None)
+                False, 'full')
         )
 
         self.dockermock.assert_called_once_with(
@@ -865,8 +861,7 @@ class TestDockerImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             True,
-            'full',
-            None)
+            'full')
         )
 
         self.dockermock.assert_not_called()
@@ -897,8 +892,7 @@ class TestDockerImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             False,
-            'full',
-            None)
+            'full')
         )
 
         self.dockermock.assert_not_called()
@@ -1018,8 +1012,7 @@ class TestSkopeoImageUploader(base.TestCase):
                 None,
                 None,
                 False,
-                'full',
-                None)
+                'full')
             )
         )
         mock_popen.assert_called_once_with([
@@ -1083,15 +1076,14 @@ class TestSkopeoImageUploader(base.TestCase):
                 'add-foo-plugin',
                 {'foo_version': '1.0.1'},
                 False,
-                'partial',
-                None)
+                'partial')
             )
         )
 
         mock_inspect.assert_has_calls([
             mock.call(urlparse(
                 'docker://docker.io/t/nova-api:latest'
-            ), insecure=False, mirrors=None, session=mock.ANY)
+            ), session=mock.ANY)
         ])
         mock_copy.assert_has_calls([
             mock.call(
@@ -1140,7 +1132,7 @@ class TestSkopeoImageUploader(base.TestCase):
             self.uploader.upload_image, image_uploader.UploadTask(
                 image + ':' + tag, None, push_destination,
                 append_tag, 'add-foo-plugin', {'foo_version': '1.0.1'},
-                False, 'full', None)
+                False, 'full')
         )
 
         mock_copy.assert_called_once_with(
@@ -1168,8 +1160,7 @@ class TestSkopeoImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             True,
-            'full',
-            None)
+            'full')
         )
 
         mock_ansible.assert_not_called()
@@ -1199,8 +1190,7 @@ class TestSkopeoImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             False,
-            'full',
-            None)
+            'full')
         )
 
         mock_ansible.assert_not_called()
@@ -1257,6 +1247,7 @@ class TestPythonImageUploader(base.TestCase):
     def setUp(self):
         super(TestPythonImageUploader, self).setUp()
         self.uploader = image_uploader.PythonImageUploader()
+        self.uploader.init_registries_cache()
         u = self.uploader
         u._fetch_manifest.retry.sleep = mock.Mock()
         u._upload_url.retry.sleep = mock.Mock()
@@ -1309,8 +1300,7 @@ class TestPythonImageUploader(base.TestCase):
             modify_role=None,
             modify_vars=None,
             dry_run=False,
-            cleanup='full',
-            mirrors={}
+            cleanup='full'
         )
 
         self.assertEqual(
@@ -1324,21 +1314,15 @@ class TestPythonImageUploader(base.TestCase):
 
         authenticate.assert_has_calls([
             mock.call(
-                target_url,
-                insecure=False,
-                mirrors={}
+                target_url
             ),
             mock.call(
-                source_url,
-                insecure=False,
-                mirrors={}
+                source_url
             ),
         ])
 
         _fetch_manifest.assert_called_once_with(
-            source_url,
-            insecure=False,
-            mirrors={}, session=source_session)
+            source_url, session=source_session)
 
         _cross_repo_mount.assert_called_once_with(
             target_url,
@@ -1355,8 +1339,7 @@ class TestPythonImageUploader(base.TestCase):
             target_url,
             source_manifest=manifest,
             source_session=source_session,
-            target_session=target_session,
-            mirrors={}
+            target_session=target_session
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1412,8 +1395,7 @@ class TestPythonImageUploader(base.TestCase):
             modify_role='add-foo-plugin',
             modify_vars={'foo_version': '1.0.1'},
             dry_run=False,
-            cleanup='full',
-            mirrors={}
+            cleanup='full'
         )
 
         source_url = urlparse(
@@ -1438,21 +1420,15 @@ class TestPythonImageUploader(base.TestCase):
         )
         authenticate.assert_has_calls([
             mock.call(
-                target_url,
-                insecure=False,
-                mirrors={}
+                target_url
             ),
             mock.call(
-                source_url,
-                insecure=False,
-                mirrors={}
+                source_url
             ),
         ])
 
         _fetch_manifest.assert_called_once_with(
-            source_url,
-            insecure=False,
-            mirrors={}, session=source_session)
+            source_url, session=source_session)
 
         _cross_repo_mount.assert_has_calls([
             mock.call(
@@ -1482,8 +1458,7 @@ class TestPythonImageUploader(base.TestCase):
             unmodified_target_url,
             source_manifest=manifest,
             source_session=source_session,
-            target_session=target_session,
-            mirrors={}
+            target_session=target_session
         )
         _copy_registry_to_local.assert_called_once_with(unmodified_target_url)
         run_modify_playbook.assert_called_once_with(
@@ -1499,7 +1474,6 @@ class TestPythonImageUploader(base.TestCase):
         _copy_local_to_registry.assert_called_once_with(
             local_modified_url,
             target_url,
-            mirrors={},
             session=target_session
         )
 
@@ -1510,7 +1484,7 @@ class TestPythonImageUploader(base.TestCase):
         session.get.return_value.text = manifest
         self.assertEqual(
             manifest,
-            self.uploader._fetch_manifest(url, session, False, {})
+            self.uploader._fetch_manifest(url, session)
         )
 
         session.get.assert_called_once_with(
@@ -1535,10 +1509,9 @@ class TestPythonImageUploader(base.TestCase):
             'http://192.168.2.1/v2/upload?foo=bar',
             self.uploader._upload_url(
                 url,
-                insecure=False,
                 session=session,
-                previous_request=previous_request,
-                mirrors={})
+                previous_request=previous_request
+            )
         )
         session.post.assert_not_called()
 
@@ -1550,10 +1523,9 @@ class TestPythonImageUploader(base.TestCase):
             'http://192.168.2.1/v2/upload?foo=baz',
             self.uploader._upload_url(
                 url,
-                insecure=False,
                 session=session,
-                previous_request=None,
-                mirrors={})
+                previous_request=None
+            )
         )
         session.post.assert_called_once_with(
             'https://192.168.2.1/v2/t/nova-api/blobs/uploads/',
@@ -1590,8 +1562,7 @@ class TestPythonImageUploader(base.TestCase):
                 target_url,
                 layer,
                 source_session=source_session,
-                target_session=target_session,
-                mirrors=None
+                target_session=target_session
             )
         )
 
@@ -1618,8 +1589,7 @@ class TestPythonImageUploader(base.TestCase):
                 target_url,
                 layer,
                 source_session=source_session,
-                target_session=target_session,
-                mirrors=None
+                target_session=target_session
             )
         )
         self.assertEqual(
@@ -1680,8 +1650,7 @@ class TestPythonImageUploader(base.TestCase):
         self.uploader._copy_registry_to_registry(
             source_url, target_url, manifest,
             source_session=source_session,
-            target_session=target_session,
-            mirrors={}
+            target_session=target_session
         )
 
         source_session.get.assert_called_once_with(
@@ -1805,8 +1774,7 @@ class TestPythonImageUploader(base.TestCase):
                 target_url,
                 session=target_session,
                 layer=layer,
-                layer_entry=layer_entry,
-                mirrors=None
+                layer_entry=layer_entry
             )
         )
 
@@ -1840,8 +1808,7 @@ class TestPythonImageUploader(base.TestCase):
                 target_url,
                 session=target_session,
                 layer=layer,
-                layer_entry=layer_entry,
-                mirrors=None
+                layer_entry=layer_entry
             )
         )
         # test tar-split assemble call
