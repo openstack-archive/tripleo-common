@@ -37,16 +37,10 @@ class J2SwiftLoader(jinja2.BaseLoader):
     only the absolute path relative to the container root is searched.
     """
 
-    def __init__(self, swift, container, searchpath=None):
+    def __init__(self, swift, container, searchpath):
         self.swift = swift
         self.container = container
-        if searchpath is not None:
-            if isinstance(searchpath, six.string_types):
-                self.searchpath = [searchpath]
-            else:
-                self.searchpath = list(searchpath)
-        else:
-            self.searchpath = []
+        self.searchpath = [searchpath]
         # Always search the absolute path from the root of the swift container
         if '' not in self.searchpath:
             self.searchpath.append('')
@@ -96,15 +90,9 @@ class ProcessTemplatesAction(base.TripleOAction):
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
         super(ProcessTemplatesAction, self).__init__()
         self.container = container
+        self.check_none = True
 
-    def _j2_render_and_put(self,
-                           j2_template,
-                           j2_data,
-                           outfile_name=None,
-                           context=None):
-        swift = self.get_object_client(context)
-        yaml_f = outfile_name or j2_template.replace('.j2.yaml', '.yaml')
-
+    def _j2_render_and_put(self, j2_template, j2_data, yaml_f, swift):
         # Search for templates relative to the current template path first
         template_base = os.path.dirname(yaml_f)
         j2_loader = J2SwiftLoader(swift, self.container, template_base)
@@ -282,7 +270,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                             self._j2_render_and_put(j2_template,
                                                     j2_data,
                                                     out_f_path,
-                                                    context=context)
+                                                    swift)
                         else:
                             # Backwards compatibility with templates
                             # that specify {{role}} vs {{role.name}}
@@ -293,12 +281,12 @@ class ProcessTemplatesAction(base.TripleOAction):
                             self._j2_render_and_put(j2_template,
                                                     j2_data,
                                                     out_f_path,
-                                                    context=context)
+                                                    swift)
                     else:
                         LOG.info("Skipping rendering of %s, defined in %s" %
                                  (out_f_path, j2_excl_data))
 
-            elif (f.endswith('.network.j2.yaml')):
+            elif f.endswith('.network.j2.yaml'):
                 LOG.info("jinja2 rendering network template %s" % f)
                 j2_template = swift.get_object(self.container, f)[1]
                 LOG.info("jinja2 rendering networks %s" % ",".join(n_map))
@@ -318,7 +306,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                         self._j2_render_and_put(j2_template,
                                                 j2_data,
                                                 out_f_path,
-                                                context=context)
+                                                swift)
                     else:
                         LOG.info("Skipping rendering of %s, defined in %s" %
                                  (out_f_path, j2_excl_data))
@@ -331,7 +319,8 @@ class ProcessTemplatesAction(base.TripleOAction):
                 self._j2_render_and_put(j2_template,
                                         j2_data,
                                         out_f,
-                                        context=context)
+                                        swift)
+        return role_data
 
     def run(self, context):
         error_text = None
@@ -353,7 +342,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             # not found in swift, but if they are found and an exception
             # occurs during processing, that exception will cause the
             # ProcessTemplatesAction to return an error result.
-            self._process_custom_roles(context)
+            role_data = self._process_custom_roles(context)
         except Exception as err:
             LOG.exception("Error occurred while processing custom roles.")
             return actions.Result(error=six.text_type(err))
@@ -386,6 +375,26 @@ class ProcessTemplatesAction(base.TripleOAction):
 
         if error_text:
             return actions.Result(error=error_text)
+
+        if self.check_none and role_data:
+            to_remove = set()
+            for key, value in env.get('resource_registry', {}).items():
+                if (key.startswith('OS::TripleO::Services::') and
+                        value == 'OS::Heat::None'):
+                    to_remove.add(key)
+            if to_remove:
+                for role in role_data:
+                    for service in to_remove:
+                        try:
+                            role.get('ServicesDefault', []).remove(service)
+                        except ValueError:
+                            pass
+                LOG.info('Removing unused services, updating roles')
+                swift.put_object(
+                    self.container, constants.OVERCLOUD_J2_ROLES_NAME,
+                    yaml.safe_dump(role_data))
+                self.check_none = False
+                return ProcessTemplatesAction.run(self, context)
 
         files = dict(list(template_files.items()) + list(env_files.items()))
 
