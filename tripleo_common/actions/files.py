@@ -147,6 +147,7 @@ class RestoreTempDirFromSwift(base.TripleOAction):
     ^/tmp/file-mistral-action[A-Za-z0-9_]{6}$
 
     Container should contain a single tarball object
+    If container is empty, then no error is returned
     """
 
     def __init__(self, path, container):
@@ -165,7 +166,9 @@ class RestoreTempDirFromSwift(base.TripleOAction):
         try:
             swiftutils.download_container(swift, self.container, self.path)
             filenames = os.listdir(self.path)
-            if len(filenames) == 1:
+            if len(filenames) == 0:
+                pass
+            elif len(filenames) == 1:
                 tarball.extract_tarball(self.path, filenames[0], remove=True)
             else:
                 msg = "%d objects found in container: %s" \
