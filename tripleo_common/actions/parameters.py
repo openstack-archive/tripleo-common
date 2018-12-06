@@ -199,8 +199,7 @@ class UpdateParametersAction(templates.ProcessTemplatesAction):
             # There has been an error validating we must reprocess the
             # templates with the saved working env
             plan_utils.put_env(swift, saved_env)
-            env = saved_env
-            processed_data = super(UpdateParametersAction, self).run(context)
+            self._process_custom_roles(context)
 
             err_msg = ("Error validating environment for plan %s: %s" % (
                 self.container, err))
