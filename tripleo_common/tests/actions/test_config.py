@@ -73,14 +73,15 @@ class GetOvercloudConfigActionTest(base.TestCase):
         mock_orchestration_client.return_value = heat
         mock_config.return_value = '/tmp/fake-path'
 
-        action = config.GetOvercloudConfig(self.plan, '/tmp',
+        action = config.GetOvercloudConfig(self.plan, '/tmp/fake-path',
                                            self.config_container)
         action.run(self.ctx)
 
         self.assertEqual(2, self.swift.put_object.call_count)
-        self.assertEqual(mock.call('config-overcloud',
-                                   'config-overcloud.tar.gz', ''),
-                         self.swift.put_object.call_args_list[1])
+        self.assertEqual(mock.call(
+            'config-overcloud', 'config-overcloud.tar.gz',
+            self.swift.put_object.call_args_list[1][0][2]),  # closed file call
+            self.swift.put_object.call_args_list[1])
         mock_create_tarball.assert_called_once()
         self.assertEqual(dict(excludes=['.tox', '*.pyc', '*.pyo']),
                          mock_create_tarball.call_args[1])
