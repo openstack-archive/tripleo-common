@@ -45,7 +45,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # NOTE: Mistral executor needs to run nova-manage cells_v2 commands on
 # the undercloud baremetal workflows. Undercloud mistral executor needs to run
 # container image operations during overcloud deploy
-{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'docker', 'podman', 'python2-notario', 'qemu-img'] %}
+{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'docker', 'podman', 'python2-notario', 'qemu-img', 'ipmitool'] %}
 
 # Include the ironic-staging-drivers
 {% set ironic_conductor_packages_append = ['openstack-ironic-staging-drivers'] %}
