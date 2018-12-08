@@ -49,6 +49,7 @@ workflows:
             fernet_keys: <% task(rotate_keys).result %>
           use_openstack_credentials: true
           playbook: /usr/share/tripleo-common/playbooks/rotate-keys.yaml
+          execution_id: <% execution().id %>
         on-success: send_message
         publish:
           status: SUCCESS

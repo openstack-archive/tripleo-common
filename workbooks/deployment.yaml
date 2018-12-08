@@ -517,6 +517,7 @@ workflows:
           blacklisted_hostnames: <% $.blacklisted_hostnames %>
           override_ansible_cfg: <% $.override_ansible_cfg %>
           command_timeout: <% $.config_download_timeout %>
+          execution_id: <% execution().id %>
         publish:
           log_path: <% task().result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS

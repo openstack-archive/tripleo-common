@@ -167,6 +167,7 @@ workflows:
                   wait_for_connection:
                     sleep: 5
                     timeout: 300
+          execution_id: <% execution().id %>
 
   create_admin_via_ssh:
     input:
@@ -194,3 +195,4 @@ workflows:
           playbook:
             - hosts: overcloud
               tasks: <% $.tasks %>
+          execution_id: <% execution().id %>
