@@ -866,6 +866,15 @@ container_images_template:
 #   services:
 #   - OS::TripleO::Services::Tacker
 
+# NOTE: the TripleoClient service will likely be just a stub to allow
+# us to obtain this container via the prepare commands.
+- imagename: "{{namespace}}/{{name_prefix}}tripleoclient{{name_suffix}}:{{tag}}"
+  image_source: kolla
+  params:
+  - DockerTripleoclientImage
+  services:
+  - OS::TripleO::Services::TripleoClient
+
 - imagename: "{{namespace}}/{{name_prefix}}tripleo-ui{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:

@@ -205,6 +205,8 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-swift-proxy-server:current-tripleo
   image_source: kolla
+- imagename: docker.io/tripleomaster/centos-binary-tripleoclient:current-tripleo
+  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-tripleo-ui:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-zaqar:current-tripleo
