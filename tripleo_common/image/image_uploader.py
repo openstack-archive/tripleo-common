@@ -41,6 +41,7 @@ from tripleo_common.actions import ansible
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageUploaderException
+from tripleo_common.image import image_export
 
 
 LOG = logging.getLogger(__name__)
@@ -193,6 +194,8 @@ class BaseImageUploader(object):
     mirrors = {}
     insecure_registries = set()
     secure_registries = set(SECURE_REGISTRIES)
+    export_registries = set()
+    push_registries = set()
 
     def __init__(self):
         self.upload_tasks = []
@@ -206,6 +209,8 @@ class BaseImageUploader(object):
         cls.secure_registries.clear()
         cls.secure_registries.update(SECURE_REGISTRIES)
         cls.mirrors.clear()
+        cls.export_registries.clear()
+        cls.push_registries.clear()
 
     def cleanup(self):
         pass
@@ -396,7 +401,7 @@ class BaseImageUploader(object):
         manifest_r = manifest_f.result()
         tags_r = tags_f.result()
 
-        if manifest_r.status_code == 404:
+        if manifest_r.status_code in (403, 404):
             raise ImageNotFoundException('Not found image: %s' %
                                          image_url.geturl())
         manifest_r.raise_for_status()
@@ -584,6 +589,12 @@ class BaseImageUploader(object):
                           source_layers, session):
         netloc = target_image_url.netloc
         name = target_image_url.path.split(':')[0][1:]
+        export = netloc in cls.export_registries
+        if export:
+            image_export.cross_repo_mount(
+                target_image_url, image_layers, source_layers)
+            return
+
         if netloc in cls.insecure_registries:
             scheme = 'http'
         else:
@@ -904,6 +915,8 @@ class PythonImageUploader(BaseImageUploader):
         target_session = self.authenticate(
             t.target_image_url)
 
+        self._detect_target_export(t.target_image_url, target_session)
+
         if t.modify_role:
             if self._image_exists(
                     t.target_image, target_session):
@@ -986,6 +999,34 @@ class PythonImageUploader(BaseImageUploader):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
+    def _detect_target_export(cls, image_url, session):
+        if image_url.netloc in cls.export_registries:
+            return True
+        if image_url.netloc in cls.push_registries:
+            return False
+
+        # detect if the registry is push-capable by requesting an upload URL.
+        image, tag = cls._image_tag_from_url(image_url)
+        upload_req_url = cls._build_url(
+            image_url,
+            path=CALL_UPLOAD % {'image': image})
+        r = session.post(upload_req_url, timeout=30)
+        if r.status_code in (501, 403, 404, 405):
+            cls.export_registries.add(image_url.netloc)
+            return True
+        r.raise_for_status()
+        cls.push_registries.add(image_url.netloc)
+        return False
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def _fetch_manifest(cls, url, session):
         image, tag = cls._image_tag_from_url(url)
         parts = {
@@ -997,7 +1038,7 @@ class PythonImageUploader(BaseImageUploader):
         )
         manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
         r = session.get(url, headers=manifest_headers, timeout=30)
-        if r.status_code == 404:
+        if r.status_code in (403, 404):
             raise ImageNotFoundException('Not found image: %s' %
                                          url.geturl())
         r.raise_for_status()
@@ -1147,6 +1188,7 @@ class PythonImageUploader(BaseImageUploader):
                                           manifest_str,
                                           config_str,
                                           target_session=None):
+
         manifest = json.loads(manifest_str)
         if config_str is not None:
             manifest['config']['size'] = len(config_str)
@@ -1159,6 +1201,16 @@ class PythonImageUploader(BaseImageUploader):
                 manifest_type = MEDIA_MANIFEST_V1_SIGNED
             else:
                 manifest_type = MEDIA_MANIFEST_V1
+
+        export = target_url.netloc in cls.export_registries
+        if export:
+            image_export.export_manifest_config(
+                target_url,
+                manifest_str,
+                manifest_type,
+                config_str
+            )
+            return
 
         if config_str is not None:
             config_digest = manifest['config']['digest']
@@ -1339,6 +1391,11 @@ class PythonImageUploader(BaseImageUploader):
         layer['mediaType'] = MEDIA_BLOB_COMPRESSED
         length = 0
         upload_resp = None
+
+        export = target_url.netloc in cls.export_registries
+        if export:
+            return image_export.export_stream(
+                target_url, layer, calc_digest, layer_stream)
 
         for chunk in layer_stream:
             if not chunk:
