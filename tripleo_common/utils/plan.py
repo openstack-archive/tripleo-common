@@ -192,9 +192,12 @@ def apply_environments_order(capabilities, environments):
                         = environment.get('requires', [])
 
     # apply ordering rules
+    rest = []
     for e in environments:
         path = e.get('path', '')
         if path not in order_rules:
+            environments.remove(e)
+            rest.append(e)
             continue
         path_pos = environments.index(e)
         for requirement in order_rules[path]:
@@ -204,4 +207,4 @@ def apply_environments_order(capabilities, environments):
                     item = environments.pop(requirement_pos)
                     environments.insert(path_pos, item)
 
-    return environments
+    return environments + rest

@@ -47,6 +47,7 @@ resource_registry:
 UNORDERED_PLAN_ENV_LIST = [
     {'path': 'overcloud-resource-registry-puppet.yaml'},
     {'path': 'environments/docker-ha.yaml'},
+    {'path': 'environments/custom-environment-not-in-capabilities-map.yaml'},
     {'path': 'environments/containers-default-parameters.yaml'},
     {'path': 'environments/docker.yaml'}
 ]
@@ -283,7 +284,9 @@ class PlanTest(base.TestCase):
             {'path': 'overcloud-resource-registry-puppet.yaml'},
             {'path': 'environments/docker.yaml'},
             {'path': 'environments/docker-ha.yaml'},
-            {'path': 'environments/containers-default-parameters.yaml'}
+            {'path': 'environments/containers-default-parameters.yaml'},
+            {'path':
+                'environments/custom-environment-not-in-capabilities-map.yaml'}
         ]
 
         ordered_env = plan_utils.apply_environments_order(
