@@ -9,7 +9,7 @@
       path: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/common/post-deploy.conf"
       section: controller_worker
       option: amp_boot_network_list
-      value: {{ lb_mgmt_net_id }}
+      value: "{{ lb_mgmt_net_id }}"
   - name: setting [controller_worker]/amp_secgroup_list
     become: true
     become_user: root
@@ -17,7 +17,7 @@
       path: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/common/post-deploy.conf"
       section: controller_worker
       option: amp_secgroup_list
-      value: {{ lb_mgmt_secgroup_id }}
+      value: "{{ lb_mgmt_secgroup_id }}"
   - name: making sure octavia health manager configuration directory exists
     file: path="{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager" state=directory
     become: true
