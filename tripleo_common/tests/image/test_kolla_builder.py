@@ -138,6 +138,29 @@ class TestKollaImageBuilder(base.TestCase):
             'kolla-build',
         ], env=env, stdout=-1)
 
+    @mock.patch('tripleo_common.image.base.open',
+                mock.mock_open(read_data=filedata), create=True)
+    @mock.patch('os.path.isfile', return_value=True)
+    @mock.patch('subprocess.Popen')
+    def test_build_images_exclude(self, mock_popen, mock_path):
+        process = mock.Mock()
+        process.returncode = 0
+        process.communicate.return_value = 'done', ''
+        mock_popen.return_value = process
+
+        builder = kb.KollaImageBuilder(self.filelist)
+        self.assertEqual('done', builder.build_images(['kolla-config.conf'],
+                                                      ['nova-compute']))
+        env = os.environ.copy()
+        mock_popen.assert_called_once_with([
+            'kolla-build',
+            '--config-file',
+            'kolla-config.conf',
+            'nova-libvirt',
+            'heat-docker-agents-centos',
+            'image-with-missing-tag',
+        ], env=env, stdout=-1)
+
     @mock.patch('subprocess.Popen')
     def test_build_images_fail(self, mock_popen):
         process = mock.Mock()
