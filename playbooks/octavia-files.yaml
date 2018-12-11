@@ -6,6 +6,7 @@
     amp_ssh_key_name: "{{ amp_ssh_key_name }}"
     amp_ssh_key_path: "{{ amp_ssh_key_path }}"
     amp_ssh_key_data: "{{ amp_ssh_key_data }}"
+    amp_to_raw: "{{ amp_to_raw | bool }}"
     auth_username: "{{ auth_username }}"
     auth_pasword: "{{ auth_password }}"
     auth_project_name: "{{ auth_project_name }}"

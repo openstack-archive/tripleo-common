@@ -48,10 +48,37 @@
       upload_image: true
     when: current_md5 is not defined or replace_image
 
+  - block:
+      - name: create temporary directory
+        tempfile:
+          state: directory
+        register: amp_tmp_dir
+
+      - name: set RAW file name
+        set_fact:
+          raw_filename: "{{ amp_tmp_dir.path }}/{{ image_filename|splitext|first|basename }}.img"
+
+      - name: convert image from qcow2 to raw
+        shell: |
+          qemu-img convert -f qcow2 -O raw {{ image_filename }} {{ raw_filename }}
+
+      - name: setting amphora format to raw
+        set_fact:
+          raw_format: raw
+    when: amp_to_raw
+
   - name: upload image to glance
     shell: |
-      openstack image create --disk-format qcow2  --container-format bare --tag {{ amp_image_tag }} \
-        --file {{ image_filename }} {{ amphora_image }}
+      openstack image create --disk-format {{ raw_format|default('qcow2') }} \
+        --container-format bare --tag {{ amp_image_tag }} \
+        --file {{ raw_filename|default(image_filename) }} \
+        {{ amphora_image }}
     register: image_result
     changed_when: "image_result.stdout != ''"
     when: image_file_result.stat.exists and upload_image is defined
+
+  - name: delete converted raw image
+    file:
+      path: "{{ amp_tmp_dir.path }}"
+      state: absent
+    when: amp_to_raw
