@@ -373,8 +373,16 @@ RUN mkdir /etc/libqb
 {% endblock %}
 
 {% block mariadb_footer %}
-# We'll configure mariadb with galera.cnf
-RUN rm /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
+# When transitioning from mariadb 10.1 to 10.3, mysql_upgrade is now
+# shipped in mariadb-server-utils, so check whether we need that package
+# until we switch to 10.3.
+RUN if yum list available mariadb-server-utils; then yum install -y mariadb-server-utils && \
+    yum clean all && rm -rf /var/cache/yum ; fi
+
+# We'll configure mariadb with galera.cnf.
+# Note: in mariadb 10.3, auth_gssapi.cnf is shipped in optional
+# mariadb-gssapi-server. We don't install it here, so force rm
+RUN rm -f /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
 
 RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/mariadb /openstack/healthcheck && \
