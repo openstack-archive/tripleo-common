@@ -1,0 +1,40 @@
+- name: ensure apache is installed
+  package:
+    name: httpd
+    state: present
+
+- name: create image data directory
+  file:
+    state: directory
+    path: "{{ image_data_dir }}/v2"
+    mode: 755
+    owner: root
+    group: root
+
+- name: create /v2/ response file
+  copy:
+    content: "{}" 
+    dest: "{{ image_data_dir }}/v2/index.json"
+    mode: 644
+    owner: root
+    group: root
+
+- lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^\s*Listen(.*)$'
+    line: '# Listen \1'
+
+- name: manage /etc/httpd/conf.d/image-serve.conf
+  template:
+    src: image-serve.conf.j2
+    dest: /etc/httpd/conf.d/image-serve.conf
+  notify: restart httpd service
+
+- name: force systemd to reread configs
+  meta: flush_handlers
+
+- name: enable and start httpd
+  systemd:
+    enabled: true
+    state: started
+    name: httpd

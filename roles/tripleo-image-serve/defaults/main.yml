@@ -1,0 +1,5 @@
+# defaults file for apache-image-serve
+
+container_registry_host: localhost
+container_registry_port: 8787
+image_data_dir: /var/lib/image-serve

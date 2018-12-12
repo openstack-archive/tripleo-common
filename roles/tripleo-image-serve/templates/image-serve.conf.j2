@@ -1,0 +1,24 @@
+Listen {{ container_registry_port }}
+<VirtualHost {{ container_registry_host }}:{{ container_registry_port }}>
+    DocumentRoot {{ image_data_dir }} 
+
+    <Directory {{ image_data_dir }}>
+        # This assumes a file exists containing {} at
+        # {{ image_data_dir }}/index.json
+        DirectoryIndex index.json
+
+        Options FollowSymLinks MultiViews
+        AllowOverride FileInfo
+        Require all granted
+
+        Header set Docker-Distribution-Api-Version registry/2.0
+    </Directory>
+
+    <LocationMatch "^/v2/.*/.*/blobs/sha256:.*$">
+        SetEnvIf Request_URI "sha256:(.*)$" digest=sha256:$1
+        Header set Docker-Content-Digest "%{digest}e"
+        Header set ETag "%{digest}e"
+        Header set Cache-Control "max-age=31536000"
+        Header set Content-Type "application/octet-stream"
+    </LocationMatch>
+</VirtualHost>
