@@ -73,6 +73,9 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 # isn't valid here.
 {% set neutron_dhcp_agent_packages = ['docker'] %}
 
+# NOTE(beagles): octavia-api with TLS everywhere needs these packages
+{% set octavia_api_packages_append = ['httpd', 'mod_ssl'] %}
+
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
 # redis resource-agent requires pidof
 {% set redis_packages_append = ['stunnel', 'sysvinit-tools',
@@ -462,7 +465,10 @@ RUN mkdir -p /openstack && \
 {% endblock %}
 
 {% block octavia_api_footer %}
-RUN mkdir -p /openstack && \
+RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
+    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
+    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_octavia_extend_start; \
+    mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/octavia-api /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
