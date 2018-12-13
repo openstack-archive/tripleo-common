@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Remove the tripleo specific inclusion of the openstack-ironic-statging-drivers
+    package into the ironic-conductor container as this has been included in
+    kolla.
