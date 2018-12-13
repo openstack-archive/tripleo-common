@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import copy
 import logging
 import os
 import sys
@@ -165,3 +166,40 @@ class PrepareContainerImageParameters(base.TripleOAction):
         update_action = heat_capabilities.UpdateCapabilitiesAction(
             environments, container=self.container)
         return update_action.run(context)
+
+
+class ContainerImagePrepareDefault(base.TripleOAction):
+    """ContainerImagePrepare default parameters
+
+    """
+
+    def __init__(self, values):
+
+        super(ContainerImagePrepareDefault, self).__init__()
+        self.values = values
+
+    def run(self, context):
+        cip = copy.deepcopy(kolla_builder.CONTAINER_IMAGE_PREPARE_PARAM)
+
+        for entry in cip:
+            if 'push_destination' in self.values:
+                entry['push_destination'] = self.values['push_destination']
+
+            if 'tag_from_label' in self.values:
+                entry['tag_from_label'] = self.values['tag_from_label']
+
+            if 'namespace' in self.values:
+                entry['set']['namespace'] = self.values['namespace']
+
+            if 'name_prefix' in self.values:
+                entry['set']['name_prefix'] = self.values['name_prefix']
+
+            if 'name_suffix' in self.values:
+                entry['set']['name_suffix'] = self.values['name_suffix']
+
+            if 'tag' in self.values:
+                entry['set']['tag'] = self.values['tag']
+
+        return {
+            'ContainerImagePrepare': cip
+        }
