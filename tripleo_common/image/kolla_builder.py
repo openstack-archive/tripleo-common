@@ -431,7 +431,7 @@ class KollaImageBuilder(base.BaseImageManager):
                 result.append(entry)
         return result
 
-    def build_images(self, kolla_config_files=None):
+    def build_images(self, kolla_config_files=None, excludes=[]):
 
         cmd = ['kolla-build']
         if kolla_config_files:
@@ -442,11 +442,13 @@ class KollaImageBuilder(base.BaseImageManager):
         container_images = self.load_config_files(self.CONTAINER_IMAGES) or []
         container_images.sort(key=lambda i: i.get('imagename'))
         for i in container_images:
-            # Do not attempt to build containers that are not from kolla
+            # Do not attempt to build containers that are not from kolla or
+            # are in our exclude list
             if not i.get('image_source', '') == 'kolla':
                 continue
             image = self.imagename_to_regex(i.get('imagename'))
-            if image:
+            # Make sure the image was properly parsed and not purposely skipped
+            if image and image not in excludes:
                 cmd.append(image)
 
         self.logger.info('Running %s' % ' '.join(cmd))
