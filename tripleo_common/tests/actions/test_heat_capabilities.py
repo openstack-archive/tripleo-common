@@ -302,8 +302,8 @@ class UpdateCapabilitiesActionTest(base.TestCase):
         self.assertEqual({
             'name': 'test-container',
             'environments': [
-                {'path': '/path/to/overcloud-default-env.yaml'},
-                {'path': '/path/to/poc-custom-env.yaml'}
+                {'path': '/path/to/poc-custom-env.yaml'},
+                {'path': '/path/to/overcloud-default-env.yaml'}
             ]},
             action.run(mock_ctx))
 
