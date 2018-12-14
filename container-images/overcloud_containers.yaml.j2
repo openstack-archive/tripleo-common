@@ -883,7 +883,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::TripleoUI
 
-- imagename: "{{namespace}}/{{name_prefix}}zaqar{{name_suffix}}:{{tag}}"
+- imagename: "{{namespace}}/{{name_prefix}}zaqar-wsgi{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
   - DockerZaqarConfigImage
