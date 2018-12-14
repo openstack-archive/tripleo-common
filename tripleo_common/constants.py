@@ -199,3 +199,5 @@ ANSIBLE_ERRORS_FILE = 'ansible-errors.json'
 DEPLOYMENT_STATUS_FILE = 'deployment_status.yaml'
 
 MISTRAL_WORK_DIR = '/var/lib/mistral'
+
+EXCLUSIVE_NEUTRON_DRIVERS = ['ovn', 'openvswitch']

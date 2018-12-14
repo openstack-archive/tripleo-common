@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Prevent upgrading a stack to a version of tripleo templates or
+    environment that specifies neutron mechanism drivers that are
+    incompatible with the existing stack. Upgrade can be forced
+    by ForceNeutronDriverUpdate parameter which need to be set in
+    deployment parameters.

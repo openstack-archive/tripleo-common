@@ -407,6 +407,7 @@ class DeployStackActionTest(base.TestCase):
             error="Error during stack creation: ERROR: Oops\n")
         self.assertEqual(expected, action.run(mock_ctx))
 
+    @mock.patch('tripleo_common.update.check_neutron_mechanism_drivers')
     @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -417,7 +418,8 @@ class DeployStackActionTest(base.TestCase):
     def test_run_update_failed(
         self, get_orchestration_client_mock, mock_get_object_client,
         mock_get_template_contents,
-        mock_process_multiple_environments_and_files, mock_time):
+        mock_process_multiple_environments_and_files, mock_time,
+        mock_check_neutron_drivers):
 
         mock_ctx = mock.MagicMock()
         # setup swift
@@ -448,6 +450,7 @@ class DeployStackActionTest(base.TestCase):
 
         # freeze time at datetime.datetime(2016, 9, 8, 16, 24, 24)
         mock_time.time.return_value = 1473366264
+        mock_check_neutron_drivers.return_value = None
 
         action = deployment.DeployStackAction(1, 'overcloud')
         expected = actions.Result(
