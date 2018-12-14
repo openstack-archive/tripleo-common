@@ -378,7 +378,8 @@ class DeploymentStatusAction(base.TripleOAction):
         if cd_execs:
             cd_exec = workflow_client.executions.get(cd_execs[-1].id)
             cd_status = cd_exec.state
-            ansible_status = json.loads(cd_exec.output)['deployment_status']
+            ansible_status = json.loads(
+                cd_exec.output).get('deployment_status')
 
         def update_status(status):
             # If we need to update the status return it
