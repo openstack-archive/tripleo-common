@@ -26,7 +26,6 @@ disk_images:
       - openssh
       - disable-nouveau
     packages:
-      - ntp
       - python-psutil
       - python-debtcollector
       - plotnetcfg

@@ -29,7 +29,6 @@ disk_images:
       - python-debtcollector
       - plotnetcfg
       - sos
-      - ntp
       - device-mapper-multipath
       - openstack-heat-agents
       - os-net-config
