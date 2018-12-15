@@ -7,7 +7,6 @@
       - openstack-python36-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
-      - tripleo-multinode-baremetal-minimal
       - tripleo-multinode-container-minimal
       - tripleo-undercloud-jobs
       - tripleo-build-containers-jobs
