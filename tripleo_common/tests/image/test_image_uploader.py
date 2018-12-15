@@ -1027,7 +1027,7 @@ class TestSkopeoImageUploader(base.TestCase):
             'copy',
             'docker://docker.io/t/nova-api:latest',
             'docker://localhost:8787/t/nova-api:latest'],
-            env={}, stdout=-1
+            env={}, stdout=-1, universal_newlines=True
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'

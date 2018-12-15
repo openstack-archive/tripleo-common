@@ -557,7 +557,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
                                            stderr=subprocess.STDOUT,
                                            shell=False, bufsize=1,
                                            cwd=self.work_dir,
-                                           env=env_variables)
+                                           env=env_variables,
+                                           universal_newlines=True)
                 start = time.time()
                 stdout = []
                 lines = []

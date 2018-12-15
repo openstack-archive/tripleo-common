@@ -54,7 +54,8 @@ def rm_container(name):
     log.info('Removing container: %s' % name)
     subproc = subprocess.Popen(['/usr/bin/docker', 'rm', name],
                                stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+                               stderr=subprocess.PIPE,
+                               universal_newlines=True)
     cmd_stdout, cmd_stderr = subproc.communicate()
     if cmd_stdout:
         log.debug(cmd_stdout)
@@ -76,7 +77,8 @@ def populate_container_rpms_list(container):
     log.info('Running docker command: %s' % ' '.join(dcmd))
 
     subproc = subprocess.Popen(dcmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+                               stderr=subprocess.PIPE,
+                               universal_newlines=True)
     cmd_stdout, cmd_stderr = subproc.communicate()
     if subproc.returncode != 0:
         log.error('Failed running rpm -qa for %s' % container)
@@ -99,7 +101,8 @@ def yum_update_container(container, name, packages):
             '--format', '{{json .Config.Cmd}}',
             container]
     subproc = subprocess.Popen(dcmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+                               stderr=subprocess.PIPE,
+                               universal_newlines=True)
     cmd_stdout, cmd_stderr = subproc.communicate()
     container_cmd = cmd_stdout
     log.info('Original container command: %s' % container_cmd)
@@ -122,7 +125,8 @@ def yum_update_container(container, name, packages):
 
         subproc = subprocess.Popen(dcmd,
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                                   stderr=subprocess.PIPE,
+                                   universal_newlines=True)
         cmd_stdout, cmd_stderr = subproc.communicate()
         log.info(cmd_stdout)
         if subproc.returncode != 0:
@@ -146,7 +150,8 @@ def yum_update_container(container, name, packages):
     log.info('Running docker command: %s' % ' '.join(dcmd))
 
     subproc = subprocess.Popen(dcmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+                               stderr=subprocess.PIPE,
+                               universal_newlines=True)
     cmd_stdout, cmd_stderr = subproc.communicate()
     if subproc.returncode != 0:
         log.error('Failed running docker commit for %s' % container)
@@ -157,7 +162,8 @@ def yum_update_container(container, name, packages):
     log.info('Running docker command: %s' % ' '.join(dcmd))
 
     subproc = subprocess.Popen(dcmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+                               stderr=subprocess.PIPE,
+                               universal_newlines=True)
     cmd_stdout, cmd_stderr = subproc.communicate()
     if subproc.returncode != 0:
         log.error('Failed running docker push for %s' % container)

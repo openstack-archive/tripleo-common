@@ -122,7 +122,7 @@ class TestKollaImageBuilder(base.TestCase):
             'nova-libvirt',
             'heat-docker-agents-centos',
             'image-with-missing-tag',
-        ], env=env, stdout=-1)
+        ], env=env, stdout=-1, universal_newlines=True)
 
     @mock.patch('subprocess.Popen')
     def test_build_images_no_conf(self, mock_popen):
@@ -136,7 +136,7 @@ class TestKollaImageBuilder(base.TestCase):
         env = os.environ.copy()
         mock_popen.assert_called_once_with([
             'kolla-build',
-        ], env=env, stdout=-1)
+        ], env=env, stdout=-1, universal_newlines=True)
 
     @mock.patch('tripleo_common.image.base.open',
                 mock.mock_open(read_data=filedata), create=True)
@@ -159,7 +159,7 @@ class TestKollaImageBuilder(base.TestCase):
             'nova-libvirt',
             'heat-docker-agents-centos',
             'image-with-missing-tag',
-        ], env=env, stdout=-1)
+        ], env=env, stdout=-1, universal_newlines=True)
 
     @mock.patch('subprocess.Popen')
     def test_build_images_fail(self, mock_popen):
@@ -175,7 +175,7 @@ class TestKollaImageBuilder(base.TestCase):
         env = os.environ.copy()
         mock_popen.assert_called_once_with([
             'kolla-build',
-        ], env=env, stdout=-1)
+        ], env=env, stdout=-1, universal_newlines=True)
 
 
 class TestKollaImageBuilderTemplate(base.TestCase):
