@@ -20,6 +20,7 @@ import six
 from six.moves import configparser
 from six.moves import cStringIO as StringIO
 import subprocess
+import sys
 import tempfile
 import time
 import yaml
@@ -434,12 +435,16 @@ class AnsiblePlaybookAction(base.TripleOAction):
             queue.post(self.format_message(message_part))
 
     def run(self, context):
+
+        python_version = sys.version_info.major
+        ansible_playbook_cmd = "ansible-playbook-{}".format(python_version)
+
         if 0 < self.verbosity < 6:
             verbosity_option = '-' + ('v' * self.verbosity)
-            command = ['ansible-playbook', verbosity_option,
+            command = [ansible_playbook_cmd, verbosity_option,
                        self.playbook]
         else:
-            command = ['ansible-playbook', self.playbook]
+            command = [ansible_playbook_cmd, self.playbook]
 
         if self.limit_hosts:
             command.extend(['--limit', self.limit_hosts])

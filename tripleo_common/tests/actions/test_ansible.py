@@ -19,6 +19,7 @@ import os
 import random
 from six.moves import configparser
 import string
+import sys
 import tempfile
 
 from oslo_concurrency import processutils
@@ -114,9 +115,11 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_CALLBACK_WHITELIST': 'profile_tasks',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '0',
         }
-
+        python_version = sys.version_info.major
+        ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
         mock_execute.assert_called_once_with(
-            'ansible-playbook', '-v', pb, '--become', '--become-user',
+            ansible_playbook_cmd, '-v', pb, '--become',
+            '--become-user',
             self.become_user, '--extra-vars', json.dumps(self.extra_vars),
             env_variables=env, cwd=action.work_dir,
             log_errors=processutils.LogErrors.ALL)
