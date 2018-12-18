@@ -365,7 +365,7 @@ class GenerateFencingParametersAction(base.TripleOAction):
             if "mac" in node:
                 # Not all Ironic drivers present a MAC address, so we only
                 # capture it if it's present
-                mac_addr = node["mac"][0]
+                mac_addr = node["mac"][0].lower()
                 node_data["host_mac"] = mac_addr
 
                 # If the MAC isn't in the hostmap, this node hasn't been
