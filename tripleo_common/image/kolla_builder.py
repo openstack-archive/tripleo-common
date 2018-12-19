@@ -273,12 +273,13 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     result = builder.container_images_from_template(
         filter=ffunc, **mapping_args)
 
-    uploader = image_uploader.ImageUploadManager().uploader('docker')
+    manager = image_uploader.ImageUploadManager(mirrors=mirrors)
+    uploader = manager.uploader('docker')
     images = [i.get('imagename', '') for i in result]
 
     if tag_from_label:
         image_version_tags = uploader.discover_image_tags(
-            images, tag_from_label, mirrors=mirrors)
+            images, tag_from_label)
         for entry in result:
             imagename = entry.get('imagename', '')
             image_no_tag = imagename.rpartition(':')[0]
@@ -288,7 +289,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
 
     if modify_only_with_labels:
         images_with_labels = uploader.filter_images_with_labels(
-            images, modify_only_with_labels, mirrors=mirrors)
+            images, modify_only_with_labels)
 
     params = {}
     modify_append_tag = append_tag
