@@ -3,7 +3,7 @@
   become: true
   lineinfile:
     path: /etc/ssh/ssh_known_hosts
-    line: "{{ ssh_known_hosts[hostvars[item]['ansible_hostname']] + ' ssh-rsa ' + hostvars[item]['ansible_ssh_host_key_rsa_public'] }}"
+    line: "{{ ssh_known_hosts[hostvars[item]['ansible_hostname'] | lower] + ' ssh-rsa ' + hostvars[item]['ansible_ssh_host_key_rsa_public'] }}"
     create: yes
   with_items: "{{ groups['overcloud']|intersect(play_hosts) }}"
   tags:
