@@ -249,23 +249,23 @@ container_images:
   image_source: openshift
 - imagename: quay.io/coreos/cluster-monitoring-operator:v0.1.1
   image_source: openshift
-- imagename: quay.io/coreos/configmap-reload:latest
+- imagename: quay.io/coreos/configmap-reload:v0.0.1
   image_source: openshift
-- imagename: quay.io/coreos/prometheus-operator:latest
+- imagename: quay.io/coreos/prometheus-operator:v0.23.2
   image_source: openshift
-- imagename: quay.io/coreos/prometheus-config-reloader:v0.24.0
+- imagename: quay.io/coreos/prometheus-config-reloader:v0.23.2
   image_source: openshift
-- imagename: docker.io/openshift/prometheus:latest
+- imagename: docker.io/openshift/prometheus:v2.3.2
   image_source: openshift
-- imagename: docker.io/openshift/prometheus-alertmanager:latest
+- imagename: docker.io/openshift/prometheus-alertmanager:v0.15.2
   image_source: openshift
-- imagename: docker.io/openshift/prometheus-node-exporter:latest
+- imagename: docker.io/openshift/prometheus-node-exporter:v0.16.0
   image_source: openshift
-- imagename: docker.io/openshift/oauth-proxy:latest
+- imagename: docker.io/openshift/oauth-proxy:v1.1.0
   image_source: openshift
 - imagename: quay.io/coreos/kube-rbac-proxy:v0.3.1
   image_source: openshift
-- imagename: quay.io/coreos/kube-state-metrics:latest
+- imagename: quay.io/coreos/kube-state-metrics:v1.3.1
   image_source: openshift
-- imagename: docker.io/grafana/grafana:latest
+- imagename: docker.io/grafana/grafana:5.2.1
   image_source: openshift
