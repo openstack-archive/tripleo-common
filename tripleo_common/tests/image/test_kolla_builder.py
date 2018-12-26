@@ -203,21 +203,21 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'openshift_configmap_reload_namespace':
                     'docker.io/tripleorocky',
                 'openshift_configmap_reload_image': 'coreos-configmap-reload',
-                'openshift_configmap_reload_tag': 'latest',
+                'openshift_configmap_reload_tag': 'v0.0.1',
                 'openshift_prometheus_operator_namespace':
                     'docker.io/tripleorocky',
                 'openshift_prometheus_operator_image':
                     'coreos-prometheus-operator',
-                'openshift_prometheus_operator_tag': 'latest',
+                'openshift_prometheus_operator_tag': 'v0.23.2',
                 'openshift_prometheus_config_reload_namespace':
                     'docker.io/tripleorocky',
                 'openshift_prometheus_config_reload_image':
                     'coreos-prometheus-config-reloader',
-                'openshift_prometheus_config_reload_tag': 'v0.24.0',
-                'openshift_prometheus_tag': 'latest',
-                'openshift_prometheus_alertmanager_tag': 'latest',
-                'openshift_prometheus_node_exporter_tag': 'latest',
-                'openshift_oauth_proxy_tag': 'latest',
+                'openshift_prometheus_config_reload_tag': 'v0.23.2',
+                'openshift_prometheus_tag': 'v2.3.2',
+                'openshift_prometheus_alertmanager_tag': 'v0.15.2',
+                'openshift_prometheus_node_exporter_tag': 'v0.16.0',
+                'openshift_oauth_proxy_tag': 'v1.1.0',
                 'openshift_kube_rbac_proxy_namespace':
                     'docker.io/tripleorocky',
                 'openshift_kube_rbac_proxy_image': 'coreos-kube-rbac-proxy',
@@ -226,9 +226,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                     'docker.io/tripleorocky',
                 'openshift_kube_state_metrics_image':
                     'coreos-kube-state-metrics',
-                'openshift_kube_state_metrics_tag': 'latest',
+                'openshift_kube_state_metrics_tag': 'v1.3.1',
                 'openshift_grafana_namespace': 'docker.io/grafana',
-                'openshift_grafana_tag': 'latest',
+                'openshift_grafana_tag': '5.2.1',
             },
             builder.container_images_template_inputs()
         )
