@@ -313,8 +313,8 @@ class GetDpdkSocketMemoryAction(base.TripleOAction):
                     not nics_info['mtu'] in distinct_mtu_per_node):
                 distinct_mtu_per_node.append(nics_info['mtu'])
                 roundup_mtu = self.roundup_mtu_bytes(nics_info['mtu'])
-                socket_memory += (((roundup_mtu + overhead)
-                                  * packet_size_in_buffer) /
+                socket_memory += (((roundup_mtu + overhead) *
+                                  packet_size_in_buffer) /
                                   (1024 * 1024))
 
         # For Non DPDK numa node

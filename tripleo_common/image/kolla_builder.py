@@ -297,8 +297,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
         imagename = entry.get('imagename', '')
         append_tag = ''
         if modify_role and (
-                (not modify_only_with_labels)
-                or imagename in images_with_labels):
+                (not modify_only_with_labels) or
+                imagename in images_with_labels):
             entry['modify_role'] = modify_role
             if modify_append_tag:
                 entry['modify_append_tag'] = modify_append_tag

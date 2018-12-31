@@ -318,8 +318,8 @@ class Config(object):
                     nested_depth=constants.NESTED_DEPTH,
                     filters=dict(physical_resource_id=parent_stack))
                 if not resources:
-                    message = "The deployment resource grandparent name could" \
-                              "not be determined."
+                    message = "The deployment resource grandparent name" \
+                              "could not be determined."
                     raise ValueError(message)
                 deployment_name = resources[0].resource_name
             config_dict['deployment_name'] = deployment_name
