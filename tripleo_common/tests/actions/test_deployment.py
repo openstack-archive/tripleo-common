@@ -204,9 +204,6 @@ class OrchestrationDeployActionTest(base.TestCase):
 
 class DeployStackActionTest(base.TestCase):
 
-    def setUp(self,):
-        super(DeployStackActionTest, self).setUp()
-
     @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -360,6 +357,100 @@ class DeployStackActionTest(base.TestCase):
         swift.copy_object.assert_called_once_with(
             "overcloud-swift-rings", "swift-rings.tar.gz",
             "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
+
+    @mock.patch('tripleo_common.actions.deployment.time')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
+    def test_run_create_failed(
+        self, get_orchestration_client_mock, mock_get_object_client,
+        mock_get_template_contents,
+        mock_process_multiple_environments_and_files, mock_time):
+
+        mock_ctx = mock.MagicMock()
+        # setup swift
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': 'overcloud',
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'parameter_defaults': {'random_existing_data': 'a_value'},
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
+        mock_get_object_client.return_value = swift
+
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = None
+        heat.stacks.create.side_effect = heat_exc.HTTPException("Oops")
+        get_orchestration_client_mock.return_value = heat
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        # freeze time at datetime.datetime(2016, 9, 8, 16, 24, 24)
+        mock_time.time.return_value = 1473366264
+
+        action = deployment.DeployStackAction(1, 'overcloud')
+        expected = actions.Result(
+            error="Error during stack creation: ERROR: Oops")
+        self.assertEqual(expected, action.run(mock_ctx))
+
+    @mock.patch('tripleo_common.actions.deployment.time')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
+    def test_run_update_failed(
+        self, get_orchestration_client_mock, mock_get_object_client,
+        mock_get_template_contents,
+        mock_process_multiple_environments_and_files, mock_time):
+
+        mock_ctx = mock.MagicMock()
+        # setup swift
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': 'overcloud',
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'parameter_defaults': {'random_existing_data': 'a_value'},
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2')
+        )
+        mock_get_object_client.return_value = swift
+
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = mock.Mock()
+        heat.stacks.update.side_effect = heat_exc.HTTPException("Oops")
+        get_orchestration_client_mock.return_value = heat
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30'
+        })
+        mock_process_multiple_environments_and_files.return_value = ({}, {})
+
+        # freeze time at datetime.datetime(2016, 9, 8, 16, 24, 24)
+        mock_time.time.return_value = 1473366264
+
+        action = deployment.DeployStackAction(1, 'overcloud')
+        expected = actions.Result(
+            error="Error during stack update: ERROR: Oops")
+        self.assertEqual(expected, action.run(mock_ctx))
 
 
 class OvercloudRcActionTestCase(base.TestCase):
