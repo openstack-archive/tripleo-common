@@ -1082,8 +1082,10 @@ class TestValidateNodes(base.TestCase):
 
     def test_missing_fields(self):
         for field in ('pm_addr', 'pm_user', 'pm_password'):
+            # NOTE(tonyb): We can't use ipmi here as it's fine with some of
+            # these fields being missing.
             nodes_json = [
-                {'pm_type': 'pxe_ipmitool',
+                {'pm_type': 'pxe_drac',
                  'pm_addr': '1.1.1.1',
                  'pm_user': 'root',
                  'pm_password': 'p@$$w0rd'},
@@ -1093,6 +1095,17 @@ class TestValidateNodes(base.TestCase):
             self.assertRaisesRegex(exception.InvalidNode,
                                    'fields are missing: %s' % field,
                                    nodes.validate_nodes, nodes_json)
+
+    def test_ipmi_missing_user_ok(self):
+        nodes_json = [
+            {'pm_type': 'ipmi',
+             'pm_addr': '1.1.1.1',
+             'pm_password': 'p@$$w0rd'},
+        ]
+
+        # validate_nodes() doesn't have an explicit return which means python
+        # gives us None
+        self.assertEqual(None, nodes.validate_nodes(nodes_json))
 
     def test_duplicate_redfish_node(self):
         nodes_json = [
