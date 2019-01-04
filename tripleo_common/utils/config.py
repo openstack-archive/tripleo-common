@@ -111,30 +111,30 @@ class Config(object):
         return os.fdopen(
             os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w')
 
-    def _write_playbook_get_tasks(self, tasks, role, filepath):
-        playbook = []
+    def _write_tasks_per_step(self, tasks, role, filepath, step):
 
-        def get_key(task):
+        def step_in_task(task, step):
             whenexpr = task.get('when', None)
             if whenexpr is None:
-                return ''
+                # If no step is defined, it will be executed for all
+                # steps.
+                return True
             if not isinstance(whenexpr, list):
                 whenexpr = [whenexpr]
             for w in whenexpr:
                 # make \|int optional incase forgotten; use only step digit:
-                match = re.search('step(\|int)? == ([0-9]+)', "%s" % w)
+                match = re.search('step(\|int)? == ([0-9]+)$', "%s" % w)
                 if match:
-                    matches = len(match.groups())
-                    return match.group(matches)
-            return ''
+                    if match.group(2) == str(step):
+                        return True
+                    else:
+                        return False
+            return True
 
-        sorted_tasks = sorted(tasks, key=get_key)
-        playbook.append({'name': '%s playbook' % role,
-                         'hosts': role,
-                         'tasks': sorted_tasks})
+        tasks_per_step = [task for task in tasks if step_in_task(task, step)]
         with self._open_file(filepath) as conf_file:
-            yaml.safe_dump(playbook, conf_file, default_flow_style=False)
-        return sorted_tasks
+            yaml.safe_dump(tasks_per_step, conf_file, default_flow_style=False)
+        return tasks_per_step
 
     def initialize_git_repo(self, dirname):
         repo = git.Repo.init(dirname)
@@ -222,23 +222,27 @@ class Config(object):
                         role_group_vars[role_name] = {}
                     role_group_vars[role_name].update(role[config])
                 else:
-                    if 'upgrade_tasks' in config:
-                        filepath = os.path.join(role_path, '%s_playbook.yaml' %
-                                                config)
-                        data = self._write_playbook_get_tasks(
-                            role[config], role_name, filepath)
-                    else:
-                        try:
-                            data = role[config]
-                        except KeyError as e:
-                            message = 'Invalid key: %s, error: %s' % (config,
-                                                                      str(e))
-                            raise KeyError(message)
+                    # NOTE(jfrancoa): Move this upgrade_tasks condition to the
+                    # upper level once THT is adapted. We include it here to
+                    # allow the CI to pass until THT changed is not merged.
+                    if config == 'upgrade_tasks':
+                        for i in range(constants.UPGRADE_STEPS_MAX):
+                            filepath = os.path.join(role_path, '%s_step%s.yaml'
+                                                    % (config, i))
+                            self._write_tasks_per_step(role[config], role_name,
+                                                       filepath, i)
+                    try:
+                        data = role[config]
+                    except KeyError as e:
+                        message = 'Invalid key: %s, error: %s' % (config,
+                                                                  str(e))
+                        raise KeyError(message)
                     filepath = os.path.join(role_path, '%s.yaml' % config)
                     with self._open_file(filepath) as conf_file:
                         yaml.safe_dump(data,
                                        conf_file,
                                        default_flow_style=False)
+
         role_config = self.get_role_config()
         for config_name, config in six.iteritems(role_config):
             conf_path = os.path.join(config_dir, config_name + ".yaml")
