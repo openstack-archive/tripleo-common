@@ -188,6 +188,9 @@ class ProcessTemplatesAction(base.TripleOAction):
             j2_network_file = swift.get_object(
                 self.container, constants.OVERCLOUD_J2_NETWORKS_NAME)[1]
             network_data = yaml.safe_load(j2_network_file)
+            # Allow no networks defined in network_data
+            if network_data is None:
+                network_data = []
         except swiftexceptions.ClientException:
             # Until t-h-t contains network_data.yaml we tolerate a missing file
             LOG.warning("No %s file found, ignoring"
