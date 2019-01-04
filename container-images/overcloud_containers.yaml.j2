@@ -755,6 +755,14 @@ container_images_template:
   - OS::TripleO::Services::PankoApi
   - OS::TripleO::Services::UndercloudPankoApi
 
+- imagename: "{{namespace}}/{{name_prefix}}placement-api{{name_suffix}}:{{tag}}"
+  image_source: kolla
+  params:
+  - DockerPlacementConfigImage
+  - DockerPlacementImage
+  services:
+  - OS::TripleO::Services::Placement
+
 - imagename: "{{namespace}}/{{name_prefix}}qdrouterd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:

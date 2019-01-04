@@ -181,6 +181,8 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-panko-api:current-tripleo
   image_source: kolla
+- imagename: docker.io/tripleomaster/centos-binary-placement-api:current-tripleo
+  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-qdrouterd:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-rabbitmq:current-tripleo
