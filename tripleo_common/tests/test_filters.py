@@ -27,7 +27,7 @@ if 'nova' not in sys.modules:
 else:
     raise RuntimeError('nova module already found in sys.modules.  The '
                        'fake_nova injection should be removed.')
-from tripleo_common.filters import capabilities_filter
+from tripleo_common.filters import capabilities_filter  # noqa
 
 
 class TestCapabilitiesFilter(base.TestCase):

@@ -83,9 +83,9 @@ def download_container(swiftclient, container, dest,
         # write file if `overwrite_only_newer` is not set,
         # or if file does not exist at destination,
         # or if we found a newer file at source
-        if (not overwrite_only_newer
-                or not already_exists
-                or (overwrite_only_newer and is_newer)):
+        if (not overwrite_only_newer or
+                not already_exists or
+                (overwrite_only_newer and is_newer)):
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
 
