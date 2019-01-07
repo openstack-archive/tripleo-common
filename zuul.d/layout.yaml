@@ -23,7 +23,7 @@
               - tripleo_common/image/kolla_builder.py
               - scripts/.*$
         - tripleo-ci-centos-7-scenario001-standalone
-        - tripleo-ci-centos-7-scenario002-multinode-oooq-container:
+        - tripleo-ci-centos-7-scenario002-standalone:
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
