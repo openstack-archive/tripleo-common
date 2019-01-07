@@ -17,6 +17,7 @@ build_default_image () {
 
 OPENSHIFT_ANSIBLE_DEFAULT_IMAGE=$(build_default_image)
 
+: ${PLAN_NAME:=openshift}
 : ${CONFIG_DOWNLOAD_DIR:=}
 : ${OPENSHIFT_ANSIBLE_IMAGE:=$OPENSHIFT_ANSIBLE_DEFAULT_IMAGE}
 
@@ -27,10 +28,12 @@ usage () {
     echo "  -i, --image                the openshift-ansible image tag to use. Defaults to"
     echo "                             $OPENSHIFT_ANSIBLE_DEFAULT_IMAGE"
     echo "  -d, --config-download-dir  the path to the config-download directory for openshift"
+    echo "                             DEPRECATED use --plan instead"
+    echo "  -n, --plan                 the plan name. Defaults to $PLAN_NAME"
     echo "  -h, --help                 print this help and exit"
 }
 
-OPTS=`getopt -o hd:i: --long help,config-download-dir:,image: -- "$@"`
+OPTS=`getopt -o hd:n:i: --long help,config-download-dir:,plan:,image: -- "$@"`
 eval set -- "$OPTS"
 
 while true; do
@@ -38,8 +41,13 @@ while true; do
     -h | --help)
       usage; exit ;;
     -d | --config-download-dir)
+      echo "--config-download-dir is deprecated, use --plan instead"
       shift
       export CONFIG_DOWNLOAD_DIR=$1; shift ;;
+    -n | --plan)
+      shift
+      export PLAN_NAME=$1
+      shift ;;
     -i | --image)
       shift
       export OPENSHIFT_ANSIBLE_IMAGE=$1; shift ;;
@@ -49,8 +57,10 @@ while true; do
 done
 
 if [[ -z $CONFIG_DOWNLOAD_DIR ]]; then
-  echo "Missing required --config-download-dir option"
-  usage
+  export CONFIG_DOWNLOAD_DIR=/var/lib/mistral/${PLAN_NAME}
+fi
+if [[ ! -d $CONFIG_DOWNLOAD_DIR ]]; then
+  echo "Config-download directory doesn't exist at ${CONFIG_DOWNLOAD_DIR}"
   exit
 fi
 

@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    `tripleo-deploy-openshift` script now understands the `--plan` option to
+    run the openshift-ansible playbooks for a deployment named differently than
+    "openshift".
+deprecations:
+  - |
+    The `--config-download-dir` option to the `tripleo-deploy-openshift` script
+    is deprecated in favor of `--plan`.
