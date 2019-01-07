@@ -50,7 +50,7 @@ workflows:
 
   object_exists:
 
-    description: >-
+    description: >
         Verify if a Swift object exists
 
         Given the name of a Swift container and object this workflow will
