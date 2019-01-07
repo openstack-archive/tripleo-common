@@ -1,0 +1,7 @@
+---
+other:
+  - |
+    Add an initial task to the config_download_deploy workflow that queries for
+    existing executions of the same workflow on the same plan. If any are
+    found, that means that config-download is already running on the existing
+    plan, so the additional one that is trying to start is failed.
