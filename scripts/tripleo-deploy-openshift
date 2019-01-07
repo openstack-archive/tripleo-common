@@ -19,6 +19,7 @@ OPENSHIFT_ANSIBLE_DEFAULT_IMAGE=$(build_default_image)
 
 : ${PLAN_NAME:=openshift}
 : ${CONFIG_DOWNLOAD_DIR:=}
+: ${OPENSHIFT_PLAYBOOK:=}
 : ${OPENSHIFT_ANSIBLE_IMAGE:=$OPENSHIFT_ANSIBLE_DEFAULT_IMAGE}
 
 usage () {
@@ -30,10 +31,12 @@ usage () {
     echo "  -d, --config-download-dir  the path to the config-download directory for openshift"
     echo "                             DEPRECATED use --plan instead"
     echo "  -n, --plan                 the plan name. Defaults to $PLAN_NAME"
+    echo "  -p, --playbook             the path of the playbook to run. Defaults to"
+    echo "                             openshift/playbook.yml in the config-download directory"
     echo "  -h, --help                 print this help and exit"
 }
 
-OPTS=`getopt -o hd:n:i: --long help,config-download-dir:,plan:,image: -- "$@"`
+OPTS=`getopt -o hd:n:i:p: --long help,config-download-dir:,plan:,image:,playbook: -- "$@"`
 eval set -- "$OPTS"
 
 while true; do
@@ -48,6 +51,9 @@ while true; do
       shift
       export PLAN_NAME=$1
       shift ;;
+    -p | --playbook)
+      shift
+      export OPENSHIFT_PLAYBOOK=$1; shift ;;
     -i | --image)
       shift
       export OPENSHIFT_ANSIBLE_IMAGE=$1; shift ;;
@@ -64,6 +70,10 @@ if [[ ! -d $CONFIG_DOWNLOAD_DIR ]]; then
   exit
 fi
 
+if [[ -z $OPENSHIFT_PLAYBOOK ]]; then
+  export OPENSHIFT_PLAYBOOK=${CONFIG_DOWNLOAD_DIR}/openshift/playbook.yml
+fi
+
 ANSIBLE_OPTS="-e @${CONFIG_DOWNLOAD_DIR}/openshift/global_vars.yml"
 if [[ -f ${CONFIG_DOWNLOAD_DIR}/openshift/global_gluster_vars.yml ]]; then
   ANSIBLE_OPTS="${ANSIBLE_OPTS} -e @${CONFIG_DOWNLOAD_DIR}/openshift/global_gluster_vars.yml"
@@ -77,6 +87,6 @@ docker run \
         -e ANSIBLE_HOST_KEY_CHECKING=False \
         -e ANSIBLE_CONFIG=${CONFIG_DOWNLOAD_DIR}/ansible.cfg \
         -e INVENTORY_DIR=${CONFIG_DOWNLOAD_DIR}/openshift/inventory \
-        -e PLAYBOOK_FILE=${CONFIG_DOWNLOAD_DIR}/openshift/playbook.yml \
+        -e PLAYBOOK_FILE=${OPENSHIFT_PLAYBOOK} \
         -e OPTS="${ANSIBLE_OPTS}" \
         -t ${OPENSHIFT_ANSIBLE_IMAGE}
