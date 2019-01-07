@@ -23,7 +23,7 @@ OPENSHIFT_ANSIBLE_DEFAULT_IMAGE=$(build_default_image)
 : ${OPENSHIFT_ANSIBLE_IMAGE:=$OPENSHIFT_ANSIBLE_DEFAULT_IMAGE}
 
 usage () {
-    echo "Usage: $0 [options]"
+    echo "Usage: $0 [options] [extra_ansible_options...]"
     echo ""
     echo "Options:"
     echo "  -i, --image                the openshift-ansible image tag to use. Defaults to"
@@ -78,6 +78,7 @@ ANSIBLE_OPTS="-e @${CONFIG_DOWNLOAD_DIR}/openshift/global_vars.yml"
 if [[ -f ${CONFIG_DOWNLOAD_DIR}/openshift/global_gluster_vars.yml ]]; then
   ANSIBLE_OPTS="${ANSIBLE_OPTS} -e @${CONFIG_DOWNLOAD_DIR}/openshift/global_gluster_vars.yml"
 fi
+ANSIBLE_OPTS="${ANSIBLE_OPTS} $@"
 
 docker run \
         --net=host \
