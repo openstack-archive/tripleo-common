@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Introduce a `--playbook` option to the `tripleo-deploy-openshift` script in
+    order to be able to run openshift-ansible playbook directly on already
+    deployed servers.
