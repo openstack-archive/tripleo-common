@@ -47,6 +47,7 @@
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
+              - scripts/tripleo-deploy-openshift
         - openstack-tox-cover:
             voting: false
 
