@@ -21,6 +21,7 @@ OPENSHIFT_ANSIBLE_DEFAULT_IMAGE=$(build_default_image)
 : ${CONFIG_DOWNLOAD_DIR:=}
 : ${OPENSHIFT_PLAYBOOK:=}
 : ${OPENSHIFT_ANSIBLE_IMAGE:=$OPENSHIFT_ANSIBLE_DEFAULT_IMAGE}
+: ${OPENSHIFT_ANSIBLE_DIR:=}
 
 usage () {
     echo "Usage: $0 [options] [extra_ansible_options...]"
@@ -33,10 +34,12 @@ usage () {
     echo "  -n, --plan                 the plan name. Defaults to $PLAN_NAME"
     echo "  -p, --playbook             the path of the playbook to run. Defaults to"
     echo "                             openshift/playbook.yml in the config-download directory"
+    echo "  --osa                      the path to openshift-ansible directory. Mutually"
+    echo "                             exclusive with --image"
     echo "  -h, --help                 print this help and exit"
 }
 
-OPTS=`getopt -o hd:n:i:p: --long help,config-download-dir:,plan:,image:,playbook: -- "$@"`
+OPTS=`getopt -o hd:n:i:p: --long help,config-download-dir:,plan:,image:,playbook:,osa: -- "$@"`
 eval set -- "$OPTS"
 
 while true; do
@@ -57,6 +60,9 @@ while true; do
     -i | --image)
       shift
       export OPENSHIFT_ANSIBLE_IMAGE=$1; shift ;;
+    --osa)
+      shift
+      export OPENSHIFT_ANSIBLE_DIR=$1; shift ;;
     --) shift ; break ;;
     * ) break ;;
   esac
@@ -80,14 +86,25 @@ if [[ -f ${CONFIG_DOWNLOAD_DIR}/openshift/global_gluster_vars.yml ]]; then
 fi
 ANSIBLE_OPTS="${ANSIBLE_OPTS} $@"
 
-docker run \
-        --net=host \
-        -u `id -u` \
-        -v ${CONFIG_DOWNLOAD_DIR}:${CONFIG_DOWNLOAD_DIR} \
-        -w ${CONFIG_DOWNLOAD_DIR} \
-        -e ANSIBLE_HOST_KEY_CHECKING=False \
-        -e ANSIBLE_CONFIG=${CONFIG_DOWNLOAD_DIR}/ansible.cfg \
-        -e INVENTORY_DIR=${CONFIG_DOWNLOAD_DIR}/openshift/inventory \
-        -e PLAYBOOK_FILE=${OPENSHIFT_PLAYBOOK} \
-        -e OPTS="${ANSIBLE_OPTS}" \
-        -t ${OPENSHIFT_ANSIBLE_IMAGE}
+if [ -z $OPENSHIFT_ANSIBLE_DIR ]; then
+  docker run \
+          --net=host \
+          -u `id -u` \
+          -v ${CONFIG_DOWNLOAD_DIR}:${CONFIG_DOWNLOAD_DIR} \
+          -w ${CONFIG_DOWNLOAD_DIR} \
+          -e ANSIBLE_HOST_KEY_CHECKING=False \
+          -e ANSIBLE_CONFIG=${CONFIG_DOWNLOAD_DIR}/ansible.cfg \
+          -e INVENTORY_DIR=${CONFIG_DOWNLOAD_DIR}/openshift/inventory \
+          -e PLAYBOOK_FILE=${OPENSHIFT_PLAYBOOK} \
+          -e OPTS="${ANSIBLE_OPTS}" \
+          -t ${OPENSHIFT_ANSIBLE_IMAGE}
+else
+  pushd ${CONFIG_DOWNLOAD_DIR}
+  ANSIBLE_HOST_KEY_CHECKING=False \
+  ANSIBLE_CONFIG=${CONFIG_DOWNLOAD_DIR}/ansible.cfg \
+  ansible-playbook \
+          -i ${CONFIG_DOWNLOAD_DIR}/openshift/inventory \
+          ${ANSIBLE_OPTS} \
+          ${OPENSHIFT_PLAYBOOK}
+  popd
+fi
