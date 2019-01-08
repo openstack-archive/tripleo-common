@@ -1,0 +1,5 @@
+---
+fixes:
+  - Workaround `bug 1810932 <https://bugs.launchpad.net/tripleo/+bug/1810932>`__ by
+    scripting an in-place update of ssh_known_hosts
+
