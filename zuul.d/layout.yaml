@@ -51,4 +51,6 @@
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
     gate:
+      jobs:
+        - tripleo-ci-centos-7-scenario001-standalone
       queue: tripleo
