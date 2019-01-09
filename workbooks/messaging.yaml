@@ -31,7 +31,7 @@ workflows:
               type: 'tripleo.workflow.name', # Matches the workflow name
               payload: {
                 status: 'STATUS', # One of RUNNING, SUCCESS, FAILED
-                execution: {execution details}, # Deprecated and will be removed in the future.
+                root_execution_id: 'UUID of the root execution',
                 execution_id: 'UUID',
                 message: "Human readable description",
                 < Arbitrary data. This should match the workflow output data >
@@ -73,7 +73,7 @@ workflows:
           publish:
             branch:
               # The payload with arbitrary keys is merged with the status, message and execution.
-              payload: <% {status => $.status, message => $.message, execution => $.execution, execution_id => $.execution.id, plan_name => $.plan_name, deployment_status => $.deployment_status} + $.payload %>
+              payload: <% {status => $.status, message => $.message, root_execution_id => $.execution.root_execution_id, execution_id => $.execution.id, plan_name => $.plan_name, deployment_status => $.deployment_status} + $.payload %>
           next: prepare_messages
 
       prepare_messages:
