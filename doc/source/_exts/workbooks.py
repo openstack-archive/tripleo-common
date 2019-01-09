@@ -14,8 +14,11 @@ import os
 from docutils import nodes
 from docutils.parsers import rst
 from docutils.statemachine import ViewList
+from sphinx.util import logging
 from sphinx.util.nodes import nested_parse_with_titles
 import yaml
+
+LOG = logging.getLogger(__name__)
 
 
 WORKFLOW_PATH = os.path.abspath(
@@ -87,7 +90,7 @@ def _write_workbook_pages(app):
 
     for name, workbook in all_workbooks.items():
         filename = 'doc/source/reference/workbooks/%s.rst' % name
-        app.info('generating workbook page for %s' % name)
+        LOG.info('generating workbook page for %s' % name)
         with open(filename, 'w') as f:
             f.write('\n'.join(_workbook_to_rst(name, workbook)))
         files.append(filename)
@@ -117,6 +120,6 @@ class WorkflowListDirective(rst.Directive):
 
 
 def setup(app):
-    app.info('loading workbooks extension')
+    LOG.info('loading workbooks extension')
     app.add_directive('workbooklist', WorkflowListDirective)
     _write_workbook_pages(app)
