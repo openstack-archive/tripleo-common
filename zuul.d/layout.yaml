@@ -27,10 +27,11 @@
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-scenario003-multinode-oooq-container:
+        - tripleo-ci-centos-7-scenario003-standalone:
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
+              - zuul.d/layout.yaml
         - tripleo-ci-centos-7-scenario004-standalone:
             files:
               - workbooks/ceph-ansible.yaml
