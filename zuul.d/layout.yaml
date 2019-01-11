@@ -11,6 +11,7 @@
       - tripleo-multinode-container-minimal
       - tripleo-undercloud-jobs
       - tripleo-build-containers-jobs
+      - tripleo-standalone-scenarios-full
     check:
       jobs:
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
@@ -22,23 +23,6 @@
               - tripleo_common/actions/container_images.py
               - tripleo_common/image/kolla_builder.py
               - scripts/.*$
-        - tripleo-ci-centos-7-scenario001-standalone
-        - tripleo-ci-centos-7-scenario002-standalone:
-            files:
-              - ^container-images/.*$
-              - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-scenario003-standalone:
-            files:
-              - ^container-images/.*$
-              - tripleo_common/image/kolla_builder.py
-              - zuul.d/layout.yaml
-        - tripleo-ci-centos-7-scenario004-standalone:
-            files:
-              - workbooks/ceph-ansible.yaml
-              - ^container-images/.*$
-              - tripleo_common/actions/ansible.py
-              - tripleo_common/image/kolla_builder.py
-              - zuul.d/layout.yaml
         - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
             files:
               - ^container-images/.*$
@@ -52,17 +36,4 @@
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
     gate:
-      jobs:
-        - tripleo-ci-centos-7-scenario001-standalone
-        - tripleo-ci-centos-7-scenario002-standalone:
-            files:
-              - ^container-images/.*$
-              - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-scenario004-standalone:
-            files:
-              - workbooks/ceph-ansible.yaml
-              - ^container-images/.*$
-              - tripleo_common/actions/ansible.py
-              - tripleo_common/image/kolla_builder.py
-              - zuul.d/layout.yaml
       queue: tripleo
