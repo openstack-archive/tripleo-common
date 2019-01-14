@@ -761,7 +761,7 @@ container_images_template:
   - DockerPlacementConfigImage
   - DockerPlacementImage
   services:
-  - OS::TripleO::Services::Placement
+  - OS::TripleO::Services::PlacementApi
 
 - imagename: "{{namespace}}/{{name_prefix}}qdrouterd{{name_suffix}}:{{tag}}"
   image_source: kolla
