@@ -119,6 +119,7 @@ PASSWORD_PARAMETER_NAMES = (
     'PacemakerRemoteAuthkey',
     'PankoPassword',
     'PcsdPassword',
+    'PlacementPassword',
     'RpcPassword',
     'NotifyPassword',
     'RabbitCookie',
