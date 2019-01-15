@@ -82,12 +82,12 @@ SAMPLE_ROLE = """
     - InternalApi
   HostnameFormatDefault: '%stackname%-sample-%index%'
   ServicesDefault:
-    - OS::TripleO::Services::Ntp
+    - OS::TripleO::Services::Timesync
 """
 
 SAMPLE_ROLE_OBJ = {
     'HostnameFormatDefault': '%stackname%-sample-%index%',
-    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'ServicesDefault': ['OS::TripleO::Services::Timesync'],
     'description': 'Sample!\n',
     'name': 'sample',
     'networks': ['InternalApi']
@@ -105,12 +105,12 @@ SAMPLE_ROLE_2 = """
     - InternalApi
   HostnameFormatDefault: '%stackname%-sample-%index%'
   ServicesDefault:
-    - OS::TripleO::Services::Ntp
+    - OS::TripleO::Services::Timesync
 """
 
 SAMPLE_ROLE_2_OBJ = {
     'HostnameFormatDefault': '%stackname%-sample-%index%',
-    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'ServicesDefault': ['OS::TripleO::Services::Timesync'],
     'description': 'Sample2!\n',
     'name': 'sample2',
     'networks': ['InternalApi']
@@ -130,12 +130,12 @@ UPDATED_ROLE = """
     - primary
   HostnameFormatDefault: '%stackname%-sample-%index%'
   ServicesDefault:
-    - OS::TripleO::Services::Ntp
+    - OS::TripleO::Services::Timesync
 """
 
 UPDATED_ROLE_OBJ = {
     'HostnameFormatDefault': '%stackname%-sample-%index%',
-    'ServicesDefault': ['OS::TripleO::Services::Ntp'],
+    'ServicesDefault': ['OS::TripleO::Services::Timesync'],
     'description': 'Sample!\n',
     'name': 'sample',
     'networks': ['InternalApi', 'ExternalApi'],
