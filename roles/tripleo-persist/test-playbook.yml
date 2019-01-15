@@ -1,0 +1,20 @@
+- hosts: overcloud-controller-0
+  become: true
+  tasks:
+    - name: test tripleo-persist persistence
+      include_role:
+        name: tripleo-persist
+        tasks_from: persist.yml
+      vars:
+        tripleo_persist_dir: /testdir/testsubdir
+        tripleo_persist_storage_root_dir: /home/stack/tripleo-persist
+      when: persist|default(false)|bool
+
+    - name: test tripleo-persist restoration
+      include_role:
+        name: tripleo-persist
+        tasks_from: restore.yml
+      vars:
+        tripleo_persist_dir: /testdir/testsubdir
+        tripleo_persist_storage_root_dir: /home/stack/tripleo-persist
+      when: restore|default(false)|bool

@@ -1,0 +1,9 @@
+- name: make sure the parent directory is present
+  file:
+    path: "{{tripleo_persist_dir|dirname}}"
+    state: directory
+
+- name: push and extract the archive
+  unarchive:
+    src: "{{tripleo_persist_storage_root_dir}}/{{inventory_hostname}}{{tripleo_persist_dir}}.tar.gz"
+    dest: "{{tripleo_persist_dir|dirname}}"

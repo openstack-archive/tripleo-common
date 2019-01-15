@@ -1,0 +1,2 @@
+tripleo_persist_storage_root_dir: /var/lib/mistral/tripleo-persist
+tripleo_persist_storage_root_become: false
