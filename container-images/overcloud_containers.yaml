@@ -153,6 +153,8 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-nova-scheduler:current-tripleo
   image_source: kolla
+- imagename: docker.io/tripleomaster/centos-binary-nova-serialproxy:current-tripleo
+  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-novajoin-notifier:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-novajoin-server:current-tripleo
