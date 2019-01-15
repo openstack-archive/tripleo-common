@@ -103,7 +103,7 @@ container_images:
 - imagename: docker.io/tripleorocky/centos-binary-swift-proxy-server:current-tripleo
 - imagename: docker.io/tripleorocky/centos-binary-tripleo-ui:current-tripleo
 - imagename: docker.io/tripleorocky/centos-binary-zaqar:current-tripleo
-- imagename: docker.io/ceph/daemon:v3.2.0-stable-3.2-luminous-centos-7-x86_64
+- imagename: docker.io/ceph/daemon:v3.2.1-stable-3.2-luminous-centos-7-x86_64
 - imagename: docker.io/tripleorocky/centos-binary-tempest:current-tripleo
 - imagename: docker.io/tripleorocky/centos-binary-rsyslog-base:current-tripleo
 - imagename: docker.io/openshift/origin-ansible:v3.11.0
