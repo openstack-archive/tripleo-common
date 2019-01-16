@@ -1,0 +1,11 @@
+- hosts: undercloud
+  tasks:
+    - name: test tripleo-transfer
+      include_role:
+        name: tripleo-transfer
+      vars:
+        tripleo_transfer_src_host: overcloud-controller-0
+        tripleo_transfer_src_dir: /srcdir/srcsubdir
+        tripleo_transfer_dest_host: overcloud-controller-1
+        tripleo_transfer_dest_dir: /destdir/destsubdir
+        tripleo_transfer_storage_root_dir: /home/stack/tripleo-transfer

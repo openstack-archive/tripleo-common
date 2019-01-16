@@ -1,0 +1,5 @@
+tripleo_transfer_storage_root_dir: /var/lib/mistral/tripleo-transfer
+tripleo_transfer_storage_root_become: false
+tripleo_transfer_src_become: true
+tripleo_transfer_dest_become: true
+tripleo_transfer_dest_wipe: true
