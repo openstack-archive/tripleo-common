@@ -666,7 +666,18 @@ workflows:
           message: "Deleting <% $.container %> deployment"
           execution: <% execution() %>
           plan_name: <% $.container %>
-        on-complete: delete_stack
+        on-complete: stack_exists
+
+      stack_exists:
+        action: heat.stacks_get
+        input:
+          stack_id: <% $.container %>
+        publish-on-error:
+          deployment_status: UNDEPLOYED
+          message: "Stack does not exist: <% task().result %>"
+          status: SUCCESS
+        on-success: delete_stack
+        on-error: send_undeployed_message
 
       delete_stack:
         workflow: tripleo.stack.v1.delete_stack
