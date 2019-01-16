@@ -353,7 +353,7 @@ RUN mkdir -p /openstack && \
 
 {% block keystone_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone-public /openstack/healthcheck && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
