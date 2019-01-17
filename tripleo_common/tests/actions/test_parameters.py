@@ -24,6 +24,7 @@ from tripleo_common.tests import base
 from tripleo_common.utils import passwords as password_utils
 
 _EXISTING_PASSWORDS = {
+    'PlacementPassword': 'VFJeqBKbatYhQm9jja67hufft',
     'MistralPassword': 'VFJeqBKbatYhQm9jja67hufft',
     'BarbicanPassword': 'MGGQBtgKT7FnywvkcdMwE9nhx',
     'BarbicanSimpleCryptoKek': 'dGhpcnR5X3R3b19ieXRlX2tleWJsYWhibGFoYmxhaGg=',
