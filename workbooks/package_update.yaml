@@ -38,14 +38,22 @@ workflows:
         input:
           timeout: <% $.timeout %>
           container: <% $.container %>
-        on-success: send_message
+        publish-on-error:
+          message: <% task().result %>
+        on-success: set_update_success
         on-error: set_update_failed
 
       set_update_failed:
         on-success: send_message
         publish:
           status: FAILED
-          message: <% task(update).result %>
+          update_status: UPDATE_FAILED
+
+      set_update_success:
+        on-success: send_message
+        publish:
+          status: SUCCESS
+          update_status: UPDATE_SUCCESS
 
       send_message:
         workflow: tripleo.messaging.v1.send
