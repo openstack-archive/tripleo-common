@@ -1,0 +1,6 @@
+---
+- name: delete the upgrade hiera file
+  file:
+    path: "{{tripleo_upgrade_hiera_file}}"
+    state: absent
+  become: yes

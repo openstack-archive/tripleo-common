@@ -1,0 +1,1 @@
+tripleo_upgrade_hiera_file: /etc/puppet/hieradata/upgrade.json
