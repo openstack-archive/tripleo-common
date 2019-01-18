@@ -35,5 +35,6 @@
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
+              - scripts/tripleo-deploy-openshift
     gate:
       queue: tripleo
