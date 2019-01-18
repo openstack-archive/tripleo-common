@@ -142,15 +142,20 @@ workflows:
           limit_hosts: <% $.nodes %>
           module_path: <% $.module_path %>
           queue_name: <% $.ansible_queue_name %>
+          reproduce_command: true
           execution_id: <% execution().id %>
+          work_dir: <% $.work_dir %>/<% execution().id %>
           skip_tags: <% $.skip_tags %>
           trash_output: true
         on-success:
           - node_update_passed: <% task().result.returncode = 0 %>
           - node_update_failed: <% task().result.returncode != 0 %>
         on-error: node_update_failed
+        publish-on-error:
+          status: FAILED
+          message: Ansible failed, check log at <% $.work_dir %>/<% execution().id %>/ansible.log.
         publish:
-          output: <% task().result %>
+          log_path: <% task().result.get('log_path') %>
 
       node_update_passed:
         on-success: notify_zaqar
@@ -162,7 +167,7 @@ workflows:
         on-success: notify_zaqar
         publish:
           status: FAILED
-          message: Failed to update nodes - <% $.nodes %>, please see the logs.
+          message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/ansible.log.
 
       notify_zaqar:
         action: zaqar.queue_post
