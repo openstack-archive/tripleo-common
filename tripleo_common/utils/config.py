@@ -72,7 +72,7 @@ class Config(object):
             if server_id in v:
                 return k
 
-    def get_config_dict(self, deployment):
+    def get_deployment_resource_id(self, deployment):
         if '/' in deployment.attributes['value']['deployment']:
             deployment_stack_id = \
                 deployment.attributes['value']['deployment'].split('/')[-1]
@@ -82,6 +82,9 @@ class Config(object):
         else:
             deployment_resource_id = \
                 deployment.attributes['value']['deployment']
+        return deployment_resource_id
+
+    def get_config_dict(self, deployment_resource_id):
         deployment_rsrc = self.client.software_deployments.get(
             deployment_resource_id)
         config = self.client.software_configs.get(
@@ -261,8 +264,15 @@ class Config(object):
             # create. If that's the case, just skip this deployment, otherwise
             # it will result in a Not found error if we try and query the
             # deployment API for this deployment.
-            if deployment.attributes['value'].get('deployment') == \
-                    'TripleOSoftwareDeployment':
+            dep_value_resource_name = deployment.attributes[
+                'value'].get('deployment') == 'TripleOSoftwareDeployment'
+
+            # if not check the physical_resource_id
+            if not dep_value_resource_name:
+                deployment_resource_id = self.get_deployment_resource_id(
+                    deployment)
+
+            if dep_value_resource_name or not deployment_resource_id:
                 warnings.warn('Skipping deployment %s because it has no '
                               'valid uuid (physical_resource_id) '
                               'associated.' %
@@ -270,7 +280,7 @@ class Config(object):
                 continue
 
             server_id = deployment.attributes['value']['server']
-            config_dict = self.get_config_dict(deployment)
+            config_dict = self.get_config_dict(deployment_resource_id)
 
             # deployment_name should be set via the name property on the
             # Deployment resources in the templates, however, if it's None
