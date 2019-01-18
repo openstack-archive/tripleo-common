@@ -54,7 +54,8 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 #           deploy.
 #   tripleo-heat-templates: to load the default plan from the CLI/UI
 #   python-notario: ceph-ansible depends on this but it is bind mounted from host
-{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'docker', 'podman', 'libseccomp', 'openstack-tripleo-heat-templates', 'python2-notario'] %}
+#   ipmitool: for baremetal node discovery
+{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'docker', 'podman', 'libseccomp', 'openstack-tripleo-heat-templates', 'python2-notario', 'ipmitool'] %}
 
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
