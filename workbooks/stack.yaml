@@ -92,7 +92,7 @@ workflows:
           queue_name: <% $.queue_name %>
         timeout: <% $.timeout %>
         publish:
-          stack_status: <% let(stack => $.stack) -> task().result.stacks.where($.stack_name = $stack).first().stack_status %>
+          stack_status: <% let(stack => $.stack) -> task().result.stacks.where($.stack_name = $stack).first({}).get(stack_status) %>
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
