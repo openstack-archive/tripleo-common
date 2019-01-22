@@ -1,0 +1,35 @@
+- name: create the directory for hiera file
+  file:
+    path: "{{tripleo_upgrade_hiera_file|dirname}}"
+    owner: "root"
+    group: "root"
+    mode: 0755
+    state: directory
+  become: yes
+
+- name: check if the upgrade file exists.
+  stat:
+    path: "{{tripleo_upgrade_hiera_file}}"
+  register: _tripleo_upgrade_hiera_file
+  become: yes
+
+- name: check if the file contains valid json
+  command: "jq . {{tripleo_upgrade_hiera_file}}"
+  register: _tripleo_upgrade_hiera_test
+  become: yes
+  when: _tripleo_upgrade_hiera_file.stat.exists
+
+- name: create the hiera file when no file or empty file.
+  copy:
+    dest: "{{tripleo_upgrade_hiera_file}}"
+    owner: "root"
+    group: "root"
+    mode: 0644
+    content: "{}"
+  become: yes
+  when: not _tripleo_upgrade_hiera_file.stat.exists or _tripleo_upgrade_hiera_test.stdout == ""
+
+- name: load the json hiera data
+  command: "jq . {{tripleo_upgrade_hiera_file}}"
+  register: tripleo_upgrade_hiera_command
+  become: yes

@@ -1,0 +1,39 @@
+- hosts: controller-0
+  gather_facts: false
+  become: true
+  tasks:
+    - name: test tripleo-upgrade-hiera - add a first value
+      include_role:
+        name: tripleo-upgrade-hiera
+        tasks_from: set.yml
+      vars:
+        tripleo_upgrade_key: pacemaker_short_node_names_override
+        tripleo_upgrade_value: [ "controller-0" ]
+
+    - name: test tripleo-upgrade-hiera - add another value
+      include_role:
+        name: tripleo-upgrade-hiera
+        tasks_from: set.yml
+      vars:
+        tripleo_upgrade_key: mysql_short_node_names_override
+        tripleo_upgrade_value: [ "controller-0", "controller-1" ]
+
+    - name: test tripleo-upgrade-hiera - update a value
+      include_role:
+        name: tripleo-upgrade-hiera
+        tasks_from: set.yml
+      vars:
+        tripleo_upgrade_key: mysql_short_node_names_override
+        tripleo_upgrade_value: [ "controller-1" ]
+
+    - name: test tripleo-upgrade-hiera - remove a value
+      include_role:
+        name: tripleo-upgrade-hiera
+        tasks_from: remove.yml
+      vars:
+        tripleo_upgrade_key: pacemaker_short_node_names_override
+
+    - name: test tripleo-upgrade-hiera - remove all values
+      include_role:
+        name: tripleo-upgrade-hiera
+        tasks_from: remove-all.yml

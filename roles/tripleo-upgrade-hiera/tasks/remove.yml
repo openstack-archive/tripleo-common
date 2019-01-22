@@ -1,0 +1,16 @@
+---
+- name: ensure tripleo-upgrade hiera file exists
+  include_tasks: create-tripleo-upgrade-file.yml
+
+- name: remove a tripleo-upgrade key
+  set_fact:
+    tripleo_upgrade_hiera_data_del: "{{ tripleo_upgrade_hiera_data_del|default({})|combine({item.key: item.value}) }}"
+    cacheable: no
+  when: item.key != tripleo_upgrade_key
+  with_dict: "{{ tripleo_upgrade_hiera_command.stdout | from_json | default({}) }}"
+
+- name: write the updated tripleo-upgrade hiera data
+  copy:
+    content: "{{ tripleo_upgrade_hiera_data_del | to_nice_json }}"
+    dest: "{{tripleo_upgrade_hiera_file}}"
+  become: yes
