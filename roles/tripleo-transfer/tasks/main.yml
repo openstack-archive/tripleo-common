@@ -1,3 +1,13 @@
+- name: make sure we don't have a trailing forward slash in the src
+  set_fact:
+    tripleo_transfer_src_dir_safe: "{{tripleo_transfer_src_dir|regex_replace('\\/$', '')}}"
+    cacheable: no
+
+- name: make sure we don't have a trailing forward slash in the dst
+  set_fact:
+    tripleo_transfer_dest_dir_safe: "{{tripleo_transfer_dest_dir|regex_replace('\\/$', '')}}"
+    cacheable: no
+
 - name: ensure local storage directory exists and has correct permissions
   file:
     path: "{{tripleo_transfer_storage_root_dir}}"
@@ -20,14 +30,14 @@
 # "no_log: true".
 - name: create the archive
   shell: |
-    tar --transform "s|^{{tripleo_transfer_src_dir|basename}}|{{tripleo_transfer_dest_dir|basename}}|" -czf "{{tripleo_transfer_tempfile.path}}" -C "{{tripleo_transfer_src_dir|dirname}}" "{{tripleo_transfer_src_dir|basename}}"
+    tar --transform "s|^{{tripleo_transfer_src_dir_safe|basename}}|{{tripleo_transfer_dest_dir_safe|basename}}|" -czf "{{tripleo_transfer_tempfile.path}}" -C "{{tripleo_transfer_src_dir_safe|dirname}}" "{{tripleo_transfer_src_dir_safe|basename}}"
   become: "{{tripleo_transfer_src_become}}"
   delegate_to: "{{tripleo_transfer_src_host}}"
 
 - name: fetch the archive
   fetch:
     src: "{{tripleo_transfer_tempfile.path}}"
-    dest: "{{tripleo_transfer_storage_root_dir}}/{{tripleo_transfer_dest_host}}{{tripleo_transfer_dest_dir}}.tar.gz"
+    dest: "{{tripleo_transfer_storage_root_dir}}/{{tripleo_transfer_dest_host}}{{tripleo_transfer_dest_dir_safe}}.tar.gz"
     flat: yes
   become: "{{tripleo_transfer_src_become}}"
   delegate_to: "{{tripleo_transfer_src_host}}"
@@ -41,7 +51,7 @@
 
 - name: wipe the destination directory
   file:
-    path: "{{tripleo_transfer_dest_dir}}"
+    path: "{{tripleo_transfer_dest_dir_safe}}"
     state: absent
   become: "{{tripleo_transfer_dest_become}}"
   delegate_to: "{{tripleo_transfer_dest_host}}"
@@ -49,19 +59,19 @@
 
 - name: make sure the destination parent directory is present
   file:
-    path: "{{tripleo_transfer_dest_dir|dirname}}"
+    path: "{{tripleo_transfer_dest_dir_safe|dirname}}"
     state: directory
   become: "{{tripleo_transfer_dest_become}}"
   delegate_to: "{{tripleo_transfer_dest_host}}"
 
 - name: push and extract the archive
   unarchive:
-    src: "{{tripleo_transfer_storage_root_dir}}/{{tripleo_transfer_dest_host}}{{tripleo_transfer_dest_dir}}.tar.gz"
-    dest: "{{tripleo_transfer_dest_dir|dirname}}"
+    src: "{{tripleo_transfer_storage_root_dir}}/{{tripleo_transfer_dest_host}}{{tripleo_transfer_dest_dir_safe}}.tar.gz"
+    dest: "{{tripleo_transfer_dest_dir_safe|dirname}}"
   become: "{{tripleo_transfer_dest_become}}"
   delegate_to: "{{tripleo_transfer_dest_host}}"
 
 - name: remove the local archive
   file:
-    path: "{{tripleo_transfer_storage_root_dir}}/{{tripleo_transfer_dest_host}}{{tripleo_transfer_dest_dir}}.tar.gz"
+    path: "{{tripleo_transfer_storage_root_dir}}/{{tripleo_transfer_dest_host}}{{tripleo_transfer_dest_dir_safe}}.tar.gz"
     state: absent
