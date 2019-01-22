@@ -16,9 +16,10 @@
 
 import six
 
+from keystoneauth1.identity.generic import Token as IdentityToken
 from keystoneauth1 import loading
 from keystoneauth1 import session as ks_session
-from keystoneauth1.token_endpoint import Token
+from keystoneauth1.token_endpoint import Token as SimpleToken
 from keystoneclient import service_catalog as ks_service_catalog
 from keystoneclient.v3 import client as ks_client
 from keystoneclient.v3 import endpoints as ks_endpoints
@@ -90,10 +91,10 @@ def get_session_and_auth(context, **kwargs):
             }
         )
 
-        auth = Token(endpoint=endpoint, token=context.auth_token)
+        auth = SimpleToken(endpoint=endpoint, token=context.auth_token)
 
         auth_uri = context.auth_uri or CONF.keystone_authtoken.auth_uri
-        ks_auth = Token(
+        ks_auth = SimpleToken(
             endpoint=auth_uri,
             token=context.auth_token
         )
@@ -106,6 +107,39 @@ def get_session_and_auth(context, **kwargs):
         "session": session,
         "auth": auth
     }
+
+
+# NOTE(dtantsur): get_session_and_auth returns a session tied to a specific
+# service. This function returns a generic session. Eventually we should switch
+# everything to using it and service-specific Adapter on top.
+def get_session(context):
+    """Get a generic session suitable for any service(s).
+
+    :param context: action context
+    :return: keystone `Session`
+    """
+    try:
+        context = context.security
+    except AttributeError:
+        pass
+
+    auth_uri = context.auth_uri or CONF.keystone_authtoken.auth_uri
+
+    try:
+        # TODO(dtantsur): a better way to detect the project domain?
+        project_domain = context.service_catalog['project']['domain']['name']
+    except KeyError:
+        project_domain = CONF.keystone_authtoken.project_domain_name
+
+    ks_auth = IdentityToken(auth_uri, token=context.auth_token,
+                            # NOTE(dtantsur): project scope is required for V3
+                            project_name=context.project_name,
+                            project_domain_name=project_domain)
+    sess = ks_session.Session(
+        auth=ks_auth,
+        verify=_determine_verify(context)
+    )
+    return sess
 
 
 def _admin_client(trust_id=None):
