@@ -26,6 +26,7 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
+from tripleo_common import update
 from tripleo_common.utils import overcloudrc
 from tripleo_common.utils import plan as plan_utils
 
@@ -175,6 +176,20 @@ class DeployStackAction(templates.ProcessTemplatesAction):
                 self.container, err))
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
+
+        if not stack_is_new:
+            try:
+                LOG.debug('Checking for compatible neutron mechanism drivers')
+                msg = update.check_neutron_mechanism_drivers(env, stack,
+                                                             swift,
+                                                             self.container)
+                if msg:
+                    return actions.Result(error=msg)
+            except swiftexceptions.ClientException as err:
+                err_msg = ("Error getting template %s: %s" % (
+                    self.container, err))
+                LOG.exception(err_msg)
+                return actions.Result(error=err_msg)
 
         # process all plan files and create or update a stack
         processed_data = super(DeployStackAction, self).run(context)
