@@ -7,8 +7,6 @@ disk_images:
       - selinux-permissive
     environment:
       FS_TYPE: xfs
-    packages:
-      - yum-plugin-priorities
     options:
       - "--mkfs-options '-s size=4096'"
   -
@@ -17,6 +15,4 @@ disk_images:
     distro: fedora
     elements:
       - selinux-permissive
-    packages:
-      - yum-plugin-priorities
 
