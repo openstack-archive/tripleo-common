@@ -1219,7 +1219,8 @@ class PythonImageUploader(BaseImageUploader):
         cmd.append(pull_source)
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                   universal_newlines=True)
 
         out, err = process.communicate()
         LOG.info(out)
@@ -1507,7 +1508,8 @@ class PythonImageUploader(BaseImageUploader):
         cmd = ['podman', 'rmi', image_url.path]
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
+        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                   universal_newlines=True)
 
         out, err = process.communicate()
         LOG.info(out)

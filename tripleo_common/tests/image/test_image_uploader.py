@@ -2075,7 +2075,8 @@ class TestPythonImageUploader(base.TestCase):
             'podman',
             'rmi',
             '/t/nova-api:latest'],
-            env={}, stdout=-1
+            env={}, stdout=-1,
+            universal_newlines=True
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
