@@ -58,7 +58,8 @@ class TestReserveNodes(base.TestCase):
         self.assertFalse(mock_pr.return_value.reserve_node.called)
         self.assertFalse(mock_pr.return_value.unprovision_node.called)
 
-    def test_failure(self, mock_pr):
+    @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
+    def test_failure(self, mock_log, mock_pr):
         instances = [
             {'hostname': 'host1'},
             {'hostname': 'host2', 'resource_class': 'compute',
@@ -82,6 +83,62 @@ class TestReserveNodes(base.TestCase):
         ])
         mock_pr.return_value.unprovision_node.assert_called_once_with(
             success_node)
+        mock_log.assert_called_once_with('Provisioning failed, cleaning up')
+
+    @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
+    def test_failure_to_clean_up(self, mock_log, mock_pr):
+        instances = [
+            {'hostname': 'host1'},
+            {'hostname': 'host2', 'resource_class': 'compute',
+             'capabilities': {'answer': '42'}},
+            {'hostname': 'host3'},
+        ]
+        success_node = mock.Mock(uuid='uuid1')
+        mock_pr.return_value.reserve_node.side_effect = [
+            success_node,
+            RuntimeError("boom"),
+        ]
+        mock_pr.return_value.unprovision_node.side_effect = AssertionError
+        action = baremetal_deploy.ReserveNodesAction(instances)
+        result = action.run(mock.Mock())
+
+        self.assertIn('RuntimeError: boom', result.error)
+        mock_pr.return_value.reserve_node.assert_has_calls([
+            mock.call(resource_class='baremetal', capabilities=None,
+                      candidates=None, traits=None),
+            mock.call(resource_class='compute', capabilities={'answer': '42'},
+                      candidates=None, traits=None)
+        ])
+        mock_pr.return_value.unprovision_node.assert_called_once_with(
+            success_node)
+        mock_log.assert_has_calls([
+            mock.call('Provisioning failed, cleaning up'),
+            mock.call('Unable to release node %s, moving on', success_node)
+        ])
+
+    def test_duplicate_hostname(self, mock_pr):
+        instances = [
+            {'hostname': 'host1'},
+            # name is used as the default for hostname
+            {'name': 'host1'},
+        ]
+        action = baremetal_deploy.ReserveNodesAction(instances)
+        result = action.run(mock.Mock())
+
+        self.assertIn('Hostname host1 is used more than once', result.error)
+        self.assertFalse(mock_pr.return_value.reserve_node.called)
+
+    def test_duplicate_name(self, mock_pr):
+        instances = [
+            {'hostname': 'host1', 'name': 'node-1'},
+            # name is used as the default for hostname
+            {'name': 'node-1'},
+        ]
+        action = baremetal_deploy.ReserveNodesAction(instances)
+        result = action.run(mock.Mock())
+
+        self.assertIn('Node node-1 is requested more than once', result.error)
+        self.assertFalse(mock_pr.return_value.reserve_node.called)
 
 
 @mock.patch.object(baremetal_deploy, '_provisioner', autospec=True)
@@ -243,10 +300,12 @@ class TestDeployNode(base.TestCase):
                          source.ramdisk_location)
         self.assertEqual('abcd', source.checksum)
 
-    def test_failure(self, mock_pr):
+    @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
+    def test_failure(self, mock_log, mock_pr):
         pr = mock_pr.return_value
+        instance = {'hostname': 'host1'}
         action = baremetal_deploy.DeployNodeAction(
-            instance={'hostname': 'host1'},
+            instance=instance,
             node='1234'
         )
         pr.provision_node.side_effect = RuntimeError('boom')
@@ -263,6 +322,38 @@ class TestDeployNode(base.TestCase):
             config=mock.ANY,
         )
         pr.unprovision_node.assert_called_once_with('1234')
+        mock_log.assert_called_once_with(
+            'Provisioning of %s on node %s failed',
+            instance, '1234')
+
+    @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
+    def test_failure_to_clean_up(self, mock_log, mock_pr):
+        pr = mock_pr.return_value
+        instance = {'hostname': 'host1'}
+        action = baremetal_deploy.DeployNodeAction(
+            instance=instance,
+            node='1234'
+        )
+        pr.provision_node.side_effect = RuntimeError('boom')
+        pr.unprovision_node.side_effect = AssertionError
+        result = action.run(mock.Mock())
+
+        self.assertIn('RuntimeError: boom', result.error)
+        pr.provision_node.assert_called_once_with(
+            '1234',
+            image=mock.ANY,
+            nics=[{'network': 'ctlplane'}],
+            hostname='host1',
+            root_size_gb=49,
+            swap_size_mb=None,
+            config=mock.ANY,
+        )
+        pr.unprovision_node.assert_called_once_with('1234')
+        mock_log.assert_has_calls([
+            mock.call('Provisioning of %s on node %s failed',
+                      instance, '1234'),
+            mock.call('Unable to release node %s, moving on', '1234')
+        ])
 
 
 @mock.patch.object(baremetal_deploy, '_provisioner', autospec=True)
@@ -275,7 +366,7 @@ class TestCheckExistingInstances(base.TestCase):
             {'hostname': 'host2', 'resource_class': 'compute',
              'capabilities': {'answer': '42'}}
         ]
-        existing = mock.MagicMock()
+        existing = mock.MagicMock(hostname='host2')
         pr.show_instance.side_effect = [
             RuntimeError('not found'),
             existing,
@@ -302,6 +393,17 @@ class TestCheckExistingInstances(base.TestCase):
         self.assertIn("'hostname' is a required property", result.error)
         self.assertFalse(mock_pr.return_value.show_instance.called)
 
+    def test_hostname_mismatch(self, mock_pr):
+        instances = [
+            {'hostname': 'host1'},
+        ]
+        mock_pr.return_value.show_instance.return_value.hostname = 'host2'
+        action = baremetal_deploy.CheckExistingInstancesAction(instances)
+        result = action.run(mock.Mock())
+
+        self.assertIn("hostname host1 was not found", result.error)
+        mock_pr.return_value.show_instance.assert_called_once_with('host1')
+
 
 @mock.patch.object(baremetal_deploy, '_provisioner', autospec=True)
 class TestWaitForDeployment(base.TestCase):
@@ -316,6 +418,18 @@ class TestWaitForDeployment(base.TestCase):
                                                          timeout=3600)
         inst = pr.wait_for_provisioning.return_value[0]
         self.assertIs(result, inst.to_dict.return_value)
+
+    def test_failure(self, mock_pr):
+        pr = mock_pr.return_value
+        pr.wait_for_provisioning.side_effect = RuntimeError('boom')
+        action = baremetal_deploy.WaitForDeploymentAction(
+            {'hostname': 'compute.cloud', 'uuid': 'uuid1'})
+        result = action.run(mock.Mock())
+
+        self.assertIn("RuntimeError: boom", result.error)
+        pr.wait_for_provisioning.assert_called_once_with(['uuid1'],
+                                                         timeout=3600)
+        self.assertFalse(pr.unprovision_node.called)
 
 
 @mock.patch.object(baremetal_deploy, '_provisioner', autospec=True)
