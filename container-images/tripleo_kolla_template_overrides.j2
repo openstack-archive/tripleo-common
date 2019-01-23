@@ -50,9 +50,8 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 #   openstack-tripleo-validations: validations
 #   nova-common: to run nova-manage cells_v2 commands on
 #   tripleo-heat-templates: to load the default plan from the CLI/UI
-#   python-notario: ceph-ansible depends on this but it is bind mounted from host
 #   ipmitool: for baremetal node discovery
-{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'openstack-tripleo-heat-templates', 'python2-notario', 'ipmitool'] %}
+{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'openstack-tripleo-heat-templates', 'ipmitool'] %}
 
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
