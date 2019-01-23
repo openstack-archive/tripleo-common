@@ -24,8 +24,6 @@ pip-log.txt
 .coverage
 cover
 .tox
-nosetests.xml
-.testrepository
 .venv
 .stestr/*
 
