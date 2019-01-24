@@ -94,6 +94,17 @@ class CheckExistingInstancesAction(base.TripleOAction):
             except Exception:
                 not_found.append(request)
             else:
+                # NOTE(dtantsur): metalsmith can match instances by node names,
+                # provide a safeguard to avoid conflicts.
+                if (instance.hostname and
+                        instance.hostname != request['hostname']):
+                    error = ("Requested hostname %s was not found, but the "
+                             "deployed node %s has a matching name. Refusing "
+                             "to proceed to avoid confusing results. Please "
+                             "either rename the node or use a different "
+                             "hostname") % (request['hostname'], instance.uuid)
+                    return actions.Result(error=error)
+
                 found.append(instance.to_dict())
 
         if found:
@@ -165,11 +176,7 @@ class ReserveNodesAction(base.TripleOAction):
         except Exception as exc:
             LOG.exception('Provisioning failed, cleaning up')
             # Remove all reservations on failure
-            try:
-                _release_nodes(provisioner, nodes)
-            except Exception:
-                LOG.exception('Clean up failed, some nodes may still be '
-                              'reserved by failed instances')
+            _release_nodes(provisioner, nodes)
             return actions.Result(
                 error="%s: %s" % (type(exc).__name__, exc)
             )
@@ -259,11 +266,7 @@ class DeployNodeAction(base.TripleOAction):
         except Exception as exc:
             LOG.exception('Provisioning of %s on node %s failed',
                           self.instance, self.node)
-            try:
-                _release_nodes(provisioner, [self.node])
-            except Exception:
-                LOG.exception('Clean up failed, node %s may still be '
-                              'reserved by the failed instance', self.node)
+            _release_nodes(provisioner, [self.node])
             return actions.Result(
                 error="%s: %s" % (type(exc).__name__, exc)
             )
@@ -286,8 +289,16 @@ class WaitForDeploymentAction(base.TripleOAction):
 
         LOG.debug('Waiting for instance %s to provision',
                   self.instance['hostname'])
-        instance = provisioner.wait_for_provisioning([self.instance['uuid']],
-                                                     timeout=self.timeout)[0]
+        try:
+            instance = provisioner.wait_for_provisioning(
+                [self.instance['uuid']], timeout=self.timeout)[0]
+        except Exception as exc:
+            LOG.exception('Provisioning of instance %s failed or timed out',
+                          self.instance['hostname'])
+            # Do not tear down, leave it up for the calling code to handle.
+            return actions.Result(
+                error="%s: %s" % (type(exc).__name__, exc)
+            )
         LOG.info('Successfully provisioned instance %s',
                  self.instance['hostname'])
         return instance.to_dict()
@@ -320,7 +331,22 @@ def _validate_instances(instances):
     for inst in instances:
         if inst.get('name') and not inst.get('hostname'):
             inst['hostname'] = inst['name']
+
     jsonschema.validate(instances, _INSTANCES_INPUT_SCHEMA)
+
+    hostnames = set()
+    names = set()
+    for inst in instances:
+        if inst['hostname'] in hostnames:
+            raise ValueError('Hostname %s is used more than once' %
+                             inst['hostname'])
+        hostnames.add(inst['hostname'])
+
+        if inst.get('name'):
+            if inst['name'] in names:
+                raise ValueError('Node %s is requested more than once' %
+                                 inst['name'])
+            names.add(inst['name'])
 
 
 def _release_nodes(provisioner, nodes):
