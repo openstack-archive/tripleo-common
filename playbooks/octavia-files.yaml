@@ -1,5 +1,5 @@
 ---
-- hosts: undercloud[0]
+- hosts: Undercloud[0]
   remote_user: stack
   gather_facts: True
   vars:
