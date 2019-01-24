@@ -354,7 +354,11 @@ RUN mkdir -p /openstack && \
 
 {% block keystone_footer %}
 RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone /openstack/healthcheck && \
+    if [ -f /usr/share/openstack-tripleo-common/healtcheck/keystone ]; then \
+        ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone /openstack/healthcheck; \
+    else \
+        ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone-public /openstack/healthcheck; \
+    fi && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
