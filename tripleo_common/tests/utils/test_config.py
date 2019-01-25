@@ -231,7 +231,12 @@ class TestConfig(base.TestCase):
 
         return deployment_data, configs
 
-    def _get_config_dict(self, deployment):
+    def _get_deployment_id(self, deployment):
+        return deployment.attributes['value']['deployment']
+
+    def _get_config_dict(self, deployment_id):
+        deployment = list(filter(
+            lambda d: d.id == deployment_id, self.deployments))[0]
         config = self.configs[deployment.attributes['value']['config']].copy()
         config['inputs'] = []
         config['inputs'].append(dict(
@@ -247,15 +252,16 @@ class TestConfig(base.TestCase):
         return yaml.safe_load(open(file_path).read())
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
+    @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
     def test_config_download(self, mock_deployment_data, mock_config_dict,
+                             mock_deployment_resource_id,
                              mock_git_init):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
         stack = mock.MagicMock()
         heat.stacks.get.return_value = stack
-
         stack.outputs = [
             {'output_key': 'RoleNetHostnameMap',
              'output_value': {
@@ -288,8 +294,9 @@ class TestConfig(base.TestCase):
         deployment_data, configs = \
             self._get_config_data('config_data.yaml')
         self.configs = configs
-
+        self.deployments = deployment_data
         mock_deployment_data.return_value = deployment_data
+        mock_deployment_resource_id.side_effect = self._get_deployment_id
         mock_config_dict.side_effect = self._get_config_dict
 
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
@@ -355,15 +362,17 @@ class TestConfig(base.TestCase):
                                     d)))
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
+    @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
     def test_config_download_os_apply_config(
-        self, mock_deployment_data, mock_config_dict, mock_git_init):
+        self, mock_deployment_data, mock_config_dict,
+        mock_deployment_resource_id, mock_git_init):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
         stack = mock.MagicMock()
         heat.stacks.get.return_value = stack
-
+        heat.resources.get.return_value = mock.MagicMock()
         stack.outputs = [
             {'output_key': 'RoleNetHostnameMap',
              'output_value': {
@@ -415,9 +424,10 @@ class TestConfig(base.TestCase):
         deployment_data.append(deployment_mock)
 
         self.configs = configs
-
+        self.deployments = deployment_data
         mock_deployment_data.return_value = deployment_data
         mock_config_dict.side_effect = self._get_config_dict
+        mock_deployment_resource_id.side_effect = self._get_deployment_id
 
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         with warnings.catch_warnings(record=True) as w:
@@ -428,21 +438,26 @@ class TestConfig(base.TestCase):
             assert "group:os-apply-config is deprecated" in str(w[-1].message)
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
+    @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
-    def test_config_download_no_deployment_name(self, mock_deployment_data,
-                                                mock_git_init):
+    def test_config_download_no_deployment_name(
+        self, mock_deployment_data, mock_deployment_resource_id,
+        mock_git_init):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
         stack = mock.MagicMock()
         heat.stacks.get.return_value = stack
+        heat.resources.get.return_value = mock.MagicMock()
 
         deployment_data, _ = self._get_config_data('config_data.yaml')
 
         # Delete the name of the first deployment and his parent.
         del deployment_data[0].attributes['value']['name']
         deployment_data[0].parent_resource = None
+        self.deployments = deployment_data
 
         mock_deployment_data.return_value = deployment_data
+        mock_deployment_resource_id.side_effect = self._get_deployment_id
 
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         self.assertRaises(ValueError,
@@ -450,15 +465,19 @@ class TestConfig(base.TestCase):
         mock_git_init.assert_called_once_with(self.tmp_dir)
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
+    @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
     def test_config_download_no_deployment_uuid(self, mock_deployment_data,
                                                 mock_config_dict,
+                                                mock_deployment_resource_id,
                                                 mock_git_init):
         heat = mock.MagicMock()
         self.config = ooo_config.Config(heat)
         stack = mock.MagicMock()
         heat.stacks.get.return_value = stack
+        heat.resources.get.return_value = mock.MagicMock()
+
         stack.outputs = [
             {'output_key': 'RoleNetHostnameMap',
              'output_value': {
@@ -495,14 +514,20 @@ class TestConfig(base.TestCase):
         deployment_data[0].attributes['value']['deployment'] = \
             'TripleOSoftwareDeployment'
 
+        # Set the physical_resource_id as '' for the second deployment
+        deployment_data[1].attributes['value']['deployment'] = ''
+
         self.configs = configs
+        self.deployments = deployment_data
         mock_deployment_data.return_value = deployment_data
         mock_config_dict.side_effect = self._get_config_dict
+        mock_deployment_resource_id.side_effect = self._get_deployment_id
 
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         with warnings.catch_warnings(record=True) as w:
             self.config.download_config(stack, self.tmp_dir)
             assert "Skipping deployment" in str(w[-1].message)
+            assert "Skipping deployment" in str(w[-2].message)
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.git, 'Repo')
@@ -614,11 +639,11 @@ class TestConfig(base.TestCase):
         deployment_data, configs = \
             self._get_config_data('config_data.yaml')
         self.configs = configs
+        self.deployments = deployment_data
 
         stack_data = self.config.fetch_config('overcloud')
         mock_deployment_data.return_value = deployment_data
         mock_config_dict.side_effect = self._get_config_dict
-
         config_dir = self.useFixture(fixtures.TempDir()).path
 
         self.config.write_config(stack_data, 'overcloud', config_dir)
