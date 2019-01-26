@@ -29,9 +29,8 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% else %}
 {% set barbican_api_packages_remove = ['uwsgi-plugin-python'] %}
 {% endif %}
-{% block cinder_volume_redhat_setup %}
-# RUN sed -i '1 i include /var/lib/cinder/volumes/*' /etc/tgt/tgtd.conf
-{% endblock %}
+# remove the block to override the behavior
+{% block cinder_volume_redhat_setup %}{% endblock %}
 
 # This installs the puppet dependency in the base container and includes helper scripts
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
