@@ -123,11 +123,9 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set openstack_base_packages_append = ['python-crypto', 'python-msgpack', 'openstack-selinux'] %}
 
 # Use mariadb-server-galera and xinetd for galera and clustercheck
-{#  'percona-xtrabackup', # EPEL
-    'pv'                  # EPEL
+{#  'pv'                  # EPEL
 #}
 {% set mariadb_packages_remove = [
-    'percona-xtrabackup',
     'pv'
 ] %}
 {% set mariadb_packages_append = ['xinetd', 'pacemaker', 'pacemaker-remote',
