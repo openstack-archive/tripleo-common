@@ -12,8 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import metalsmith
 from metalsmith import sources
 import mock
+from openstack import exceptions as sdk_exc
 
 from tripleo_common.actions import baremetal_deploy
 from tripleo_common.tests import base
@@ -195,6 +197,34 @@ class TestDeployNode(base.TestCase):
         self.assertEqual([], config.ssh_keys)
         self.assertEqual('heat-admin', config.users[0]['name'])
 
+    def test_success_advanced_nic(self, mock_pr):
+        action = baremetal_deploy.DeployNodeAction(
+            instance={'hostname': 'host1',
+                      'nics': [{'subnet': 'ctlplane-subnet'},
+                               {'network': 'ctlplane',
+                                'fixed_ip': '10.0.0.2'}]},
+            node='1234'
+        )
+        result = action.run(mock.Mock())
+
+        pr = mock_pr.return_value
+        self.assertEqual(
+            pr.provision_node.return_value.to_dict.return_value,
+            result)
+        pr.provision_node.assert_called_once_with(
+            '1234',
+            image=mock.ANY,
+            nics=[{'subnet': 'ctlplane-subnet'},
+                  {'network': 'ctlplane', 'fixed_ip': '10.0.0.2'}],
+            hostname='host1',
+            root_size_gb=49,
+            swap_size_mb=None,
+            config=mock.ANY,
+        )
+        config = pr.provision_node.call_args[1]['config']
+        self.assertEqual([], config.ssh_keys)
+        self.assertEqual('heat-admin', config.users[0]['name'])
+
     def test_success(self, mock_pr):
         pr = mock_pr.return_value
         action = baremetal_deploy.DeployNodeAction(
@@ -228,8 +258,6 @@ class TestDeployNode(base.TestCase):
         self.assertIsInstance(source, sources.GlanceImage)
         # TODO(dtantsur): check the image when it's a public field
 
-    # NOTE(dtantsur): limited coverage for source detection since this code is
-    # being moved to metalsmith in 0.9.0.
     def test_success_http_partition_image(self, mock_pr):
         action = baremetal_deploy.DeployNodeAction(
             instance={'hostname': 'host1',
@@ -363,12 +391,14 @@ class TestCheckExistingInstances(base.TestCase):
         pr = mock_pr.return_value
         instances = [
             {'hostname': 'host1'},
+            {'hostname': 'host3'},
             {'hostname': 'host2', 'resource_class': 'compute',
              'capabilities': {'answer': '42'}}
         ]
         existing = mock.MagicMock(hostname='host2')
         pr.show_instance.side_effect = [
-            RuntimeError('not found'),
+            sdk_exc.ResourceNotFound(""),
+            metalsmith.exceptions.Error(""),
             existing,
         ]
         action = baremetal_deploy.CheckExistingInstancesAction(instances)
@@ -376,10 +406,11 @@ class TestCheckExistingInstances(base.TestCase):
 
         self.assertEqual({
             'instances': [existing.to_dict.return_value],
-            'not_found': [{'hostname': 'host1'}]
+            'not_found': [{'hostname': 'host1', 'image': 'overcloud-full'},
+                          {'hostname': 'host3', 'image': 'overcloud-full'}]
         }, result)
         pr.show_instance.assert_has_calls([
-            mock.call('host1'), mock.call('host2')
+            mock.call(host) for host in ['host1', 'host3', 'host2']
         ])
 
     def test_missing_hostname(self, mock_pr):
@@ -403,6 +434,18 @@ class TestCheckExistingInstances(base.TestCase):
 
         self.assertIn("hostname host1 was not found", result.error)
         mock_pr.return_value.show_instance.assert_called_once_with('host1')
+
+    def test_unexpected_error(self, mock_pr):
+        instances = [
+            {'hostname': 'host%d' % i} for i in range(3)
+        ]
+        mock_pr.return_value.show_instance.side_effect = RuntimeError('boom')
+        action = baremetal_deploy.CheckExistingInstancesAction(instances)
+        result = action.run(mock.Mock())
+
+        self.assertIn("hostname host0", result.error)
+        self.assertIn("RuntimeError: boom", result.error)
+        mock_pr.return_value.show_instance.assert_called_once_with('host0')
 
 
 @mock.patch.object(baremetal_deploy, '_provisioner', autospec=True)
