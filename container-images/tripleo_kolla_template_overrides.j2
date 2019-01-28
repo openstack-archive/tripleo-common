@@ -106,14 +106,11 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 
 # Remove packages not present in repos
 #
-{# 'libtomcrypt',    # EPEL, Unknown use
-   'libtommath',     # EPEL, Unknown use
+{#
    'python2-crypto', # EPEL, RDO is python-crypto
    'python2-msgpack' # EPEL, RDO is python-msgpack
 #}
 {% set openstack_base_packages_remove = [
-    'libtomcrypt',
-    'libtommath',
     'python2-crypto',
     'python2-msgpack',
     'python-cloudkittyclient',
