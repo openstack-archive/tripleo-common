@@ -18,6 +18,7 @@ import jsonschema
 import metalsmith
 from metalsmith import sources
 from mistral_lib import actions
+from openstack import exceptions as sdk_exc
 import six
 
 from tripleo_common.actions import base
@@ -51,6 +52,7 @@ _INSTANCES_INPUT_SCHEMA = {
                                    'network': {'type': 'string'},
                                    'port': {'type': 'string'},
                                    'fixed_ip': {'type': 'string'},
+                                   'subnet': {'type': 'string'},
                                },
                                'additionalProperties': False}},
             'profile': {'type': 'string'},
@@ -89,10 +91,16 @@ class CheckExistingInstancesAction(base.TripleOAction):
         for request in self.instances:
             try:
                 instance = provisioner.show_instance(request['hostname'])
-            # TODO(dtantsur): use openstacksdk exceptions when metalsmith
-            # is bumped to 0.9.0.
-            except Exception:
+            # TODO(dtantsur): replace Error with a specific exception
+            except (sdk_exc.ResourceNotFound, metalsmith.exceptions.Error):
                 not_found.append(request)
+            except Exception as exc:
+                message = ('Failed to request instance information for '
+                           'hostname %s' % request['hostname'])
+                LOG.exception(message)
+                return actions.Result(
+                    error="%s. %s: %s" % (message, type(exc).__name__, exc)
+                )
             else:
                 # NOTE(dtantsur): metalsmith can match instances by node names,
                 # provide a safeguard to avoid conflicts.
@@ -166,13 +174,7 @@ class ReserveNodesAction(base.TripleOAction):
                     traits=instance.get('traits'))
                 LOG.info('Reserved node %s for instance %s', node, instance)
                 nodes.append(node)
-                try:
-                    node_id = node.id
-                except AttributeError:
-                    # TODO(dtantsur): transition from ironicclient to
-                    # openstacksdk, remove when metalsmith is bumped to 0.9.0
-                    node_id = node.uuid
-                result.append({'node': node_id, 'instance': instance})
+                result.append({'node': node.id, 'instance': instance})
         except Exception as exc:
             LOG.exception('Provisioning failed, cleaning up')
             # Remove all reservations on failure
@@ -204,45 +206,10 @@ class DeployNodeAction(base.TripleOAction):
         self.default_network = default_network
         self.default_root_size = default_root_size
 
-    def _get_image(self):
-        # TODO(dtantsur): move this logic to metalsmith in 0.9.0
-        image = self.instance.get('image', self.default_image)
-        image_type = _link_type(image)
-        if image_type == 'glance':
-            return sources.GlanceImage(image)
-        else:
-            checksum = self.instance.get('image_checksum')
-            if (checksum and image_type == 'http' and
-                    _link_type(checksum) == 'http'):
-                kwargs = {'checksum_url': checksum}
-            else:
-                kwargs = {'checksum': checksum}
-
-            whole_disk_image = not (self.instance.get('image_kernel') or
-                                    self.instance.get('image_ramdisk'))
-
-            if whole_disk_image:
-                if image_type == 'http':
-                    return sources.HttpWholeDiskImage(image, **kwargs)
-                else:
-                    return sources.FileWholeDiskImage(image, **kwargs)
-            else:
-                if image_type == 'http':
-                    return sources.HttpPartitionImage(
-                        image,
-                        kernel_url=self.instance.get('image_kernel'),
-                        ramdisk_url=self.instance.get('image_ramdisk'),
-                        **kwargs)
-                else:
-                    return sources.FilePartitionImage(
-                        image,
-                        kernel_location=self.instance.get('image_kernel'),
-                        ramdisk_location=self.instance.get('image_ramdisk'),
-                        **kwargs)
-
     def run(self, context):
         try:
-            _validate_instances([self.instance])
+            _validate_instances([self.instance],
+                                default_image=self.default_image)
         except Exception as exc:
             LOG.error('Failed to validate the request. %s', exc)
             return actions.Result(error=six.text_type(exc))
@@ -252,11 +219,12 @@ class DeployNodeAction(base.TripleOAction):
         LOG.debug('Starting provisioning of %s on node %s',
                   self.instance, self.node)
         try:
+            image = _get_source(self.instance)
             instance = provisioner.provision_node(
                 self.node,
                 config=self.config,
                 hostname=self.instance['hostname'],
-                image=self._get_image(),
+                image=image,
                 nics=self.instance.get('nics',
                                        [{'network': self.default_network}]),
                 root_size_gb=self.instance.get('root_size_gb',
@@ -327,16 +295,22 @@ class UndeployInstanceAction(base.TripleOAction):
         LOG.info('Successfully unprovisioned %s', instance.hostname)
 
 
-def _validate_instances(instances):
+def _validate_instances(instances, default_image='overcloud-full'):
     for inst in instances:
         if inst.get('name') and not inst.get('hostname'):
             inst['hostname'] = inst['name']
+
+        # Set the default image so that the source validation can succeed.
+        inst.setdefault('image', default_image)
 
     jsonschema.validate(instances, _INSTANCES_INPUT_SCHEMA)
 
     hostnames = set()
     names = set()
     for inst in instances:
+        # NOTE(dtantsur): validate image parameters
+        _get_source(inst)
+
         if inst['hostname'] in hostnames:
             raise ValueError('Hostname %s is used more than once' %
                              inst['hostname'])
@@ -360,10 +334,8 @@ def _release_nodes(provisioner, nodes):
             LOG.info('Removed reservation from node %s', node)
 
 
-def _link_type(image):
-    if image.startswith('http://') or image.startswith('https://'):
-        return 'http'
-    elif image.startswith('file://'):
-        return 'file'
-    else:
-        return 'glance'
+def _get_source(instance):
+    return sources.detect(image=instance.get('image'),
+                          kernel=instance.get('image_kernel'),
+                          ramdisk=instance.get('image_ramdisk'),
+                          checksum=instance.get('image_checksum'))
