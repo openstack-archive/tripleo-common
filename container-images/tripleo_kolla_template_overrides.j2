@@ -267,6 +267,8 @@ RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/fluentd /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+# make sure no gems are installed
+{% block fluentd_plugins_install %}{% endblock %}
 
 {% block glance_api_footer %}
 RUN mkdir -p /openstack && \
