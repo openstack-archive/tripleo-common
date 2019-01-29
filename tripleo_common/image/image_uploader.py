@@ -243,8 +243,12 @@ class BaseImageUploader(object):
             action = ansible.AnsiblePlaybookAction(
                 playbook=playbook,
                 work_dir=work_dir,
-                verbosity=3,
-                extra_env_variables=dict(os.environ)
+                verbosity=1,
+                extra_env_variables=dict(os.environ),
+                override_ansible_cfg=(
+                    "[defaults]\n"
+                    "stdout_callback=yaml\n"
+                )
             )
             result = action.run(None)
             log_path = result.get('log_path')
