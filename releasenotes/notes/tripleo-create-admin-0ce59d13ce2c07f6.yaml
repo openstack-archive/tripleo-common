@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Break out tripleo-admin creation to its own role called tripleo-create-admin.
+    This removes some inline ansible from the mistral workflow, and allows
+    this role to be reused in other contexts (such as undercloud install).
