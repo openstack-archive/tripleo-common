@@ -799,8 +799,12 @@ class TestDockerImageUploader(base.TestCase):
         mock_ansible.assert_called_once_with(
             playbook=playbook,
             work_dir=mock.ANY,
-            verbosity=3,
-            extra_env_variables=mock.ANY
+            verbosity=1,
+            extra_env_variables=mock.ANY,
+            override_ansible_cfg=(
+                "[defaults]\n"
+                "stdout_callback=yaml\n"
+            )
         )
         self.dockermock.return_value.tag.assert_not_called()
         self.dockermock.return_value.push.assert_called_once_with(
@@ -1100,8 +1104,12 @@ class TestSkopeoImageUploader(base.TestCase):
         mock_ansible.assert_called_once_with(
             playbook=playbook,
             work_dir=mock.ANY,
-            verbosity=3,
-            extra_env_variables=mock.ANY
+            verbosity=1,
+            extra_env_variables=mock.ANY,
+            override_ansible_cfg=(
+                "[defaults]\n"
+                "stdout_callback=yaml\n"
+            )
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
