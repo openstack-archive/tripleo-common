@@ -166,6 +166,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% if distro_python3 %}
 {% set openstack_base_packages_remove = [
     'python3-cloudkittyclient',
+    'python3-congressclient',
     'python3-elasticsearch',
     'python3-magnumclient',
     'python3-muranoclient',
