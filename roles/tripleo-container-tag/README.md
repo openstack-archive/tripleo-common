@@ -15,6 +15,7 @@ Role variables
 - container_image: -- Name of the container image to tag.
 - container_image_latest: -- Name of the tag.
 - container_cli: -- Name of the Container CLI tool (default to docker).
+- pull_image: -- Pulling or not the image passed in container_image variable ( default to true).
 
 Example Playbook
 ----------------
