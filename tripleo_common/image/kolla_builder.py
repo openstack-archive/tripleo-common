@@ -432,7 +432,8 @@ class KollaImageBuilder(base.BaseImageManager):
                 result.append(entry)
         return result
 
-    def build_images(self, kolla_config_files=None, excludes=[]):
+    def build_images(self, kolla_config_files=None, excludes=[],
+                     template_only=False, kolla_tmp_dir=None):
 
         cmd = ['kolla-build']
         if kolla_config_files:
@@ -452,6 +453,15 @@ class KollaImageBuilder(base.BaseImageManager):
             if image and image not in excludes:
                 cmd.append(image)
 
+        if template_only:
+            # build the dep list cmd line
+            cmd_deps = list(cmd)
+            cmd_deps.append('--list-dependencies')
+            # build the template only cmd line
+            cmd.append('--template-only')
+            cmd.append('--work-dir')
+            cmd.append(kolla_tmp_dir)
+
         self.logger.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
         process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
@@ -459,4 +469,16 @@ class KollaImageBuilder(base.BaseImageManager):
         out, err = process.communicate()
         if process.returncode != 0:
             raise subprocess.CalledProcessError(process.returncode, cmd, err)
+
+        if template_only:
+            self.logger.info('Running %s' % ' '.join(cmd_deps))
+            env = os.environ.copy()
+            process = subprocess.Popen(cmd_deps, env=env,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE,
+                                       universal_newlines=True)
+            out, err = process.communicate()
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(process.returncode,
+                                                    cmd_deps, err)
         return out
