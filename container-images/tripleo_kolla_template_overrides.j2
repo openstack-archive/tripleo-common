@@ -542,12 +542,11 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-#TODO(aschultz): uncomment once we have promotion see LP#1813998
-#{% block placement_api_footer %}
-#RUN mkdir -p /openstack && \
-#    ln -s /usr/share/openstack-tripleo-common/healthcheck/placement-api /openstack/healthcheck && \
-#    chmod a+rx /openstack/healthcheck
-#{% endblock %}
+{% block placement_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/placement-api /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
 
 {% block rabbitmq_install_plugins %}
 # External rabbitmq plugins installation is disabled
