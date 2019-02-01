@@ -1,0 +1,23 @@
+- name: create user {{ tripleo_admin_user }}
+  user:
+    name: '{{ tripleo_admin_user }}'
+- name: grant admin rights to user {{ tripleo_admin_user }}
+  copy:
+    dest: /etc/sudoers.d/{{ tripleo_admin_user }}
+    content: |
+      {{ tripleo_admin_user }} ALL=(ALL) NOPASSWD:ALL
+    mode: 0440
+- name: ensure .ssh dir exists for user {{ tripleo_admin_user }}
+  file:
+    path: /home/{{ tripleo_admin_user }}/.ssh
+    state: directory
+    owner: '{{ tripleo_admin_user }}'
+    group: '{{ tripleo_admin_user }}'
+    mode: 0700
+- name: ensure authorized_keys file exists for user {{ tripleo_admin_user }}
+  file:
+    path: /home/{{ tripleo_admin_user }}/.ssh/authorized_keys
+    state: touch
+    owner: '{{ tripleo_admin_user }}'
+    group: '{{ tripleo_admin_user }}'
+    mode: 0600
