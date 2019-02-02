@@ -501,6 +501,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+{% block nova_placement_api_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-placement /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
 {% block octavia_api_footer %}
 RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
@@ -540,11 +546,12 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% block placement_api_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/placement-api /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
+#TODO(aschultz): uncomment once we have promotion see LP#1813998
+#{% block placement_api_footer %}
+#RUN mkdir -p /openstack && \
+#    ln -s /usr/share/openstack-tripleo-common/healthcheck/placement-api /openstack/healthcheck && \
+#    chmod a+rx /openstack/healthcheck
+#{% endblock %}
 
 {% block rabbitmq_install_plugins %}
 # External rabbitmq plugins installation is disabled
