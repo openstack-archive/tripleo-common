@@ -150,7 +150,7 @@ class TripleoInventory(object):
                 'hosts': self._hosts(['undercloud']),
                 'vars': {
                     'ansible_host': 'localhost',
-                    'ansible_connection': 'local',
+                    'ansible_ssh_user': self.ansible_ssh_user,
                     'ansible_python_interpreter': sys.executable,
                     # see https://github.com/ansible/ansible/issues/41808
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',

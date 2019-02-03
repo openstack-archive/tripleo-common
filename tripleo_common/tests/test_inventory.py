@@ -198,7 +198,7 @@ class TestInventory(base.TestCase):
                     'redis_vip': 'x.x.x.6'}},
             'Undercloud': {
                 'hosts': ['undercloud'],
-                'vars': {'ansible_connection': 'local',
+                'vars': {'ansible_ssh_user': 'heat-admin',
                          'ansible_host': 'localhost',
                          'ansible_python_interpreter': sys.executable,
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
@@ -272,7 +272,7 @@ class TestInventory(base.TestCase):
                     'redis_vip': 'x.x.x.6'}},
             'Undercloud': {
                 'hosts': ['undercloud'],
-                'vars': {'ansible_connection': 'local',
+                'vars': {'ansible_ssh_user': 'my-custom-admin',
                          'ansible_host': 'localhost',
                          'ansible_python_interpreter': 'foo',
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
@@ -370,7 +370,7 @@ class TestInventory(base.TestCase):
             'sh': {'children': {'CustomRole': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
             'Undercloud': {'hosts': {'undercloud': {}},
-                           'vars': {'ansible_connection': 'local',
+                           'vars': {'ansible_ssh_user': 'heat-admin',
                                     'ansible_host': 'localhost',
                                     'ansible_python_interpreter':
                                         sys.executable,
