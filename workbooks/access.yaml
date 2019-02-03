@@ -31,9 +31,32 @@ workflows:
     tasks:
       get_pubkey:
         action: tripleo.validations.get_pubkey
-        on-success: get_blacklisted_ip_addresses
+        on-success: authorize_undercloud_admin
         publish:
           pubkey: <% task().result %>
+
+      authorize_undercloud_admin:
+        action: tripleo.ansible-playbook
+        # older underclouds may not have a tripleo-admin user,
+        # so continue on success or failure
+        on-complete: get_blacklisted_ip_addresses
+        input:
+          inventory:
+            undercloud:
+              hosts:
+                localhost:
+                  ansible_connection: local
+          playbook:
+            - hosts: undercloud
+              tasks:
+              - name: undercloud authorize user <% $.overcloud_admin %>
+                import_role:
+                  name: tripleo-create-admin
+                  tasks_from: authorize_user.yml
+                vars:
+                  tripleo_admin_user: <% $.overcloud_admin %>
+                  tripleo_admin_pubkey: <% $.pubkey %>
+          execution_id: <% execution().id %>
 
       get_blacklisted_ip_addresses:
         action: heat.stacks_output_show
@@ -50,23 +73,12 @@ workflows:
       get_ssh_servers_not_blacklisted:
         publish:
           ssh_servers_not_blacklisted: <% let(blacklisted=>$.blacklisted_ip_addresses, ssh_servers=>$.ssh_servers) -> $ssh_servers.where(not $ in $blacklisted) %>
-        on-success: generate_playbook
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-
-      generate_playbook:
         on-success:
           - create_admin_via_nova: <% $.ssh_private_key = null %>
           - create_admin_via_ssh: <% $.ssh_private_key != null %>
-        publish:
-          create_admin_tasks:
-            - name: create and authorize user <% $.overcloud_admin %>
-              import_role:
-                name: tripleo-create-admin
-              vars:
-                tripleo_admin_user: <% $.overcloud_admin %>
-                tripleo_admin_pubkey: <% $.pubkey %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
 
       # Nova variant
       create_admin_via_nova:
@@ -74,7 +86,13 @@ workflows:
         input:
           queue_name: <% $.queue_name %>
           ssh_servers: <% $.ssh_servers_not_blacklisted %>
-          tasks: <% $.create_admin_tasks %>
+          tasks:
+            - name: create and authorize user <% $.overcloud_admin %>
+              import_role:
+                name: tripleo-create-admin
+              vars:
+                tripleo_admin_user: <% $.overcloud_admin %>
+                tripleo_admin_pubkey: <% $.pubkey %>
           overcloud_admin: <% $.overcloud_admin %>
 
       # SSH variant
@@ -84,7 +102,13 @@ workflows:
           ssh_private_key: <% $.ssh_private_key %>
           ssh_user: <% $.ssh_user %>
           ssh_servers: <% $.ssh_servers_not_blacklisted %>
-          tasks: <% $.create_admin_tasks %>
+          tasks:
+            - name: create and authorize user <% $.overcloud_admin %>
+              import_role:
+                name: tripleo-create-admin
+              vars:
+                tripleo_admin_user: <% $.overcloud_admin %>
+                tripleo_admin_pubkey: <% $.pubkey %>
 
   create_admin_via_nova:
     input:
