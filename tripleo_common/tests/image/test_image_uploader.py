@@ -55,6 +55,10 @@ class TestImageUploadManager(base.TestCase):
         self.filelist = files
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_registry_to_registry')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
@@ -68,13 +72,13 @@ class TestImageUploadManager(base.TestCase):
                 return_value=False)
     @mock.patch('os.path.isfile', return_value=True)
     @mock.patch('fcntl.ioctl', side_effect=Exception)
-    @mock.patch('tripleo_common.image.image_uploader.Client')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'get_undercloud_registry', return_value='192.0.2.0:8787')
-    def test_file_parsing(self, mock_gur, mockdocker, mockioctl, mockpath,
+    def test_file_parsing(self, mock_gur, mockioctl, mockpath,
                           mock_images_match, mock_is_insecure, mock_inspect,
-                          mock_auth):
+                          mock_auth, mock_copy, mock_manifest):
 
+        mock_manifest.return_value = '{"layers": []}'
         mock_inspect.return_value = {}
         manager = image_uploader.ImageUploadManager(self.filelist)
         parsed_data = manager.upload()
@@ -86,27 +90,6 @@ class TestImageUploadManager(base.TestCase):
         sorted_parsed_data = sorted(parsed_data,
                                     key=operator.itemgetter('imagename'))
         self.assertEqual(sorted_expected_data, sorted_parsed_data)
-
-        dockerc = mockdocker.return_value
-        dockerc.remove_image.assert_has_calls([
-            mock.call('192.0.2.0:8787/tripleomaster'
-                      '/centos-binary-nova-libvirt:liberty'),
-            mock.call('docker.io/tripleomaster'
-                      '/centos-binary-nova-compute:liberty'),
-            mock.call('docker.io/tripleomaster'
-                      '/centos-binary-nova-libvirt:liberty'),
-            mock.call('docker.io/tripleomaster'
-                      '/heat-docker-agents-centos:latest'),
-            mock.call('docker.io/tripleomaster'
-                      '/image-with-missing-tag:latest'),
-
-            mock.call('localhost:8787/tripleomaster'
-                      '/centos-binary-nova-compute:liberty'),
-            mock.call('localhost:8787/tripleomaster'
-                      '/heat-docker-agents-centos:latest'),
-            mock.call('localhost:8787/tripleomaster/'
-                      'image-with-missing-tag:latest'),
-        ])
 
     @mock.patch('netifaces.ifaddresses')
     @mock.patch('netifaces.interfaces')
