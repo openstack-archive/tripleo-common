@@ -141,8 +141,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-nova-novncproxy:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-placement-api:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-nova-scheduler:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-nova-serialproxy:current-tripleo
