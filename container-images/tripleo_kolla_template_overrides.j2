@@ -214,6 +214,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 
 # Required for nova migration
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
+{% set nova_libvirt_packages_remove = ['libvirt-daemon-driver-lxc'] %}
 # On RHEL7 /etc/pki/CA was part of base openssl package.
 # On RHEL8 it is now in openssl-perl.
 {% set nova_libvirt_packages_append = ['openstack-nova-migration', 'openssl-perl'] %}
