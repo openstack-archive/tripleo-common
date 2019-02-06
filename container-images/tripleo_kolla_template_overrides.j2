@@ -152,12 +152,6 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
 {% set nova_libvirt_packages_append = ['openstack-nova-migration'] %}
 
-# workaround for LP #1814233
-# Review https://review.openstack.org/#/c/634365/
-# Remove when https://review.openstack.org/#/c/634402/ is merged
-{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10'] %}
-{% set rabbitmq_packages_append = ['rabbitmq-server'] %}
-
 ############################ service container footers #########################
 
 {% block aodh_api_footer %}
@@ -563,8 +557,13 @@ RUN mkdir -p /openstack && \
 # External rabbitmq plugins installation is disabled
 {% endblock %}
 
+# workaround for LP #1814233
+# Review https://review.openstack.org/#/c/634365/
+# Remove when https://review.openstack.org/#/c/634402/ is merged
+{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10'] %}
 {% set rabbitmq_packages_append = [
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
+    'rabbitmq-server', 'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
+
 {% block rabbitmq_footer %}
 RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/rabbitmq /openstack/healthcheck && \
