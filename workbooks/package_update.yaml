@@ -27,6 +27,8 @@ workflows:
           timeout: <% $.timeout %>
           container: <% $.container %>
           ceph_ansible_playbook: <% $.ceph_ansible_playbook %>
+        publish-on-error:
+          message: <% task().result %>
         on-success: clean_plan
         on-error: set_update_failed
 
@@ -37,15 +39,20 @@ workflows:
           parameter: CephAnsiblePlaybook
           env_key: parameter_defaults
           delete: true
-        on-success: send_message
+        on-success: set_update_success
         on-error: set_update_failed
-
 
       set_update_failed:
         on-success: send_message
         publish:
           status: FAILED
-          message: <% task(update).result %>
+          update_status: UPDATE_FAILED
+
+      set_update_success:
+        on-success: send_message
+        publish:
+          status: SUCCESS
+          update_status: UPDATE_SUCCESS
 
       send_message:
         action: zaqar.queue_post
