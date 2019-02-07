@@ -1,9 +1,14 @@
+- name: make sure we don't have a trailing forward slash
+  set_fact:
+    tripleo_persist_dir_safe: "{{tripleo_persist_dir|regex_replace('\\/$', '')}}"
+    cacheable: no
+
 - name: make sure the parent directory is present
   file:
-    path: "{{tripleo_persist_dir|dirname}}"
+    path: "{{tripleo_persist_dir_safe|dirname}}"
     state: directory
 
 - name: push and extract the archive
   unarchive:
-    src: "{{tripleo_persist_storage_root_dir}}/{{inventory_hostname}}{{tripleo_persist_dir}}.tar.gz"
-    dest: "{{tripleo_persist_dir|dirname}}"
+    src: "{{tripleo_persist_storage_root_dir}}/{{inventory_hostname}}{{tripleo_persist_dir_safe}}.tar.gz"
+    dest: "{{tripleo_persist_dir_safe|dirname}}"

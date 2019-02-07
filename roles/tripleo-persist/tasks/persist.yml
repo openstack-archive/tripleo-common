@@ -13,17 +13,22 @@
     prefix: ansible.tripleo-persist.
   register: tripleo_persist_tempfile
 
+- name: make sure we don't have a trailing forward slash
+  set_fact:
+    tripleo_persist_dir_safe: "{{tripleo_persist_dir|regex_replace('\\/$', '')}}"
+    cacheable: no
+
 # Using the "archive" module lists lists all tarred files in module
 # output, if there's too many files, it can crash ansible even with
 # "no_log: true".
 - name: create the archive
   shell: |
-    tar -czf "{{tripleo_persist_tempfile.path}}" -C "{{tripleo_persist_dir|dirname}}" "{{tripleo_persist_dir|basename}}"
+    tar -czf "{{tripleo_persist_tempfile.path}}" -C "{{tripleo_persist_dir_safe|dirname}}" "{{tripleo_persist_dir_safe|basename}}"
 
 - name: fetch the archive
   fetch:
     src: "{{tripleo_persist_tempfile.path}}"
-    dest: "{{tripleo_persist_storage_root_dir}}/{{inventory_hostname}}{{tripleo_persist_dir}}.tar.gz"
+    dest: "{{tripleo_persist_storage_root_dir}}/{{inventory_hostname}}{{tripleo_persist_dir_safe}}.tar.gz"
     flat: yes
 
 - name: remove tempfile
