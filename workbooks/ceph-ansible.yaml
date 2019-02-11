@@ -108,7 +108,8 @@ workflows:
               gather_facts: no
               tasks:
                 - name: collect machine id
-                  command: dmidecode -s system-uuid
+                  # awk strips unwanted output, see LP bug #1762460
+                  shell: dmidecode -s system-uuid | awk 'match($0, /[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}/) { print substr($0, RSTART, RLENGTH) }' | tr A-F a-f
         publish:
           ansible_output: <% json_parse(task().result.stderr) %>
         on-success: set_ip_uuids
@@ -121,10 +122,15 @@ workflows:
           json_node_data_lookup: <% json_parse($.node_data_lookup) %>
         on-error:
           - fail(msg=<% 'Ceph deployment stopped, NodeDataLookup (node_data_lookup) is not valid JSON. {0}'.format($.node_data_lookup) %>)
+        on-success:
+         - uuid_force_lowercase
+      uuid_force_lowercase:
+        publish:
+          node_data: <% dict($.json_node_data_lookup.keys().select($.toLower()).zip($.json_node_data_lookup.values())) %>
         on-success: map_node_data_lookup
       map_node_data_lookup:
         publish:
-          ips_data: <% let(uuids => $.ip_uuids, root => $) -> $.ips_list.toDict($, $root.json_node_data_lookup.get($uuids.get($, "NO-UUID-FOUND"), {})) %>
+          ips_data: <% let(uuids => $.ip_uuids, root => $) -> $.ips_list.toDict($, $root.node_data.get($uuids.get($, "NO-UUID-FOUND"), {})) %>
         on-success: set_role_vars
       set_role_vars:
         publish:
