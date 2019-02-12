@@ -84,12 +84,12 @@ class TestImageExport(base.TestCase):
 
         target_url = urlparse('docker://localhost:8787/t/nova-api:latest')
         layer = {
-            'digest': compressed_digest
+            'digest': 'sha256:somethingelse'
         }
         calc_digest = hashlib.sha256()
         layer_stream = io.BytesIO(blob_compressed)
         layer_digest = image_export.export_stream(
-            target_url, layer, calc_digest, layer_stream
+            target_url, layer, layer_stream
         )
         self.assertEqual(compressed_digest, layer_digest)
         self.assertEqual(compressed_digest, layer['digest'])
