@@ -534,6 +534,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::NeutronApi
   - OS::TripleO::Services::NeutronServer
+  - OS::TripleO::Services::OVNController
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent-ovn{{name_suffix}}:{{tag}}"
   image_source: kolla
