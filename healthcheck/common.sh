@@ -61,7 +61,7 @@ healthcheck_file_modification () {
     curr_time=$(date +%s)
     last_mod=$(stat -c '%Y' $file_path)
     limit_epoch=$(( curr_time-limit_seconds ))
-    if [ "$limit_epoch" -gt "$last_mod" ]; then
+    if [ ${limit_epoch} -gt ${last_mod} ]; then
         return 1
     fi
 }
