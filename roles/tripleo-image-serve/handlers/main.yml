@@ -1,0 +1,16 @@
+- name: restart httpd
+  command: /bin/true
+  notify:
+    - Image-Serve | reload systemd
+    - Image-Serve | reload httpd
+  listen: "restart httpd service"
+
+- name: Image-Serve | reload systemd
+  systemd:
+    daemon_reload: yes
+  when: ansible_service_mgr == 'systemd'
+
+- name: Image-Serve | reload httpd
+  service:
+    name: httpd
+    state: restarted
