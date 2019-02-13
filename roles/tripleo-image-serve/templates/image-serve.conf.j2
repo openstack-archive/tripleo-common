@@ -1,6 +1,6 @@
 Listen {{ container_registry_port }}
 <VirtualHost {{ container_registry_host }}:{{ container_registry_port }}>
-    DocumentRoot {{ image_data_dir }} 
+    DocumentRoot {{ image_data_dir }}
 
     <Directory {{ image_data_dir }}>
         # This assumes a file exists containing {} at
