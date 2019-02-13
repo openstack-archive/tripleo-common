@@ -52,7 +52,7 @@ def image_tag_from_url(image_url):
     return image, tag
 
 
-def export_stream(target_url, layer, calc_digest, layer_stream):
+def export_stream(target_url, layer, layer_stream):
     image, tag = image_tag_from_url(target_url)
     digest = layer['digest']
     blob_dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'blobs')
@@ -62,6 +62,7 @@ def export_stream(target_url, layer, calc_digest, layer_stream):
     LOG.debug('export layer to %s' % blob_path)
 
     length = 0
+    calc_digest = hashlib.sha256()
     with open(blob_path, 'w+b') as f:
         for chunk in layer_stream:
             if not chunk:
@@ -72,6 +73,12 @@ def export_stream(target_url, layer, calc_digest, layer_stream):
 
     layer_digest = 'sha256:%s' % calc_digest.hexdigest()
     LOG.debug('Calculated layer digest: %s' % layer_digest)
+
+    # if the original layer is uncompressed the digest may change on export
+    expected_blob_path = os.path.join(blob_dir_path, '%s.gz' % layer_digest)
+    if blob_path != expected_blob_path:
+        os.rename(blob_path, expected_blob_path)
+
     layer['digest'] = layer_digest
     layer['size'] = length
     return layer_digest

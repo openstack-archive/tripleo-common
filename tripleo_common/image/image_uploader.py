@@ -1403,7 +1403,7 @@ class PythonImageUploader(BaseImageUploader):
         export = target_url.netloc in cls.export_registries
         if export:
             return image_export.export_stream(
-                target_url, layer, calc_digest, layer_stream)
+                target_url, layer, layer_stream)
 
         for chunk in layer_stream:
             if not chunk:
