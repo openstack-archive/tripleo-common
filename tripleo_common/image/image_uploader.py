@@ -1066,6 +1066,14 @@ class PythonImageUploader(BaseImageUploader):
         return r.headers['Location']
 
     @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def _layer_stream_registry(cls, digest, source_url, calc_digest,
                                session):
         LOG.debug('Fetching layer: %s' % digest)
