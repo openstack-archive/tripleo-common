@@ -1,6 +1,10 @@
 Listen {{ container_registry_port }}
 <VirtualHost {{ container_registry_host }}:{{ container_registry_port }}>
     DocumentRoot {{ image_data_dir }}
+    ErrorLog "/var/log/httpd/image_serve_error.log"
+    ServerSignature Off
+    CustomLog "/var/log/httpd/image_serve_access.log" combined
+    SetEnvIf X-Forwarded-Proto https HTTPS=1
 
     <Directory {{ image_data_dir }}>
         # This assumes a file exists containing {} at
