@@ -124,6 +124,45 @@ class TestKollaImageBuilder(base.TestCase):
             'image-with-missing-tag',
         ], env=env, stdout=-1, universal_newlines=True)
 
+    @mock.patch('tripleo_common.image.base.open',
+                mock.mock_open(read_data=filedata), create=True)
+    @mock.patch('os.path.isfile', return_value=True)
+    @mock.patch('subprocess.Popen')
+    def test_build_images_template_only(self, mock_popen, mock_path):
+        process = mock.Mock()
+        process.returncode = 0
+        process.communicate.return_value = 'done', ''
+        mock_popen.return_value = process
+
+        builder = kb.KollaImageBuilder(self.filelist)
+        self.assertEqual('done',
+                         builder.build_images(
+                             ['kolla-config.conf'], [], True, '/tmp/kolla'))
+        env = os.environ.copy()
+        call1 = mock.call([
+            'kolla-build',
+            '--config-file',
+            'kolla-config.conf',
+            'nova-compute',
+            'nova-libvirt',
+            'heat-docker-agents-centos',
+            'image-with-missing-tag',
+            '--template-only',
+            '--work-dir', '/tmp/kolla',
+        ], env=env, stdout=-1, universal_newlines=True)
+        call2 = mock.call([
+            'kolla-build',
+            '--config-file',
+            'kolla-config.conf',
+            'nova-compute',
+            'nova-libvirt',
+            'heat-docker-agents-centos',
+            'image-with-missing-tag',
+            '--list-dependencies',
+        ], env=env, stdout=-1, stderr=-1, universal_newlines=True)
+        calls = [call1, call2]
+        mock_popen.assert_has_calls(calls, any_order=True)
+
     @mock.patch('subprocess.Popen')
     def test_build_images_no_conf(self, mock_popen):
         process = mock.Mock()
