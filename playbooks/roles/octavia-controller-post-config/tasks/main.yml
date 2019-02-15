@@ -11,9 +11,9 @@
     become: true
     become_user: root
     shell: |
-      crudini --get "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf" health_manager controller_ip_port_list
+        awk -F '=' -e '/^controller_ip_port_list/ { print $2; }' "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf"
     register: config_contents
-    failed_when: config_contents.rc != 0 and 'Parameter not found' not in config_contents.stderr
+    failed_when: config_contents.rc != 0
     changed_when: false
     ignore_errors: true
   - name: retrieve current ip list
