@@ -7,15 +7,16 @@
   file:
     state: directory
     path: "{{ image_data_dir }}/v2"
-    mode: 755
+    mode: 0755
     owner: root
     group: root
+    setype: httpd_sys_content_t
 
 - name: create /v2/ response file
   copy:
-    content: "{}" 
+    content: "{}"
     dest: "{{ image_data_dir }}/v2/index.json"
-    mode: 644
+    mode: 0644
     owner: root
     group: root
 
