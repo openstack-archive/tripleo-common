@@ -5,6 +5,7 @@ Listen {{ container_registry_port }}
     ServerSignature Off
     CustomLog "/var/log/httpd/image_serve_access.log" combined
     SetEnvIf X-Forwarded-Proto https HTTPS=1
+    RedirectMatch ^/$ /v2
 
     <Directory {{ image_data_dir }}>
         # This assumes a file exists containing {} at
