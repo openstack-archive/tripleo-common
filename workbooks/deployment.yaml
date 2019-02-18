@@ -401,8 +401,8 @@ workflows:
         publish:
           running_config_download_workflows: <% task().result.where($.id != execution().id) %>
         on-success:
-          - fail_deploy_in_progress: <% $.running_config_download_workflows != [] %>
-          - get_blacklisted_hostnames: <% $.running_config_download_workflows = [] %>
+          - fail_deploy_in_progress: <% $.running_config_download_workflows.len() > 0 %>
+          - get_blacklisted_hostnames: <% $.running_config_download_workflows.len() = 0 %>
 
       fail_deploy_in_progress:
         workflow: tripleo.messaging.v1.send
