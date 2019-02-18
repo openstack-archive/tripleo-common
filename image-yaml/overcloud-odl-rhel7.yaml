@@ -17,12 +17,7 @@ disk_images:
            - java-1.8.0-openjdk
            - ntp
            - opendaylight
-           - python-heat-agent-puppet
-           - python-heat-agent-hiera
-           - python-heat-agent-apply-config
-           - python-heat-agent-ansible
-           - python-heat-agent-docker-cmd
-           - python-heat-agent-json-file
+           - openstack-heat-agents
            - os-net-config
            - jq
          options:
