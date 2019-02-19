@@ -24,7 +24,11 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
 {% set cinder_volume_packages_remove = ['scsi-target-utils'] %}
 {% set ironic_conductor_packages_remove = ['shellinabox'] %}
+{% if distro_python3 %}
+{% set barbican_api_packages_remove = ['uwsgi-plugin-python3'] %}
+{% else %}
 {% set barbican_api_packages_remove = ['uwsgi-plugin-python'] %}
+{% endif %}
 {% block cinder_volume_redhat_setup %}
 # RUN sed -i '1 i include /var/lib/cinder/volumes/*' /etc/tgt/tgtd.conf
 {% endblock %}
@@ -37,21 +41,45 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # This installs the novajoin package in the nova container images; This is
 # required for TLS everywhere, as nova-api will use the cloud-init script
 # provided by the novajoin package in order to enroll the nodes to the CA
+{% if distro_python3 %}
+{% set nova_api_packages_append = ['python3-novajoin'] %}
+{% set nova_compute_ironic_packages_append = ['python3-novajoin'] %}
+{% else %}
 {% set nova_api_packages_append = ['python-novajoin'] %}
 {% set nova_compute_ironic_packages_append = ['python-novajoin'] %}
+{% endif %}
 
 {% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
 
 # Required for mistral-db-populate to load tripleo custom actions on
 # the undercloud
-{% set mistral_base_packages_append = ['openstack-tripleo-common', 'ansible', 'python-shade', 'skydive-ansible'] %}
+{% set mistral_base_packages_append = ['openstack-tripleo-common'] %}
+{% if distro_python3 %}
+{% set mistral_base_packages_append = mistral_base_packages_append + [
+  'python3-shade',
+  'ansible-python3',
+] %}
+# TODO(aschultz): currently missing
+#  'skydive-ansible',
+{% else %}
+{% set mistral_base_packages_append = mistral_base_packages_append + [
+  'python-shade',
+  'ansible',
+  'skydive-ansible',
+] %}
+{% endif %}
 
 # NOTE: Mistral executor needs:
 #   openstack-tripleo-validations: validations
 #   nova-common: to run nova-manage cells_v2 commands on
 #   tripleo-heat-templates: to load the default plan from the CLI/UI
 #   ipmitool: for baremetal node discovery
-{% set mistral_executor_packages_append = ['openstack-tripleo-validations', 'openstack-nova-common', 'openstack-tripleo-heat-templates', 'ipmitool'] %}
+{% set mistral_executor_packages_append = [
+  'openstack-tripleo-validations',
+  'openstack-nova-common',
+  'openstack-tripleo-heat-templates',
+  'ipmitool',
+] %}
 
 # FIXME (kolla review to add ceilometer to swift proxy image)
 # NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
@@ -73,10 +101,22 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 # NOTE (jaosorior): neutron-server with TLS everywhere needs httpd and mod_ssl packages.
 # NOTE (hjensas): python2-networking-baremetal ML2 plug-in for ironic neutron integration.
 # NOTE (ramishra): python2-networking-ansible ML2 plug-in for neutron ansible integration.
-{% set neutron_server_packages_append = ['httpd',
-                                         'mod_ssl',
-                                         'python2-networking-baremetal',
-                                         'python2-networking-ansible'] %}
+{% set neutron_server_packages_append = [
+  'httpd',
+  'mod_ssl',
+] %}
+{% if distro_python3 %}
+{% set neutron_server_packages_append = neutron_server_packages_append + [
+  'python3-networking-baremetal',
+  'python3-networking-ansible'
+] %}
+{% else %}
+{% set neutron_server_packages_append = neutron_server_packages_append + [
+  'python2-networking-baremetal',
+  'python2-networking-ansible'
+] %}
+{% endif %}
+
 {% block neutron_server_footer %}
 RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
@@ -97,11 +137,35 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
 # redis resource-agent requires pidof
-{% set redis_packages_append = ['stunnel', 'sysvinit-tools',
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
+{% set redis_packages_append = [
+  'stunnel',
+  'pacemaker',
+  'pacemaker-remote',
+  'pcs',
+  'libqb',
+  'resource-agents'
+] %}
+{% if distro_python3 %}
+{% set redis_packages_append = redis_packages_append + [
+  'procps-ng',
+] %}
+{% else %}
+{% set redis_packages_append = redis_packages_append + [
+  'sysvinit-tools',
+] %}
+{% endif %}
 
 # Remove packages not present in repos
 #
+{% if distro_python3 %}
+{% set openstack_base_packages_remove = [
+    'python3-cloudkittyclient',
+    'python3-magnumclient',
+    'python3-muranoclient',
+    'python3-troveclient',
+    'python3-vitrageclient',
+] %}
+{% else %}
 {#
    'python2-crypto', # EPEL, RDO is python-crypto
    'python2-msgpack' # EPEL, RDO is python-msgpack
@@ -115,8 +179,13 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'python-troveclient',
     'python-vitrageclient',
 ] %}
+{% endif %}
 # Pick up the proper packages for python2-crypto and python2-msgpack
+{% if distro_python3 %}
+{% set openstack_base_packages_append = ['python3-crypto', 'python3-msgpack', 'openstack-selinux'] %}
+{% else %}
 {% set openstack_base_packages_append = ['python-crypto', 'python-msgpack', 'openstack-selinux'] %}
+{% endif %}
 
 # Use mariadb-server-galera and xinetd for galera and clustercheck
 {#  'pv'                  # EPEL
@@ -133,9 +202,10 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'make',
     'ntp',
     'python-pymongo',
+    'python2-pymongo',
+    'python3-pymongo',
     'ruby-devel'
 ] %}
-
 # Horizon dashboards we do not support
 # See LP#1767520
 {% set horizon_packages_remove = [
@@ -310,7 +380,12 @@ RUN mkdir -p /openstack && \
 {% endblock %}
 
 {% set haproxy_packages_append = [
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
+    'libqb',
+    'pacemaker',
+    'pacemaker-remote',
+    'pcs',
+    'resource-agents',
+] %}
 {% block haproxy_footer %}
 RUN mkdir /etc/libqb
 {% endblock %}
