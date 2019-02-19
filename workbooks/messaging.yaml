@@ -17,15 +17,15 @@ workflows:
         calling workflow.
 
         If plan_name is provided the message will be persisted to Swift. In a
-        container named "{plan_name}-messages". The swift objects will be
-        named:
+        container named "{plan_name}-messages". The swift objects will be named:
+
             {TYPE}/{TIMESTAMP}.yaml
 
         If a deployment_status is provided, the top-level deployment_status.yaml
         will also be updated, which will contain the deployment_status and the
         related message.
 
-        The standard message format will be:
+        The standard message format will be::
 
             body: {
               type: 'tripleo.workflow.name', # Matches the workflow name
