@@ -152,9 +152,11 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
 
     pd = environment.get('parameter_defaults', {})
     cip = pd.get('ContainerImagePrepare')
+    # if user does not provide a ContainerImagePrepare, use the defaults.
     if not cip:
-        LOG.info(_("No ContainerImagePrepare parameter defined."))
-        return
+        LOG.info(_("No ContainerImagePrepare parameter defined. Using "
+                   "the defaults."))
+        cip = CONTAINER_IMAGE_PREPARE_PARAM
 
     mirrors = {}
     mirror = pd.get('DockerRegistryMirror')
