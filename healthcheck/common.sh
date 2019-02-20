@@ -3,6 +3,7 @@
 : ${HEALTHCHECK_CURL_WRITE_OUT:='\n%{http_code} %{remote_ip}:%{remote_port} %{time_total} seconds\n'}
 
 healthcheck_curl () {
+  export NSS_SDB_USE_CACHE=no
   curl -g -k -q --fail \
     --max-time "${HEALTHCHECK_CURL_MAX_TIME}" \
     --user-agent "${HEALTHCHECK_CURL_USER_AGENT}" \
