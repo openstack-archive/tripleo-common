@@ -1030,6 +1030,10 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
             "11:22:33:44:55:66": {
                 "compute_name": "compute_name_1",
                 "baremetal_name": "baremetal_name_1"
+                },
+            "aa:bb:cc:dd:ee:ff": {
+                "compute_name": "compute_name_4",
+                "baremetal_name": "baremetal_name_4"
                 }
             }
         mock_generate_hostmap.return_value = test_hostmap
@@ -1055,6 +1059,19 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                 "11:22:33:44:55:66"
             ]
         }, {
+            # test node using redfish pm
+            "name": "compute-4",
+            "pm_password": "calvin",
+            "pm_type": "redfish",
+            "pm_user": "root",
+            "pm_addr": "172.16.0.1:8000",
+            "pm_port": "8000",
+            "redfish_verify_ca": "false",
+            "pm_system_id": "/redfish/v1/Systems/5678",
+            "mac": [
+                "aa:bb:cc:dd:ee:ff"
+            ]
+        }, {
             # This is an extra node that is not in the hostmap, to ensure we
             # cope with unprovisioned nodes
             "name": "control-2",
@@ -1065,7 +1082,8 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
             "mac": [
                 "22:33:44:55:66:77"
             ]
-        }]
+        }
+        ]
 
         action = parameters.GenerateFencingParametersAction(test_envjson,
                                                             28,
@@ -1076,7 +1094,7 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
         result = action.run(mock_ctx)["parameter_defaults"]
 
         self.assertTrue(result["EnableFencing"])
-        self.assertEqual(len(result["FencingConfig"]["devices"]), 2)
+        self.assertEqual(len(result["FencingConfig"]["devices"]), 3)
         self.assertEqual(result["FencingConfig"]["devices"][0], {
                          "agent": "fence_ipmilan",
                          "host_mac": "00:11:22:33:44:55",
@@ -1102,6 +1120,22 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                              "login": "control-1-admin",
                              "passwd": "control-1-password",
                              "pcmk_host_list": "compute_name_1"
+                             }
+                         })
+        self.assertEqual(result["FencingConfig"]["devices"][2], {
+                         "agent": "fence_redfish",
+                         "host_mac": "aa:bb:cc:dd:ee:ff",
+                         "params": {
+                             "delay": 28,
+                             "ipaddr": "172.16.0.1:8000",
+                             "ipport": "8000",
+                             "lanplus": True,
+                             "privlvl": 5,
+                             "login": "root",
+                             "passwd": "calvin",
+                             "systems_uri": "/redfish/v1/Systems/5678",
+                             "ssl_insecure": "true",
+                             "pcmk_host_list": "compute_name_4"
                              }
                          })
 
