@@ -30,11 +30,13 @@ import tempfile
 import tenacity
 import yaml
 
-import docker
+# Docker in TripleO is deprecated in Stein
 try:
+    import docker
     from docker import APIClient as Client
 except ImportError:
-    from docker import Client
+    pass
+
 from oslo_concurrency import processutils
 from oslo_log import log as logging
 from tripleo_common.actions import ansible
