@@ -1,6 +1,10 @@
 ---
   - name: making sure octavia worker configuration directory exists
-    file: path="{{ octavia_confd_prefix }}/etc/octavia/conf.d/octavia-worker" state=directory
+    file:
+      path: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/octavia-worker"
+      state: directory
+      selevel: s0
+      setype: svirt_sandbox_file_t
     become: true
   - name: setting [controller_worker]/amp_boot_network_list
     become: true
@@ -10,6 +14,8 @@
       section: controller_worker
       option: amp_boot_network_list
       value: "{{ lb_mgmt_net_id }}"
+      selevel: s0
+      setype: svirt_sandbox_file_t
   - name: setting [controller_worker]/amp_secgroup_list
     become: true
     become_user: root
@@ -18,8 +24,14 @@
       section: controller_worker
       option: amp_secgroup_list
       value: "{{ lb_mgmt_secgroup_id }}"
+      selevel: s0
+      setype: svirt_sandbox_file_t
   - name: making sure octavia health manager configuration directory exists
-    file: path="{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager" state=directory
+    file:
+      path: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager"
+      state: directory
+      selevel: s0
+      setype: svirt_sandbox_file_t
     become: true
   - name: create octavia health manager configuration file
     become: true
@@ -27,3 +39,5 @@
     template:
       dest: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf"
       src: "manager-post-deploy.conf.j2"
+      selevel: s0
+      setype: svirt_sandbox_file_t
