@@ -193,8 +193,10 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set sensu_client_packages_remove = [
     'ceph-common',
     'cyrus-sasl-devel',
+    'docker-client',
     'gcc-c++',
     'make',
+    'mariadb',
     'ntp',
     'python-pymongo',
     'python2-pymongo',
