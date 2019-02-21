@@ -169,11 +169,9 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 ] %}
 {% else %}
 {#
-   'python2-crypto', # EPEL, RDO is python-crypto
    'python2-msgpack' # EPEL, RDO is python-msgpack
 #}
 {% set openstack_base_packages_remove = [
-    'python2-crypto',
     'python2-msgpack',
     'python-cloudkittyclient',
     'python-magnumclient',
@@ -182,11 +180,11 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'python-vitrageclient',
 ] %}
 {% endif %}
-# Pick up the proper packages for python2-crypto and python2-msgpack
+# Pick up the proper packages for python2-msgpack
 {% if distro_python3 %}
-{% set openstack_base_packages_append = ['python3-crypto', 'python3-msgpack', 'openstack-selinux'] %}
+{% set openstack_base_packages_append = ['python3-msgpack', 'openstack-selinux'] %}
 {% else %}
-{% set openstack_base_packages_append = ['python-crypto', 'python-msgpack', 'openstack-selinux'] %}
+{% set openstack_base_packages_append = ['python-msgpack', 'openstack-selinux'] %}
 {% endif %}
 
 # Use mariadb-server-galera and xinetd for galera and clustercheck
