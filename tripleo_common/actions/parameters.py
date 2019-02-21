@@ -127,11 +127,13 @@ class UpdateParametersAction(templates.ProcessTemplatesAction):
 
     def __init__(self, parameters,
                  container=constants.DEFAULT_CONTAINER_NAME,
-                 key=constants.DEFAULT_PLAN_ENV_KEY):
+                 key=constants.DEFAULT_PLAN_ENV_KEY,
+                 validate=True):
         super(UpdateParametersAction, self).__init__()
         self.container = container
         self.parameters = parameters
         self.key = key
+        self.validate = validate
 
     def run(self, context):
         swift = self.get_object_client(context)
@@ -164,8 +166,9 @@ class UpdateParametersAction(templates.ProcessTemplatesAction):
         if isinstance(processed_data, actions.Result):
             return processed_data
 
-        processed_data['show_nested'] = True
         env = plan_utils.get_env(swift, self.container)
+        if not self.validate:
+            return env
 
         params = env.get('parameter_defaults')
         fields = {
