@@ -387,6 +387,8 @@ class KollaImageBuilder(base.BaseImageManager):
         hyphenated appropriately.
         '''
         mapping = dict(kwargs)
+        if CONTAINER_IMAGES_DEFAULTS is None:
+            return
         for k, v in CONTAINER_IMAGES_DEFAULTS.items():
             mapping.setdefault(k, v)
         np = mapping['name_prefix']
