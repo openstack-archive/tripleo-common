@@ -36,6 +36,15 @@ None
           name: tripleo-create-admin
           tasks_from: create_user.yml
 
+### Create user tripleo-admin with a keypair ###
+    - hosts: undercloud
+      tasks:
+      - import_role:
+          name: tripleo-create-admin
+          tasks_from: create_user.yml
+        vars: 
+          tripleo_admin_generate_key: true
+
 ### Authorize existing user ###
 
     - hosts: localhost
