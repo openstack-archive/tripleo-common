@@ -35,6 +35,8 @@
       option: "controller_ip_port_list"
       value: "{{ o_hm_ip_list }}"
       path: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf"
+      selevel: s0
+      setype: svirt_sandbox_file_t
     when: octavia_config_updated
 
   - name: restart octavia containers

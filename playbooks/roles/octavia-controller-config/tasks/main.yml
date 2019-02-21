@@ -13,6 +13,10 @@
   - include_tasks: netport.yml
   - include_tasks: netinterface.yml
   - name: making sure octavia common configuration directory exists
-    file: path="{{ octavia_confd_prefix }}/etc/octavia/conf.d/common" state=directory
+    file:
+      path: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/common"
+      state: directory
+      selevel: s0
+      setype: svirt_sandbox_file_t
     become: true
   - include_tasks: octavia.yml
