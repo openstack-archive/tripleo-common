@@ -19,6 +19,7 @@
     mode: 0644
     owner: root
     group: root
+    setype: httpd_sys_content_t
 
 - lineinfile:
     path: /etc/httpd/conf/httpd.conf
