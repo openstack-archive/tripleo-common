@@ -168,6 +168,7 @@ workflows:
   list:
     input:
       - group_names: []
+      - queue_name: tripleo
     output:
       validations: <% $.validations %>
     tags:
@@ -188,7 +189,8 @@ workflows:
         workflow: tripleo.messaging.v1.send
         input:
           queue_name: <% $.queue_name %>
-          type: <% execution() %>
+          type: <% execution().name %>
+          execution: <% execution() %>
           status: <% $.status %>
           message: <% $.get('message', '') %>
           payload:
