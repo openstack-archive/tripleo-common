@@ -1101,7 +1101,7 @@ class PythonImageUploader(BaseImageUploader):
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
         reraise=True,
         retry=tenacity.retry_if_exception_type(
-            requests.exceptions.RequestException
+            IOError
         ),
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
@@ -1183,6 +1183,9 @@ class PythonImageUploader(BaseImageUploader):
                 target_session=target_session
             ))
         for job in copy_jobs:
+            e = job.exception()
+            if e:
+                raise e
             image = job.result()
             if image:
                 LOG.debug('Upload complete for layer: %s' % image)
