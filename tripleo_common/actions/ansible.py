@@ -613,6 +613,8 @@ class AnsibleGenerateInventoryAction(base.TripleOAction):
         self._kwargs_for_run = kwargs
         self.ansible_ssh_user = self._kwargs_for_run.pop(
             'ansible_ssh_user', 'tripleo-admin')
+        self.undercloud_key_file = self._kwargs_for_run.pop(
+            'undercloud_key_file', None)
         self.ansible_python_interpreter = self._kwargs_for_run.pop(
             'ansible_python_interpreter', None)
         self._work_dir = self._kwargs_for_run.pop(
@@ -642,6 +644,7 @@ class AnsibleGenerateInventoryAction(base.TripleOAction):
             project_name=context.security.project_name,
             username=context.security.user_name,
             ansible_ssh_user=self.ansible_ssh_user,
+            undercloud_key_file=self.undercloud_key_file,
             undercloud_connection=inventory.UNDERCLOUD_CONNECTION_SSH,
             ansible_python_interpreter=self.ansible_python_interpreter,
             plan_name=self.plan_name,
