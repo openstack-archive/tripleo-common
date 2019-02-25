@@ -270,63 +270,63 @@ class TestBaseImageUploader(base.TestCase):
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo', 'rdo_version'))
+                (self.uploader, 'docker.io/t/foo', 'rdo_version'))
         )
 
         # templated labels -> tag
         self.assertEqual(
             ('docker.io/t/foo', '1.0.0-20180125'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo', '{release}-{version}'))
+                (self.uploader, 'docker.io/t/foo', '{release}-{version}'))
         )
 
         # simple label -> tag with fallback
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo:a', 'bar'))
+                (self.uploader, 'docker.io/t/foo:a', 'bar'))
         )
 
         # templated labels -> tag with fallback
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                ('docker.io/t/foo:a', '{releases}-{versions}'))
+                (self.uploader, 'docker.io/t/foo:a', '{releases}-{versions}'))
         )
 
         # Invalid template
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', '{release}-{version')
+            (self.uploader, 'docker.io/t/foo', '{release}-{version')
         )
 
         # Missing label in template
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', '{releases}-{version}')
+            (self.uploader, 'docker.io/t/foo', '{releases}-{version}')
         )
 
         # no tag_from_label specified
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', None)
+            (self.uploader, 'docker.io/t/foo', None)
         )
 
         # missing RepoTags entry
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', 'build_version')
+            (self.uploader, 'docker.io/t/foo', 'build_version')
         )
 
         # missing Labels entry
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', 'version')
+            (self.uploader, 'docker.io/t/foo', 'version')
         )
 
         # inspect call failed
@@ -334,7 +334,7 @@ class TestBaseImageUploader(base.TestCase):
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            ('docker.io/t/foo', 'rdo_version')
+            (self.uploader, 'docker.io/t/foo', 'rdo_version')
         )
 
     @mock.patch('concurrent.futures.ThreadPoolExecutor')
@@ -360,9 +360,9 @@ class TestBaseImageUploader(base.TestCase):
         mock_pool.return_value.map.assert_called_once_with(
             image_uploader.discover_tag_from_inspect,
             [
-                ('docker.io/t/foo', 'rdo_release'),
-                ('docker.io/t/bar', 'rdo_release'),
-                ('docker.io/t/baz', 'rdo_release')
+                (self.uploader, 'docker.io/t/foo', 'rdo_release'),
+                (self.uploader, 'docker.io/t/bar', 'rdo_release'),
+                (self.uploader, 'docker.io/t/baz', 'rdo_release')
             ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -388,7 +388,7 @@ class TestBaseImageUploader(base.TestCase):
 
     def test_authenticate(self):
         req = self.requests
-        auth = image_uploader.BaseImageUploader.authenticate
+        auth = self.uploader.authenticate
         url1 = urlparse('docker://docker.io/t/nova-api:latest')
 
         # no auth required
@@ -420,7 +420,7 @@ class TestBaseImageUploader(base.TestCase):
 
     def test_authenticate_with_no_service(self):
         req = self.requests
-        auth = image_uploader.BaseImageUploader.authenticate
+        auth = self.uploader.authenticate
         url1 = urlparse('docker://docker.io/t/nova-api:latest')
 
         headers = {
@@ -1002,6 +1002,68 @@ class TestPythonImageUploader(base.TestCase):
             source_session=source_session,
             target_session=target_session
         )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._cross_repo_mount')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_registry_to_registry')
+    def test_insecure_registry(
+            self, _copy_registry_to_registry, _cross_repo_mount,
+            _fetch_manifest, authenticate):
+        target_session = mock.Mock()
+        source_session = mock.Mock()
+        authenticate.side_effect = [
+            target_session,
+            source_session
+        ]
+        manifest = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+            },
+            'layers': [
+                {'digest': 'sha256:aaa'},
+                {'digest': 'sha256:bbb'},
+                {'digest': 'sha256:ccc'}
+            ],
+        })
+        _fetch_manifest.return_value = manifest
+
+        image = '192.0.2.0:8787/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        push_destination = 'localhost:8787'
+        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        task = image_uploader.UploadTask(
+            image_name=image + ':' + tag,
+            pull_source=None,
+            push_destination=push_destination,
+            append_tag=None,
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup='full'
+        )
+
+        self.assertEqual(
+            [],
+            self.uploader.upload_image(task)
+        )
+        source_url = urlparse('docker://192.0.2.0:8787/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+
+        authenticate.assert_has_calls([
+            mock.call(
+                target_url
+            ),
+            mock.call(
+                source_url
+            ),
+        ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')

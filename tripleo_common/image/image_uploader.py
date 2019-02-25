@@ -48,6 +48,8 @@ SECURE_REGISTRIES = (
     'registry-1.docker.io',
 )
 
+NO_VERIFY_REGISTRIES = ()
+
 CLEANUP = (
     CLEANUP_FULL, CLEANUP_PARTIAL, CLEANUP_NONE
 ) = (
@@ -183,6 +185,7 @@ class BaseImageUploader(object):
 
     mirrors = {}
     insecure_registries = set()
+    no_verify_registries = set(NO_VERIFY_REGISTRIES)
     secure_registries = set(SECURE_REGISTRIES)
     export_registries = set()
     push_registries = set()
@@ -196,6 +199,8 @@ class BaseImageUploader(object):
     @classmethod
     def init_registries_cache(cls):
         cls.insecure_registries.clear()
+        cls.no_verify_registries.clear()
+        cls.no_verify_registries.update(NO_VERIFY_REGISTRIES)
         cls.secure_registries.clear()
         cls.secure_registries.update(SECURE_REGISTRIES)
         cls.mirrors.clear()
@@ -294,7 +299,6 @@ class BaseImageUploader(object):
         else:
             return True
 
-    @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
         reraise=True,
         retry=tenacity.retry_if_exception_type(
@@ -303,10 +307,13 @@ class BaseImageUploader(object):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
-    def authenticate(cls, image_url, username=None, password=None):
-        image, tag = cls._image_tag_from_url(image_url)
-        url = cls._build_url(image_url, path='/')
+    def authenticate(self, image_url, username=None, password=None):
+        netloc = image_url.netloc
+        image, tag = self._image_tag_from_url(image_url)
+        url = self._build_url(image_url, path='/')
+
         session = requests.Session()
+        session.verify = (netloc not in self.no_verify_registries)
         r = session.get(url, timeout=30)
         LOG.debug('%s status code %s' % (url, r.status_code))
         if r.status_code == 200:
@@ -340,12 +347,16 @@ class BaseImageUploader(object):
     def _build_url(cls, url, path):
         netloc = url.netloc
         insecure = netloc in cls.insecure_registries
+        tls_verify = netloc in cls.no_verify_registries
         if netloc in cls.mirrors:
             mirror = cls.mirrors[netloc]
             return '%sv2%s' % (mirror, path)
         else:
             if insecure:
                 scheme = 'http'
+            # Just to be clear: we DO want TLS for that specific case
+            elif tls_verify:
+                scheme = 'https'
             else:
                 scheme = 'https'
             if netloc == 'docker.io':
@@ -398,6 +409,7 @@ class BaseImageUploader(object):
         tags_r.raise_for_status()
 
         manifest = manifest_r.json()
+
         digest = manifest_r.headers['Docker-Content-Digest']
         if manifest.get('schemaVersion', 2) == 1:
             config = json.loads(manifest['history'][0]['v1Compatibility'])
@@ -498,11 +510,11 @@ class BaseImageUploader(object):
 
         # prime self.insecure_registries by testing every image
         for url in image_urls:
-            self.is_insecure_registry(url.netloc)
+            self.is_insecure_registry(url)
 
         discover_args = []
         for image in images:
-            discover_args.append((image, tag_from_label))
+            discover_args.append((self, image, tag_from_label))
         p = futures.ThreadPoolExecutor(max_workers=16)
 
         versioned_images = {}
@@ -517,6 +529,7 @@ class BaseImageUploader(object):
         self.is_insecure_registry(image_url.netloc)
         session = self.authenticate(
             image_url, username=username, password=password)
+
         i = self._inspect(image_url, session)
         return self._discover_tag_from_inspect(i, image, tag_from_label,
                                                fallback_tag)
@@ -553,11 +566,22 @@ class BaseImageUploader(object):
             return False
         if registry_host in self.insecure_registries:
             return True
+        if registry_host in self.no_verify_registries:
+            return True
         try:
             requests.get('https://%s/v2' % registry_host, timeout=30)
         except requests.exceptions.SSLError:
-            self.insecure_registries.add(registry_host)
-            return True
+            # Might be just a TLS certificate validation issue
+            # Just retry without the verification
+            try:
+                requests.get('https://%s/v2' % registry_host, timeout=30,
+                             verify=False)
+                self.no_verify_registries.add(registry_host)
+                return True
+            except requests.exceptions.SSLError:
+                # So nope, it's really not a certificate verification issue
+                self.insecure_registries.add(registry_host)
+                return True
         except Exception:
             # for any other error assume it is a secure registry, because:
             # - it is secure registry
@@ -780,7 +804,8 @@ class PythonImageUploader(BaseImageUploader):
             return []
 
         target_session = self.authenticate(
-            t.target_image_url)
+            t.target_image_url
+        )
 
         self._detect_target_export(t.target_image_url, target_session)
 
@@ -795,7 +820,8 @@ class PythonImageUploader(BaseImageUploader):
             copy_target_url = t.target_image_url
 
         source_session = self.authenticate(
-            t.source_image_url)
+            t.source_image_url
+        )
 
         manifest_str = self._fetch_manifest(
             t.source_image_url,
@@ -1147,7 +1173,8 @@ class PythonImageUploader(BaseImageUploader):
         LOG.info('Pulling %s' % pull_source)
         cmd = ['podman', 'pull']
 
-        if source_url.netloc in cls.insecure_registries:
+        if source_url.netloc in [cls.insecure_registries,
+                                 cls.no_verify_registries]:
             cmd.append('--tls-verify=false')
 
         cmd.append(pull_source)
@@ -1536,9 +1563,9 @@ def upload_task(args):
 
 
 def discover_tag_from_inspect(args):
-    image, tag_from_label = args
+    self, image, tag_from_label = args
     image_url = BaseImageUploader._image_to_url(image)
-    session = BaseImageUploader.authenticate(image_url)
+    session = self.authenticate(image_url)
     i = BaseImageUploader._inspect(image_url, session=session)
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
