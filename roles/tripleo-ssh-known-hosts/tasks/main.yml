@@ -1,6 +1,7 @@
 ---
 - name: Add host keys in /etc/ssh/ssh_known_hosts for live/cold-migration
   become: true
+  check_mode: no
   block:
     # Workaround https://bugs.launchpad.net/tripleo/+bug/1810932
     # Ansible modules perform a replace instead of in-place modification.
