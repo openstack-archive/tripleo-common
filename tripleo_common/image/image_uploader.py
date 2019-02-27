@@ -30,13 +30,6 @@ import tempfile
 import tenacity
 import yaml
 
-# Docker in TripleO is deprecated in Stein
-try:
-    import docker
-    from docker import APIClient as Client
-except ImportError:
-    pass
-
 from oslo_concurrency import processutils
 from oslo_log import log as logging
 from tripleo_common.actions import ansible
@@ -117,7 +110,6 @@ class ImageUploadManager(BaseImageManager):
             config_files = []
         super(ImageUploadManager, self).__init__(config_files)
         self.uploaders = {
-            'docker': DockerImageUploader(),
             'skopeo': SkopeoImageUploader(),
             'python': PythonImageUploader()
         }
@@ -138,6 +130,9 @@ class ImageUploadManager(BaseImageManager):
         if uploader not in self.uploaders:
             raise ImageUploaderException('Unknown image uploader type')
         return self.uploaders[uploader]
+
+    def get_uploader(self, uploader):
+        return self.uploader(uploader)
 
     def get_push_destination(self, item):
         push_destination = item.get('push_destination')
@@ -183,13 +178,6 @@ class ImageUploadManager(BaseImageManager):
 
         return upload_images  # simply to make test validation easier
 
-    def get_uploader(self, uploader):
-        if uploader == 'docker':
-            return DockerImageUploader()
-        if uploader == 'skopeo':
-            return SkopeoImageUploader()
-        raise ImageUploaderException('Unknown image uploader type')
-
 
 class BaseImageUploader(object):
 
@@ -223,7 +211,7 @@ class BaseImageUploader(object):
     @classmethod
     def run_modify_playbook(cls, modify_role, modify_vars,
                             source_image, target_image, append_tag,
-                            container_build_tool='docker'):
+                            container_build_tool='buildah'):
         vars = {}
         if modify_vars:
             vars.update(modify_vars)
@@ -615,129 +603,6 @@ class BaseImageUploader(object):
                 r = session.post(url, data=data, timeout=30)
                 r.raise_for_status()
                 LOG.debug('%s %s' % (r.status_code, r.reason))
-
-
-class DockerImageUploader(BaseImageUploader):
-    """Upload images using docker pull/tag/push"""
-
-    def upload_image(self, task):
-        t = task
-        LOG.info('imagename: %s' % t.image_name)
-
-        if t.dry_run:
-            return []
-
-        if t.modify_role:
-            target_session = self.authenticate(
-                t.target_image_url)
-            if self._image_exists(t.target_image,
-                                  session=target_session):
-                LOG.warning('Skipping upload for modified image %s' %
-                            t.target_image)
-                return []
-        else:
-            source_session = self.authenticate(
-                t.source_image_url)
-            if self._images_match(t.source_image, t.target_image,
-                                  session1=source_session):
-                LOG.warning('Skipping upload for image %s' % t.image_name)
-                return []
-
-        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
-        self._pull(dockerc, t.repo, tag=t.source_tag)
-
-        if t.modify_role:
-            self.run_modify_playbook(
-                t.modify_role, t.modify_vars, t.source_image,
-                t.target_image_source_tag, t.append_tag)
-            # raise an exception if the playbook didn't tag
-            # the expected target image
-            dockerc.inspect_image(t.target_image)
-        else:
-            response = dockerc.tag(
-                image=t.source_image, repository=t.target_image_no_tag,
-                tag=t.target_tag, force=True
-            )
-            LOG.debug(response)
-
-        self._push(dockerc, t.target_image_no_tag, tag=t.target_tag)
-
-        LOG.warning('Completed upload for image %s' % t.image_name)
-        if t.cleanup == CLEANUP_NONE:
-            return []
-        if t.cleanup == CLEANUP_PARTIAL:
-            return [t.source_image]
-        return [t.source_image, t.target_image]
-
-    @classmethod
-    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
-        reraise=True,
-        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
-        stop=tenacity.stop_after_attempt(5)
-    )
-    def _pull(cls, dockerc, image, tag=None):
-        LOG.info('Pulling %s' % image)
-
-        for line in dockerc.pull(image, tag=tag, stream=True):
-            status = json.loads(line)
-            if 'error' in status:
-                LOG.warning('docker pull failed: %s' % status['error'])
-                raise ImageUploaderException('Could not pull image %s' % image)
-
-    @classmethod
-    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
-        reraise=True,
-        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
-        stop=tenacity.stop_after_attempt(5)
-    )
-    def _push(cls, dockerc, image, tag=None):
-        LOG.info('Pushing %s' % image)
-
-        for line in dockerc.push(image, tag=tag, stream=True):
-            status = json.loads(line)
-            if 'error' in status:
-                LOG.warning('docker push failed: %s' % status['error'])
-                raise ImageUploaderException('Could not push image %s' % image)
-
-    def cleanup(self, local_images):
-        if not local_images:
-            return []
-
-        dockerc = Client(base_url='unix://var/run/docker.sock', version='auto')
-        for image in sorted(local_images):
-            if not image:
-                continue
-            LOG.warning('Removing local copy of %s' % image)
-            try:
-                dockerc.remove_image(image)
-            except docker.errors.APIError as e:
-                if e.explanation:
-                    LOG.error(e.explanation)
-                else:
-                    LOG.error(e)
-
-    def run_tasks(self):
-        if not self.upload_tasks:
-            return
-        local_images = []
-
-        # Pull a single image first, to avoid duplicate pulls of the
-        # same base layers
-        uploader, first_task = self.upload_tasks.pop()
-        result = uploader.upload_image(first_task)
-        local_images.extend(result)
-
-        # workers will be based on CPU count with a min 4, max 12
-        workers = min(12, max(4, processutils.get_worker_count()))
-        p = futures.ThreadPoolExecutor(max_workers=workers)
-
-        for result in p.map(upload_task, self.upload_tasks):
-            local_images.extend(result)
-        LOG.info('result %s' % local_images)
-
-        # Do cleanup after all the uploads so common layers don't get deleted
-        # repeatedly
-        self.cleanup(local_images)
 
 
 class SkopeoImageUploader(BaseImageUploader):

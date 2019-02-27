@@ -274,7 +274,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
         filter=ffunc, **mapping_args)
 
     manager = image_uploader.ImageUploadManager(mirrors=mirrors)
-    uploader = manager.uploader('docker')
+    uploader = manager.uploader('python')
     images = [i.get('imagename', '') for i in result]
 
     if tag_from_label:
@@ -342,7 +342,7 @@ def detect_insecure_registries(params):
               merged into other parameters
     """
     insecure = set()
-    uploader = image_uploader.ImageUploadManager().uploader('docker')
+    uploader = image_uploader.ImageUploadManager().uploader('python')
     for image in params.values():
         host = image.split('/')[0]
         if uploader.is_insecure_registry(host):
