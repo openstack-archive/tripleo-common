@@ -214,7 +214,8 @@ class TestConfig(base.TestCase):
             os.path.dirname(os.path.realpath(__file__)),
             'data',
             datafile)
-        config_data = yaml.safe_load(open(config_data_path).read())
+        with open(config_data_path) as fin:
+            config_data = yaml.safe_load(fin.read())
         deployment_data = []
 
         for deployment in config_data['deployments']:
@@ -249,7 +250,8 @@ class TestConfig(base.TestCase):
             os.path.dirname(os.path.realpath(__file__)),
             'data',
             file_name)
-        return yaml.safe_load(open(file_path).read())
+        with open(file_path) as fin:
+            return yaml.safe_load(fin.read())
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
@@ -306,70 +308,70 @@ class TestConfig(base.TestCase):
         for f in ['Controller',
                   'Compute', ]:
 
-            self.assertEqual(
-                self._get_yaml_file(f),
-                yaml.safe_load(
-                    open(os.path.join(tmp_path, 'group_vars', f)).read()))
+            with open(os.path.join(tmp_path, 'group_vars', f)) as fin:
+                self.assertEqual(
+                    self._get_yaml_file(f),
+                    yaml.safe_load(fin.read()))
 
         for f in ['overcloud-controller-0',
                   'overcloud-novacompute-0',
                   'overcloud-novacompute-1',
                   'overcloud-novacompute-2']:
-
-            self.assertEqual(
-                self._get_yaml_file(os.path.join('host_vars', f)),
-                yaml.safe_load(
-                    open(os.path.join(tmp_path, 'host_vars', f)).read()))
+            with open(os.path.join(tmp_path, 'host_vars', f)) as fin:
+                self.assertEqual(
+                    self._get_yaml_file(os.path.join('host_vars', f)),
+                    yaml.safe_load(fin.read()))
 
         for d in ['ControllerHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost',
                   'MyPostConfig']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(tmp_path, 'Controller',
-                                      'overcloud-controller-0',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                                    'overcloud-controller-0',
-                                    d)))
+            with open(os.path.join(tmp_path, 'Controller',
+                                   'overcloud-controller-0',
+                                   d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                                        'overcloud-controller-0',
+                                        d)))
 
         for d in ['ComputeHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(tmp_path, 'Compute',
-                                      'overcloud-novacompute-0',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                                    'overcloud-novacompute-0',
-                                    d)))
+
+            with open(os.path.join(tmp_path, 'Compute',
+                                   'overcloud-novacompute-0',
+                                   d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                                        'overcloud-novacompute-0',
+                                        d)))
 
         for d in ['ComputeHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(tmp_path, 'Compute',
-                                      'overcloud-novacompute-1',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                                    'overcloud-novacompute-1',
-                                    d)))
+            with open(os.path.join(tmp_path, 'Compute',
+                                   'overcloud-novacompute-1',
+                                   d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                                        'overcloud-novacompute-1',
+                                        d)))
 
         for d in ['ComputeHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost',
                   'AnsibleDeployment']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(tmp_path, 'Compute',
-                                      'overcloud-novacompute-2',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                                    'overcloud-novacompute-2',
-                                    d)))
+            with open(os.path.join(tmp_path, 'Compute',
+                                   'overcloud-novacompute-2',
+                                   d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                                        'overcloud-novacompute-2',
+                                        d)))
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
@@ -660,60 +662,58 @@ class TestConfig(base.TestCase):
 
         for f in ['Controller',
                   'Compute', ]:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(config_dir, 'group_vars', f)).read()),
-                self._get_yaml_file(f))
+            with open(os.path.join(config_dir, 'group_vars', f)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(f))
 
         for d in ['ControllerHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost',
                   'MyPostConfig']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(config_dir, 'Controller',
-                                      'overcloud-controller-0',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                    'overcloud-controller-0',
-                    d)))
+            with open(os.path.join(config_dir, 'Controller',
+                                   'overcloud-controller-0', d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                        'overcloud-controller-0',
+                        d)))
 
         for d in ['ComputeHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(config_dir, 'Compute',
-                                      'overcloud-novacompute-0',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                    'overcloud-novacompute-0',
-                    d)))
+            with open(os.path.join(config_dir, 'Compute',
+                                   'overcloud-novacompute-0',
+                                   d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                        'overcloud-novacompute-0',
+                        d)))
 
         for d in ['ComputeHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(config_dir, 'Compute',
-                                      'overcloud-novacompute-1',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                    'overcloud-novacompute-1',
-                    d)))
+            with open(os.path.join(config_dir, 'Compute',
+                                   'overcloud-novacompute-1',
+                                   d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                        'overcloud-novacompute-1',
+                        d)))
 
         for d in ['ComputeHostEntryDeployment',
                   'NetworkDeployment',
                   'MyExtraConfigPost',
                   'AnsibleDeployment']:
-            self.assertEqual(
-                yaml.safe_load(
-                    open(os.path.join(config_dir, 'Compute',
-                                      'overcloud-novacompute-2',
-                                      d)).read()),
-                self._get_yaml_file(os.path.join(
-                    'overcloud-novacompute-2',
-                    d)))
+            with open(os.path.join(config_dir, 'Compute',
+                                   'overcloud-novacompute-2', d)) as fin:
+                self.assertEqual(
+                    yaml.safe_load(fin.read()),
+                    self._get_yaml_file(os.path.join(
+                        'overcloud-novacompute-2',
+                        d)))
 
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
