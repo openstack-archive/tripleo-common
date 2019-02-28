@@ -72,6 +72,7 @@
       openstack image create --disk-format {{ raw_format|default('qcow2') }} \
         --container-format bare --tag {{ amp_image_tag }} \
         --file {{ raw_filename|default(image_filename) }} \
+        --property hw_architecture={{ amp_hw_arch }} \
         {{ amphora_image }}
     register: image_result
     changed_when: "image_result.stdout != ''"
