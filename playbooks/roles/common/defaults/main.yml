@@ -5,6 +5,7 @@ amp_image_tag: "amphora-image"
 amp_ssh_key_name: "octavia-ssh-key"
 amp_ssh_key_path: ""
 amp_to_raw: False
+amp_hw_arch: "x86_64"
 auth_username: "octavia"
 auth_project_name: "service"
 lb_mgmt_net_name: "lb-mgmt-net"
