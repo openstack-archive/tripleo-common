@@ -149,14 +149,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::Collectd
 
-- imagename: "{{namespace}}/{{name_prefix}}congress-api{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - DockerCongressApiImage
-  - DockerCongressConfigImage
-  services:
-  - OS::TripleO::Services::Congress
-
 - imagename: "{{namespace}}/{{name_prefix}}cron{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
