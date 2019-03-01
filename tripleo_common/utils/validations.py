@@ -55,7 +55,7 @@ def _get_validations_from_swift(swift, container, objects, groups, results,
         if skip_existing and validation_id in existing_ids:
             continue
 
-        contents = swift.get_object(container, obj['name'])[1]
+        contents = swift_utils.get_object_string(swift, container, obj['name'])
         validation = yaml.safe_load(contents)
         validation_groups = get_validation_metadata(validation, 'groups') or []
 
@@ -130,7 +130,7 @@ def download_validation(swift, plan, validation):
     # If a custom validation with that name exists, get it from the plan
     # container and override. Otherwise, the default one will be used.
     try:
-        contents = swift.get_object(plan, swift_path)[1]
+        contents = swift_utils.get_object_string(swift, plan, swift_path)
     except swiftexceptions.ClientException:
         pass
     else:

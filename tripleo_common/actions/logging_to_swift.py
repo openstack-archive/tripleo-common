@@ -129,9 +129,10 @@ class PublishUILogToSwiftAction(base.TripleOAction):
         self._rotate(swift)
 
         try:
-            old_contents = swift.get_object(
+            old_contents = swiftutils.get_object_string(
+                swift,
                 self.logging_container,
-                constants.TRIPLEO_UI_LOG_FILENAME)[1]
+                constants.TRIPLEO_UI_LOG_FILENAME)
             new_contents = "%s\n%s" % (old_contents, self.logging_data)
         except swiftexceptions.ClientException:
             LOG.debug(
@@ -139,9 +140,11 @@ class PublishUILogToSwiftAction(base.TripleOAction):
             new_contents = self.logging_data
 
         try:
-            swift.put_object(self.logging_container,
-                             constants.TRIPLEO_UI_LOG_FILENAME,
-                             new_contents)
+            swiftutils.put_object_string(
+                swift,
+                self.logging_container,
+                constants.TRIPLEO_UI_LOG_FILENAME,
+                new_contents)
         except swiftexceptions.ClientException as err:
             msg = "Failed to publish logs: %s" % err
             return actions.Result(error=msg)

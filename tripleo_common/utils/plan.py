@@ -22,6 +22,7 @@ import tempfile
 import yaml
 
 from tripleo_common import constants
+from tripleo_common.utils import swift as swiftutils
 
 
 def update_in_env(swift, env, key, value='', delete_key=False):
@@ -44,7 +45,7 @@ def update_in_env(swift, env, key, value='', delete_key=False):
 def get_env(swift, name):
     """Get plan environment from Swift and convert it to a dictionary."""
     env = yaml.safe_load(
-        swift.get_object(name, constants.PLAN_ENVIRONMENT)[1]
+        swiftutils.get_object_string(swift, name, constants.PLAN_ENVIRONMENT)
     )
 
     # Ensure the name is correct, as it will be used to update the
@@ -57,7 +58,8 @@ def get_env(swift, name):
 
 def put_env(swift, env):
     """Convert given environment to yaml and upload it to Swift."""
-    swift.put_object(
+    swiftutils.put_object_string(
+        swift,
         env['name'],
         constants.PLAN_ENVIRONMENT,
         yaml.safe_dump(env, default_flow_style=False)
@@ -67,12 +69,14 @@ def put_env(swift, env):
 def get_user_env(swift, container_name):
     """Get user environment from Swift convert it to a dictionary."""
     return yaml.safe_load(
-        swift.get_object(container_name, constants.USER_ENVIRONMENT)[1])
+        swiftutils.get_object_string(swift, container_name,
+                                     constants.USER_ENVIRONMENT))
 
 
 def put_user_env(swift, container_name, env):
     """Convert given user environment to yaml and upload it to Swift."""
-    swift.put_object(
+    swiftutils.put_object_string(
+        swift,
         container_name,
         constants.USER_ENVIRONMENT,
         yaml.safe_dump(env, default_flow_style=False)

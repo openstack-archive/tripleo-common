@@ -28,6 +28,7 @@ from tripleo_common.actions import heat_capabilities
 from tripleo_common import constants
 from tripleo_common.image import kolla_builder
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import swift as swiftutils
 
 
 LOG = logging.getLogger(__name__)
@@ -68,7 +69,8 @@ class PrepareContainerImageEnv(base.TripleOAction):
         params = default_image_params()
         swift = self.get_object_client(context)
         try:
-            swift.put_object(
+            swiftutils.put_object_string(
+                swift,
                 self.container,
                 constants.CONTAINER_DEFAULTS_ENVIRONMENT,
                 yaml.safe_dump(
@@ -101,8 +103,10 @@ class PrepareContainerImageParameters(base.TripleOAction):
 
     def _get_role_data(self, swift):
         try:
-            j2_role_file = swift.get_object(
-                self.container, constants.OVERCLOUD_J2_ROLES_NAME)[1]
+            j2_role_file = swiftutils.get_object_string(
+                swift,
+                self.container,
+                constants.OVERCLOUD_J2_ROLES_NAME)
             role_data = yaml.safe_load(j2_role_file)
         except swiftexceptions.ClientException:
             LOG.info("No %s file found, not filtering container images by role"
@@ -147,7 +151,8 @@ class PrepareContainerImageParameters(base.TripleOAction):
                 os.remove(f)
 
         try:
-            swift.put_object(
+            swiftutils.put_object_string(
+                swift,
                 self.container,
                 constants.CONTAINER_DEFAULTS_ENVIRONMENT,
                 yaml.safe_dump(

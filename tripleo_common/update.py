@@ -19,6 +19,7 @@ import yaml
 from heatclient.common import template_utils
 
 from tripleo_common import constants
+from tripleo_common.utils import swift as swiftutils
 
 
 def add_breakpoints_cleanup_into_env(env):
@@ -78,9 +79,11 @@ def check_neutron_mechanism_drivers(env, stack, plan_client, container):
         # TODO(beagles): we need to look for a better way to
         # get the current template default value. This is fragile
         # with respect to changing filenames, etc.
-        ml2_tmpl = plan_client.get_object(
-            container, 'puppet/services/neutron-plugin-ml2.yaml')
-        ml2_def = yaml.safe_load(ml2_tmpl[1])
+        ml2_tmpl = swiftutils.get_object_string(
+            plan_client,
+            container,
+            'puppet/services/neutron-plugin-ml2.yaml')
+        ml2_def = yaml.safe_load(ml2_tmpl)
         default_drivers = ml2_def.get('parameters', {}).get(driver_key,
                                                             {}).get('default')
         new_driver = get_exclusive_neutron_driver(default_drivers)
