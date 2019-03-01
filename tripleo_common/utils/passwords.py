@@ -110,7 +110,7 @@ def create_cephx_key():
     # https://github.com/ceph/ceph-deploy/blob/master/ceph_deploy/new.py#L21
     key = os.urandom(16)
     header = struct.pack("<hiih", 1, int(time.time()), 0, len(key))
-    return base64.b64encode(header + key)
+    return base64.b64encode(header + key).decode('utf-8')
 
 
 def get_snmpd_readonly_user_password(mistralclient):
@@ -123,7 +123,7 @@ def get_snmpd_readonly_user_password(mistralclient):
 
 
 def create_keystone_credential():
-    return base64.urlsafe_b64encode(os.urandom(32))
+    return base64.urlsafe_b64encode(os.urandom(32)).decode('utf-8')
 
 
 def create_ssh_keypair(comment=None, bits=2048):
@@ -147,4 +147,4 @@ def create_rndc_key_secret():
         passlib.pwd.genword(length=_MIN_PASSWORD_SIZE).encode('utf-8'),
         msg=passlib.pwd.genword(length=_MIN_PASSWORD_SIZE).encode('utf-8'),
         digestmod=hashlib.sha256)
-    return base64.b64encode(h.digest())
+    return base64.b64encode(h.digest()).decode('utf-8')

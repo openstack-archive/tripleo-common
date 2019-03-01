@@ -85,8 +85,8 @@ def put_user_env(swift, container_name, env):
 
 def write_json_temp_file(data):
     """Writes the provided data to a json file and return the filename"""
-    with tempfile.NamedTemporaryFile(delete=False, mode='w') as temp_file:
-        temp_file.write(json.dumps(data))
+    with tempfile.NamedTemporaryFile(delete=False, mode='wb') as temp_file:
+        temp_file.write(json.dumps(data).encode('utf-8'))
     return temp_file.name
 
 

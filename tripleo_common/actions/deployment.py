@@ -240,7 +240,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
         # CA to be trusted by the overcloud.
         try:
             with open(local_ca_path, 'rb') as ca_file:
-                return ca_file.read()
+                return ca_file.read().decode('utf-8')
         except IOError:
             # If the file wasn't found it means that the undercloud's TLS
             # was explicitly disabled or another CA is being used. So we'll

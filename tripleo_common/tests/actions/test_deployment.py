@@ -482,7 +482,7 @@ class DeployStackActionTest(base.TestCase):
             self.assertIn('CAMap', my_params)
             self.assertIn('undercloud-ca', my_params['CAMap'])
             self.assertIn('content', my_params['CAMap']['undercloud-ca'])
-            self.assertEqual(b'FAKE CA CERT',
+            self.assertEqual('FAKE CA CERT',
                              my_params['CAMap']['undercloud-ca']['content'])
 
     def test_set_tls_parameters_ca_found_camap_provided(self):
@@ -491,7 +491,7 @@ class DeployStackActionTest(base.TestCase):
         my_params = {}
         my_env = {
             'parameter_defaults': {
-                'CAMap': {'overcloud-ca': {'content': b'ANOTER FAKE CERT'}}}}
+                'CAMap': {'overcloud-ca': {'content': 'ANOTER FAKE CERT'}}}}
         with tempfile.NamedTemporaryFile() as ca_file:
             # Write test data
             ca_file.write(b'FAKE CA CERT')
@@ -503,11 +503,11 @@ class DeployStackActionTest(base.TestCase):
             self.assertIn('CAMap', my_params)
             self.assertIn('undercloud-ca', my_params['CAMap'])
             self.assertIn('content', my_params['CAMap']['undercloud-ca'])
-            self.assertEqual(b'FAKE CA CERT',
+            self.assertEqual('FAKE CA CERT',
                              my_params['CAMap']['undercloud-ca']['content'])
             self.assertIn('overcloud-ca', my_params['CAMap'])
             self.assertIn('content', my_params['CAMap']['overcloud-ca'])
-            self.assertEqual(b'ANOTER FAKE CERT',
+            self.assertEqual('ANOTER FAKE CERT',
                              my_params['CAMap']['overcloud-ca']['content'])
 
 
