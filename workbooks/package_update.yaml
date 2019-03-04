@@ -109,6 +109,7 @@ workflows:
       - work_dir: /var/lib/mistral
       - tags: ''
       - skip_tags: ''
+      - extra_vars: ''
 
     tags:
       - tripleo-common-managed
@@ -146,6 +147,7 @@ workflows:
           work_dir: <% $.work_dir %>/<% execution().id %>
           tags: <% $.tags %>
           skip_tags: <% $.skip_tags %>
+          extra_vars: <% $.extra_vars %>
           trash_output: true
         on-success:
           - node_update_passed: <% task().result.returncode = 0 %>
