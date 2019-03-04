@@ -23,6 +23,7 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import swift as swiftutils
 
 LOG = logging.getLogger(__name__)
 
@@ -44,9 +45,10 @@ class GetCapabilitiesAction(base.TripleOAction):
     def run(self, context):
         try:
             swift = self.get_object_client(context)
-            map_file = swift.get_object(
-                self.container, 'capabilities-map.yaml')
-            capabilities = yaml.safe_load(map_file[1])
+            map_file = swiftutils.get_object_string(swift,
+                                                    self.container,
+                                                    'capabilities-map.yaml')
+            capabilities = yaml.safe_load(map_file)
         except Exception:
             err_msg = (
                 "Error parsing capabilities-map.yaml.")
@@ -202,9 +204,11 @@ class UpdateCapabilitiesAction(base.TripleOAction):
             # ordering
             try:
                 swift = self.get_object_client(context)
-                map_file = swift.get_object(
-                    self.container, 'capabilities-map.yaml')
-                capabilities = yaml.safe_load(map_file[1])
+                map_file = swiftutils.get_object_string(
+                    swift,
+                    self.container,
+                    'capabilities-map.yaml')
+                capabilities = yaml.safe_load(map_file)
             except swiftexceptions.ClientException as err:
                 err_msg = ("Error retrieving capabilities-map.yaml for "
                            "plan %s: %s" % (self.container, err))

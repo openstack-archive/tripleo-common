@@ -159,8 +159,8 @@ class ListRolesAction(base.TripleOAction):
     def run(self, context):
         try:
             swift = self.get_object_client(context)
-            roles_data = yaml.safe_load(swift.get_object(
-                self.container, self.role_file_name)[1])
+            roles_data = yaml.safe_load(swiftutils.get_object_string(
+                swift, self.container, self.role_file_name))
         except Exception as err:
             err_msg = ("Error retrieving roles data from deployment plan: %s"
                        % err)
@@ -244,10 +244,10 @@ class UpdatePlanFromDirAction(base.TripleOAction):
                     tmp_tarball.name,
                     container_tmp)
             # Get all new templates:
-            new_templates = swift.get_object(container_tmp,
-                                             '')[1].splitlines()
-            old_templates = swift.get_object(self.container,
-                                             '')[1].splitlines()
+            new_templates = swiftutils.get_object_string(swift, container_tmp,
+                                                         '').splitlines()
+            old_templates = swiftutils.get_object_string(swift, self.container,
+                                                         '').splitlines()
             exclude_user_data = [constants.PLAN_ENVIRONMENT,
                                  constants.OVERCLOUD_J2_ROLES_NAME,
                                  constants.OVERCLOUD_J2_NETWORKS_NAME,
@@ -256,19 +256,28 @@ class UpdatePlanFromDirAction(base.TripleOAction):
             for new in new_templates:
                 # if doesn't exist, push it:
                 if new not in old_templates:
-                    swift.put_object(
+                    swiftutils.put_object_string(
+                        swift,
                         self.container,
                         new,
-                        swift.get_object(container_tmp, new)[1])
+                        swiftutils.get_object_string(swift, container_tmp, new)
+                    )
                 else:
-                    content_new = swift.get_object(container_tmp, new)
-                    content_old = swift.get_object(self.container, new)
+                    content_new = swiftutils.get_object_string(swift,
+                                                               container_tmp,
+                                                               new)
+                    content_old = swiftutils.get_object_string(swift,
+                                                               self.container,
+                                                               new)
                     if (not content_new == content_old and
                        new not in exclude_user_data):
-                        swift.put_object(
+                        swiftutils.put_object_string(
+                            swift,
                             self.container,
                             new,
-                            swift.get_object(container_tmp, new)[1])
+                            swiftutils.get_object_string(swift, container_tmp,
+                                                         new)
+                        )
         except swiftexceptions.ClientException as err:
             msg = "Error attempting an operation on container: %s" % err
             LOG.exception(msg)

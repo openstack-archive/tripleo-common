@@ -166,3 +166,21 @@ def create_and_upload_tarball(swiftservice,
                         LOG.error("%s" % error)
     except SwiftError as e:
         LOG.error(e.value)
+
+
+def get_object_string(swift, container, object_name):
+    """Get the object contents as a string """
+    data = swift.get_object(container, object_name)[1]
+    try:
+        return data.decode('utf-8')
+    except AttributeError:
+        return data
+
+
+def put_object_string(swift, container, object_name, contents):
+    """Put the object contents as a string """
+    try:
+        contents = contents.decode('utf-8')
+    except AttributeError:
+        pass
+    return swift.put_object(container, object_name, contents)

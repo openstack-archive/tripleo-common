@@ -25,6 +25,7 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import swift as swiftutils
 
 LOG = logging.getLogger(__name__)
 
@@ -56,8 +57,9 @@ class J2SwiftLoader(jinja2.BaseLoader):
         for searchpath in self.searchpath:
             template_path = os.path.join(searchpath, *pieces)
             try:
-                source = self.swift.get_object(
-                    self.container, template_path)[1]
+                source = swiftutils.get_object_string(self.swift,
+                                                      self.container,
+                                                      template_path)
                 return source, None, False
             except swiftexceptions.ClientException:
                 pass
@@ -122,8 +124,8 @@ class ProcessTemplatesAction(base.TripleOAction):
         try:
             # write the template back to the plan container
             LOG.info("Writing rendered template %s" % yaml_f)
-            swift.put_object(
-                self.container, yaml_f, r_template)
+            swiftutils.put_object_string(swift, self.container, yaml_f,
+                                         r_template)
         except swiftexceptions.ClientException as ex:
             error_msg = ("Error storing file %s in container %s"
                          % (yaml_f, self.container))
@@ -133,8 +135,8 @@ class ProcessTemplatesAction(base.TripleOAction):
     def _get_j2_excludes_file(self, context):
         swift = self.get_object_client(context)
         try:
-            j2_excl_file = swift.get_object(
-                self.container, constants.OVERCLOUD_J2_EXCLUDES)[1]
+            j2_excl_file = swiftutils.get_object_string(
+                swift, self.container, constants.OVERCLOUD_J2_EXCLUDES)
             j2_excl_data = yaml.safe_load(j2_excl_file)
             if (j2_excl_data is None or j2_excl_data.get('name') is None):
                 j2_excl_data = {"name": []}
@@ -176,8 +178,8 @@ class ProcessTemplatesAction(base.TripleOAction):
         swift = self.get_object_client(context)
 
         try:
-            j2_role_file = swift.get_object(
-                self.container, constants.OVERCLOUD_J2_ROLES_NAME)[1]
+            j2_role_file = swiftutils.get_object_string(
+                swift, self.container, constants.OVERCLOUD_J2_ROLES_NAME)
             role_data = yaml.safe_load(j2_role_file)
         except swiftexceptions.ClientException:
             LOG.info("No %s file found, skipping jinja templating"
@@ -185,8 +187,8 @@ class ProcessTemplatesAction(base.TripleOAction):
             return
 
         try:
-            j2_network_file = swift.get_object(
-                self.container, constants.OVERCLOUD_J2_NETWORKS_NAME)[1]
+            j2_network_file = swiftutils.get_object_string(
+                swift, self.container, constants.OVERCLOUD_J2_NETWORKS_NAME)
             network_data = yaml.safe_load(j2_network_file)
             # Allow no networks defined in network_data
             if network_data is None:
@@ -258,7 +260,9 @@ class ProcessTemplatesAction(base.TripleOAction):
             #    and create one file common to all roles
             if f.endswith('.role.j2.yaml'):
                 LOG.info("jinja2 rendering role template %s" % f)
-                j2_template = swift.get_object(self.container, f)[1]
+                j2_template = swiftutils.get_object_string(swift,
+                                                           self.container,
+                                                           f)
                 LOG.info("jinja2 rendering roles %s" % ","
                          .join(role_names))
                 for role in role_names:
@@ -300,7 +304,9 @@ class ProcessTemplatesAction(base.TripleOAction):
 
             elif (f.endswith('.network.j2.yaml')):
                 LOG.info("jinja2 rendering network template %s" % f)
-                j2_template = swift.get_object(self.container, f)[1]
+                j2_template = swiftutils.get_object_string(swift,
+                                                           self.container,
+                                                           f)
                 LOG.info("jinja2 rendering networks %s" % ",".join(n_map))
                 for network in n_map:
                     j2_data = {'network': n_map[network]}
@@ -325,7 +331,9 @@ class ProcessTemplatesAction(base.TripleOAction):
 
             elif f.endswith('.j2.yaml'):
                 LOG.info("jinja2 rendering %s" % f)
-                j2_template = swift.get_object(self.container, f)[1]
+                j2_template = swiftutils.get_object_string(swift,
+                                                           self.container,
+                                                           f)
                 j2_data = {'roles': role_data, 'networks': network_data}
                 out_f = f.replace('.j2.yaml', '.yaml')
                 self._j2_render_and_put(j2_template,

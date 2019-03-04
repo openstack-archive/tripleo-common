@@ -29,6 +29,7 @@ from tripleo_common import constants
 from tripleo_common import update
 from tripleo_common.utils import overcloudrc
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import swift as swiftutils
 
 LOG = logging.getLogger(__name__)
 
@@ -73,10 +74,8 @@ class OrchestrationDeployAction(base.TripleOAction):
         count_check = 0
         swift_client = self.get_object_client(context)
         while not body:
-            headers, body = swift_client.get_object(
-                container_name,
-                object_name
-            )
+            body = swiftutils.get_object_string(swift_client, container_name,
+                                                object_name)
             count_check += 3
             if body or count_check > self.timeout:
                 break
@@ -373,9 +372,9 @@ class DeploymentStatusAction(base.TripleOAction):
                         deployment_status=None)
 
         try:
-            headers, body = swift_client.get_object(
-                '%s-messages' % self.plan,
-                'deployment_status.yaml')
+            body = swiftutils.get_object_string(swift_client,
+                                                '%s-messages' % self.plan,
+                                                'deployment_status.yaml')
 
             deployment_status = yaml.safe_load(body)['deployment_status']
         except swiftexceptions.ClientException:

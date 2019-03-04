@@ -63,3 +63,26 @@ class SwiftTest(base.TestCase):
     def test_create_container(self):
         swift_utils.create_container(self.swiftclient, 'abc')
         self.swiftclient.put_container.assert_called()
+
+    def test_get_object_string(self):
+        self.swiftclient.get_object.return_value = (1, str('foo'))
+        val = swift_utils.get_object_string(self.swiftclient, 'foo', 'bar')
+        self.assertEqual(str('foo'), val)
+
+    def test_get_object_string_from_bytes(self):
+        self.swiftclient.get_object.return_value = (1, b'foo')
+        val = swift_utils.get_object_string(self.swiftclient, 'foo', 'bar')
+        self.assertEqual(str('foo'), val)
+
+    def test_put_object_string(self):
+        put_mock = mock.MagicMock()
+        self.swiftclient.put_object = put_mock
+        swift_utils.put_object_string(self.swiftclient, 'foo', 'bar',
+                                      str('foo'))
+        put_mock.assert_called_once_with('foo', 'bar', str('foo'))
+
+    def test_put_object_string_from_bytes(self):
+        put_mock = mock.MagicMock()
+        self.swiftclient.put_object = put_mock
+        swift_utils.put_object_string(self.swiftclient, 'foo', 'bar', b'foo')
+        put_mock.assert_called_once_with('foo', 'bar', str('foo'))
