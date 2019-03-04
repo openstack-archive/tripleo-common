@@ -15,6 +15,7 @@ workflows:
       - swift_tar: "swift-rings.tar.gz"
       - get_url_parm: SwiftRingGetTempurl
       - put_url_parm: SwiftRingPutTempurl
+      - validate_stack: true
     tags:
       - tripleo-common-managed
     tasks:
@@ -44,6 +45,7 @@ workflows:
         input:
           parameters: <% {$.get_url_parm => task(get_tempurl).result, $.put_url_parm => task(put_tempurl).result} %>
           container: <% $.container %>
+          validate: validate_stack
         on-success: set_status_success
         on-error: set_tempurl_failed
 
