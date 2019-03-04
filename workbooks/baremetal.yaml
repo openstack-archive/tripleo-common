@@ -1072,8 +1072,18 @@ workflows:
     tasks:
 
       cell_v2_discover_hosts:
-        on-success: wait_for_nova_resources
+        on-success: name_to_uuids
         action: tripleo.baremetal.cell_v2_discover_hosts
+
+      name_to_uuids:
+        on-success: wait_for_nova_resources
+        action: ironic.node_get
+        input:
+          node_id: <% $.node %>
+          fields: ['uuid']
+        with-items: node in <% $.node_uuids %>
+        publish:
+          node_uuids: <% task().result.uuid %>
 
       wait_for_nova_resources:
         with-items: node_uuid in <% $.node_uuids %>
