@@ -112,12 +112,16 @@ def set_neutron_driver(pd, mapping_args):
     :param mapping_args: Dict to set neutron_driver value on
     """
     if not pd or 'NeutronMechanismDrivers' not in pd:
+        # we should set default neutron driver
+        mapping_args['neutron_driver'] = 'ovn'
         return
     nmd = pd['NeutronMechanismDrivers']
     if 'opendaylight_v2' in nmd:
         mapping_args['neutron_driver'] = 'odl'
     elif 'ovn' in nmd:
         mapping_args['neutron_driver'] = 'ovn'
+    else:
+        mapping_args['neutron_driver'] = 'other'
 
 
 def container_images_prepare_multi(environment, roles_data, dry_run=False,

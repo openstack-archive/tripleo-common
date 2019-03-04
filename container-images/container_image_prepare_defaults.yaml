@@ -18,10 +18,10 @@ parameter_defaults:
       name_suffix: ''
       tag: current-tripleo
 
-      # Substitute neutron images based on driver. Can be <null>, 'ovn' or
+      # Substitute neutron images based on driver. Can be 'other', 'ovn' or
       # 'odl'. This is usually set automatically by detecting if odl or ovn
       # services are deployed.
-      neutron_driver: null
+      neutron_driver: 'ovn'
 
       # Container image name components for Ceph images.
       # Only used if Ceph is deployed.

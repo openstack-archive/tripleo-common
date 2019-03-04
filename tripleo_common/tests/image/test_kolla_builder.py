@@ -254,7 +254,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
                 'tag': 'current-tripleo',
-                'neutron_driver': None,
+                'neutron_driver': 'ovn',
                 'openshift_namespace': 'docker.io/openshift',
                 'openshift_tag': 'v3.11.0',
                 'openshift_prefix': 'origin',
@@ -1250,18 +1250,18 @@ class TestPrepare(base.TestCase):
     def test_set_neutron_driver(self):
         mapping_args = {}
         kb.set_neutron_driver(None, mapping_args)
-        self.assertNotIn('neutron_driver', mapping_args)
+        self.assertEqual('ovn', mapping_args['neutron_driver'])
 
         mapping_args = {}
         kb.set_neutron_driver({}, mapping_args)
-        self.assertNotIn('neutron_driver', mapping_args)
+        self.assertEqual('ovn', mapping_args['neutron_driver'])
 
         mapping_args = {}
         kb.set_neutron_driver(
             {'NeutronMechanismDrivers': ['sriovnicswitch', 'openvswitch']},
             mapping_args
         )
-        self.assertNotIn('neutron_driver', mapping_args)
+        self.assertEqual('other', mapping_args['neutron_driver'])
 
         mapping_args = {}
         kb.set_neutron_driver(
