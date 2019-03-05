@@ -310,6 +310,7 @@ class BaseImageUploader(object):
     def authenticate(self, image_url, username=None, password=None):
         netloc = image_url.netloc
         image, tag = self._image_tag_from_url(image_url)
+        self.is_insecure_registry(netloc)
         url = self._build_url(image_url, path='/')
 
         session = requests.Session()
@@ -346,17 +347,12 @@ class BaseImageUploader(object):
     @classmethod
     def _build_url(cls, url, path):
         netloc = url.netloc
-        insecure = netloc in cls.insecure_registries
-        tls_verify = netloc in cls.no_verify_registries
         if netloc in cls.mirrors:
             mirror = cls.mirrors[netloc]
             return '%sv2%s' % (mirror, path)
         else:
-            if insecure:
+            if netloc in cls.insecure_registries:
                 scheme = 'http'
-            # Just to be clear: we DO want TLS for that specific case
-            elif tls_verify:
-                scheme = 'https'
             else:
                 scheme = 'https'
             if netloc == 'docker.io':
@@ -566,8 +562,6 @@ class BaseImageUploader(object):
             return False
         if registry_host in self.insecure_registries:
             return True
-        if registry_host in self.no_verify_registries:
-            return True
         try:
             requests.get('https://%s/v2' % registry_host, timeout=30)
         except requests.exceptions.SSLError:
@@ -577,7 +571,7 @@ class BaseImageUploader(object):
                 requests.get('https://%s/v2' % registry_host, timeout=30,
                              verify=False)
                 self.no_verify_registries.add(registry_host)
-                return True
+                return False
             except requests.exceptions.SSLError:
                 # So nope, it's really not a certificate verification issue
                 self.insecure_registries.add(registry_host)
@@ -714,10 +708,12 @@ class SkopeoImageUploader(BaseImageUploader):
         LOG.info('Copying from %s to %s' % (source, target))
         cmd = ['skopeo', 'copy']
 
-        if source_url.netloc in cls.insecure_registries:
+        if source_url.netloc in [cls.insecure_registries,
+                                 cls.no_verify_registries]:
             cmd.append('--src-tls-verify=false')
 
-        if target_url.netloc in cls.insecure_registries:
+        if target_url.netloc in [cls.insecure_registries,
+                                 cls.no_verify_registries]:
             cmd.append('--dest-tls-verify=false')
 
         cmd.append(source)
@@ -1564,9 +1560,9 @@ def upload_task(args):
 
 def discover_tag_from_inspect(args):
     self, image, tag_from_label = args
-    image_url = BaseImageUploader._image_to_url(image)
+    image_url = self._image_to_url(image)
     session = self.authenticate(image_url)
-    i = BaseImageUploader._inspect(image_url, session=session)
+    i = self._inspect(image_url, session=session)
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
         path = image.rpartition(':')
@@ -1574,5 +1570,5 @@ def discover_tag_from_inspect(args):
         image = path[0]
     else:
         fallback_tag = None
-    return image, BaseImageUploader._discover_tag_from_inspect(
+    return image, self._discover_tag_from_inspect(
         i, image, tag_from_label, fallback_tag)
