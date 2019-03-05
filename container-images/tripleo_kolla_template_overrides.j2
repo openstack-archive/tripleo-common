@@ -476,6 +476,10 @@ RUN mkdir -p /openstack && \
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-executor /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
+# TODO(emilien) Remove once proper packaging is released for Ansible
+{% if distro_python3 %}
+RUN test -f /usr/bin/ansible-playbook-3 || ln -s /usr/bin/ansible-playbook /usr/bin/ansible-playbook-3
+{% endif %}
 USER root
 RUN useradd validations
 USER mistral
