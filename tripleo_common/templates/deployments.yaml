@@ -34,6 +34,10 @@
   become: true
   when: (force | bool)
 
+- name: Set fact for async_deployment
+  set_fact:
+    use_async_deployment: "{{ (async_deployment | default(False)) or (item == 'NetworkDeployment') }}"
+
 - name: "Run deployment {{ item }}"
   shell: |
     /usr/libexec/os-refresh-config/configure.d/55-heat-config
@@ -41,14 +45,39 @@
   become: true
   environment:
     HEAT_SHELL_CONFIG: /var/lib/heat-config/tripleo-config-download/{{ item }}
-  register: deployment_result
+  register: deployment_sync_result
   ignore_errors: yes
+  when: not use_async_deployment
 
-- name: "Output for {{ item }}"
+- name: "Run async deployment {{ item }}"
+  shell: |
+    /usr/libexec/os-refresh-config/configure.d/55-heat-config
+    exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
+  become: true
+  environment:
+    HEAT_SHELL_CONFIG: /var/lib/heat-config/tripleo-config-download/{{ item }}
+  register: deployment_async_result
+  ignore_errors: yes
+  when: use_async_deployment
+  async: "{{ async_timeout | default(300) }}"
+  poll: "{{ async_poll | default(3) }}"
+
+- name: "Output for sync deployment {{ item }}"
   debug:
     msg:
-      - stderr: "{{ deployment_result.stderr.split('\n') }}"
-      - status_code: "{{ deployment_result.rc }}"
+      - stderr: "{{ deployment_sync_result.stderr.split('\n') }}"
+      - status_code: "{{ deployment_sync_result.rc }}"
   tags:
     - output
-  failed_when: deployment_result.rc != 0
+  failed_when: deployment_sync_result.rc != 0
+  when: not use_async_deployment
+
+- name: "Output for async deployment {{ item }}"
+  debug:
+    msg:
+      - stderr: "{{ deployment_async_result.stderr.split('\n') }}"
+      - status_code: "{{ deployment_async_result.rc }}"
+  tags:
+    - output
+  failed_when: deployment_async_result.rc != 0
+  when: use_async_deployment
