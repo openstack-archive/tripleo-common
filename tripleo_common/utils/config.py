@@ -12,7 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import git
+
 import json
 import logging
 import os
@@ -25,7 +25,7 @@ import yaml
 import jinja2
 
 from tripleo_common import constants
-
+from tripleo_common.utils.safe_import import git
 
 warnings.filterwarnings('once')
 

@@ -18,11 +18,11 @@ import shutil
 import tempfile
 import uuid
 
-import git
 from mistral_lib import actions
 
 from tripleo_common.actions import vcs
 from tripleo_common.tests import base
+from tripleo_common.utils.safe_import import git
 
 
 class GitCloneActionTest(base.TestCase):

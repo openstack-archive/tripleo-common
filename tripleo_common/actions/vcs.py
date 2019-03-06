@@ -17,10 +17,11 @@ import logging
 import shutil
 import tempfile
 
-from git import Repo
 import six
 
 from mistral_lib import actions
+from tripleo_common.utils.safe_import import Repo
+
 
 LOG = logging.getLogger(__name__)
 
