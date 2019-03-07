@@ -45,7 +45,7 @@ workflows:
         input:
           parameters: <% {$.get_url_parm => task(get_tempurl).result, $.put_url_parm => task(put_tempurl).result} %>
           container: <% $.container %>
-          validate: validate_stack
+          validate: <% $.validate_stack %>
         on-success: set_status_success
         on-error: set_tempurl_failed
 

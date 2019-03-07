@@ -133,7 +133,7 @@ workflows:
         action: tripleo.parameters.update
         input:
           container: <% $.container %>
-          validate: validate_stack
+          validate: <% $.validate_stack %>
           parameters:
             RootStackName: <% $.container %>
         on-success: container_images_prepare
@@ -302,7 +302,7 @@ workflows:
           get_url_parm: SwiftRingGetTempurl
           put_url_parm: SwiftRingPutTempurl
           use_default_templates: true
-          validate_stack: validate_stack
+          validate_stack: <% $.validate_stack %>
 
       create_ceph_ansible_fetch_directory_backup_plan:
         workflow: tripleo.swift_backup.v1.create_swift_backup_container_plan
