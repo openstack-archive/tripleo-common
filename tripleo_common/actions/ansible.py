@@ -567,7 +567,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 start = time.time()
                 stdout = []
                 lines = []
-                for line in iter(process.stdout.readline, b''):
+                for line in iter(process.stdout.readline, ''):
                     lines.append(line)
                     if not self.trash_output:
                         stdout.append(line)
