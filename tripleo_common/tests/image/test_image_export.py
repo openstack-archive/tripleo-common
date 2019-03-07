@@ -89,7 +89,7 @@ class TestImageExport(base.TestCase):
         calc_digest = hashlib.sha256()
         layer_stream = io.BytesIO(blob_compressed)
         layer_digest = image_export.export_stream(
-            target_url, layer, layer_stream
+            target_url, layer, layer_stream, verify_digest=False
         )
         self.assertEqual(compressed_digest, layer_digest)
         self.assertEqual(compressed_digest, layer['digest'])
@@ -103,6 +103,28 @@ class TestImageExport(base.TestCase):
         self.assertTrue(os.path.isfile(blob_path))
         with open(blob_path, 'rb') as f:
             self.assertEqual(blob_compressed, f.read())
+
+    def test_export_stream_verify_failed(self):
+        blob_data = six.b('The Blob')
+        blob_compressed = zlib.compress(blob_data)
+        calc_digest = hashlib.sha256()
+        calc_digest.update(blob_compressed)
+
+        target_url = urlparse('docker://localhost:8787/t/nova-api:latest')
+        layer = {
+            'digest': 'sha256:somethingelse'
+        }
+        calc_digest = hashlib.sha256()
+        layer_stream = io.BytesIO(blob_compressed)
+        self.assertRaises(IOError, image_export.export_stream,
+                          target_url, layer, layer_stream,
+                          verify_digest=True)
+        blob_dir = os.path.join(image_export.IMAGE_EXPORT_DIR,
+                                'v2/t/nova-api/blobs')
+        blob_path = os.path.join(blob_dir, 'sha256:somethingelse.gz')
+
+        self.assertTrue(os.path.isdir(blob_dir))
+        self.assertFalse(os.path.isfile(blob_path))
 
     def test_cross_repo_mount(self):
         target_url = urlparse('docker://localhost:8787/t/nova-api:latest')

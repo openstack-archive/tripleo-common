@@ -126,8 +126,11 @@ if __name__ == '__main__':
     with open(args.environment_file) as f:
         env = yaml.safe_load(f)
 
-    params = kolla_builder.container_images_prepare_multi(
-        env, roles_data, cleanup=args.cleanup, dry_run=args.dry_run)
-    result = yaml.safe_dump(params, default_flow_style=False)
-    log.info(result)
-    print(result)
+    try:
+        params = kolla_builder.container_images_prepare_multi(
+            env, roles_data, cleanup=args.cleanup, dry_run=args.dry_run)
+        result = yaml.safe_dump(params, default_flow_style=False)
+        log.info(result)
+        print(result)
+    except Exception as e:
+        log.exception('Image prepare failed', e)
