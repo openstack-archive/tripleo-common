@@ -134,7 +134,7 @@ class J2SwiftLoaderTest(base.TestCase):
         return swift
 
     def test_include_absolute_path(self):
-        j2_loader = templates.J2SwiftLoader(self._setup_swift(), None)
+        j2_loader = templates.J2SwiftLoader(self._setup_swift(), None, '')
         template = jinja2.Environment(loader=j2_loader).from_string(
             r'''
             Included this:
@@ -162,7 +162,7 @@ class J2SwiftLoaderTest(base.TestCase):
             ''')
 
     def test_include_not_found(self):
-        j2_loader = templates.J2SwiftLoader(self._setup_swift(), None)
+        j2_loader = templates.J2SwiftLoader(self._setup_swift(), None, '')
         template = jinja2.Environment(loader=j2_loader).from_string(
             r'''
             Included this:
@@ -173,7 +173,7 @@ class J2SwiftLoaderTest(base.TestCase):
             template.render)
 
     def test_include_invalid_path(self):
-        j2_loader = templates.J2SwiftLoader(self._setup_swift(), 'bar')
+        j2_loader = templates.J2SwiftLoader(self._setup_swift(), 'bar', '')
         template = jinja2.Environment(loader=j2_loader).from_string(
             r'''
             Included this:
@@ -335,13 +335,12 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_object = mock.MagicMock()
         swift.get_container = mock.MagicMock()
         get_obj_client_mock.return_value = swift
-        mock_ctx = mock.MagicMock()
 
         # Test
         action = templates.ProcessTemplatesAction()
         action._j2_render_and_put(JINJA_SNIPPET_CONFIG,
                                   {'role': 'CustomRole'},
-                                  'customrole-config.yaml', context=mock_ctx)
+                                  'customrole-config.yaml', swift)
 
         action_result = swift.put_object._mock_mock_calls[0]
 
@@ -363,14 +362,13 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_container = mock.MagicMock(
             side_effect=return_container_files)
         get_obj_client_mock.return_value = swift
-        mock_ctx = mock.MagicMock()
 
         # Test
         action = templates.ProcessTemplatesAction()
         action._j2_render_and_put(r"{% include 'foo.yaml' %}",
                                   {'role': 'CustomRole'},
                                   'customrole-config.yaml',
-                                  context=mock_ctx)
+                                  swift)
 
         action_result = swift.put_object._mock_mock_calls[0]
 
@@ -394,14 +392,13 @@ class ProcessTemplatesActionTest(base.TestCase):
         swift.get_container = mock.MagicMock(
             side_effect=return_container_files)
         get_obj_client_mock.return_value = swift
-        mock_ctx = mock.MagicMock()
 
         # Test
         action = templates.ProcessTemplatesAction()
         action._j2_render_and_put(r"{% include 'foo.yaml' %}",
                                   {'role': 'CustomRole'},
                                   'bar/customrole-config.yaml',
-                                  context=mock_ctx)
+                                  swift)
 
         action_result = swift.put_object._mock_mock_calls[0]
 

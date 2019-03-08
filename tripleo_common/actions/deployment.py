@@ -139,6 +139,7 @@ class DeployStackAction(base.TripleOAction):
         self.container = container
         self.timeout_mins = timeout
         self.skip_deploy_identifier = skip_deploy_identifier
+        self.role_data = None
 
     def run(self, context):
         # check to see if the stack exists
@@ -198,11 +199,30 @@ class DeployStackAction(base.TripleOAction):
             container=self.container
         )
         processed_data = process_templates_action.run(context)
+        self.role_data = process_templates_action.role_data
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
         if isinstance(processed_data, actions.Result):
             return processed_data
+
+        # prune roles of unused services after the templates have been
+        # processed
+        environment = processed_data.get('environment', {})
+        resource_reg = environment.get('resource_registry', {})
+        roles_changed = self._prune_unused_services(resource_reg, swift)
+
+        if roles_changed:
+            # reprocess the data with the new role information
+            process_templates_action = templates.ProcessTemplatesAction(
+                container=self.container
+            )
+            processed_data = process_templates_action.run(context)
+
+            # If we receive a 'Result' instance it is because the parent action
+            # had an error.
+            if isinstance(processed_data, actions.Result):
+                return processed_data
 
         stack_args = processed_data.copy()
         stack_args['timeout_mins'] = self.timeout_mins
@@ -266,6 +286,44 @@ class DeployStackAction(base.TripleOAction):
         }
         orig_camap.update(ca_map_entry)
         return orig_camap
+
+    def _prune_unused_services(self, resource_registry, swift):
+        """Remove unused services from role data
+
+        Finds the unused services in the resource registry and removes them
+        from the role data in the plan so we do not create empty service
+        chain stacks that are not needed.
+
+        :param resource_registry: tripleo resource registry dict
+        :param swift: swift client
+        :returns: true if we updated the roles file. else false
+        """
+        to_remove = set()
+        for key, value in resource_registry.items():
+            if (key.startswith('OS::TripleO::Services::') and
+                    value.startswith('OS::Heat::None')):
+                to_remove.add(key)
+
+        if not to_remove or not self.role_data:
+            LOG.info('No unused services to prune or no role data')
+            return False
+
+        LOG.info('Removing unused services from role data')
+        for role in self.role_data:
+            role_name = role.get('name')
+            for service in to_remove:
+                try:
+                    role.get('ServicesDefault', []).remove(service)
+                    LOG.debug('Removing {} from {} role'.format(
+                        service, role_name))
+                except ValueError:
+                    pass
+        LOG.debug('Saving updated role data to swift')
+        swift.put_object(self.container,
+                         constants.OVERCLOUD_J2_ROLES_NAME,
+                         yaml.safe_dump(self.role_data,
+                                        default_flow_style=False))
+        return True
 
 
 class OvercloudRcAction(base.TripleOAction):
