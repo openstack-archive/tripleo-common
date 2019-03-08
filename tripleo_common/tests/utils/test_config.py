@@ -12,7 +12,6 @@
 
 import datetime
 import fixtures
-import git
 import mock
 import os
 import uuid
@@ -26,6 +25,7 @@ from tripleo_common import constants
 from tripleo_common.tests import base
 from tripleo_common.tests.fake_config import fakes
 from tripleo_common.utils import config as ooo_config
+from tripleo_common.utils.safe_import import git
 
 
 class TestConfig(base.TestCase):
