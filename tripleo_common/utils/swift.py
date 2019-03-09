@@ -64,6 +64,10 @@ def download_container(swiftclient, container, dest,
         is_newer = False
         filename = obj['name']
         contents = swiftclient.get_object(container, filename)[1]
+        try:
+            contents = contents.encode('utf-8')
+        except (UnicodeDecodeError, AttributeError):
+            pass
         path = os.path.join(dest, filename)
         dirname = os.path.dirname(path)
         already_exists = os.path.exists(path)
@@ -89,7 +93,9 @@ def download_container(swiftclient, container, dest,
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
 
-            with open(path, 'w') as f:
+            # open in binary as the swift client returns error
+            # under python3 if opened as text
+            with open(path, 'wb') as f:
                 f.write(contents)
 
 
