@@ -1181,8 +1181,9 @@ class PythonImageUploader(BaseImageUploader):
         out, err = process.communicate()
         LOG.info(out)
         if process.returncode != 0:
-            raise ImageUploaderException('Error pulling image:\n%s\n%s' %
-                                         (' '.join(cmd), err))
+            LOG.error('Error pulling image:\n%s\n%s' %
+                      (' '.join(cmd), err))
+            raise ImageUploaderException('Pulling image failed')
         return out
 
     @classmethod
