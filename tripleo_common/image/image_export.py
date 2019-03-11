@@ -52,7 +52,7 @@ def image_tag_from_url(image_url):
     return image, tag
 
 
-def export_stream(target_url, layer, layer_stream):
+def export_stream(target_url, layer, layer_stream, verify_digest=True):
     image, tag = image_tag_from_url(target_url)
     digest = layer['digest']
     blob_dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'blobs')
@@ -63,21 +63,37 @@ def export_stream(target_url, layer, layer_stream):
 
     length = 0
     calc_digest = hashlib.sha256()
-    with open(blob_path, 'w+b') as f:
-        for chunk in layer_stream:
-            if not chunk:
-                break
-            f.write(chunk)
-            calc_digest.update(chunk)
-            length += len(chunk)
+    try:
+        with open(blob_path, 'w+b') as f:
+            for chunk in layer_stream:
+                if not chunk:
+                    break
+                f.write(chunk)
+                calc_digest.update(chunk)
+                length += len(chunk)
 
-    layer_digest = 'sha256:%s' % calc_digest.hexdigest()
-    LOG.debug('Calculated layer digest: %s' % layer_digest)
+        layer_digest = 'sha256:%s' % calc_digest.hexdigest()
+        LOG.debug('Calculated layer digest: %s' % layer_digest)
 
-    # if the original layer is uncompressed the digest may change on export
-    expected_blob_path = os.path.join(blob_dir_path, '%s.gz' % layer_digest)
-    if blob_path != expected_blob_path:
-        os.rename(blob_path, expected_blob_path)
+        if verify_digest:
+            if digest != layer_digest:
+                raise IOError('Expected digest %s '
+                              'does not match calculated %s' %
+                              (digest, layer_digest))
+        else:
+            # if the original layer is uncompressed
+            # the digest may change on export
+            expected_blob_path = os.path.join(
+                blob_dir_path, '%s.gz' % layer_digest)
+            if blob_path != expected_blob_path:
+                os.rename(blob_path, expected_blob_path)
+
+    except Exception as e:
+        LOG.error('Error while writing blob %s' % blob_path)
+        # cleanup blob file
+        if os.path.isfile(blob_path):
+            os.remove(blob_path)
+        raise e
 
     layer['digest'] = layer_digest
     layer['size'] = length

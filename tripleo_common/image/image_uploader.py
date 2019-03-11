@@ -928,8 +928,7 @@ class PythonImageUploader(BaseImageUploader):
         manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
         r = session.get(url, headers=manifest_headers, timeout=30)
         if r.status_code in (403, 404):
-            raise ImageNotFoundException('Not found image: %s' %
-                                         url.geturl())
+            raise ImageNotFoundException('Not found image: %s' % url)
         r.raise_for_status()
         return r.text
 
@@ -1284,11 +1283,12 @@ class PythonImageUploader(BaseImageUploader):
         calc_digest = hashlib.sha256()
         layer_stream = cls._layer_stream_local(layer_id, calc_digest)
         return cls._copy_stream_to_registry(target_url, layer, calc_digest,
-                                            layer_stream, session)
+                                            layer_stream, session,
+                                            verify_digest=False)
 
     @classmethod
     def _copy_stream_to_registry(cls, target_url, layer, calc_digest,
-                                 layer_stream, session):
+                                 layer_stream, session, verify_digest=True):
         layer['mediaType'] = MEDIA_BLOB_COMPRESSED
         length = 0
         upload_resp = None
@@ -1296,7 +1296,7 @@ class PythonImageUploader(BaseImageUploader):
         export = target_url.netloc in cls.export_registries
         if export:
             return image_export.export_stream(
-                target_url, layer, layer_stream)
+                target_url, layer, layer_stream, verify_digest=verify_digest)
 
         for chunk in layer_stream:
             if not chunk:
