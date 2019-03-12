@@ -62,7 +62,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% if distro_python_version.startswith('3') %}
 {% set mistral_base_packages_append = mistral_base_packages_append + [
   'python3-shade',
-  'ansible-python3',
+  'python3dist\(ansible\)',
 ] %}
 {% else %}
 {% set mistral_base_packages_append = mistral_base_packages_append + [
