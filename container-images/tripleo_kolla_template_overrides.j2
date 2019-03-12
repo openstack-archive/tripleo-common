@@ -18,7 +18,7 @@ enabled=1\n\
 gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% endblock %}
 
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 # NOTE(aschultz): puppet-firewall throws errors when trying to query the rules
 {% set base_centos_binary_packages_append = ['iptables-services'] %}
 {% endif %}
@@ -29,7 +29,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
 {% set cinder_volume_packages_remove = ['scsi-target-utils'] %}
 {% set ironic_conductor_packages_remove = ['shellinabox'] %}
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 {% set barbican_api_packages_remove = ['uwsgi-plugin-python3'] %}
 {% else %}
 {% set barbican_api_packages_remove = ['uwsgi-plugin-python'] %}
@@ -45,7 +45,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # This installs the novajoin package in the nova container images; This is
 # required for TLS everywhere, as nova-api will use the cloud-init script
 # provided by the novajoin package in order to enroll the nodes to the CA
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 {% set nova_api_packages_append = ['python3-novajoin'] %}
 {% set nova_compute_ironic_packages_append = ['python3-novajoin'] %}
 {% else %}
@@ -58,7 +58,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # Required for mistral-db-populate to load tripleo custom actions on
 # the undercloud
 {% set mistral_base_packages_append = ['openstack-tripleo-common'] %}
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 {% set mistral_base_packages_append = mistral_base_packages_append + [
   'python3-shade',
   'ansible-python3',
@@ -111,7 +111,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
   'httpd',
   'mod_ssl',
 ] %}
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 {% set neutron_server_packages_append = neutron_server_packages_append + [
   'python3-networking-baremetal',
   'python3-networking-ansible'
@@ -151,7 +151,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
   'libqb',
   'resource-agents'
 ] %}
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 {% set redis_packages_append = redis_packages_append + [
   'procps-ng',
 ] %}
@@ -163,7 +163,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 
 # Remove packages not present in repos
 #
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 {% set openstack_base_packages_remove = [
     'python3-cloudkittyclient',
     'python3-elasticsearch',
@@ -475,7 +475,7 @@ RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-executor /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 # TODO(emilien) Remove once proper packaging is released for Ansible
-{% if distro_python3 %}
+{% if distro_python_version.startswith('3') %}
 RUN test -f /usr/bin/ansible-playbook-3 || ln -s /usr/bin/ansible-playbook /usr/bin/ansible-playbook-3
 {% endif %}
 USER root
