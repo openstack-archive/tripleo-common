@@ -138,8 +138,8 @@ def export_manifest_config(target_url,
         config_digest = manifest['config']['digest']
         config_path = os.path.join(blob_dir_path, config_digest)
 
-        with open(config_path, 'w+') as f:
-            f.write(config_str)
+        with open(config_path, 'w+b') as f:
+            f.write(config_str.encode('utf-8'))
 
     calc_digest = hashlib.sha256()
     calc_digest.update(manifest_str.encode('utf-8'))
@@ -156,6 +156,7 @@ def export_manifest_config(target_url,
 
     make_dir(manifest_dir_path)
     make_dir(tags_dir_path)
+    build_catalog()
 
     headers = collections.OrderedDict()
     headers['Content-Type'] = manifest_type
@@ -165,8 +166,8 @@ def export_manifest_config(target_url,
         for header in headers.items():
             f.write('Header set %s "%s"\n' % header)
 
-    with open(manifest_path, 'w+') as f:
-        f.write(manifest_str)
+    with open(manifest_path, 'w+b') as f:
+        f.write(manifest_str.encode('utf-8'))
 
     if os.path.exists(manifest_symlink_path):
         os.remove(manifest_symlink_path)
@@ -182,5 +183,23 @@ def export_manifest_config(target_url,
         "name": image,
         "tags": tags
     }
-    with open(tags_list_path, 'w+') as f:
-        json.dump(tags_data, f)
+    with open(tags_list_path, 'w+b') as f:
+        f.write(json.dumps(tags_data, ensure_ascii=False).encode('utf-8'))
+
+
+def build_catalog():
+    catalog_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', '_catalog')
+    catalog_entries = []
+    LOG.debug('Rebuilding %s' % catalog_path)
+    images_path = os.path.join(IMAGE_EXPORT_DIR, 'v2')
+
+    for namespace in os.listdir(images_path):
+        namespace_path = os.path.join(images_path, namespace)
+        if not os.path.isdir(namespace_path):
+            continue
+        for image in os.listdir(namespace_path):
+            catalog_entries.append('%s/%s' % (namespace, image))
+
+    catalog = {'repositories': catalog_entries}
+    with open(catalog_path, 'w+b') as f:
+        f.write(json.dumps(catalog, ensure_ascii=False).encode('utf-8'))
