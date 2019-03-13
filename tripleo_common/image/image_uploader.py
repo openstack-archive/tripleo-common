@@ -477,6 +477,14 @@ class BaseImageUploader(object):
         image_url = self._image_to_url(image)
         return self._inspect(image_url, session)
 
+    def delete(self, image, session=None):
+        image_url = self._image_to_url(image)
+        return self._delete(image_url, session)
+
+    @classmethod
+    def _delete(cls, image, session=None):
+        raise NotImplementedError()
+
     @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
         reraise=True,
@@ -782,7 +790,7 @@ class SkopeoImageUploader(BaseImageUploader):
         return out
 
     @classmethod
-    def _delete(cls, image_url):
+    def _delete(cls, image_url, session=None):
         insecure = cls.is_insecure_registry(image_url.netloc)
         image = image_url.geturl()
         LOG.info('Deleting %s' % image)
@@ -1513,9 +1521,18 @@ class PythonImageUploader(BaseImageUploader):
         }
 
     @classmethod
-    def _delete(cls, image_url):
+    def _delete_from_registry(cls, image_url, session=None):
+        if not cls._detect_target_export(image_url, session):
+            raise NotImplementedError(
+                'Deleting not supported via the registry API')
+        return image_export.delete_image(image_url)
+
+    @classmethod
+    def _delete(cls, image_url, session=None):
         image = image_url.geturl()
         LOG.info('Deleting %s' % image)
+        if image_url.scheme == 'docker':
+            return cls._delete_from_registry(image_url, session)
         if image_url.scheme != 'containers-storage':
             raise ImageUploaderException('Delete not implemented for %s' %
                                          image_url.geturl())
