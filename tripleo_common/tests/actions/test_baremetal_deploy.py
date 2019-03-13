@@ -56,7 +56,7 @@ class TestReserveNodes(base.TestCase):
         action = baremetal_deploy.ReserveNodesAction(instances)
         result = action.run(mock.Mock())
 
-        self.assertIn("'hostname' is a required property", result.error)
+        self.assertIn("hostname or name is required", result.error)
         self.assertFalse(mock_pr.return_value.reserve_node.called)
         self.assertFalse(mock_pr.return_value.unprovision_node.called)
 
@@ -421,7 +421,7 @@ class TestCheckExistingInstances(base.TestCase):
         action = baremetal_deploy.CheckExistingInstancesAction(instances)
         result = action.run(mock.Mock())
 
-        self.assertIn("'hostname' is a required property", result.error)
+        self.assertIn("hostname or name is required", result.error)
         self.assertFalse(mock_pr.return_value.show_instance.called)
 
     def test_hostname_mismatch(self, mock_pr):
@@ -453,14 +453,50 @@ class TestWaitForDeployment(base.TestCase):
 
     def test_success(self, mock_pr):
         pr = mock_pr.return_value
+        inst = pr.wait_for_provisioning.return_value[0]
+        inst.to_dict.return_value = {'hostname': 'compute.cloud'}
+
         action = baremetal_deploy.WaitForDeploymentAction(
             {'hostname': 'compute.cloud', 'uuid': 'uuid1'})
         result = action.run(mock.Mock())
 
         pr.wait_for_provisioning.assert_called_once_with(['uuid1'],
                                                          timeout=3600)
-        inst = pr.wait_for_provisioning.return_value[0]
         self.assertIs(result, inst.to_dict.return_value)
+        self.assertEqual({}, result['port_map'])
+
+    def test_with_nics(self, mock_pr):
+        pr = mock_pr.return_value
+        net_mock = mock.Mock()
+        net_mock.name = 'ctlplane'
+        net_mock.to_dict.return_value = {'tags': ['foo']}
+        inst = pr.wait_for_provisioning.return_value[0]
+        inst.nics.return_value = [
+            mock.Mock(fixed_ips=[{'ip_address': '1.2.3.5',
+                                  'subnet_id': 'abcd'}],
+                      network=net_mock)
+        ]
+        pr.connection.network.get_subnet.return_value.to_dict.return_value = {
+            'cidr': '1.2.3.0/24'
+        }
+        inst.to_dict.return_value = {'hostname': 'compute.cloud'}
+
+        action = baremetal_deploy.WaitForDeploymentAction(
+            {'hostname': 'compute.cloud', 'uuid': 'uuid1'})
+        result = action.run(mock.Mock())
+
+        pr.wait_for_provisioning.assert_called_once_with(['uuid1'],
+                                                         timeout=3600)
+        self.assertIs(result, inst.to_dict.return_value)
+        self.assertEqual(
+            {
+                'ctlplane': {
+                    'network': {'tags': ['foo']},
+                    'fixed_ips': [{'ip_address': '1.2.3.5'}],
+                    'subnets': [{'cidr': '1.2.3.0/24'}],
+                }
+            },
+            result['port_map'])
 
     def test_failure(self, mock_pr):
         pr = mock_pr.return_value
@@ -497,3 +533,200 @@ class TestUndeployInstance(base.TestCase):
 
         pr.show_instance.assert_called_once_with('inst1')
         self.assertFalse(pr.unprovision_node.called)
+
+
+class TestExpandRoles(base.TestCase):
+
+    def test_simple(self):
+        roles = [
+            {'name': 'Compute'},
+            {'name': 'Controller'},
+        ]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual(
+            [
+                {'hostname': 'overcloud-novacompute-0'},
+                {'hostname': 'overcloud-controller-0'},
+            ],
+            result['instances'])
+        self.assertEqual(
+            {
+                'ComputeDeployedServerHostnameFormat':
+                '%stackname%-novacompute-%index%',
+                'ComputeDeployedServerCount': 1,
+                'ControllerDeployedServerHostnameFormat':
+                '%stackname%-controller-%index%',
+                'ControllerDeployedServerCount': 1,
+                'HostnameMap': {
+                    'overcloud-novacompute-0': 'overcloud-novacompute-0',
+                    'overcloud-controller-0': 'overcloud-controller-0'
+                }
+            },
+            result['environment']['parameter_defaults'])
+
+    def test_with_parameters(self):
+        roles = [
+            {'name': 'Compute', 'count': 2, 'profile': 'compute',
+             'hostname_format': 'compute-%index%.example.com'},
+            {'name': 'Controller', 'count': 3, 'profile': 'control',
+             'hostname_format': 'controller-%index%.example.com'},
+        ]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual(
+            [
+                {'hostname': 'compute-0.example.com', 'profile': 'compute'},
+                {'hostname': 'compute-1.example.com', 'profile': 'compute'},
+                {'hostname': 'controller-0.example.com', 'profile': 'control'},
+                {'hostname': 'controller-1.example.com', 'profile': 'control'},
+                {'hostname': 'controller-2.example.com', 'profile': 'control'},
+            ],
+            result['instances'])
+        self.assertEqual(
+            {
+                'ComputeDeployedServerHostnameFormat':
+                'compute-%index%.example.com',
+                'ComputeDeployedServerCount': 2,
+                'ControllerDeployedServerHostnameFormat':
+                'controller-%index%.example.com',
+                'ControllerDeployedServerCount': 3,
+                'HostnameMap': {
+                    'compute-0.example.com': 'compute-0.example.com',
+                    'compute-1.example.com': 'compute-1.example.com',
+                    'controller-0.example.com': 'controller-0.example.com',
+                    'controller-1.example.com': 'controller-1.example.com',
+                    'controller-2.example.com': 'controller-2.example.com',
+                }
+            },
+            result['environment']['parameter_defaults'])
+
+    def test_explicit_instances(self):
+        roles = [
+            {'name': 'Compute', 'count': 2, 'profile': 'compute',
+             'hostname_format': 'compute-%index%.example.com'},
+            {'name': 'Controller',
+             'profile': 'control',
+             'instances': [
+                 {'hostname': 'controller-X.example.com',
+                  'profile': 'control-X'},
+                 {'name': 'node-0', 'traits': ['CUSTOM_FOO'],
+                  'nics': [{'subnet': 'leaf-2'}]},
+             ]},
+        ]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual(
+            [
+                {'hostname': 'compute-0.example.com', 'profile': 'compute'},
+                {'hostname': 'compute-1.example.com', 'profile': 'compute'},
+                {'hostname': 'controller-X.example.com',
+                 'profile': 'control-X'},
+                # Name provides the default for hostname later on.
+                {'name': 'node-0', 'profile': 'control',
+                 'traits': ['CUSTOM_FOO'], 'nics': [{'subnet': 'leaf-2'}]},
+            ],
+            result['instances'])
+        self.assertEqual(
+            {
+                'ComputeDeployedServerHostnameFormat':
+                'compute-%index%.example.com',
+                'ComputeDeployedServerCount': 2,
+                'ControllerDeployedServerHostnameFormat':
+                '%stackname%-controller-%index%',
+                'ControllerDeployedServerCount': 2,
+                'HostnameMap': {
+                    'compute-0.example.com': 'compute-0.example.com',
+                    'compute-1.example.com': 'compute-1.example.com',
+                    'overcloud-controller-0': 'controller-X.example.com',
+                    'overcloud-controller-1': 'node-0',
+                }
+            },
+            result['environment']['parameter_defaults'])
+
+    def test_count_with_instances(self):
+        roles = [
+            {'name': 'Compute', 'count': 2, 'profile': 'compute',
+             'hostname_format': 'compute-%index%.example.com'},
+            {'name': 'Controller',
+             'profile': 'control',
+             # Count makes no sense with instances and thus is disallowed.
+             'count': 3,
+             'instances': [
+                 {'hostname': 'controller-X.example.com',
+                  'profile': 'control-X'},
+                 {'name': 'node-0', 'traits': ['CUSTOM_FOO'],
+                  'nics': [{'subnet': 'leaf-2'}]},
+             ]},
+        ]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertIn("Count and instances cannot be provided together",
+                      result.error)
+
+    def test_instances_without_hostname(self):
+        roles = [
+            {'name': 'Compute', 'count': 2, 'profile': 'compute',
+             'hostname_format': 'compute-%index%.example.com'},
+            {'name': 'Controller',
+             'profile': 'control',
+             'instances': [
+                 {'profile': 'control-X'},  # missing hostname here
+                 {'name': 'node-0', 'traits': ['CUSTOM_FOO'],
+                  'nics': [{'subnet': 'leaf-2'}]},
+             ]},
+        ]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertIn("Either hostname or name is required", result.error)
+
+
+class TestPopulateEnvironment(base.TestCase):
+
+    def test_success(self):
+        port_map = {
+            'compute-0': {
+                'ctlplane': {
+                    'network': {'tags': ['foo']},
+                    'fixed_ips': [{'ip_address': '1.2.3.5'}],
+                    'subnets': [{'cidr': '1.2.3.0/24'}],
+                },
+                'foobar': {
+                    'network': {},
+                    'fixed_ips': [{'ip_address': '1.2.4.5'}],
+                    'subnets': [{'cidr': '1.2.4.0/24'}],
+                },
+            },
+            'controller-0': {
+                'ctlplane': {
+                    'network': {'tags': ['foo']},
+                    'fixed_ips': [{'ip_address': '1.2.3.4'}],
+                    'subnets': [{'cidr': '1.2.3.0/24'}],
+                },
+                'foobar': {
+                    'network': {},
+                    'fixed_ips': [{'ip_address': '1.2.4.4'}],
+                    'subnets': [{'cidr': '1.2.4.0/24'}],
+                },
+            },
+        }
+        action = baremetal_deploy.PopulateEnvironmentAction({}, port_map)
+        result = action.run(mock.Mock())
+        self.assertEqual(
+            {
+                'parameter_defaults': {
+                    'DeployedServerPortMap': {
+                        'compute-0-ctlplane': {
+                            'fixed_ips': [{'ip_address': '1.2.3.5'}],
+                            'subnets': [{'cidr': '1.2.3.0/24'}],
+                            'network': {'tags': ['foo']},
+                        },
+                        'controller-0-ctlplane': {
+                            'fixed_ips': [{'ip_address': '1.2.3.4'}],
+                            'subnets': [{'cidr': '1.2.3.0/24'}],
+                            'network': {'tags': ['foo']},
+                        },
+                    }
+                }
+            },
+            result)

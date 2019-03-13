@@ -133,6 +133,7 @@ workflows:
         publish:
           ctlplane_ips: <% $.all_instances.toDict($.hostname, $.ip_addresses.ctlplane[0]) %>
           instances: <% $.all_instances.toDict($.hostname, $) %>
+          port_map: <% $.all_instances.toDict($.hostname, $.port_map) %>
         on-complete: send_message
 
       send_message:
@@ -146,12 +147,14 @@ workflows:
           payload:
             ctlplane_ips: <% $.get('ctlplane_ips', {}) %>
             instances: <% $.get('instances', {}) %>
+            port_map: <% $.get('port_map', {}) %>
 
     output:
       ctlplane_ips: <% $.ctlplane_ips %>
       existing_instances: <% $.existing_instances.toDict($.hostname, $) %>
       instances: <% $.instances %>
       new_instances: <% $.new_instances.toDict($.hostname, $) %>
+      port_map: <% $.port_map %>
 
 
   undeploy_instances:
@@ -188,3 +191,89 @@ workflows:
           status: <% $.get('status', 'SUCCESS') %>
           message: <% $.get('message', '') %>
           execution: <% execution() %>
+
+
+  deploy_roles:
+    description: Deploy roles on bare metal nodes.
+
+    input:
+      - roles
+      - plan: overcloud
+      - ctlplane_network: ctlplane
+      - ssh_keys: []
+      - ssh_user_name: heat-admin
+      - timeout: 3600
+      - concurrency: 20
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      expand_roles:
+        action: tripleo.baremetal_deploy.expand_roles
+        input:
+          roles: <% $.roles %>
+          stackname: <% $.plan %>
+        publish:
+          input_instances: <% task().result.instances %>
+          environment: <% task().result.environment %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-success: deploy_instances
+        on-error: send_message
+
+      deploy_instances:
+        workflow: tripleo.baremetal_deploy.v1.deploy_instances
+        input:
+          instances: <% $.input_instances %>
+          ssh_keys: <% $.ssh_keys %>
+          ssh_user_name: <% $.ssh_user_name %>
+          timeout: <% $.timeout %>
+          queue_name: <% $.queue_name %>
+        publish:
+          ctlplane_ips: <% task().result.ctlplane_ips %>
+          instances: <% task().result.instances %>
+          new_instances: <% task().result.new_instances %>
+          existing_instances: <% task().result.existing_instances %>
+          port_map: <% task().result.port_map %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-success: populate_environment
+        on-error: send_message
+
+      populate_environment:
+        action: tripleo.baremetal_deploy.populate_environment
+        input:
+          ctlplane_network: <% $.ctlplane_network %>
+          environment: <% $.environment %>
+          port_map: <% $.port_map %>
+        publish:
+          environment: <% task().result %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-complete: send_message
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            environment: <% $.get('environment', {}) %>
+            instances: <% $.get('instances', {}) %>
+
+    output:
+      ctlplane_ips: <% $.ctlplane_ips %>
+      environment: <% $.environment %>
+      existing_instances: <% $.existing_instances %>
+      instances: <% $.instances %>
+      new_instances: <% $.new_instances %>
+      port_map: <% $.port_map %>
