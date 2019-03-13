@@ -1,14 +1,31 @@
 #!/bin/bash
 
+build_default_image () {
+  if [ -f /usr/share/openstack-tripleo-common/common/container-images/container_image_prepare_defaults.yaml ]; then
+    local default_file=/usr/share/openstack-tripleo-common/common/container-images/container_image_prepare_defaults.yaml
+  elif [ -f ${BASH_SOURCE%/*}/../container-images/container_image_prepare_defaults.yaml ]; then
+    local default_file=${BASH_SOURCE%/*}/../container-images/container_image_prepare_defaults.yaml
+  else
+    echo "docker.io/openshift/origin-ansible:latest"
+    exit
+  fi
+  local namespace=$(awk '/openshift_namespace:/ {print $2}' $default_file)
+  local prefix=$(awk '/openshift_prefix:/ {print $2}' $default_file)
+  local tag=$(awk '/openshift_tag:/ {print $2}' $default_file)
+  echo ${namespace}/${prefix}-ansible:${tag}
+}
+
+OPENSHIFT_ANSIBLE_DEFAULT_IMAGE=$(build_default_image)
+
 : ${CONFIG_DOWNLOAD_DIR:=}
-: ${OPENSHIFT_ANSIBLE_IMAGE:=docker.io/openshift/origin-ansible:latest}
+: ${OPENSHIFT_ANSIBLE_IMAGE:=$OPENSHIFT_ANSIBLE_DEFAULT_IMAGE}
 
 usage () {
     echo "Usage: $0 [options]"
     echo ""
     echo "Options:"
-    echo "  -i, --image                the openshift-ansible image tag to use. Default to"
-    echo "                             docker.io/openshift/origin-ansible:latest"
+    echo "  -i, --image                the openshift-ansible image tag to use. Defaults to"
+    echo "                             $OPENSHIFT_ANSIBLE_DEFAULT_IMAGE"
     echo "  -d, --config-download-dir  the path to the config-download directory for openshift"
     echo "  -h, --help                 print this help and exit"
 }
