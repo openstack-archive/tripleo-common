@@ -263,7 +263,7 @@ class DeployStackAction(templates.ProcessTemplatesAction):
 
 
 class OvercloudRcAction(base.TripleOAction):
-    """Generate the overcloudrc and overcloudrc.v3 for a plan
+    """Generate the overcloudrc for a plan
 
     Given the name of a container, generate the overcloudrc files needed to
     access the overcloud via the CLI.

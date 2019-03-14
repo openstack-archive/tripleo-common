@@ -115,5 +115,4 @@ def create_overcloudrc(stack, no_proxy, admin_password, region_name):
 
     return {
         "overcloudrc": overcloudrc,
-        "overcloudrc.v3": overcloudrc
     }

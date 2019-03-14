@@ -1,0 +1,6 @@
+---
+deprecations:
+  - |
+    overcloudrc.v3 is no longer generated from the overcloudrc workflow. This
+    is due to the fact that we've been shipping keystone v3 by default for some
+    releases now, and we have the same contents available in overcloudrc.
