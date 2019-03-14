@@ -87,7 +87,7 @@ fi
 ANSIBLE_OPTS="${ANSIBLE_OPTS} $@"
 
 if [ -z $OPENSHIFT_ANSIBLE_DIR ]; then
-  docker run \
+  sudo podman run \
           --net=host \
           -u `id -u` \
           -v ${CONFIG_DOWNLOAD_DIR}:${CONFIG_DOWNLOAD_DIR} \
