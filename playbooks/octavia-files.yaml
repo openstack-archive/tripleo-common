@@ -87,5 +87,6 @@
   gather_facts: True
   vars:
     octavia_confd_prefix: "/var/lib/config-data/puppet-generated/octavia"
+    container_cli: "{{ container_cli }}"
   roles:
     - octavia-controller-post-config
