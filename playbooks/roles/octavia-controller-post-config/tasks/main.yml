@@ -40,5 +40,5 @@
   - name: restart octavia containers
     become: true
     become_user: root
-    shell: "docker restart $(sudo docker ps -f name=octavia -q)"
+    shell: "{{ container_cli }} restart $(sudo {{ container_cli }} ps -f name=octavia -q)"
     when: octavia_config_updated
