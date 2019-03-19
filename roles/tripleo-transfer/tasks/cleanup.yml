@@ -1,0 +1,6 @@
+- name: ensure tripleo_transfer storage directory is removed
+  file:
+    path: "{{tripleo_transfer_storage_root_dir}}"
+    state: absent
+  delegate_to: localhost
+  become: "{{tripleo_transfer_storage_root_become}}"
