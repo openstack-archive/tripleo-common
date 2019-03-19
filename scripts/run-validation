@@ -3,6 +3,27 @@
 set -e
 set -o pipefail
 
+SCRIPT_NAME=$(basename $0)
+OPTS=`getopt -o i: -l inputs: -n $SCRIPT_NAME -- "$@"`
+
+if [ $? != 0 ]; then
+    echo "Terminating..." >&2
+    exit 1
+fi
+
+EXTRA_VARS_FILE=""
+
+# Note the quotes around `$OPTS': they are essential!
+eval set -- "$OPTS"
+
+while true ; do
+    case "$1" in
+        -i | --inputs ) EXTRA_VARS_FILE="$2" ; shift 2 ;;
+        -- ) shift ; break ;;
+        * ) echo "Error: unsupported option $1." ; exit 1 ;;
+    esac
+done
+
 VALIDATION_FILE=$1
 IDENTITY_FILE=$2
 PLAN_NAME=$3
@@ -19,6 +40,15 @@ fi
 
 if [[ -z "$IDENTITY_FILE" ]]; then
     echo "Missing required identity file"
+    exit 1
+fi
+
+if [[ -z "$EXTRA_VARS_FILE" ]]; then
+    EXTRA_VARS_ARGS=""
+elif [[ -r "$EXTRA_VARS_FILE" ]]; then
+    EXTRA_VARS_ARGS="--extra-vars @$EXTRA_VARS_FILE"
+else
+    echo "Can not find the inputs file at $EXTRA_VARS_FILE"
     exit 1
 fi
 
@@ -55,4 +85,4 @@ if [ -z "${OS_PASSWORD:-}" ]; then
     export OS_AUTH_URL=${OS_AUTH_URL/%v3/v2.0}
 fi
 
-ansible-playbook $VALIDATION_FILE
+ansible-playbook $EXTRA_VARS_ARGS $VALIDATION_FILE

@@ -165,11 +165,17 @@ class RunValidationActionTest(base.TestCase):
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch('tripleo_common.utils.validations.write_inputs_file')
+    @mock.patch('tripleo_common.utils.validations.cleanup_inputs_file')
     @mock.patch('tripleo_common.utils.validations.write_identity_file')
     @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
     @mock.patch('tripleo_common.utils.validations.run_validation')
-    def test_run(self, mock_run_validation, mock_cleanup_identity_file,
-                 mock_write_identity_file, mock_get_object_client,
+    def test_run(self, mock_run_validation,
+                 mock_cleanup_identity_file,
+                 mock_write_identity_file,
+                 mock_cleanup_inputs_file,
+                 mock_write_inputs_file,
+                 mock_get_object_client,
                  get_workflow_client_mock):
         mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
@@ -181,6 +187,7 @@ class RunValidationActionTest(base.TestCase):
         swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
         mock_get_object_client.return_value = swiftclient
         mock_write_identity_file.return_value = 'identity_file_path'
+        mock_write_inputs_file.return_value = 'inputs_file_path'
         mock_run_validation.return_value = 'output', 'error'
         action = validations.RunValidationAction('validation')
         expected = actions.Result(
@@ -196,18 +203,26 @@ class RunValidationActionTest(base.TestCase):
             'validation',
             'identity_file_path',
             constants.DEFAULT_CONTAINER_NAME,
+            'inputs_file_path',
             mock_ctx)
         mock_cleanup_identity_file.assert_called_once_with(
             'identity_file_path')
+        mock_cleanup_inputs_file.assert_called_once_with('inputs_file_path')
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_workflow_client')
+    @mock.patch('tripleo_common.utils.validations.write_inputs_file')
+    @mock.patch('tripleo_common.utils.validations.cleanup_inputs_file')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.utils.validations.write_identity_file')
     @mock.patch('tripleo_common.utils.validations.cleanup_identity_file')
     @mock.patch('tripleo_common.utils.validations.run_validation')
-    def test_run_failing(self, mock_run_validation, mock_cleanup_identity_file,
-                         mock_write_identity_file, mock_get_object_client,
+    def test_run_failing(self, mock_run_validation,
+                         mock_cleanup_identity_file,
+                         mock_write_identity_file,
+                         mock_get_object_client,
+                         mock_cleanup_inputs_file,
+                         mock_write_inputs_file,
                          get_workflow_client_mock):
         mock_ctx = mock.MagicMock()
         mistral = mock.MagicMock()
@@ -219,6 +234,7 @@ class RunValidationActionTest(base.TestCase):
         swiftclient = mock.MagicMock(url='http://swift:8080/v1/AUTH_test')
         mock_get_object_client.return_value = swiftclient
         mock_write_identity_file.return_value = 'identity_file_path'
+        mock_write_inputs_file.return_value = 'inputs_file_path'
         mock_run_validation.side_effect = ProcessExecutionError(
             stdout='output', stderr='error')
         action = validations.RunValidationAction('validation')
@@ -235,6 +251,8 @@ class RunValidationActionTest(base.TestCase):
             'validation',
             'identity_file_path',
             constants.DEFAULT_CONTAINER_NAME,
+            'inputs_file_path',
             mock_ctx)
         mock_cleanup_identity_file.assert_called_once_with(
             'identity_file_path')
+        mock_cleanup_inputs_file.assert_called_once_with('inputs_file_path')

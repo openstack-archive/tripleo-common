@@ -249,7 +249,7 @@ class RunValidationTest(base.TestCase):
 
         result = validations.run_validation(mock_get_object_client(),
                                             'validation', 'identity_file',
-                                            'plan', mock_ctx)
+                                            'plan', 'inputs_file', mock_ctx)
         self.assertEqual('output', result)
         mock_execute.assert_called_once_with(
             '/usr/bin/sudo', '-u', 'validations',
@@ -258,6 +258,7 @@ class RunValidationTest(base.TestCase):
             'OS_AUTH_TOKEN=auth_token',
             'OS_TENANT_NAME=project_name',
             '/usr/bin/run-validation',
+            '--inputs', 'inputs_file',
             'validation_path',
             'identity_file',
             'plan'

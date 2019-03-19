@@ -121,16 +121,19 @@ class ListGroupsAction(base.TripleOAction):
 
 class RunValidationAction(base.TripleOAction):
     """Run the given validation"""
-    def __init__(self, validation, plan=constants.DEFAULT_CONTAINER_NAME):
+    def __init__(self, validation, plan=constants.DEFAULT_CONTAINER_NAME,
+                 inputs=None):
         super(RunValidationAction, self).__init__()
         self.validation = validation
         self.plan = plan
+        self.inputs = inputs if inputs else {}
 
     def run(self, context):
         mc = self.get_workflow_client(context)
         swift = self.get_object_client(context)
 
         identity_file = None
+        inputs_file = None
 
         # Make sure the ssh_keys environment exists
         try:
@@ -146,11 +149,13 @@ class RunValidationAction(base.TripleOAction):
         try:
             private_key = env.variables['private_key']
             identity_file = utils.write_identity_file(private_key)
+            inputs_file = utils.write_inputs_file(self.inputs)
 
             stdout, stderr = utils.run_validation(swift,
                                                   self.validation,
                                                   identity_file,
                                                   self.plan,
+                                                  inputs_file,
                                                   context)
             return_value = {'stdout': stdout, 'stderr': stderr}
             mistral_result = {"data": return_value}
@@ -164,6 +169,8 @@ class RunValidationAction(base.TripleOAction):
         finally:
             if identity_file:
                 utils.cleanup_identity_file(identity_file)
+            if inputs_file:
+                utils.cleanup_inputs_file(inputs_file)
         return actions.Result(**mistral_result)
 
 

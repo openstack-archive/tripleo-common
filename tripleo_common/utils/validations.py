@@ -140,7 +140,8 @@ def download_validation(swift, plan, validation):
     return dst_path
 
 
-def run_validation(swift, validation, identity_file, plan, context):
+def run_validation(swift, validation, identity_file,
+                   plan, inputs_file, context):
     return processutils.execute(
         '/usr/bin/sudo', '-u', 'validations',
         'OS_AUTH_URL={}'.format(context.auth_uri),
@@ -148,6 +149,7 @@ def run_validation(swift, validation, identity_file, plan, context):
         'OS_AUTH_TOKEN={}'.format(context.auth_token),
         'OS_TENANT_NAME={}'.format(context.project_name),
         '/usr/bin/run-validation',
+        '--inputs', inputs_file,
         download_validation(swift, plan, validation),
         identity_file,
         plan
@@ -176,3 +178,20 @@ def pattern_validator(pattern, value):
     if not re.match(pattern, value):
         return False
     return True
+
+
+def write_inputs_file(inputs):
+    """Serialise the validation inputs to a file on disk."""
+    fd, path = tempfile.mkstemp(prefix='validation_inputs_')
+    LOG.debug("Writing the validation inputs to %s", path)
+    with os.fdopen(fd, 'w') as tmp:
+        tmp.write(yaml.dump(inputs))
+    processutils.execute('/usr/bin/sudo', '/usr/bin/chown', 'validations:',
+                         path)
+    return path
+
+
+def cleanup_inputs_file(path):
+    """Remove the temporary validation inputs file."""
+    LOG.debug("Cleaning up the validation inputs at %s", path)
+    processutils.execute('/usr/bin/sudo', '/usr/bin/rm', '-f', path)
