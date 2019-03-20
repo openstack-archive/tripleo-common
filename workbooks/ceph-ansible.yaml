@@ -184,8 +184,6 @@ workflows:
           extra_env_variables: <% $.ansible_extra_env_variables.mergeWith($.ansible_env_variables) %>
           extra_vars:
             ireallymeanit: 'yes'
-        publish:
-          output: <% task().result %>
         on-complete: save_fetch_directory
       save_fetch_directory:
         action: tripleo.files.save_temp_dir_to_swift
