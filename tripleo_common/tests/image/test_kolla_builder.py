@@ -18,7 +18,6 @@ import mock
 import os
 import requests
 import six
-import subprocess
 import sys
 import tempfile
 import yaml
@@ -163,16 +162,20 @@ class TestKollaImageBuilder(base.TestCase):
         calls = [call1, call2]
         mock_popen.assert_has_calls(calls, any_order=True)
 
+    @mock.patch('tripleo_common.image.kolla_builder.KollaImageBuilder.'
+                'container_images_from_template')
     @mock.patch('subprocess.Popen')
-    def test_build_images_no_conf(self, mock_popen):
+    def test_build_images_no_conf(self, mock_popen, mock_images_from_template):
         process = mock.Mock()
         process.returncode = 0
         process.communicate.return_value = 'done', ''
         mock_popen.return_value = process
+        mock_images_from_template.return_value = []
 
         builder = kb.KollaImageBuilder([])
         self.assertEqual('done', builder.build_images([]))
         env = os.environ.copy()
+        mock_images_from_template.assert_called_once()
         mock_popen.assert_called_once_with([
             'kolla-build',
         ], env=env, stdout=-1, universal_newlines=True)
@@ -198,22 +201,6 @@ class TestKollaImageBuilder(base.TestCase):
             'nova-libvirt',
             'heat-docker-agents-centos',
             'image-with-missing-tag',
-        ], env=env, stdout=-1, universal_newlines=True)
-
-    @mock.patch('subprocess.Popen')
-    def test_build_images_fail(self, mock_popen):
-        process = mock.Mock()
-        process.returncode = 1
-        process.communicate.return_value = '', 'ouch'
-        mock_popen.return_value = process
-
-        builder = kb.KollaImageBuilder([])
-        self.assertRaises(subprocess.CalledProcessError,
-                          builder.build_images,
-                          [])
-        env = os.environ.copy()
-        mock_popen.assert_called_once_with([
-            'kolla-build',
         ], env=env, stdout=-1, universal_newlines=True)
 
 

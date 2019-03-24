@@ -447,7 +447,12 @@ class KollaImageBuilder(base.BaseImageManager):
                 cmd.append('--config-file')
                 cmd.append(f)
 
-        container_images = self.load_config_files(self.CONTAINER_IMAGES) or []
+        if len(self.config_files) == 0:
+            self.config_files = [DEFAULT_TEMPLATE_FILE]
+            container_images = self.container_images_from_template()
+        else:
+            container_images = self.load_config_files(self.CONTAINER_IMAGES) \
+                or []
         container_images.sort(key=lambda i: i.get('imagename'))
         for i in container_images:
             # Do not attempt to build containers that are not from kolla or
