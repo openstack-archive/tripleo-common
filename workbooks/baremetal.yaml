@@ -1175,7 +1175,6 @@ workflows:
 
     input:
       - node_uuids
-      - queue_name: tripleo
 
     tags:
       - tripleo-common-managed
@@ -1184,41 +1183,11 @@ workflows:
 
       cell_v2_discover_hosts:
         on-success: wait_for_nova_resources
-        on-error: cell_v2_discover_hosts_failed
         action: tripleo.baremetal.cell_v2_discover_hosts
 
-      cell_v2_discover_hosts_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(cell_v2_discover_hosts).result %>
-
       wait_for_nova_resources:
-        on-success: send_message
-        on-error: wait_for_nova_resources_failed
         with-items: node_uuid in <% $.node_uuids %>
         action: nova.hypervisors_find hypervisor_hostname=<% $.node_uuid %>
-
-      wait_for_nova_resources_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(wait_for_nova_resources).result %>
-
-      send_message:
-        action: zaqar.queue_post
-        retry: count=5 delay=1
-        input:
-          queue_name: <% $.queue_name %>
-          messages:
-            body:
-              type: tripleo.baremetal.v1.cellv2_discovery
-              payload:
-                status: <% $.get('status', 'SUCCESS') %>
-                message: <% $.get('message', '') %>
-                execution: <% execution() %>
-        on-success:
-          - fail: <% $.get('status') = "FAILED" %>
 
 
   discover_nodes:
