@@ -533,9 +533,6 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     'OS_AUTH_TOKEN': security_ctx.auth_token,
                     'OS_PROJECT_NAME': security_ctx.project_name})
 
-            if self.command_timeout:
-                command = ['timeout', self.command_timeout] + command
-
             command = [str(c) for c in command]
 
             if self.reproduce_command:
@@ -552,6 +549,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     f.write('\n')
 
                 os.chmod(command_path, 0o750)
+
+            if self.command_timeout:
+                command = ['timeout', str(self.command_timeout)] + command
 
             if self.queue_name:
                 zaqar = self.get_messaging_client(context)
