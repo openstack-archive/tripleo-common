@@ -45,6 +45,10 @@
       fi
     register: sec_group_rule_one
     changed_when: "sec_group_rule_one.stdout != ''"
+    environment:
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"
   - name: create security group rule to open amphora management API port
     shell: |
       if [[ $(openstack security group rule list {{ lb_mgmt_sec_grp_name }} --protocol tcp --ingress -f value 2>&1  | grep "0.0.0.0/0 9443:9443") == "" ]]; then
@@ -52,6 +56,10 @@
       fi
     register: sec_group_rule_two
     changed_when: "sec_group_rule_two.stdout != ''"
+    environment:
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"
   - name: create security group for health manager
     shell: |
       if [[ $(openstack security group show {{ lb_health_mgr_sec_grp_name }} > /dev/null; echo $?) -eq 1 ]]; then
@@ -68,3 +76,7 @@
       fi
     register: health_mgr_sec_grp_rule
     changed_when: "health_mgr_sec_grp_rule.stdout != ''"
+    environment:
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"
