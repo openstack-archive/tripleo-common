@@ -12,6 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+from datetime import datetime
 import json
 import logging
 import os
@@ -47,8 +48,14 @@ def write_default_ansible_cfg(work_dir,
     config.read(ansible_config_path)
 
     config.set('defaults', 'retry_files_enabled', 'False')
-    config.set('defaults', 'log_path',
-               os.path.join(work_dir, 'ansible.log'))
+
+    log_path = os.path.join(work_dir, 'ansible.log')
+    config.set('defaults', 'log_path', log_path)
+    if os.path.exists(log_path):
+        new_path = (log_path + '-' +
+                    datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
+        os.rename(log_path, new_path)
+
     config.set('defaults', 'forks', '25')
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
