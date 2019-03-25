@@ -216,6 +216,10 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
 {% set nova_libvirt_packages_append = ['openstack-nova-migration'] %}
 
+# On RHEL7 /etc/pki/CA was part of base openssl package.
+# On RHEL8 it is now in openssl-perl.
+{% set nova_libvirt_packages_append = ['openssl-perl'] %}
+
 ############################ service container footers #########################
 
 {% block aodh_api_footer %}
