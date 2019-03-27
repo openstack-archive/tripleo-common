@@ -14,31 +14,21 @@ healthcheck_curl () {
 healthcheck_port () {
   process=$1
 
-  # ss truncate command name to 15 characters and this behaviour
-  # cannot be disabled
-  if [ ${#process} -gt 15 ] ; then
-    process=${process:0:15}
-  fi
-
   shift 1
   args=$@
   ports=${args// /|}
-  ss -ntp | awk '{print $5,"-",$6}' | egrep ":($ports)" | grep "$process"
+  pids=$(pgrep -d '|' -f $process)
+  ss -ntp | grep -qE ":($ports).*,pid=($pids),"
 }
 
 healthcheck_listen () {
   process=$1
 
-  # ss truncate command name to 15 characters and this behaviour
-  # cannot be disabled
-  if [ ${#process} -gt 15 ] ; then
-    process=${process:0:15}
-  fi
-
   shift 1
   args=$@
   ports=${args// /|}
-  ss -lnp | awk '{print $5,"-",$7}' | egrep ":($ports)" | grep "$process"
+  pids=$(pgrep -d '|' -f $process)
+  ss -lnp | grep -qE ":($ports).*,pid=($pids),"
 }
 
 healthcheck_socket () {
@@ -48,9 +38,9 @@ healthcheck_socket () {
   # lsof truncate command name to 15 characters and this behaviour
   # cannot be disabled
   if [ ${#process} -gt 15 ] ; then
-    process=${process:0:15}
+      process=${process:0:15}
   fi
-  lsof -Fc -Ua $socket | grep "c$process"
+  lsof -Fc -Ua $socket | grep -q "c$process"
 }
 
 healthcheck_file_modification () {
