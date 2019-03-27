@@ -90,7 +90,7 @@ if [ -z $OPENSHIFT_ANSIBLE_DIR ]; then
   sudo podman run \
           --net=host \
           -u `id -u` \
-          -v ${CONFIG_DOWNLOAD_DIR}:${CONFIG_DOWNLOAD_DIR} \
+          -v ${CONFIG_DOWNLOAD_DIR}:${CONFIG_DOWNLOAD_DIR}:z \
           -w ${CONFIG_DOWNLOAD_DIR} \
           -e ANSIBLE_HOST_KEY_CHECKING=False \
           -e ANSIBLE_CONFIG=${CONFIG_DOWNLOAD_DIR}/ansible.cfg \
