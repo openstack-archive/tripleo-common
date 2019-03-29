@@ -62,12 +62,14 @@ CALL_TYPES = (
     CALL_BLOB,
     CALL_UPLOAD,
     CALL_TAGS,
+    CALL_CATALOG
 ) = (
     '/',
     '%(image)s/manifests/%(tag)s',
     '%(image)s/blobs/%(digest)s',
     '%(image)s/blobs/uploads/',
     '%(image)s/tags/list',
+    '/_catalog',
 )
 
 MEDIA_TYPES = (
@@ -448,6 +450,55 @@ class BaseImageUploader(object):
             'Os': image_os,
             'Layers': layers,
         }
+
+    def list(self, registry, session=None):
+        self.is_insecure_registry(registry)
+        url = self._image_to_url(registry)
+        catalog_url = self._build_url(
+            url, CALL_CATALOG
+        )
+        catalog = session.get(catalog_url, timeout=30).json()
+
+        tags_get_args = []
+        for repo in catalog.get('repositories', []):
+            image = '%s/%s' % (registry, repo)
+            tags_get_args.append((self, image, session))
+        p = futures.ThreadPoolExecutor(max_workers=16)
+
+        images = []
+        for image, tags in p.map(tags_for_image, tags_get_args):
+            if not tags:
+                continue
+            for tag in tags:
+                images.append('%s:%s' % (image, tag))
+        return images
+
+    def inspect(self, image, session=None):
+        image_url = self._image_to_url(image)
+        return self._inspect(image_url, session)
+
+    @classmethod
+    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            requests.exceptions.RequestException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5)
+    )
+    def _tags_for_image(cls, image, session):
+        url = cls._image_to_url(image)
+        parts = {
+            'image': url.path,
+        }
+        tags_url = cls._build_url(
+            url, CALL_TAGS % parts
+        )
+        r = session.get(tags_url, timeout=30)
+        if r.status_code in (403, 404):
+            return image, []
+        tags = r.json()
+        return image, tags.get('tags', [])
 
     @classmethod
     def _image_to_url(cls, image):
@@ -1573,3 +1624,8 @@ def discover_tag_from_inspect(args):
         fallback_tag = None
     return image, self._discover_tag_from_inspect(
         i, image, tag_from_label, fallback_tag)
+
+
+def tags_for_image(args):
+    self, image, session = args
+    return self._tags_for_image(image, session)

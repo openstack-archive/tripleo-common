@@ -612,6 +612,53 @@ class TestBaseImageUploader(base.TestCase):
             inspect(url1, session=session)
         )
 
+    @mock.patch('concurrent.futures.ThreadPoolExecutor')
+    def test_list(self, mock_pool):
+        mock_pool.return_value.map.return_value = (
+            ('localhost:8787/t/foo', ['a']),
+            ('localhost:8787/t/bar', ['b']),
+            ('localhost:8787/t/baz', ['c', 'd']),
+            ('localhost:8787/t/bink', [])
+        )
+        session = mock.Mock()
+        session.get.return_value.json.return_value = {
+            'repositories': ['t/foo', 't/bar', 't/baz', 't/bink']
+        }
+        self.assertEqual(
+            [
+                'localhost:8787/t/foo:a',
+                'localhost:8787/t/bar:b',
+                'localhost:8787/t/baz:c',
+                'localhost:8787/t/baz:d'
+            ],
+            self.uploader.list('localhost:8787', session=session)
+        )
+        mock_pool.return_value.map.assert_called_once_with(
+            image_uploader.tags_for_image,
+            [
+                (self.uploader, 'localhost:8787/t/foo', session),
+                (self.uploader, 'localhost:8787/t/bar', session),
+                (self.uploader, 'localhost:8787/t/baz', session),
+                (self.uploader, 'localhost:8787/t/bink', session)
+            ])
+
+    def test_tags_for_image(self):
+        session = mock.Mock()
+        r = mock.Mock()
+        r.status_code = 200
+        r.json.return_value = {'tags': ['a', 'b', 'c']}
+        session.get.return_value = r
+        self.uploader.insecure_registries.add('localhost:8787')
+        url = 'docker://localhost:8787/t/foo'
+        image, tags = self.uploader._tags_for_image(url, session=session)
+        self.assertEqual(url, image)
+        self.assertEqual(['a', 'b', 'c'], tags)
+
+        # test missing tags file
+        r.status_code = 404
+        image, tags = self.uploader._tags_for_image(url, session=session)
+        self.assertEqual([], tags)
+
     def test_image_tag_from_url(self):
         u = self.uploader
         self.assertEqual(
