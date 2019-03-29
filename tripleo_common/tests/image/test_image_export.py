@@ -175,6 +175,7 @@ class TestImageExport(base.TestCase):
             'mediaType': 'application/vnd.docker.'
                          'distribution.manifest.v2+json',
         }
+        catalog = {'repositories': ['t/nova-api']}
 
         manifest_str = json.dumps(manifest)
         calc_digest = hashlib.sha256()
@@ -186,6 +187,10 @@ class TestImageExport(base.TestCase):
             image_uploader.MEDIA_MANIFEST_V2, config_str
         )
 
+        catalog_path = os.path.join(
+            image_export.IMAGE_EXPORT_DIR,
+            'v2/_catalog'
+        )
         config_path = os.path.join(
             image_export.IMAGE_EXPORT_DIR,
             'v2/t/nova-api/blobs/sha256:1234'
@@ -211,6 +216,8 @@ Header set ETag "%s"
             manifest_digest
         )
 
+        with open(catalog_path, 'r') as f:
+            self.assertEqual(catalog, json.load(f))
         with open(config_path, 'r') as f:
             self.assertEqual(config_str, f.read())
         with open(manifest_path, 'r') as f:
