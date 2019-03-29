@@ -205,3 +205,5 @@ DEPLOYMENT_STATUS_FILE = 'deployment_status.yaml'
 MISTRAL_WORK_DIR = '/var/lib/mistral'
 
 EXCLUSIVE_NEUTRON_DRIVERS = ['ovn', 'openvswitch']
+
+UPGRADE_STEPS_MAX = 6

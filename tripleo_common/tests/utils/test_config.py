@@ -128,34 +128,47 @@ class TestConfig(base.TestCase):
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
         fake_role = [role for role in
                      fakes.FAKE_STACK['outputs'][1]['output_value']]
-        expected_tasks = {'FakeController': [{'name': 'Stop fake service',
-                                              'service': 'name=fake '
-                                              'state=stopped',
-                                              'when': 'step|int == 1'}],
-                          'FakeCompute': [{'name': 'Stop fake service',
-                                           'service':
-                                           'name=fake state=stopped',
-                                           'when': ['nova_api_enabled.rc == 0',
-                                                    'httpd_enabled.rc != 0',
-                                                    'step|int == 1']},
-                                          {'name': 'Stop nova-'
-                                           'compute service',
-                                           'service':
-                                           'name=openstack-nova-'
-                                           'compute state=stopped',
-                                           'when': [
-                                               'nova_compute_enabled.rc == 0',
-                                               'step|int == 2', 'existing',
-                                               'list']}]}
+        expected_tasks = {'FakeController': {0: [],
+                                             1: [{'name': 'Stop fake service',
+                                                  'service': 'name=fake '
+                                                  'state=stopped',
+                                                  'when': 'step|int == 1'}],
+                                             2: [],
+                                             3: [],
+                                             4: [],
+                                             5: []},
+                          'FakeCompute': {0: [],
+                                          1: [{'name': 'Stop fake service',
+                                               'service': 'name=fake '
+                                               'state=stopped',
+                                               'when': ['nova_api_enabled.rc'
+                                                        ' == 0',
+                                                        'httpd_enabled.rc'
+                                                        ' != 0',
+                                                        'step|int == 1']}],
+                                          2: [{'name': 'Stop nova-compute '
+                                               'service',
+                                               'service': 'name=openstack-'
+                                               'nova-compute state=stopped',
+                                               'when': ['nova_compute_'
+                                                        'enabled.rc == 0',
+                                                        'step|int == 2',
+                                                        'existing',
+                                                        'list']}],
+                                          3: [],
+                                          4: [],
+                                          5: []}}
         for role in fake_role:
             filedir = os.path.join(self.tmp_dir, role)
             os.makedirs(filedir)
-            filepath = os.path.join(filedir, "upgrade_tasks_playbook.yaml")
-            playbook_tasks = self.config._write_playbook_get_tasks(
-                fakes.FAKE_STACK['outputs'][1]['output_value'][role]
-                ['upgrade_tasks'], role, filepath)
-            self.assertTrue(os.path.isfile(filepath))
-            self.assertEqual(expected_tasks[role], playbook_tasks)
+            for step in range(constants.UPGRADE_STEPS_MAX):
+                filepath = os.path.join(filedir, "upgrade_tasks_step%s.yaml"
+                                        % step)
+                playbook_tasks = self.config._write_tasks_per_step(
+                    fakes.FAKE_STACK['outputs'][1]['output_value'][role]
+                    ['upgrade_tasks'], role, filepath, step)
+                self.assertTrue(os.path.isfile(filepath))
+                self.assertEqual(expected_tasks[role][step], playbook_tasks)
 
     def test_get_server_names(self):
         heat = mock.MagicMock()
