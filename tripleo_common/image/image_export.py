@@ -17,6 +17,7 @@ import collections
 import hashlib
 import json
 import os
+import shutil
 
 from oslo_log import log as logging
 
@@ -151,11 +152,8 @@ def export_manifest_config(target_url,
     manifest_symlink_path = os.path.join(manifests_path, tag)
     manifest_path = os.path.join(manifest_dir_path, 'index.json')
     htaccess_path = os.path.join(manifest_dir_path, '.htaccess')
-    tags_dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'tags')
-    tags_list_path = os.path.join(tags_dir_path, 'list')
 
     make_dir(manifest_dir_path)
-    make_dir(tags_dir_path)
     build_catalog()
 
     headers = collections.OrderedDict()
@@ -172,7 +170,16 @@ def export_manifest_config(target_url,
     if os.path.exists(manifest_symlink_path):
         os.remove(manifest_symlink_path)
     os.symlink(manifest_dir_path, manifest_symlink_path)
+    build_tags_list(image)
 
+
+def build_tags_list(image):
+    manifests_path = os.path.join(
+        IMAGE_EXPORT_DIR, 'v2', image, 'manifests')
+    tags_dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'tags')
+    tags_list_path = os.path.join(tags_dir_path, 'list')
+    LOG.debug('Rebuilding %s' % tags_dir_path)
+    make_dir(tags_dir_path)
     tags = []
     for f in os.listdir(manifests_path):
         f_path = os.path.join(manifests_path, f)
@@ -203,3 +210,75 @@ def build_catalog():
     catalog = {'repositories': catalog_entries}
     with open(catalog_path, 'w+b') as f:
         f.write(json.dumps(catalog, ensure_ascii=False).encode('utf-8'))
+
+
+def delete_image(image_url):
+    image, tag = image_tag_from_url(image_url)
+    manifests_path = os.path.join(
+        IMAGE_EXPORT_DIR, 'v2', image, 'manifests')
+    manifest_symlink_path = os.path.join(manifests_path, tag)
+
+    # delete manifest_symlink_path
+    LOG.debug('Deleting tag symlink %s' % manifest_symlink_path)
+    os.remove(manifest_symlink_path)
+    build_tags_list(image)
+
+    # build list of manifest_dir_path without symlinks
+    linked_manifest_dirs = set()
+    manifest_dirs = set()
+    for f in os.listdir(manifests_path):
+        f_path = os.path.join(manifests_path, f)
+        if os.path.islink(f_path):
+            linked_manifest_dirs.add(os.readlink(f_path))
+        elif os.path.isdir(f_path):
+            manifest_dirs.add(f_path)
+
+    delete_manifest_dirs = manifest_dirs.difference(linked_manifest_dirs)
+
+    # delete list of manifest_dir_path without symlinks
+    for manifest_dir in delete_manifest_dirs:
+        LOG.debug('Deleting manifest %s' % manifest_dir)
+        shutil.rmtree(manifest_dir)
+
+    # load all remaining manifests and build the set of of in-use blobs,
+    # delete any layer blob not in-use
+    reffed_blobs = set()
+    blobs_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'blobs')
+
+    def add_reffed_blob(digest):
+        blob_path = os.path.join(blobs_path, digest)
+        gz_blob_path = os.path.join(blobs_path, '%s.gz' % digest)
+        if os.path.isfile(gz_blob_path):
+            reffed_blobs.add(gz_blob_path)
+        elif os.path.isfile(blob_path):
+            reffed_blobs.add(blob_path)
+
+    for manifest_dir in linked_manifest_dirs:
+        manifest_path = os.path.join(manifest_dir, 'index.json')
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+        v1manifest = manifest.get('schemaVersion', 2) == 1
+
+        if v1manifest:
+            for digest in manifest.get('fsLayers', []):
+                add_reffed_blob(digest)
+        else:
+            for layer in manifest.get('layers', []):
+                add_reffed_blob(layer.get('digest'))
+            add_reffed_blob(manifest.get('config', {}).get('digest'))
+
+    all_blobs = set([os.path.join(blobs_path, b)
+                     for b in os.listdir(blobs_path)])
+    delete_blobs = all_blobs.difference(reffed_blobs)
+    for blob in delete_blobs:
+        LOG.debug('Deleting layer blob %s' % blob)
+        os.remove(blob)
+
+    # if no files left in manifests_path, delete the whole image
+    if not os.listdir(manifests_path):
+        image_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image)
+        LOG.debug('Deleting image directory %s' % image_path)
+        shutil.rmtree(image_path)
+
+    # rebuild the catalog for the current image list
+    build_catalog()

@@ -224,3 +224,166 @@ Header set ETag "%s"
             self.assertEqual(manifest_str, f.read())
         with open(manifest_htaccess_path, 'r') as f:
             self.assertEqual(expected_htaccess, f.read())
+
+    def _write_test_image(self, url, manifest):
+        image, tag = image_uploader.BaseImageUploader._image_tag_from_url(
+            url)
+        blob_dir = os.path.join(
+            image_export.IMAGE_EXPORT_DIR, 'v2', image[1:], 'blobs')
+        image_export.make_dir(blob_dir)
+
+        config_str = '{"config": {}}'
+        manifest_str = json.dumps(manifest)
+        calc_digest = hashlib.sha256()
+        calc_digest.update(manifest_str.encode('utf-8'))
+        manifest_digest = 'sha256:%s' % calc_digest.hexdigest()
+
+        image_export.export_manifest_config(
+            url, manifest_str,
+            image_uploader.MEDIA_MANIFEST_V2, config_str
+        )
+        for layer in manifest['layers']:
+            blob_path = os.path.join(blob_dir, '%s.gz' % layer['digest'])
+
+            with open(blob_path, 'w+') as f:
+                f.write('The Blob')
+        return manifest_digest
+
+    def assertFiles(self, dirs, files, symlinks, deleted):
+        for d in dirs:
+            self.assertTrue(os.path.isdir(d), 'is dir: %s' % d)
+        for f in files:
+            self.assertTrue(os.path.isfile(f), 'is file: %s' % f)
+        for d in deleted:
+            self.assertFalse(os.path.exists(d), 'not exists: %s' % d)
+        for l, f in symlinks.items():
+            self.assertTrue(os.path.islink(l), 'is link: %s' % l)
+            self.assertEqual(f, os.readlink(l))
+            self.assertTrue(os.path.exists(f),
+                            'link target exists: %s' % f)
+
+    def test_delete_image(self):
+        url1 = urlparse('docker://localhost:8787/t/nova-api:latest')
+        url2 = urlparse('docker://localhost:8787/t/nova-api:abc')
+        manifest_1 = {
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [
+                {'digest': 'sha256:aeb786'},
+                {'digest': 'sha256:4dc536'},
+            ],
+            'mediaType': 'application/vnd.docker.'
+                         'distribution.manifest.v2+json',
+        }
+        manifest_2 = {
+            'config': {
+                'digest': 'sha256:5678',
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [
+                {'digest': 'sha256:aeb786'},  # shared with manifest_1
+                {'digest': 'sha256:eeeeee'},  # different to manifest_1
+            ],
+            'mediaType': 'application/vnd.docker.'
+                         'distribution.manifest.v2+json',
+        }
+
+        m1_digest = self._write_test_image(
+            url=url1,
+            manifest=manifest_1
+        )
+        m2_digest = self._write_test_image(
+            url=url2,
+            manifest=manifest_2
+        )
+
+        v2_dir = os.path.join(image_export.IMAGE_EXPORT_DIR, 'v2')
+        image_dir = os.path.join(v2_dir, 't/nova-api')
+        blob_dir = os.path.join(image_dir, 'blobs')
+        m_dir = os.path.join(image_dir, 'manifests')
+
+        # assert every directory, file and symlink for the 2 images
+        self.assertFiles(
+            dirs=[
+                v2_dir,
+                image_dir,
+                blob_dir,
+                m_dir,
+                os.path.join(m_dir, m1_digest),
+                os.path.join(m_dir, m2_digest),
+            ],
+            files=[
+                os.path.join(m_dir, m1_digest, 'index.json'),
+                os.path.join(m_dir, m2_digest, 'index.json'),
+                os.path.join(blob_dir, 'sha256:1234'),
+                os.path.join(blob_dir, 'sha256:aeb786.gz'),
+                os.path.join(blob_dir, 'sha256:4dc536.gz'),
+                os.path.join(blob_dir, 'sha256:5678'),
+                os.path.join(blob_dir, 'sha256:eeeeee.gz'),
+            ],
+            symlinks={
+                os.path.join(m_dir, 'latest'): os.path.join(m_dir, m1_digest),
+                os.path.join(m_dir, 'abc'): os.path.join(m_dir, m2_digest),
+            },
+            deleted=[]
+        )
+
+        image_export.delete_image(url2)
+
+        # assert files deleted for nova-api:abc
+        self.assertFiles(
+            dirs=[
+                v2_dir,
+                image_dir,
+                blob_dir,
+                m_dir,
+                os.path.join(m_dir, m1_digest),
+            ],
+            files=[
+                os.path.join(m_dir, m1_digest, 'index.json'),
+                os.path.join(blob_dir, 'sha256:1234'),
+                os.path.join(blob_dir, 'sha256:aeb786.gz'),
+                os.path.join(blob_dir, 'sha256:4dc536.gz'),
+            ],
+            symlinks={
+                os.path.join(m_dir, 'latest'): os.path.join(m_dir, m1_digest),
+            },
+            deleted=[
+                os.path.join(m_dir, 'abc'),
+                os.path.join(m_dir, m2_digest),
+                os.path.join(m_dir, m2_digest, 'index.json'),
+                os.path.join(blob_dir, 'sha256:5678'),
+                os.path.join(blob_dir, 'sha256:eeeeee.gz'),
+            ]
+        )
+
+        image_export.delete_image(url1)
+
+        # assert all nova-api files deleted after deleting the last image
+        self.assertFiles(
+            dirs=[
+                v2_dir,
+            ],
+            files=[],
+            symlinks={},
+            deleted=[
+                image_dir,
+                blob_dir,
+                m_dir,
+                os.path.join(m_dir, 'abc'),
+                os.path.join(m_dir, 'latest'),
+                os.path.join(m_dir, m1_digest),
+                os.path.join(m_dir, m1_digest, 'index.json'),
+                os.path.join(m_dir, m2_digest),
+                os.path.join(m_dir, m2_digest, 'index.json'),
+                os.path.join(blob_dir, 'sha256:5678'),
+                os.path.join(blob_dir, 'sha256:eeeeee.gz'),
+                os.path.join(blob_dir, 'sha256:1234'),
+                os.path.join(blob_dir, 'sha256:aeb786.gz'),
+                os.path.join(blob_dir, 'sha256:4dc536.gz'),
+            ]
+        )
