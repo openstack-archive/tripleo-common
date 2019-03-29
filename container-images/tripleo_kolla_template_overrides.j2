@@ -5,13 +5,6 @@
 {% set base_yum_url_packages_override = [] %}
 {% set base_yum_repo_keys_override = [] %}
 
-# block dumb-init installation
-{% block dumb_init_installation %}{% endblock %}
-
-# stop mariadb from trying to use dumb-init which was added by
-# https://review.openstack.org/#/c/644244/
-{% block mariadb_entrypoint %}{% endblock %}
-
 # Enable ODL repo in ODL Dockerfile
 {% block opendaylight_header %}
 RUN echo $'[opendaylight-8-devel]\n\
