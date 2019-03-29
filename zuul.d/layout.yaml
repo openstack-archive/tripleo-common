@@ -67,5 +67,8 @@
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-7-containerized-undercloud-upgrades:
             dependencies: *deps_unit_lint
+        - openstack-tox-lower-constraints
     gate:
       queue: tripleo
+      jobs:
+        - openstack-tox-lower-constraints

@@ -445,9 +445,17 @@ class TestConfig(base.TestCase):
         with warnings.catch_warnings(record=True) as w:
             self.config.download_config(stack, self.tmp_dir)
             mock_git_init.assert_called_once_with(self.tmp_dir)
-            self.assertEqual(1, len(w))
-            assert issubclass(w[-1].category, DeprecationWarning)
-            assert "group:os-apply-config is deprecated" in str(w[-1].message)
+            # check that we got at least one of the warnings that we expected
+            # to throw
+            self.assertGreaterEqual(len(w), 1)
+            self.assertGreaterEqual(len([x for x in w
+                                         if issubclass(x.category,
+                                                       DeprecationWarning)]),
+                                    1)
+            self.assertGreaterEqual(len([x for x in w
+                                         if "group:os-apply-config"
+                                         in str(x.message)]),
+                                    1)
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
