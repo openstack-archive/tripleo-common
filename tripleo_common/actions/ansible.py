@@ -30,7 +30,7 @@ from mistral_lib import actions
 from oslo_concurrency import processutils
 
 from tripleo_common.actions import base
-from tripleo_common.inventory import TripleoInventory
+from tripleo_common import inventory
 
 LOG = logging.getLogger(__name__)
 
@@ -634,7 +634,7 @@ class AnsibleGenerateInventoryAction(base.TripleOAction):
         inventory_path = os.path.join(
             self.work_dir, 'tripleo-ansible-inventory.yaml')
 
-        inventory = TripleoInventory(
+        inv = inventory.TripleoInventory(
             session=self.get_session(context, 'heat'),
             hclient=self.get_orchestration_client(context),
             auth_url=context.security.auth_uri,
@@ -642,9 +642,10 @@ class AnsibleGenerateInventoryAction(base.TripleOAction):
             project_name=context.security.project_name,
             username=context.security.user_name,
             ansible_ssh_user=self.ansible_ssh_user,
+            undercloud_connection=inventory.UNDERCLOUD_CONNECTION_SSH,
             ansible_python_interpreter=self.ansible_python_interpreter,
             plan_name=self.plan_name,
             host_network=self.ssh_network)
 
-        inventory.write_static_inventory(inventory_path)
+        inv.write_static_inventory(inventory_path)
         return inventory_path

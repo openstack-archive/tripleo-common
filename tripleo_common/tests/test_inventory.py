@@ -170,6 +170,7 @@ class TestInventory(base.TestCase):
             set([o for o in self.outputs]))
 
     def test_inventory_list(self):
+        self.inventory.undercloud_connection = 'local'
         self._inventory_list(self.inventory)
 
     def _inventory_list(self, inventory):
@@ -198,7 +199,7 @@ class TestInventory(base.TestCase):
                     'redis_vip': 'x.x.x.6'}},
             'Undercloud': {
                 'hosts': ['undercloud'],
-                'vars': {'ansible_ssh_user': 'heat-admin',
+                'vars': {'ansible_connection': 'local',
                          'ansible_host': 'localhost',
                          'ansible_python_interpreter': sys.executable,
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
@@ -225,14 +226,17 @@ class TestInventory(base.TestCase):
     def test_ansible_ssh_user(self):
         self._try_alternative_args(
             ansible_ssh_user='my-custom-admin',
+            undercloud_connection='ssh',
             session=self.session,)
 
     def test_no_session(self):
         self._try_alternative_args(
             ansible_ssh_user='my-custom-admin',
+            undercloud_connection='ssh',
             session=None)
 
-    def _try_alternative_args(self, ansible_ssh_user, session):
+    def _try_alternative_args(self, ansible_ssh_user, session,
+                              undercloud_connection):
         self.inventory = TripleoInventory(
             session=session,
             hclient=self.hclient,
@@ -242,6 +246,7 @@ class TestInventory(base.TestCase):
             username='admin',
             cacert='acacert',
             ansible_ssh_user=ansible_ssh_user,
+            undercloud_connection=undercloud_connection,
             ansible_python_interpreter='foo')
 
         self.inventory.stack_outputs = self.outputs
@@ -272,7 +277,8 @@ class TestInventory(base.TestCase):
                     'redis_vip': 'x.x.x.6'}},
             'Undercloud': {
                 'hosts': ['undercloud'],
-                'vars': {'ansible_ssh_user': 'my-custom-admin',
+                'vars': {'ansible_connection': 'ssh',
+                         'ansible_ssh_user': 'my-custom-admin',
                          'ansible_host': 'localhost',
                          'ansible_python_interpreter': 'foo',
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
@@ -300,9 +306,11 @@ class TestInventory(base.TestCase):
             self.assertEqual(expected[k], inv_list[k])
 
     def test_inventory_write_static(self):
+        self.inventory.undercloud_connection = 'local'
         self._inventory_write_static()
 
     def test_inventory_write_static_extra_vars(self):
+        self.inventory.undercloud_connection = 'local'
         extra_vars = {'Undercloud': {'anextravar': 123}}
         self._inventory_write_static(extra_vars=extra_vars)
 
@@ -370,7 +378,7 @@ class TestInventory(base.TestCase):
             'sh': {'children': {'CustomRole': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
             'Undercloud': {'hosts': {'undercloud': {}},
-                           'vars': {'ansible_ssh_user': 'heat-admin',
+                           'vars': {'ansible_connection': 'local',
                                     'ansible_host': 'localhost',
                                     'ansible_python_interpreter':
                                         sys.executable,
