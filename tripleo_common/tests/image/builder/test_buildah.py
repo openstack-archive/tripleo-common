@@ -54,3 +54,23 @@ class TestBuildahBuilder(base.TestCase):
         mock_process.assert_called_once_with(
             *args, run_as_root=False, use_standard_locale=True
         )
+
+    @mock.patch.object(bb, 'build', autospec=True)
+    @mock.patch.object(bb, 'push', autospec=True)
+    def test_generate_container_with_push(self, mock_push, mock_build):
+        container_name = "fedora-base"
+        destination = "127.0.0.1:8787/master/fedora-binary-{}:latest"
+        builder = bb(WORK_DIR, DEPS, push_containers=True)
+        builder._generate_container(container_name)
+        mock_build.assert_called_once_with(builder, container_name, "")
+        mock_push.assert_called_once_with(builder,
+                                          destination.format(container_name))
+
+    @mock.patch.object(bb, 'build', autospec=True)
+    @mock.patch.object(bb, 'push', autospec=True)
+    def test_generate_container_without_push(self, mock_push, mock_build):
+        container_name = "fedora-base"
+        builder = bb(WORK_DIR, DEPS, push_containers=False)
+        builder._generate_container(container_name)
+        mock_build.assert_called_once_with(builder, container_name, "")
+        assert not mock_push.called

@@ -33,7 +33,7 @@ class BuildahBuilder(base.BaseBuilder):
 
     def __init__(self, work_dir, deps, base='fedora', img_type='binary',
                  tag='latest', namespace='master',
-                 registry_address='127.0.0.1:8787'):
+                 registry_address='127.0.0.1:8787', push_containers=True):
         """Setup the parameters to build with Buildah.
 
         :params work_dir: Directory where the Dockerfiles
@@ -50,6 +50,7 @@ class BuildahBuilder(base.BaseBuilder):
             Default to master.
         :params registry_address: IP + port of the registry where we push
             the images. Default is 127.0.0.1:8787.
+        :params push: Flag to bypass registry push if False. Default is True
         """
 
         super(BuildahBuilder, self).__init__()
@@ -61,6 +62,7 @@ class BuildahBuilder(base.BaseBuilder):
         self.tag = tag
         self.namespace = namespace
         self.registry_address = registry_address
+        self.push_containers = push_containers
         # Each container image has a Dockerfile. Buildah needs to know
         # the base directory later.
         self.cont_map = {os.path.basename(root): root for root, dirs,
@@ -88,15 +90,16 @@ class BuildahBuilder(base.BaseBuilder):
         """
 
         self.build(container_name, self._find_container_dir(container_name))
-        destination = "{}/{}/{}-{}-{}:{}".format(
-            self.registry_address,
-            self.namespace,
-            self.base,
-            self.img_type,
-            container_name,
-            self.tag
-        )
-        self.push(destination)
+        if self.push_containers:
+            destination = "{}/{}/{}-{}-{}:{}".format(
+                self.registry_address,
+                self.namespace,
+                self.base,
+                self.img_type,
+                container_name,
+                self.tag
+            )
+            self.push(destination)
 
     def build(self, container_name, container_build_path):
         """Build an image from a given directory.
