@@ -56,9 +56,13 @@ DEFAULT_PLAN_ENV_KEY = 'parameter_defaults'
 #: The path to the tripleo heat templates installed on the undercloud
 DEFAULT_TEMPLATES_PATH = '/usr/share/openstack-tripleo-heat-templates/'
 
+#: The path to the base directory of tripleo-validations
+DEFAULT_VALIDATIONS_BASEDIR = \
+    '/usr/share/openstack-tripleo-validations'
+
 # The path to the tripleo validations installed on the undercloud
 DEFAULT_VALIDATIONS_PATH = \
-    '/usr/share/openstack-tripleo-validations/validations/'
+    DEFAULT_VALIDATIONS_BASEDIR + '/playbooks/'
 
 # The path to the local CA certificate installed on the undercloud
 LOCAL_CACERT_PATH = '/etc/pki/ca-trust/source/anchors/cm-local-ca.pem'
