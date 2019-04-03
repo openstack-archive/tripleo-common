@@ -115,6 +115,7 @@ PASSWORD_PARAMETER_NAMES = (
     'NovaPassword',
     'NovajoinPassword',
     'MigrationSshKey',
+    'OctaviaServerCertsKeyPassphrase',
     'OctaviaCaKeyPassphrase',
     'OctaviaHeartbeatKey',
     'OctaviaPassword',
