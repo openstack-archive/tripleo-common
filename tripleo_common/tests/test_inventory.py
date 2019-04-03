@@ -237,6 +237,7 @@ class TestInventory(base.TestCase):
 
     def _try_alternative_args(self, ansible_ssh_user, session,
                               undercloud_connection):
+        key_file = '/var/lib/mistral/.ssh/%s-key' % ansible_ssh_user
         self.inventory = TripleoInventory(
             session=session,
             hclient=self.hclient,
@@ -247,6 +248,7 @@ class TestInventory(base.TestCase):
             cacert='acacert',
             ansible_ssh_user=ansible_ssh_user,
             undercloud_connection=undercloud_connection,
+            undercloud_key_file=key_file,
             ansible_python_interpreter='foo')
 
         self.inventory.stack_outputs = self.outputs
@@ -278,6 +280,7 @@ class TestInventory(base.TestCase):
             'Undercloud': {
                 'hosts': ['undercloud'],
                 'vars': {'ansible_connection': 'ssh',
+                         'ansible_ssh_private_key_file': key_file,
                          'ansible_ssh_user': 'my-custom-admin',
                          'ansible_host': 'localhost',
                          'ansible_python_interpreter': 'foo',

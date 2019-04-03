@@ -31,32 +31,9 @@ workflows:
     tasks:
       get_pubkey:
         action: tripleo.validations.get_pubkey
-        on-success: authorize_undercloud_admin
+        on-success: get_blacklisted_ip_addresses
         publish:
           pubkey: <% task().result %>
-
-      authorize_undercloud_admin:
-        action: tripleo.ansible-playbook
-        # older underclouds may not have a tripleo-admin user,
-        # so continue on success or failure
-        on-complete: get_blacklisted_ip_addresses
-        input:
-          inventory:
-            undercloud:
-              hosts:
-                localhost:
-                  ansible_connection: local
-          playbook:
-            - hosts: undercloud
-              tasks:
-              - name: undercloud authorize user <% $.overcloud_admin %>
-                import_role:
-                  name: tripleo-create-admin
-                  tasks_from: authorize_user.yml
-                vars:
-                  tripleo_admin_user: <% $.overcloud_admin %>
-                  tripleo_admin_pubkey: <% $.pubkey %>
-          execution_id: <% execution().id %>
 
       get_blacklisted_ip_addresses:
         action: heat.stacks_output_show

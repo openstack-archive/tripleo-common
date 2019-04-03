@@ -92,7 +92,8 @@ class TripleoInventory(object):
                  plan_name=None, auth_url=None, project_name=None,
                  cacert=None, username=None, ansible_ssh_user=None,
                  host_network=None, ansible_python_interpreter=None,
-                 undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL):
+                 undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL,
+                 undercloud_key_file=None):
         self.session = session
         self.hclient = hclient
         self.hosts_format_dict = False
@@ -102,6 +103,7 @@ class TripleoInventory(object):
         self.project_name = project_name
         self.username = username
         self.ansible_ssh_user = ansible_ssh_user
+        self.undercloud_key_file = undercloud_key_file
         self.plan_name = plan_name
         self.ansible_python_interpreter = ansible_python_interpreter
         self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
@@ -178,6 +180,9 @@ class TripleoInventory(object):
         if self.undercloud_connection == UNDERCLOUD_CONNECTION_SSH:
             ret['Undercloud']['vars']['ansible_ssh_user'] = \
                 self.ansible_ssh_user
+            if self.undercloud_key_file:
+                ret['Undercloud']['vars']['ansible_ssh_private_key_file'] = \
+                    self.undercloud_key_file
 
         swift_url = None
         if self.session:

@@ -484,6 +484,7 @@ workflows:
           work_dir: <% $.get('work_dir') %>/<% $.get('plan_name') %>
           plan_name: <% $.get('plan_name') %>
           ssh_network: <% $.get('ssh_network') %>
+          undercloud_key_file: <% $.get('work_dir') %>/.ssh/tripleo-admin-rsa
         publish:
           inventory: <% task().result %>
         on-success: send_msg_generate_inventory
