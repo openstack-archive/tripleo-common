@@ -24,6 +24,10 @@ from heatclient.exc import HTTPNotFound
 
 HOST_NETWORK = 'ctlplane'
 
+UNDERCLOUD_CONNECTION_SSH = 'ssh'
+
+UNDERCLOUD_CONNECTION_LOCAL = 'local'
+
 
 class TemplateDumper(yaml.SafeDumper):
     def represent_ordered_dict(self, data):
@@ -87,7 +91,8 @@ class TripleoInventory(object):
     def __init__(self, session=None, hclient=None,
                  plan_name=None, auth_url=None, project_name=None,
                  cacert=None, username=None, ansible_ssh_user=None,
-                 host_network=None, ansible_python_interpreter=None):
+                 host_network=None, ansible_python_interpreter=None,
+                 undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL):
         self.session = session
         self.hclient = hclient
         self.hosts_format_dict = False
@@ -101,6 +106,7 @@ class TripleoInventory(object):
         self.ansible_python_interpreter = ansible_python_interpreter
         self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
         self.hostvars = {}
+        self.undercloud_connection = undercloud_connection
 
     @staticmethod
     def get_roles_by_service(enabled_services):
@@ -150,8 +156,8 @@ class TripleoInventory(object):
                 'hosts': self._hosts(['undercloud']),
                 'vars': {
                     'ansible_host': 'localhost',
-                    'ansible_ssh_user': self.ansible_ssh_user,
                     'ansible_python_interpreter': sys.executable,
+                    'ansible_connection': self.undercloud_connection,
                     # see https://github.com/ansible/ansible/issues/41808
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
                     'auth_url': self.auth_url,
@@ -168,6 +174,10 @@ class TripleoInventory(object):
         if self.ansible_python_interpreter:
             ret['Undercloud']['vars']['ansible_python_interpreter'] = \
                 self.ansible_python_interpreter
+
+        if self.undercloud_connection == UNDERCLOUD_CONNECTION_SSH:
+            ret['Undercloud']['vars']['ansible_ssh_user'] = \
+                self.ansible_ssh_user
 
         swift_url = None
         if self.session:
