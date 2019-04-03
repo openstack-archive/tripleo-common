@@ -49,6 +49,7 @@
               - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-scenario009-multinode-oooq-container:
             dependencies: *deps_unit_lint
+            voting: true
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
@@ -72,3 +73,8 @@
       queue: tripleo
       jobs:
         - openstack-tox-lower-constraints
+        - tripleo-ci-centos-7-scenario009-multinode-oooq-container:
+            files:
+              - ^container-images/.*$
+              - tripleo_common/image/kolla_builder.py
+              - scripts/tripleo-deploy-openshift
