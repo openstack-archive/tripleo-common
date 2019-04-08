@@ -1039,6 +1039,9 @@ class TestPrepare(base.TestCase):
             'parameter_defaults': {
                 'LocalContainerRegistry': '192.0.2.1',
                 'DockerRegistryMirror': 'http://192.0.2.2/reg/',
+                'ContainerImageRegistryCredentials': {
+                    'docker.io': {'my_username': 'my_password'}
+                },
                 'ContainerImagePrepare': [{
                     'set': mapping_args,
                     'tag_from_label': 'foo',
@@ -1098,6 +1101,9 @@ class TestPrepare(base.TestCase):
                 modify_vars=None,
                 mirrors={
                     'docker.io': 'http://192.0.2.2/reg/'
+                },
+                registry_credentials={
+                    'docker.io': {'my_username': 'my_password'}
                 }
             ),
             mock.call(
@@ -1116,6 +1122,9 @@ class TestPrepare(base.TestCase):
                 modify_vars={'foo_version': '1.0.1'},
                 mirrors={
                     'docker.io': 'http://192.0.2.2/reg/'
+                },
+                registry_credentials={
+                    'docker.io': {'my_username': 'my_password'}
                 }
             )
         ])
@@ -1201,7 +1210,8 @@ class TestPrepare(base.TestCase):
                 modify_role=None,
                 modify_only_with_labels=None,
                 modify_vars=None,
-                mirrors={}
+                mirrors={},
+                registry_credentials=None
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -1217,12 +1227,13 @@ class TestPrepare(base.TestCase):
                 modify_role='add-foo-plugin',
                 modify_only_with_labels=['kolla_version'],
                 modify_vars={'foo_version': '1.0.1'},
-                mirrors={}
+                mirrors={},
+                registry_credentials=None
             )
         ])
 
         mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full',
-                                        mirrors={})
+                                        mirrors={}, registry_credentials=None)
 
         self.assertEqual(
             {

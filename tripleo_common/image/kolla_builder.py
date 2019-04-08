@@ -150,6 +150,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
     if mirror:
         mirrors['docker.io'] = mirror
 
+    creds = pd.get('ContainerImageRegistryCredentials')
+
     env_params = {}
     service_filter = build_service_filter(environment, roles_data)
 
@@ -185,7 +187,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             modify_role=modify_role,
             modify_vars=modify_vars,
             modify_only_with_labels=modify_only_with_labels,
-            mirrors=mirrors
+            mirrors=mirrors,
+            registry_credentials=creds
         )
         env_params.update(prepare_data['image_params'])
 
@@ -198,7 +201,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
                     [f.name],
                     dry_run=dry_run,
                     cleanup=cleanup,
-                    mirrors=mirrors
+                    mirrors=mirrors,
+                    registry_credentials=creds
                 )
                 uploader.upload()
     return env_params
@@ -221,7 +225,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              output_images_file=None, tag_from_label=None,
                              append_tag=None, modify_role=None,
                              modify_vars=None, modify_only_with_labels=None,
-                             mirrors=None):
+                             mirrors=None, registry_credentials=None):
     """Perform container image preparation
 
     :param template_file: path to Jinja2 file containing all image entries
@@ -248,6 +252,11 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     :param modify_only_with_labels: only modify the container images with the
                                     given labels
     :param mirrors: dict of registry netloc values to mirror urls
+    :param registry_credentials: dict of registry netloc values to
+                                 authentication credentials for that registry.
+                                 The value is a single-entry dict where the
+                                 username is the key and the password is the
+                                 value.
     :returns: dict with entries for the supplied output_env_file or
               output_images_file
     """
@@ -277,7 +286,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     result = builder.container_images_from_template(
         filter=ffunc, **mapping_args)
 
-    manager = image_uploader.ImageUploadManager(mirrors=mirrors)
+    manager = image_uploader.ImageUploadManager(
+        mirrors=mirrors, registry_credentials=registry_credentials)
     uploader = manager.uploader('python')
     images = [i.get('imagename', '') for i in result]
 
