@@ -1920,7 +1920,7 @@ class TestPythonImageUploader(base.TestCase):
             self.uploader._delete(url)
         )
         mock_popen.assert_called_once_with([
-            'podman',
+            'buildah',
             'rmi',
             '/t/nova-api:latest'],
             env={}, stdout=-1,

@@ -1234,7 +1234,7 @@ class PythonImageUploader(BaseImageUploader):
         cls._assert_scheme(source_url, 'docker')
         pull_source = source_url.netloc + source_url.path
         LOG.info('Pulling %s' % pull_source)
-        cmd = ['podman', 'pull']
+        cmd = ['buildah', 'pull']
 
         if source_url.netloc in [cls.insecure_registries,
                                  cls.no_verify_registries]:
@@ -1545,7 +1545,7 @@ class PythonImageUploader(BaseImageUploader):
         if image_url.scheme != 'containers-storage':
             raise ImageUploaderException('Delete not implemented for %s' %
                                          image_url.geturl())
-        cmd = ['podman', 'rmi', image_url.path]
+        cmd = ['buildah', 'rmi', image_url.path]
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
         process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
