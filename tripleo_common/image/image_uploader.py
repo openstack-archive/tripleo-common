@@ -406,9 +406,18 @@ class BaseImageUploader(object):
         manifest_r.raise_for_status()
         tags_r.raise_for_status()
 
-        manifest = manifest_r.json()
+        manifest_str = manifest_r.text
 
-        digest = manifest_r.headers['Docker-Content-Digest']
+        if 'Docker-Content-Digest' in manifest_r.headers:
+            digest = manifest_r.headers['Docker-Content-Digest']
+        else:
+            # The registry didn't supply the manifest digest, so calculate it
+            calc_digest = hashlib.sha256()
+            calc_digest.update(manifest_str.encode('utf-8'))
+            digest = 'sha256:%s' % calc_digest.hexdigest()
+
+        manifest = json.loads(manifest_str)
+
         if manifest.get('schemaVersion', 2) == 1:
             config = json.loads(manifest['history'][0]['v1Compatibility'])
             layers = list(reversed([l['blobSum']
