@@ -136,8 +136,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 # isn't valid here.
 {% set neutron_dhcp_agent_packages = ['docker', 'podman', 'libseccomp'] %}
 
-# NOTE(beagles): octavia-api with TLS everywhere needs these packages
-{% set octavia_api_packages_append = ['httpd', 'mod_ssl'] %}
+{% set octavia_api_packages_append = ['python-networking-ovn'] %}
 
 # NOTE (jaosorior): redis with TLS everywhere needs these packages.
 # redis resource-agent requires pidof
