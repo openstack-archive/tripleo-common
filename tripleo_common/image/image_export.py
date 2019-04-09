@@ -260,8 +260,8 @@ def delete_image(image_url):
         v1manifest = manifest.get('schemaVersion', 2) == 1
 
         if v1manifest:
-            for digest in manifest.get('fsLayers', []):
-                add_reffed_blob(digest)
+            for layer in manifest.get('fsLayers', []):
+                add_reffed_blob(layer.get('blobSum'))
         else:
             for layer in manifest.get('layers', []):
                 add_reffed_blob(layer.get('digest'))

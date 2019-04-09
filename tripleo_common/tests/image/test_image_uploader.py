@@ -1335,6 +1335,92 @@ class TestPythonImageUploader(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._cross_repo_mount')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_registry_to_registry')
+    def test_upload_image_v1_manifest(
+            self, _copy_registry_to_registry, _cross_repo_mount,
+            _fetch_manifest, authenticate):
+
+        target_session = mock.Mock()
+        source_session = mock.Mock()
+        authenticate.side_effect = [
+            target_session,
+            source_session
+        ]
+        manifest = json.dumps({
+            'schemaVersion': 1,
+            'fsLayers': [
+                {'blobSum': 'sha256:ccc'},
+                {'blobSum': 'sha256:bbb'},
+                {'blobSum': 'sha256:aaa'}
+            ],
+        })
+        _fetch_manifest.return_value = manifest
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        push_destination = 'localhost:8787'
+        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        task = image_uploader.UploadTask(
+            image_name=image + ':' + tag,
+            pull_source=None,
+            push_destination=push_destination,
+            append_tag=None,
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup='full'
+        )
+
+        self.assertEqual(
+            [],
+            self.uploader.upload_image(task)
+        )
+        source_url = urlparse('docker://docker.io/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+
+        authenticate.assert_has_calls([
+            mock.call(
+                target_url,
+                username=None,
+                password=None
+            ),
+            mock.call(
+                source_url,
+                username=None,
+                password=None
+            ),
+        ])
+
+        _fetch_manifest.assert_called_once_with(
+            source_url, session=source_session)
+
+        _cross_repo_mount.assert_called_once_with(
+            target_url,
+            {
+                'sha256:aaa': target_url,
+                'sha256:bbb': target_url,
+                'sha256:ccc': target_url,
+            },
+            ['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+            session=target_session)
+
+        _copy_registry_to_registry.assert_called_once_with(
+            source_url,
+            target_url,
+            source_manifest=manifest,
+            source_session=source_session,
+            target_session=target_session
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._image_exists')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._fetch_manifest')

@@ -232,18 +232,25 @@ Header set ETag "%s"
             image_export.IMAGE_EXPORT_DIR, 'v2', image[1:], 'blobs')
         image_export.make_dir(blob_dir)
 
-        config_str = '{"config": {}}'
+        if manifest.get('schemaVersion', 2) == 1:
+            config_str = None
+            manifest_type = image_uploader.MEDIA_MANIFEST_V1
+            layers = list(reversed([l['blobSum']
+                                    for l in manifest['fsLayers']]))
+        else:
+            config_str = '{"config": {}}'
+            manifest_type = image_uploader.MEDIA_MANIFEST_V2
+            layers = [l['digest'] for l in manifest['layers']]
         manifest_str = json.dumps(manifest)
         calc_digest = hashlib.sha256()
         calc_digest.update(manifest_str.encode('utf-8'))
         manifest_digest = 'sha256:%s' % calc_digest.hexdigest()
 
         image_export.export_manifest_config(
-            url, manifest_str,
-            image_uploader.MEDIA_MANIFEST_V2, config_str
+            url, manifest_str, manifest_type, config_str
         )
-        for layer in manifest['layers']:
-            blob_path = os.path.join(blob_dir, '%s.gz' % layer['digest'])
+        for digest in layers:
+            blob_path = os.path.join(blob_dir, '%s.gz' % digest)
 
             with open(blob_path, 'w+') as f:
                 f.write('The Blob')
@@ -266,14 +273,10 @@ Header set ETag "%s"
         url1 = urlparse('docker://localhost:8787/t/nova-api:latest')
         url2 = urlparse('docker://localhost:8787/t/nova-api:abc')
         manifest_1 = {
-            'config': {
-                'digest': 'sha256:1234',
-                'size': 2,
-                'mediaType': 'application/vnd.docker.container.image.v1+json'
-            },
-            'layers': [
-                {'digest': 'sha256:aeb786'},
-                {'digest': 'sha256:4dc536'},
+            'schemaVersion': 1,
+            'fsLayers': [
+                {'blobSum': 'sha256:aeb786'},
+                {'blobSum': 'sha256:4dc536'},
             ],
             'mediaType': 'application/vnd.docker.'
                          'distribution.manifest.v2+json',
@@ -319,7 +322,6 @@ Header set ETag "%s"
             files=[
                 os.path.join(m_dir, m1_digest, 'index.json'),
                 os.path.join(m_dir, m2_digest, 'index.json'),
-                os.path.join(blob_dir, 'sha256:1234'),
                 os.path.join(blob_dir, 'sha256:aeb786.gz'),
                 os.path.join(blob_dir, 'sha256:4dc536.gz'),
                 os.path.join(blob_dir, 'sha256:5678'),
@@ -345,7 +347,6 @@ Header set ETag "%s"
             ],
             files=[
                 os.path.join(m_dir, m1_digest, 'index.json'),
-                os.path.join(blob_dir, 'sha256:1234'),
                 os.path.join(blob_dir, 'sha256:aeb786.gz'),
                 os.path.join(blob_dir, 'sha256:4dc536.gz'),
             ],
@@ -382,7 +383,6 @@ Header set ETag "%s"
                 os.path.join(m_dir, m2_digest, 'index.json'),
                 os.path.join(blob_dir, 'sha256:5678'),
                 os.path.join(blob_dir, 'sha256:eeeeee.gz'),
-                os.path.join(blob_dir, 'sha256:1234'),
                 os.path.join(blob_dir, 'sha256:aeb786.gz'),
                 os.path.join(blob_dir, 'sha256:4dc536.gz'),
             ]

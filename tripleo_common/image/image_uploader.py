@@ -938,7 +938,11 @@ class PythonImageUploader(BaseImageUploader):
             session=source_session
         )
         manifest = json.loads(manifest_str)
-        source_layers = [l['digest'] for l in manifest['layers']]
+        if manifest.get('schemaVersion', 2) == 1:
+            source_layers = list(reversed([l['blobSum']
+                                          for l in manifest['fsLayers']]))
+        else:
+            source_layers = [l['digest'] for l in manifest['layers']]
 
         self._cross_repo_mount(
             copy_target_url, self.image_layers, source_layers,
