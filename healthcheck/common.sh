@@ -85,3 +85,16 @@ get_url_from_vhost () {
   fi
   echo ${proto}://${server_name}:${bind_port}${wsgi_alias}
 }
+
+check_swift_interval () {
+    service=$1
+    if ps -e | grep --quiet swift-$service; then
+        interval=$(get_config_val $conf $service interval 300)
+        last=`grep -o "\"replication_last\": [0-9]*" $cache | cut -f 2 -d " "`
+        now=`date +%s`
+        if [ `expr $now - $last` -gt $interval ]; then
+            echo "Last replication run did not finish within interval of $interval seconds."
+            exit 1
+        fi
+    fi
+}

@@ -595,15 +595,6 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-# Note(mmagr): Below block is currently noop because swift-proxy-server kolla image is used
-#              for swift_object_expirer container, but it will allow smooth transition
-#              to usage of correct image for the service in future.
-{% block swift_object_expirer_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-object-expirer /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
 {% block swift_proxy_server_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-proxy /openstack/healthcheck && \
