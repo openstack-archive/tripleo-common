@@ -123,3 +123,18 @@ def get_profile_of_flavor(flavor_name, compute_client):
         raise exception.DeriveParamsError(
             'Unable to determine flavor for flavor name: '
             '%s' % flavor_name)
+
+
+def convert_docker_params(stack_env=None):
+    """Convert Docker* params to "Container" varients for compatibility.
+
+    """
+
+    if stack_env:
+        pd = stack_env.get('parameter_defaults', {})
+        for k, v in pd.copy().items():
+            if k.startswith('Docker') and k.endswith('Image'):
+                name = "Container%s" % k[6:]
+                pd.setdefault(name, v)
+        # TODO(dprince) add other Docker* conversions here once
+        # this is wired in

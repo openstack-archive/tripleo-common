@@ -187,3 +187,22 @@ class ParametersTest(base.TestCase):
         self.assertRaises(exception.DeriveParamsError,
                           parameters.get_profile_of_flavor,
                           'no_profile', compute_client)
+
+    def test_convert_docker_params(self):
+
+        env = {
+            'parameter_defaults': {
+                'DockerFooImage': 'bar',
+                'DockerNoOverwriteImage': 'zzzz',
+                'ContainerNoOverwriteImage': 'boom',
+                'ContainerNoChangeImage': 'bar',
+                'DockerNoChangeImage': 'bar',
+            }
+        }
+
+        parameters.convert_docker_params(env)
+        pd = env.get('parameter_defaults', {})
+        self.assertEqual(pd['ContainerFooImage'], 'bar')
+        self.assertEqual(pd['ContainerNoOverwriteImage'], 'boom')
+        self.assertEqual(pd['ContainerNoChangeImage'], 'bar')
+        self.assertEqual(pd['DockerNoChangeImage'], 'bar')
