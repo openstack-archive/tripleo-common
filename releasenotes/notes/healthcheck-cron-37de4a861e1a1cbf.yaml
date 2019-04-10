@@ -1,0 +1,3 @@
+---
+features:
+  - new health check for "cron" containers, ensuring it exists and has content
