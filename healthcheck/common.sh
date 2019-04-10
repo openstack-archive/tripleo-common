@@ -49,6 +49,11 @@ healthcheck_file_modification () {
     file_path=$1
     limit_seconds=$2
 
+    # if the file doesn't exist, return 1
+    if [ ! -f $file_path ]; then
+        echo "${file_path} does not exist for file modification check"
+        return 1
+    fi
     curr_time=$(date +%s)
     last_mod=$(stat -c '%Y' $file_path)
     limit_epoch=$(( curr_time-limit_seconds ))
