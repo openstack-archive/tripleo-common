@@ -1,11 +1,12 @@
 ---
-- name: Check if docker is installed
-  stat:
-    path: /usr/bin/docker
-  register: docker_path_stat
+- name: Check if python2-docker is installed
+  command: /usr/bin/rpm -q python2-docker
+  register: py2_docker_installed
+  ignore_errors: true
+  changed_when: false
 
 - name: Ensure docker service is running
-  when: docker_path_stat.stat.exists
+  when: py2_docker_installed.rc|default('') == 0
   systemd:
     name: docker
   register: docker_service_state
@@ -16,6 +17,6 @@
     state: absent
   when:
     - container_cli == 'podman'
-    - docker_path_stat.stat.exists
+    - py2_docker_installed.rc|default('') == 0
     - docker_service_state.status['SubState'] == 'running'
   with_items: "{{ containers_to_rm }}"
