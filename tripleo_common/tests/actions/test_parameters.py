@@ -1033,6 +1033,10 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
             "aa:bb:cc:dd:ee:ff": {
                 "compute_name": "compute_name_4",
                 "baremetal_name": "baremetal_name_4"
+                },
+            "bb:cc:dd:ee:ff:gg": {
+                "compute_name": "compute_name_5",
+                "baremetal_name": "baremetal_name_5"
                 }
             }
         mock_generate_hostmap.return_value = test_hostmap
@@ -1071,6 +1075,17 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                 "aa:bb:cc:dd:ee:ff"
             ]
         }, {
+            # This is an extra node on oVirt/RHV
+            "name": "control-3",
+            "pm_password": "ovirt-password",
+            "pm_type": "staging-ovirt",
+            "pm_user": "admin@internal",
+            "pm_addr": "3.4.5.6",
+            "pm_vm_name": "control-3",
+            "mac": [
+                "bb:cc:dd:ee:ff:gg"
+            ]
+        }, {
             # This is an extra node that is not in the hostmap, to ensure we
             # cope with unprovisioned nodes
             "name": "control-2",
@@ -1093,7 +1108,7 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
         result = action.run(mock_ctx)["parameter_defaults"]
 
         self.assertTrue(result["EnableFencing"])
-        self.assertEqual(len(result["FencingConfig"]["devices"]), 3)
+        self.assertEqual(len(result["FencingConfig"]["devices"]), 4)
         self.assertEqual(result["FencingConfig"]["devices"][0], {
                          "agent": "fence_ipmilan",
                          "host_mac": "00:11:22:33:44:55",
@@ -1135,6 +1150,20 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
                              "systems_uri": "/redfish/v1/Systems/5678",
                              "ssl_insecure": "true",
                              "pcmk_host_list": "compute_name_4"
+                             }
+                         })
+        self.assertEqual(result["FencingConfig"]["devices"][3], {
+                         "agent": "fence_rhevm",
+                         "host_mac": "bb:cc:dd:ee:ff:gg",
+                         "params": {
+                             "delay": 28,
+                             "ipaddr": "3.4.5.6",
+                             "login": "admin@internal",
+                             "passwd": "ovirt-password",
+                             "port": "control-3",
+                             "ssl": 1,
+                             "ssl_insecure": 1,
+                             "pcmk_host_list": "compute_name_5"
                              }
                          })
 
