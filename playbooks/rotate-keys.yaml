@@ -6,8 +6,12 @@
       path: /var/lib/config-data/puppet-generated/keystone/etc/keystone/fernet-keys/
     register: containerized_keystone_dir
 
+  - name: populate service facts
+    service_facts:
+
   - set_fact:
       is_container: containerized_keystone_dir.stat.isdir is defined and containerized_keystone_dir.stat.isdir
+      podman_enabled: '"tripleo_keystone.service" in ansible_facts.services'
 
   - name: Rotate fernet keys for keystone container
     block:
@@ -32,8 +36,16 @@
         with_dict: "{{ fernet_keys }}"
         no_log: true
 
-      - name: Restart keystone container
+      - name: Restart keystone container with docker
         shell: docker restart keystone
+        when: not podman_enabled
+
+      - name: Restart keystone container
+        service:
+          name: tripleo_keystone
+          state: restarted
+        when: podman_enabled
+
     when: is_container
 
   - name: Rotate fernet keys for keystone (no container)
