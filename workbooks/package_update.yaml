@@ -186,6 +186,7 @@ workflows:
               type: tripleo.package_update.v1.update_nodes
               payload:
                 status: <% $.status %>
+                message: <% $.get('message', '') %>
                 execution: <% execution() %>
         on-success:
           - fail: <% $.get('status') = "FAILED" %>
