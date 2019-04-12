@@ -442,6 +442,20 @@ class GenerateFencingParametersAction(base.TripleOAction):
                     params["cipher"] = self.ipmi_cipher
                 if self.ipmi_level:
                     params["privlvl"] = self.ipmi_level
+            elif driver_proto in {'staging-ovirt'}:
+                # fence_rhevm
+                node_data["agent"] = "fence_rhevm"
+                params["ipaddr"] = node["pm_addr"]
+                params["passwd"] = node["pm_password"]
+                params["login"] = node["pm_user"]
+                params["port"] = node["pm_vm_name"]
+                params["ssl"] = 1
+                params["ssl_insecure"] = 1
+                if hostmap:
+                    params["pcmk_host_list"] = \
+                        hostmap[mac_addr]["compute_name"]
+                if self.delay:
+                    params["delay"] = self.delay
             else:
                 error = ("Unable to generate fencing parameters for %s" %
                          node["pm_type"])
