@@ -109,7 +109,7 @@ class ImageUploadManager(BaseImageManager):
 
     def __init__(self, config_files=None,
                  dry_run=False, cleanup=CLEANUP_FULL,
-                 mirrors=None):
+                 mirrors=None, registry_credentials=None):
         if config_files is None:
             config_files = []
         super(ImageUploadManager, self).__init__(config_files)
@@ -122,6 +122,26 @@ class ImageUploadManager(BaseImageManager):
         if mirrors:
             for uploader in self.uploaders.values():
                 uploader.mirrors.update(mirrors)
+        if registry_credentials:
+            self.validate_registry_credentials(registry_credentials)
+            for uploader in self.uploaders.values():
+                uploader.registry_credentials = registry_credentials
+
+    def validate_registry_credentials(self, creds_data):
+        if not isinstance(creds_data, dict):
+            raise TypeError('Credentials data must be a dict')
+        for registry, cred_entry in creds_data.items():
+            if not isinstance(cred_entry, dict) or len(cred_entry) != 1:
+                raise TypeError('Credentials entry must be'
+                                'a dict with a single item')
+            if not isinstance(registry, six.string_types):
+                raise TypeError('Key must be a registry host string: %s' %
+                                registry)
+            username, password = next(iter(cred_entry.items()))
+            if not (isinstance(username, six.string_types) and
+                    isinstance(password, six.string_types)):
+                raise TypeError('Username and password must be strings: %s' %
+                                username)
 
     def discover_image_tag(self, image, tag_from_label=None,
                            username=None, password=None):
@@ -197,6 +217,7 @@ class BaseImageUploader(object):
         # A mapping of layer hashs to the image which first copied that
         # layer to the target
         self.image_layers = {}
+        self.registry_credentials = {}
 
     @classmethod
     def init_registries_cache(cls):
@@ -214,6 +235,13 @@ class BaseImageUploader(object):
 
     def run_tasks(self):
         pass
+
+    def credentials_for_registry(self, registry):
+        creds = self.registry_credentials.get(registry)
+        if not creds:
+            return None, None
+        username, password = next(iter(creds.items()))
+        return username, password
 
     @classmethod
     def run_modify_playbook(cls, modify_role, modify_vars,
@@ -707,8 +735,13 @@ class SkopeoImageUploader(BaseImageUploader):
         if t.dry_run:
             return []
 
+        target_username, target_password = self.credentials_for_registry(
+            t.target_image_url.netloc)
         target_session = self.authenticate(
-            t.target_image_url)
+            t.target_image_url,
+            username=target_username,
+            password=target_password
+        )
 
         if t.modify_role and self._image_exists(
                 t.target_image, target_session):
@@ -716,8 +749,13 @@ class SkopeoImageUploader(BaseImageUploader):
                         t.target_image)
             return []
 
+        source_username, source_password = self.credentials_for_registry(
+            t.source_image_url.netloc)
         source_session = self.authenticate(
-            t.source_image_url)
+            t.source_image_url,
+            username=source_username,
+            password=source_password
+        )
 
         source_inspect = self._inspect(
             t.source_image_url,
@@ -867,8 +905,12 @@ class PythonImageUploader(BaseImageUploader):
         if t.dry_run:
             return []
 
+        target_username, target_password = self.credentials_for_registry(
+            t.target_image_url.netloc)
         target_session = self.authenticate(
-            t.target_image_url
+            t.target_image_url,
+            username=target_username,
+            password=target_password
         )
 
         self._detect_target_export(t.target_image_url, target_session)
@@ -883,8 +925,12 @@ class PythonImageUploader(BaseImageUploader):
         else:
             copy_target_url = t.target_image_url
 
+        source_username, source_password = self.credentials_for_registry(
+            t.source_image_url.netloc)
         source_session = self.authenticate(
-            t.source_image_url
+            t.source_image_url,
+            username=source_username,
+            password=source_password
         )
 
         manifest_str = self._fetch_manifest(
@@ -1639,7 +1685,9 @@ def upload_task(args):
 def discover_tag_from_inspect(args):
     self, image, tag_from_label = args
     image_url = self._image_to_url(image)
-    session = self.authenticate(image_url)
+    username, password = self.credentials_for_registry(image_url.netloc)
+    session = self.authenticate(
+        image_url, username=username, password=password)
     i = self._inspect(image_url, session=session)
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag

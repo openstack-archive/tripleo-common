@@ -154,6 +154,69 @@ class TestImageUploadManager(base.TestCase):
                           manager.get_uploader,
                           'unknown')
 
+    def test_validate_registry_credentials(self):
+        # valid credentials
+        image_uploader.ImageUploadManager(
+            self.filelist,
+            registry_credentials=None)
+        image_uploader.ImageUploadManager(
+            self.filelist,
+            registry_credentials={})
+        manager = image_uploader.ImageUploadManager(
+            self.filelist,
+            registry_credentials={
+                'docker.io': {'my_username': 'my_password'},
+                u'quay.io': {u'quay_username': u'quay_password'},
+            })
+        self.assertEqual(
+            ('my_username', 'my_password'),
+            manager.uploader('python').credentials_for_registry('docker.io')
+        )
+        self.assertEqual(
+            ('quay_username', 'quay_password'),
+            manager.uploader('python').credentials_for_registry('quay.io')
+        )
+
+        # invalid credentials
+        self.assertRaises(
+            TypeError,
+            image_uploader.ImageUploadManager,
+            self.filelist,
+            registry_credentials='foo'
+        )
+        self.assertRaises(
+            TypeError,
+            image_uploader.ImageUploadManager,
+            self.filelist,
+            registry_credentials={
+                1234: {'my_username': 'my_password'},
+            }
+        )
+        self.assertRaises(
+            TypeError,
+            image_uploader.ImageUploadManager,
+            self.filelist,
+            registry_credentials={
+                'docker.io': {True: 'my_password'},
+            }
+        )
+        self.assertRaises(
+            TypeError,
+            image_uploader.ImageUploadManager,
+            self.filelist,
+            registry_credentials={
+                'docker.io': {'my_username': True},
+            }
+        )
+        self.assertRaises(
+            TypeError,
+            image_uploader.ImageUploadManager,
+            self.filelist,
+            registry_credentials={
+                'docker.io': {'my_username': 'my_password', 'foo': 'bar'},
+            }
+        )
+
 
 class TestBaseImageUploader(base.TestCase):
 
@@ -1100,10 +1163,14 @@ class TestPythonImageUploader(base.TestCase):
 
         authenticate.assert_has_calls([
             mock.call(
-                target_url
+                target_url,
+                username=None,
+                password=None
             ),
             mock.call(
-                source_url
+                source_url,
+                username=None,
+                password=None
             ),
         ])
 
@@ -1127,6 +1194,77 @@ class TestPythonImageUploader(base.TestCase):
             source_session=source_session,
             target_session=target_session
         )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.authenticate')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._cross_repo_mount')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_registry_to_registry')
+    def test_authenticate_upload_image(
+            self, _copy_registry_to_registry, _cross_repo_mount,
+            _fetch_manifest, authenticate):
+
+        self.uploader.registry_credentials = {
+            'docker.io': {'my_username': 'my_password'},
+            'localhost:8787': {'local_username': 'local_password'},
+        }
+        target_session = mock.Mock()
+        source_session = mock.Mock()
+        authenticate.side_effect = [
+            target_session,
+            source_session
+        ]
+        manifest = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+            },
+            'layers': [
+                {'digest': 'sha256:aaa'},
+                {'digest': 'sha256:bbb'},
+                {'digest': 'sha256:ccc'}
+            ],
+        })
+        _fetch_manifest.return_value = manifest
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        push_destination = 'localhost:8787'
+        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        task = image_uploader.UploadTask(
+            image_name=image + ':' + tag,
+            pull_source=None,
+            push_destination=push_destination,
+            append_tag=None,
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup='full'
+        )
+
+        self.assertEqual(
+            [],
+            self.uploader.upload_image(task)
+        )
+        source_url = urlparse('docker://docker.io/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+
+        authenticate.assert_has_calls([
+            mock.call(
+                target_url,
+                username='local_username',
+                password='local_password'
+            ),
+            mock.call(
+                source_url,
+                username='my_username',
+                password='my_password'
+            ),
+        ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
@@ -1183,10 +1321,14 @@ class TestPythonImageUploader(base.TestCase):
 
         authenticate.assert_has_calls([
             mock.call(
-                target_url
+                target_url,
+                username=None,
+                password=None
             ),
             mock.call(
-                source_url
+                source_url,
+                username=None,
+                password=None
             ),
         ])
 
@@ -1268,10 +1410,14 @@ class TestPythonImageUploader(base.TestCase):
         )
         authenticate.assert_has_calls([
             mock.call(
-                target_url
+                target_url,
+                username=None,
+                password=None
             ),
             mock.call(
-                source_url
+                source_url,
+                username=None,
+                password=None
             ),
         ])
 
