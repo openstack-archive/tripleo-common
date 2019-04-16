@@ -762,9 +762,12 @@ class TestBaseImageUploader(base.TestCase):
             ('localhost:8787/t/bink', [])
         )
         session = mock.Mock()
-        session.get.return_value.json.return_value = {
+        response = mock.Mock()
+        response.status_code = 200
+        response.json.return_value = {
             'repositories': ['t/foo', 't/bar', 't/baz', 't/bink']
         }
+        session.get.return_value = response
         self.assertEqual(
             [
                 'localhost:8787/t/foo:a',
@@ -782,6 +785,34 @@ class TestBaseImageUploader(base.TestCase):
                 (self.uploader, 'localhost:8787/t/baz', session),
                 (self.uploader, 'localhost:8787/t/bink', session)
             ])
+
+    @mock.patch('concurrent.futures.ThreadPoolExecutor')
+    def test_list_404(self, mock_pool):
+        # setup bits
+        session = mock.Mock()
+        response = mock.Mock()
+        response.status_code = 404
+        session.get.return_value = response
+        mock_pool.return_value.map.return_value = ()
+        # execute function
+        return_val = self.uploader.list('localhost:8787', session=session)
+        # check status of things
+        self.assertEqual(
+            [],
+            return_val
+        )
+
+    @mock.patch('concurrent.futures.ThreadPoolExecutor')
+    def test_list_500(self, mock_pool):
+        session = mock.Mock()
+        response = mock.Mock()
+        response.status_code = 500
+        session.get.return_value = response
+        mock_pool.return_value.map.return_value = ()
+        self.assertRaises(ImageUploaderException,
+                          self.uploader.list,
+                          'localhost:8787',
+                          session=session)
 
     def test_tags_for_image(self):
         session = mock.Mock()
