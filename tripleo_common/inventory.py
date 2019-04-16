@@ -268,12 +268,18 @@ class TripleoInventory(object):
 
         if children:
             vip_map = self.stack_outputs.get('VipMap', {})
-            vips = {(vip_name + "_vip"): vip
-                    for vip_name, vip in vip_map.items()
-                    if vip and (vip_name in networks or vip_name == 'redis')}
+            overcloud_vars = {
+                (vip_name + "_vip"): vip for vip_name, vip in vip_map.items()
+                if vip and (vip_name in networks or vip_name == 'redis')
+            }
+
+            overcloud_vars['container_cli'] = \
+                self.get_overcloud_environment().get(
+                    'parameter_defaults', {}).get('ContainerCli')
+
             ret['overcloud'] = {
                 'children': self._hosts(sorted(children)),
-                'vars': vips
+                'vars': overcloud_vars
             }
 
         # Associate services with roles

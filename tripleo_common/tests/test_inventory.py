@@ -104,7 +104,8 @@ class TestInventory(base.TestCase):
 
         self.hclient = MagicMock()
         self.hclient.stacks.environment.return_value = {
-            'parameter_defaults': {'AdminPassword': 'theadminpw'}}
+            'parameter_defaults': {'AdminPassword': 'theadminpw',
+                                   'ContainerCli': 'podman'}}
         self.mock_stack = MagicMock()
         self.mock_stack.outputs = self.outputs_data['outputs']
         self.hclient.stacks.get.return_value = self.mock_stack
@@ -195,6 +196,7 @@ class TestInventory(base.TestCase):
             'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
+                    'container_cli': 'podman',
                     'ctlplane_vip': 'x.x.x.4',
                     'redis_vip': 'x.x.x.6'}},
             'Undercloud': {
@@ -275,6 +277,7 @@ class TestInventory(base.TestCase):
             'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
+                    'container_cli': 'podman',
                     'ctlplane_vip': 'x.x.x.4',
                     'redis_vip': 'x.x.x.6'}},
             'Undercloud': {
@@ -366,7 +369,8 @@ class TestInventory(base.TestCase):
             'overcloud': {'children': {'Compute': {},
                                        'Controller': {},
                                        'CustomRole': {}},
-                          'vars': {'ctlplane_vip': 'x.x.x.4',
+                          'vars': {'container_cli': 'podman',
+                                   'ctlplane_vip': 'x.x.x.4',
                                    'redis_vip': 'x.x.x.6'}},
             'sa': {'children': {'Controller': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
