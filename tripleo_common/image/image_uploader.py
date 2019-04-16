@@ -494,7 +494,16 @@ class BaseImageUploader(object):
         catalog_url = self._build_url(
             url, CALL_CATALOG
         )
-        catalog = session.get(catalog_url, timeout=30).json()
+        catalog_resp = session.get(catalog_url, timeout=30)
+        if catalog_resp.status_code in [200]:
+            catalog = catalog_resp.json()
+        elif catalog_resp.status_code in [404]:
+            catalog = {}
+        else:
+            raise ImageUploaderException(
+                'Image registry made invalid response: %s' %
+                (catalog_resp.status_code)
+            )
 
         tags_get_args = []
         for repo in catalog.get('repositories', []):
