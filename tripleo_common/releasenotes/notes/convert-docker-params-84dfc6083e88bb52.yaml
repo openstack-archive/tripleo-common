@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Convert Docker* params to Container* parameters transparently in our
+    templates workflows. This will allow us a means to migrate t-h-t
+    from Docker* parameters to the new generic Container varients.

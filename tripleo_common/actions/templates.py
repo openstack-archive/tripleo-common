@@ -24,6 +24,7 @@ from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
+from tripleo_common.utils import parameters
 from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import swift as swiftutils
 
@@ -384,6 +385,7 @@ class ProcessTemplatesAction(base.TripleOAction):
                 swift, self.container, plan_env)
             env_files, env = plan_utils.process_environments_and_files(
                 swift, env_paths)
+            parameters.convert_docker_params(env)
         except Exception as err:
             error_text = six.text_type(err)
             LOG.exception("Error occurred while processing plan files.")
