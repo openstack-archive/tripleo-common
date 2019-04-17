@@ -30,10 +30,10 @@ from mistral_lib import actions
 from oslo_concurrency import processutils
 
 from tripleo_common.actions import base
+from tripleo_common import constants
 from tripleo_common import inventory
 
 LOG = logging.getLogger(__name__)
-TRIPLEO_VALIDATIONS = '/usr/share/openstack-tripleo-validations'
 
 
 def write_default_ansible_cfg(work_dir,
@@ -47,20 +47,24 @@ def write_default_ansible_cfg(work_dir,
 
     modules_path = ('/root/.ansible/plugins/modules:'
                     '/usr/share/ansible/plugins/modules:'
-                    '%s/library' % TRIPLEO_VALIDATIONS)
-    lookups_path = ('root/.ansible/plugins/lookup:'
-                    '/usr/share/ansible/plugins/lookup:'
-                    '%s/lookup_plugins' % TRIPLEO_VALIDATIONS)
-    callbacks_path = ('~/.ansible/plugins/callback:'
-                      '/usr/share/ansible/plugins/callback:'
-                      '%s/callback_plugins' % TRIPLEO_VALIDATIONS)
+                    '%s/library' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+    lookups_path = (
+        'root/.ansible/plugins/lookup:'
+        '/usr/share/ansible/plugins/lookup:'
+        '%s/lookup_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+    callbacks_path = (
+        '~/.ansible/plugins/callback:'
+        '/usr/share/ansible/plugins/callback:'
+        '%s/callback_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
     roles_path = ('%(work_dir)s/roles:'
                   '/root/.ansible/roles:'
                   '/usr/share/ansible/roles:'
                   '/etc/ansible/roles:'
                   '%(ooo_val_path)s/roles:'
-                  '%(work_dir)s' % {'work_dir': work_dir,
-                                    'ooo_val_path': TRIPLEO_VALIDATIONS})
+                  '%(work_dir)s' % {
+                      'work_dir': work_dir,
+                      'ooo_val_path': constants.DEFAULT_VALIDATIONS_BASEDIR
+                  })
 
     config = configparser.ConfigParser()
     config.read(ansible_config_path)
