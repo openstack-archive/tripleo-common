@@ -261,7 +261,8 @@ class RunValidationTest(base.TestCase):
             '--inputs', 'inputs_file',
             'validation_path',
             'identity_file',
-            'plan'
+            'plan',
+            '/usr/share/openstack-tripleo-validations'
         )
         mock_download_validation.assert_called_once_with(
             mock_get_object_client(), 'plan', 'validation')

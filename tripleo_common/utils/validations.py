@@ -152,7 +152,8 @@ def run_validation(swift, validation, identity_file,
         '--inputs', inputs_file,
         download_validation(swift, plan, validation),
         identity_file,
-        plan
+        plan,
+        constants.DEFAULT_VALIDATIONS_BASEDIR
     )
 
 

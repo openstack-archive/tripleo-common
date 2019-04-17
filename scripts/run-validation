@@ -27,6 +27,7 @@ done
 VALIDATION_FILE=$1
 IDENTITY_FILE=$2
 PLAN_NAME=$3
+VALIDATIONS_BASEDIR=$4
 
 if [[ -z "$VALIDATION_FILE" ]]; then
     echo "Missing required validation file"
@@ -52,6 +53,15 @@ else
     exit 1
 fi
 
+if [[ -z "$VALIDATIONS_BASEDIR" ]]; then
+    echo "Missing required tripleo-validations basedir"
+    exit 1
+fi
+
+if [[ ! -d "$VALIDATIONS_BASEDIR" ]]; then
+    echo "Can not find tripleo-validations basedir at $VALIDATION_BASEDIR"
+    exit 1
+fi
 # Make sure ssh is not asking interactively for hosts it can't check the key
 # authenticity
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -68,6 +78,11 @@ export ANSIBLE_INVENTORY=$(which tripleo-ansible-inventory)
 
 # Use the custom validation-specific formatter
 export ANSIBLE_STDOUT_CALLBACK=validation_output
+
+export ANSIBLE_CALLBACK_PLUGINS="${VALIDATIONS_BASEDIR}/callback_plugins"
+export ANSIBLE_ROLES_PATH="${VALIDATIONS_BASEDIR}/roles"
+export ANSIBLE_LOOKUP_PLUGINS="${VALIDATIONS_BASEDIR}/lookup_plugins"
+export ANSIBLE_LIBRARY="${VALIDATIONS_BASEDIR}/library"
 
 # Environment variable is the easiest way to pass variables to an Ansible
 # dynamic inventory script
