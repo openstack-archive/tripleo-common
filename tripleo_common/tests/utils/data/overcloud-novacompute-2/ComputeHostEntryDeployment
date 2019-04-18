@@ -1,5 +1,3 @@
-deploy_server_id: 169b46f8-1965-4d90-a7de-f36fb4a830fe
-
 ComputeHostEntryDeployment:
   config:
     {"hiera_key1": "hiera_value1", "hiera_key2": "hiera_value2"}

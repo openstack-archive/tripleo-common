@@ -1,5 +1,3 @@
-deploy_server_id: 169b46f8-1965-4d90-a7de-f36fb4a830fe
-
 MyExtraConfigPost:
   config: |
     #!/bin/bash
