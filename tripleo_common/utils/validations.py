@@ -187,7 +187,10 @@ def write_inputs_file(inputs):
     LOG.debug("Writing the validation inputs to %s", path)
     with os.fdopen(fd, 'w') as tmp:
         tmp.write(yaml.dump(inputs))
-    processutils.execute('/usr/bin/sudo', '/usr/bin/chown', 'validations:',
+    processutils.execute('/usr/bin/sudo',
+                         '/usr/bin/chown',
+                         '-h',
+                         'validations:',
                          path)
     return path
 
