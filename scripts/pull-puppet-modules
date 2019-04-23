@@ -106,7 +106,7 @@ for module in $MODULES; do
         git pull
         popd > /dev/null
     elif ! [ -d $module ]; then
-        git clone https://git.openstack.org/openstack/puppet-$module $module
+        git clone https://opendev.org/openstack/puppet-$module $module
     else
         echo "$module already exists and will not be updated"
     fi
