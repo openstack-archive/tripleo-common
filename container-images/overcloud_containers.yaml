@@ -199,8 +199,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-tripleoclient:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-tripleo-ui:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-zaqar-wsgi:current-tripleo
   image_source: kolla
 - imagename: docker.io/ceph/daemon:v3.2.1-stable-3.2-luminous-centos-7-x86_64
