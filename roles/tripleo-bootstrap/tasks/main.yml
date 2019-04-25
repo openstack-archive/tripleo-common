@@ -17,3 +17,17 @@
     path: /var/lib/heat-config/tripleo-config-download
     state: directory
   become: true
+
+# We are using 'network' service provided by 'network-scripts' which is
+# deprecated in RHEL8/CentOS8/Fedora28 but os-net-config doesn't support yet
+# NetworkManager. Until it happens, we need to ensure that network is started
+# at boot, as it'll take care of restarting the network interfaces managed by
+# OVS. Note that OVS unit service is already configure to start before
+# network.service.
+# See https://bugzilla.redhat.com/show_bug.cgi?id=1701866 for context.
+- name: Ensure network service is enabled and started
+  service:
+    name: network
+    enabled: yes
+    state: started
+  become: true
