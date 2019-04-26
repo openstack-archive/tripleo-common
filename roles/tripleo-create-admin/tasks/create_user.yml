@@ -27,4 +27,7 @@
     path: /home/{{ tripleo_admin_user }}/.ssh/authorized_keys
     line: "{{ lookup('file', '/home/' + tripleo_admin_user + '/.ssh/id_rsa.pub')}}"
     state: present
+    owner: '{{ tripleo_admin_user }}'
+    group: '{{ tripleo_admin_user }}'
+    mode: 0600
   when: tripleo_admin_generate_key
