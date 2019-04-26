@@ -24,10 +24,11 @@
 # at boot, as it'll take care of restarting the network interfaces managed by
 # OVS. Note that OVS unit service is already configure to start before
 # network.service.
+# Note that we don't try to start the service since this is a one shot script
+# which can fail if someone tries to starts it a second time.
 # See https://bugzilla.redhat.com/show_bug.cgi?id=1701866 for context.
-- name: Ensure network service is enabled and started
+- name: Ensure network service is enabled
   service:
     name: network
     enabled: yes
-    state: started
   become: true
