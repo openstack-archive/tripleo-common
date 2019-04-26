@@ -864,14 +864,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::TripleoClient
 
-- imagename: "{{namespace}}/{{name_prefix}}tripleo-ui{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - DockerTripleoUIConfigImage
-  - DockerTripleoUIImage
-  services:
-  - OS::TripleO::Services::TripleoUI
-
 - imagename: "{{namespace}}/{{name_prefix}}zaqar-wsgi{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
