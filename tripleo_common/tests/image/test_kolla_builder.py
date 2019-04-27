@@ -237,7 +237,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'namespace': 'docker.io/tripleomaster',
                 'ceph_namespace': 'docker.io/ceph',
                 'ceph_image': 'daemon',
-                'ceph_tag': 'v3.2.1-stable-3.2-luminous-centos-7-x86_64',
+                'ceph_tag': 'v4.0.0-stable-4.0-nautilus-centos-7-x86_64',
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
                 'tag': 'current-tripleo',
