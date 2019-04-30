@@ -429,7 +429,7 @@ class CheckNodesCountAction(base.TripleOAction):
         requested_count = 0
 
         for param, default in self.default_role_counts.items():
-            if self.stack:
+            if self.stack and self.stack.status != 'FAILED':
                 try:
                     current = int(self.stack['parameters'][param])
                 except KeyError:
