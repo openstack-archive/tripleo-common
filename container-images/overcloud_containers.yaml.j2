@@ -614,14 +614,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::NovaVncProxy
 
-- imagename: "{{namespace}}/{{name_prefix}}nova-placement-api{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - DockerNovaPlacementConfigImage
-  - DockerNovaPlacementImage
-  services:
-  - OS::TripleO::Services::NovaPlacement
-
 - imagename: "{{namespace}}/{{name_prefix}}nova-scheduler{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
