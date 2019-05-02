@@ -20,7 +20,6 @@ import shutil
 import six
 from six.moves import configparser
 from six.moves import cStringIO as StringIO
-import subprocess
 import sys
 import tempfile
 import time
@@ -28,6 +27,7 @@ import yaml
 
 from mistral_lib import actions
 from oslo_concurrency import processutils
+from oslo_rootwrap import subprocess
 
 from tripleo_common.actions import base
 from tripleo_common import constants
