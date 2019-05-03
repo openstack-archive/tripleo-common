@@ -109,7 +109,8 @@ class ImageUploadManager(BaseImageManager):
 
     def __init__(self, config_files=None,
                  dry_run=False, cleanup=CLEANUP_FULL,
-                 mirrors=None, registry_credentials=None):
+                 mirrors=None, registry_credentials=None,
+                 multi_arch=False):
         if config_files is None:
             config_files = []
         super(ImageUploadManager, self).__init__(config_files)
@@ -126,6 +127,7 @@ class ImageUploadManager(BaseImageManager):
             self.validate_registry_credentials(registry_credentials)
             for uploader in self.uploaders.values():
                 uploader.registry_credentials = registry_credentials
+        self.multi_arch = multi_arch
 
     def validate_registry_credentials(self, creds_data):
         if not isinstance(creds_data, dict):
@@ -189,12 +191,13 @@ class ImageUploadManager(BaseImageManager):
             append_tag = item.get('modify_append_tag')
             modify_role = item.get('modify_role')
             modify_vars = item.get('modify_vars')
+            multi_arch = item.get('multi_arch', self.multi_arch)
 
             uploader = self.uploader(uploader)
             task = UploadTask(
                 image_name, pull_source, push_destination,
                 append_tag, modify_role, modify_vars, self.dry_run,
-                self.cleanup)
+                self.cleanup, multi_arch)
             uploader.add_upload_task(task)
 
         for uploader in self.uploaders.values():
@@ -1645,7 +1648,8 @@ class PythonImageUploader(BaseImageUploader):
 class UploadTask(object):
 
     def __init__(self, image_name, pull_source, push_destination,
-                 append_tag, modify_role, modify_vars, dry_run, cleanup):
+                 append_tag, modify_role, modify_vars, dry_run, cleanup,
+                 multi_arch):
         self.image_name = image_name
         self.pull_source = pull_source
         self.push_destination = push_destination
@@ -1654,6 +1658,7 @@ class UploadTask(object):
         self.modify_vars = modify_vars
         self.dry_run = dry_run
         self.cleanup = cleanup
+        self.multi_arch = multi_arch
 
         if ':' in image_name:
             image = image_name.rpartition(':')[0]
