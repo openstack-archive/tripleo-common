@@ -904,7 +904,8 @@ class TestSkopeoImageUploader(base.TestCase):
                 None,
                 None,
                 False,
-                'full')
+                'full',
+                False)
             )
         )
         mock_popen.assert_called_once_with([
@@ -969,7 +970,8 @@ class TestSkopeoImageUploader(base.TestCase):
                 'add-foo-plugin',
                 {'foo_version': '1.0.1'},
                 False,
-                'partial')
+                'partial',
+                False)
             )
         )
 
@@ -1029,7 +1031,7 @@ class TestSkopeoImageUploader(base.TestCase):
             self.uploader.upload_image, image_uploader.UploadTask(
                 image + ':' + tag, None, push_destination,
                 append_tag, 'add-foo-plugin', {'foo_version': '1.0.1'},
-                False, 'full')
+                False, 'full', False)
         )
 
         mock_copy.assert_called_once_with(
@@ -1057,7 +1059,8 @@ class TestSkopeoImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             True,
-            'full')
+            'full',
+            False)
         )
 
         mock_ansible.assert_not_called()
@@ -1087,7 +1090,8 @@ class TestSkopeoImageUploader(base.TestCase):
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
             False,
-            'full')
+            'full',
+            False)
         )
 
         mock_ansible.assert_not_called()
@@ -1198,7 +1202,8 @@ class TestPythonImageUploader(base.TestCase):
             modify_role=None,
             modify_vars=None,
             dry_run=False,
-            cleanup='full'
+            cleanup='full',
+            multi_arch=False
         )
 
         self.assertEqual(
@@ -1292,7 +1297,8 @@ class TestPythonImageUploader(base.TestCase):
             modify_role=None,
             modify_vars=None,
             dry_run=False,
-            cleanup='full'
+            cleanup='full',
+            multi_arch=False
         )
 
         self.assertEqual(
@@ -1360,7 +1366,8 @@ class TestPythonImageUploader(base.TestCase):
             modify_role=None,
             modify_vars=None,
             dry_run=False,
-            cleanup='full'
+            cleanup='full',
+            multi_arch=False
         )
 
         self.assertEqual(
@@ -1427,7 +1434,8 @@ class TestPythonImageUploader(base.TestCase):
             modify_role=None,
             modify_vars=None,
             dry_run=False,
-            cleanup='full'
+            cleanup='full',
+            multi_arch=False
         )
 
         self.assertEqual(
@@ -1529,7 +1537,8 @@ class TestPythonImageUploader(base.TestCase):
             modify_role='add-foo-plugin',
             modify_vars={'foo_version': '1.0.1'},
             dry_run=False,
-            cleanup='full'
+            cleanup='full',
+            multi_arch=False
         )
 
         source_url = urlparse(

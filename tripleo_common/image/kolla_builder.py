@@ -157,6 +157,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
         mirrors['docker.io'] = mirror
 
     creds = pd.get('ContainerImageRegistryCredentials')
+    multi_arch = len(pd.get('AdditionalArchitectures', []))
 
     env_params = {}
     service_filter = build_service_filter(environment, roles_data)
@@ -178,6 +179,10 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
         modify_append_tag = cip_entry.get('modify_append_tag',
                                           time.strftime(
                                               '-modified-%Y%m%d%H%M%S'))
+        if multi_arch and 'multi_arch' in cip_entry:
+            # individual entry sets multi_arch,
+            # so set global multi_arch to False
+            multi_arch = False
 
         prepare_data = container_images_prepare(
             excludes=cip_entry.get('excludes'),
@@ -194,7 +199,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             modify_vars=modify_vars,
             modify_only_with_labels=modify_only_with_labels,
             mirrors=mirrors,
-            registry_credentials=creds
+            registry_credentials=creds,
+            multi_arch=multi_arch
         )
         env_params.update(prepare_data['image_params'])
 
@@ -208,7 +214,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
                     dry_run=dry_run,
                     cleanup=cleanup,
                     mirrors=mirrors,
-                    registry_credentials=creds
+                    registry_credentials=creds,
+                    multi_arch=multi_arch
                 )
                 uploader.upload()
     return env_params
@@ -231,7 +238,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              output_images_file=None, tag_from_label=None,
                              append_tag=None, modify_role=None,
                              modify_vars=None, modify_only_with_labels=None,
-                             mirrors=None, registry_credentials=None):
+                             mirrors=None, registry_credentials=None,
+                             multi_arch=False):
     """Perform container image preparation
 
     :param template_file: path to Jinja2 file containing all image entries
@@ -263,6 +271,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                                  The value is a single-entry dict where the
                                  username is the key and the password is the
                                  value.
+    :param multi_arch: boolean whether to prepare every architecture of
+                       each image
     :returns: dict with entries for the supplied output_env_file or
               output_images_file
     """
@@ -293,7 +303,10 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
         filter=ffunc, **mapping_args)
 
     manager = image_uploader.ImageUploadManager(
-        mirrors=mirrors, registry_credentials=registry_credentials)
+        mirrors=mirrors,
+        registry_credentials=registry_credentials,
+        multi_arch=multi_arch
+    )
     uploader = manager.uploader('python')
     images = [i.get('imagename', '') for i in result]
 
