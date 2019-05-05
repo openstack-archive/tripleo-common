@@ -1,0 +1,41 @@
+---
+- name: check if {{ container }} service healthcheck exists in systemd
+  stat: path="/etc/systemd/system/tripleo_{{ container }}_healthcheck.service"
+  register: systemd_healthcheck_exists
+- name: tear-down {{ container }} healthcheck
+  when: systemd_healthcheck_exists.stat.exists
+  block:
+    - name: stop and disable {{ container }} healthcheck
+      systemd:
+        name: "tripleo_{{ container }}_healthcheck"
+        state: stopped
+        enabled: no
+    - name: remove {{ container }} healthcheck service
+      file:
+        path: "/etc/systemd/system/tripleo_{{ container }}_healthcheck.service"
+        state: absent
+    - name: remove {{ container }} healthcheck timer
+      file:
+        path: "/etc/systemd/system/tripleo_{{ container }}_healthcheck.timer"
+        state: absent
+- name: check if {{ container }} service exists in systemd
+  stat: path="/etc/systemd/system/tripleo_{{ container }}.service"
+  register: systemd_exists
+- name: tear-down {{ container }} container
+  when: systemd_exists.stat.exists
+  block:
+    - name: stop and disable {{ container }}
+      systemd:
+        name: "tripleo_{{ container }}"
+        state: stopped
+        enabled: no
+    - name: remove {{ container }} systemd service
+      file:
+        path: "/etc/systemd/system/tripleo_{{ container }}.service"
+        state: absent
+    - name: remove {{ container }} container
+      command: podman rm {{ container }}
+- name: Reload systemd services if needed
+  when: systemd_healthcheck_exists.stat.exists or systemd_exists.stat.exists
+  systemd:
+    daemon_reload: yes

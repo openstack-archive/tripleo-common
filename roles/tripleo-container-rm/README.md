@@ -1,19 +1,12 @@
-tripleo-docker-rm
-=================
+tripleo-container-rm
+====================
 
-An Ansible role to remove Docker containers when Podman is enabled.
-This role is being replaced by tripleo-container-rm which will support
-podman.
-
-Requirements
-------------
-
-It requires python-docker on the host.
+An Ansible role to tear-down containers.
 
 Role variables
 --------------
 
-- container_cli: -- Name of the Container CLI tool (default to docker).
+- container_cli: -- Name of the Container CLI tool (default to podman).
 - containers_to_rm: -- List of containers to remove.
 
 Example Playbook
@@ -24,12 +17,11 @@ Sample playbook to call the role:
   - name: Remove Nova API docker containers
     hosts: all
     roles:
-      - tripleo-docker-rm
+      - tripleo-container-rm
     vars:
       containers_to_rm:
         - nova_api
         - nova_api_cron
-      container_cli: podman
 
 License
 -------
