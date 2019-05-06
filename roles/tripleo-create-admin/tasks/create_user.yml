@@ -22,9 +22,14 @@
     owner: '{{ tripleo_admin_user }}'
     group: '{{ tripleo_admin_user }}'
     mode: 0600
+- name: get remote {{ tripleo_admin_user }} public key
+  slurp:
+    src: /home/{{ tripleo_admin_user }}/.ssh/id_rsa.pub
+  register: key
+  when: tripleo_admin_generate_key
 - name: append {{ tripleo_admin_user }} public key to authorized_keys
   lineinfile:
     path: /home/{{ tripleo_admin_user }}/.ssh/authorized_keys
-    line: "{{ lookup('file', '/home/' + tripleo_admin_user + '/.ssh/id_rsa.pub')}}"
+    line: "{{ key['content'] | b64decode }}"
     state: present
   when: tripleo_admin_generate_key
