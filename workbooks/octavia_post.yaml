@@ -15,7 +15,6 @@ workflows:
       - amp_ssh_key_path
       - amp_ssh_key_data
       - amp_to_raw
-      - amp_hw_arch
       - auth_username
       - auth_password
       - auth_project_name
@@ -106,7 +105,6 @@ workflows:
             amp_ssh_key_path: <% $.amp_ssh_key_path %>
             amp_ssh_key_data: <% $.amp_ssh_key_data %>
             amp_to_raw: <% $.amp_to_raw %>
-            amp_hw_arch: <% $.amp_hw_arch %>
             auth_username: <% $.auth_username %>
             auth_password: <% $.auth_password %>
             auth_project_name: <% $.auth_project_name %>
