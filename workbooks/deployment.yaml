@@ -388,6 +388,7 @@ workflows:
       - override_ansible_cfg: ""
       - config_download_timeout: 14400
       - nodes: []
+      - playbook_name: deploy_steps_playbook.yaml
 
     tags:
       - tripleo-common-managed
@@ -525,7 +526,7 @@ workflows:
           execution: <% execution() %>
           plan_name: <% $.plan_name %>
           message: >
-            Running ansible playbook at <% $.get('work_dir') %>/<% $.get('plan_name') %>/deploy_steps_playbook.yaml.
+            Running ansible playbook at <% $.get('work_dir') %>/<% $.get('plan_name') %>/<% $.get('playbook_name') %>.
             See log file at <% $.get('work_dir') %>/<% $.get('plan_name') %>/ansible.log for progress.
             ...
         on-success: run_ansible
@@ -534,8 +535,8 @@ workflows:
         action: tripleo.ansible-playbook
         input:
           inventory: <% $.inventory %>
-          playbook: <% $.get('work_dir') %>/<% $.get('plan_name') %>/deploy_steps_playbook.yaml
-          playbook_name: deploy_steps_playbook.yaml
+          playbook: <% $.get('work_dir') %>/<% $.get('plan_name') %>/<% $.get('playbook_name') %>
+          playbook_name: <% $.get('playbook_name') %>
           plan_name: <% $.plan_name %>
           remote_user: tripleo-admin
           ssh_private_key: <% $.private_key %>
