@@ -27,8 +27,16 @@
 # Note that we don't try to start the service since this is a one shot script
 # which can fail if someone tries to starts it a second time.
 # See https://bugzilla.redhat.com/show_bug.cgi?id=1701866 for context.
-- name: Ensure network service is enabled
-  service:
-    name: network
-    enabled: yes
-  become: true
+- name: Deploy and enable network service
+  when: ansible_distribution_major_version == '8'
+  block:
+    - name: Deploy network-scripts required for deprecated network service
+      package:
+        name: network-scripts
+      become: true
+      ignore_errors: true
+    - name: Ensure network service is enabled
+      service:
+        name: network
+        enabled: yes
+      become: true
