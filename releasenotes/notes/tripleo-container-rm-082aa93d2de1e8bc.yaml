@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    tripleo-container-rm is the new role that replaces tripleo-docker-rm which
+    is in charge of tearing down containers running in Docker or Podman.
+    If the container_cli is Podman, the role takes care of systemd cleanup for
+    both the container and its healthcheck if it does exist.

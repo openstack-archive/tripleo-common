@@ -1,0 +1,21 @@
+---
+- name: Check if python2-docker is installed
+  command: /usr/bin/rpm -q python2-docker
+  register: py2_docker_installed
+  ignore_errors: true
+  changed_when: false
+
+- name: Ensure docker service is running
+  when: py2_docker_installed.rc|default('') == 0
+  systemd:
+    name: docker
+  register: docker_service_state
+
+- name: remove "{{ containers_to_rm|join(', ') }}" containers
+  docker_container:
+    name: "{{ item }}"
+    state: absent
+  when:
+    - py2_docker_installed.rc|default('') == 0
+    - docker_service_state.status['SubState'] == 'running'
+  with_items: "{{ containers_to_rm }}"
