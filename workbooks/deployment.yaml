@@ -387,6 +387,7 @@ workflows:
       - blacklist: []
       - override_ansible_cfg: ""
       - config_download_timeout: 14400
+      - nodes: []
 
     tags:
       - tripleo-common-managed
@@ -463,7 +464,15 @@ workflows:
           execution: <% execution() %>
           message: Config downloaded at <% $.get('work_dir') %>/<% $.get('plan_name') %>
           plan_name: <% $.plan_name %>
+        on-success: uuids_to_names
+
+      uuids_to_names:
+        action: ironic.node_get_by_instance_uuid
         on-success: get_private_key
+        input:
+          instance_uuid: <% $.node %>
+          fields: ['instance_info']
+        with-items: node in <% $.nodes %>
 
       get_private_key:
         action: tripleo.validations.get_privkey
@@ -541,6 +550,7 @@ workflows:
           override_ansible_cfg: <% $.override_ansible_cfg %>
           command_timeout: <% $.config_download_timeout %>
           execution_id: <% execution().id %>
+          limit_hosts: <% $.nodes and list(task(uuids_to_names).result.instance_info.display_name).join(',') or false %>
         publish:
           log_path: <% task().result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS
