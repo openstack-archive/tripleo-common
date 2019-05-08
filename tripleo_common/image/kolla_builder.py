@@ -71,6 +71,12 @@ def get_enabled_services(environment, roles_data):
     for role in roles_data:
         count = parameter_defaults.get('%sCount' % role['name'],
                                        role.get('CountDefault', 0))
+        try:
+            count = int(count)
+        except ValueError:
+            raise ValueError('Unable to convert %sCount to an int: %s' %
+                             (role['name'], count))
+
         if count > 0:
             enabled_services.update(
                 parameter_defaults.get('%sServices' % role['name'],
