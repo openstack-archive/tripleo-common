@@ -93,7 +93,7 @@ class TripleoInventory(object):
                  cacert=None, username=None, ansible_ssh_user=None,
                  host_network=None, ansible_python_interpreter=None,
                  undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL,
-                 undercloud_key_file=None):
+                 undercloud_key_file=None, serial=1):
         self.session = session
         self.hclient = hclient
         self.hosts_format_dict = False
@@ -109,6 +109,7 @@ class TripleoInventory(object):
         self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
         self.hostvars = {}
         self.undercloud_connection = undercloud_connection
+        self.serial = serial
 
     @staticmethod
     def get_roles_by_service(enabled_services):
@@ -256,6 +257,7 @@ class TripleoInventory(object):
                         'bootstrap_server_id': role_node_id_map.get(
                             'bootstrap_server_id'),
                         'tripleo_role_name': role,
+                        'serial': self.serial,
                     }
 
                 }
