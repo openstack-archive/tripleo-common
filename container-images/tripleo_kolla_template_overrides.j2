@@ -548,12 +548,6 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% block nova_consoleauth_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-consoleauth /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
 {% block nova_libvirt_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-libvirt /openstack/healthcheck && \
