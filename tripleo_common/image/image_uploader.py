@@ -132,7 +132,7 @@ class ImageUploadManager(BaseImageManager):
             raise TypeError('Credentials data must be a dict')
         for registry, cred_entry in creds_data.items():
             if not isinstance(cred_entry, dict) or len(cred_entry) != 1:
-                raise TypeError('Credentials entry must be'
+                raise TypeError('Credentials entry must be '
                                 'a dict with a single item')
             if not isinstance(registry, six.string_types):
                 raise TypeError('Key must be a registry host string: %s' %
