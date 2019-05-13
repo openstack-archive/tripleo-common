@@ -19,13 +19,38 @@
       amphora_image: "{{ (image_file_result.stat.path | basename | splitext)[0] }}"
     when: amphora_image is not defined and image_file_result.stat.exists and not symlnk_check.stat.islnk
 
-  - name: check there an image in glance already
+  - name: gather facts about the service project
     shell: |
-      openstack image show {{ amphora_image }} -c checksum -f value
+      openstack project show "{{ auth_project_name }}" -c id -f value
+    register: project_id_result
+
+  - name: check there's an image in glance already
+    shell: |
+      openstack image list --property owner={{ project_id_result.stdout }} --private --name {{ amphora_image }} -c ID -f value
+    environment:
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"
+    register: glance_id_result
+    ignore_errors: true
+
+  - name: set image id fact
+    set_fact:
+      image_id: "{{ glance_id_result.stdout }}"
+    when: glance_id_result.rc == 0
+
+  - name: get checksum if there's an image in glance already
+    shell: |
+      openstack image show {{ glance_id_result.stdout }} -c checksum -f value
+    environment:
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"
+    when: image_id is defined
     register: glance_results
     ignore_errors: true
 
-  - name: get md5 from glance if image already exists there
+  - name: set current_md5 fact from glance if image already exists there
     set_fact:
       current_md5: "{{ glance_results.stdout }}"
     when: glance_results.rc == 0
@@ -37,10 +62,14 @@
 
   - name: move existing image if the names match and the md5s are not the same
     shell: |
-      ts=`openstack image show {{ amphora_image }} -f value -c created_at`
+      ts=`openstack image show {{ image_id }} -f value -c created_at`
       ts=${ts//:/}
       ts=${ts//-/}
-      openstack image set {{ amphora_image }} --name "{{ amphora_image }}_$ts"
+      openstack image set {{ image_id }} --name "{{ amphora_image }}_$ts"
+    environment:
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"
     when: replace_image is defined and replace_image
 
   - name: decide whether to upload new image
@@ -73,7 +102,11 @@
         --container-format bare --tag {{ amp_image_tag }} \
         --file {{ raw_filename|default(image_filename) }} \
         --property hw_architecture={{ amp_hw_arch }} \
-        {{ amphora_image }}
+        --private {{ amphora_image }}
+    environment:
+      OS_USERNAME: "{{ auth_username }}"
+      OS_PASSWORD: "{{ auth_password }}"
+      OS_PROJECT_NAME: "{{ auth_project_name }}"
     register: image_result
     changed_when: "image_result.stdout != ''"
     when: image_file_result.stat.exists and upload_image is defined
