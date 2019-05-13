@@ -67,6 +67,7 @@
     ca_private_key_path: "{{ ca_private_key_path }}"
     ca_passphrase: "{{ ca_passphrase }}"
     client_cert_path: "{{ client_cert_path }}"
+    auth_project_name: "{{ auth_project_name }}"
   environment:
     OS_USERNAME: "{{ os_username }}"
     OS_USER_DOMAIN_NAME: "Default"

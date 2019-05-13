@@ -1,0 +1,10 @@
+---
+security:
+  - |
+    Fixed a vulnerability where an attacker may cause new Octavia amphorae to
+    run based on any arbitrary image (CVE-2019-3895).
+fixes:
+  - |
+    Ensure [controller_worker]/amp_image_owner_id is set. This configuration
+    option restricts Glance image selection to a specific owner ID. This is a
+    recommended security setting.
