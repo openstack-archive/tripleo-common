@@ -41,3 +41,15 @@
       src: "manager-post-deploy.conf.j2"
       selevel: s0
       setype: svirt_sandbox_file_t
+  - name: gather facts about the service project
+    shell: |
+      openstack project show "{{ auth_project_name }}" -c id -f value
+    register: project_id_result
+  - name: setting [controller_worker]/amp_image_owner_id
+    become: true
+    become_user: root
+    ini_file:
+      path: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/common/post-deploy.conf"
+      section: controller_worker
+      option: amp_image_owner_id
+      value: "{{ project_id_result.stdout }}"
