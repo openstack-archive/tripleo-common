@@ -1,0 +1,19 @@
+disk_images:
+  -
+    imagename: overcloud-full
+    type: qcow2
+    distro: rhel
+    release: 8
+    elements:
+      - selinux-permissive
+    environment:
+      FS_TYPE: xfs
+    options:
+      - "--mkfs-options '-s size=4096'"
+  -
+    imagename: ironic-python-agent
+    type: qcow2
+    distro: rhel
+    release: 8
+    elements:
+      - selinux-permissive

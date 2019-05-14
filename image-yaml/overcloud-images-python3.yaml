@@ -25,15 +25,15 @@ disk_images:
       - openssh
       - disable-nouveau
     packages:
-      - python-psutil
-      - python-debtcollector
+      - python3-psutil
+      - python3-debtcollector
       - plotnetcfg
       - sos
       - device-mapper-multipath
       - openstack-heat-agents
       - os-net-config
       - jq
-      - dbus-python
+      - python3-dbus
     options:
       - "--min-tmpfs=7"
     environment:
@@ -53,7 +53,7 @@ disk_images:
       - enable-packages-install
       - override-pip-and-virtualenv
     packages:
-      - python-hardware-detect
+      - python3-hardware-detect
     options:
       - "--min-tmpfs=7"
     environment:
