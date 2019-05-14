@@ -1,0 +1,9 @@
+- hosts: overcloud
+  tasks:
+    - name: test tripleo-hieradata
+      include_role:
+        name: tripleo-hieradata
+      vars:
+        hieradata_template: hieradata.j2.yaml
+        variable_start_string: "{{"
+        variable_end_string: "}}"
