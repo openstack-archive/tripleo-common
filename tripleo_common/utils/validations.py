@@ -183,7 +183,7 @@ def pattern_validator(pattern, value):
 
 def write_inputs_file(inputs):
     """Serialise the validation inputs to a file on disk."""
-    fd, path = tempfile.mkstemp(prefix='validation_inputs_')
+    fd, path = tempfile.mkstemp(prefix='validations_inputs_')
     LOG.debug("Writing the validation inputs to %s", path)
     with os.fdopen(fd, 'w') as tmp:
         tmp.write(yaml.dump(inputs))
