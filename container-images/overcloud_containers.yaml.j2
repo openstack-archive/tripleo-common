@@ -563,7 +563,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::NovaApi
   - OS::TripleO::Services::NovaConductor
-  - OS::TripleO::Services::NovaConsoleauth
   - OS::TripleO::Services::NovaIronic
   - OS::TripleO::Services::NovaScheduler
   - OS::TripleO::Services::NovaVncProxy
@@ -592,13 +591,6 @@ container_images_template:
   - DockerNovaConductorImage
   services:
   - OS::TripleO::Services::NovaConductor
-
-- imagename: "{{namespace}}/{{name_prefix}}nova-consoleauth{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - DockerNovaConsoleauthImage
-  services:
-  - OS::TripleO::Services::NovaConsoleauth
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-libvirt{{name_suffix}}:{{tag}}"
   image_source: kolla
