@@ -5,109 +5,11 @@ description: TripleO Overcloud Deployment Workflows v1
 
 workflows:
 
-  ansible_scale_down:
-    tags:
-      - tripleo-common-managed
-
-    input:
-      - container: overcloud
-      - plan_name: overcloud
-      - work_dir: /var/lib/mistral
-      - nodes
-      - timeout: 240
-      - queue_name: tripleo
-
-    tasks:
-      get_config:
-        action: tripleo.config.get_overcloud_config
-        input:
-          container: <% $.get('plan_name') %>
-          container_config: <% $.get('plan_name') %>-config
-        on-success: download_config
-        on-error: send_message
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-          deployment_status: DEPLOY_FAILED
-
-      download_config:
-        action: tripleo.config.download_config
-        input:
-          work_dir: <% $.get('work_dir') %>/<% $.get('plan_name') %>
-          container_config: <% $.get('plan_name') %>-config
-        on-success: send_msg_config_download
-        on-error: send_message
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-          deployment_status: DEPLOY_FAILED
-
-      send_msg_config_download:
-        workflow: tripleo.messaging.v1.send
-        input:
-          queue_name: <% $.queue_name %>
-          type: <% execution().name %>
-          status: <% $.get('status', 'RUNNING') %>
-          deployment_status: DEPLOYING
-          execution: <% execution() %>
-          message: Config downloaded at <% $.get('work_dir') %>/<% $.get('plan_name') %>
-          plan_name: <% $.plan_name %>
-        on-success: get_private_key
-
-      get_private_key:
-        action: tripleo.validations.get_privkey
-        on-success: uuids_to_names
-
-      uuids_to_names:
-        action: ironic.node_get_by_instance_uuid
-        on-success: scale_down
-        input:
-          instance_uuid: <% $.node %>
-          fields: ['instance_info']
-        with-items: node in <% $.nodes %>
-
-      scale_down:
-        action: tripleo.ansible-playbook
-        on-success: send_message
-        on-error: scale_down_failed
-        publish:
-          output: <% task().result %>
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-        input:
-          ssh_private_key: <% task(get_private_key).result %>
-          verbosity: 1
-          remote_user: tripleo-admin
-          plan_name: <% $.container %>
-          become: true
-          playbook: <% $.get('work_dir') %>/<% $.get('container') %>/scale_playbook.yaml
-          tags: down
-          limit_hosts: <% list(task(uuids_to_names).result.instance_info.display_name).join(',') %>
-          inventory: <% $.get('work_dir') %>/<% $.get('container') %>/tripleo-ansible-inventory.yaml
-          execution_id: <% execution().id %>
-          queue_name: <% $.queue_name %>
-
-      scale_down_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(scale_down).result %>
-
-      send_message:
-        workflow: tripleo.messaging.v1.send
-        input:
-          queue_name: <% $.queue_name %>
-          type: <% execution().name %>
-          status: <% $.get('status', 'SUCCESS') %>
-          execution: <% execution() %>
-          message: <% $.get('message', '') %>
-
   delete_node:
     description: deletes given overcloud nodes and updates the stack
 
     input:
-      - container
+      - plan_name
       - nodes
       - timeout: 240
       - queue_name: tripleo
@@ -118,7 +20,7 @@ workflows:
     tasks:
 
       delete_node:
-        action: tripleo.scale.delete_node nodes=<% $.nodes %> timeout=<% $.timeout %> container=<% $.container %>
+        action: tripleo.scale.delete_node nodes=<% $.nodes %> timeout=<% $.timeout %> container=<% $.plan_name %>
         on-success: wait_for_stack_in_progress
         on-error: set_delete_node_failed
 
@@ -129,7 +31,7 @@ workflows:
           message: <% task(delete_node).result %>
 
       wait_for_stack_in_progress:
-        workflow: tripleo.stack.v1.wait_for_stack_in_progress stack=<% $.container %>
+        workflow: tripleo.stack.v1.wait_for_stack_in_progress stack=<% $.plan_name %>
         on-success: wait_for_stack_complete
         on-error: wait_for_stack_in_progress_failed
 
@@ -140,7 +42,7 @@ workflows:
           message: <% task(wait_for_stack_in_progress).result %>
 
       wait_for_stack_complete:
-        workflow: tripleo.stack.v1.wait_for_stack_complete_or_failed stack=<% $.container %>
+        workflow: tripleo.stack.v1.wait_for_stack_complete_or_failed stack=<% $.plan_name %>
         on-success: send_message
         on-error: wait_for_stack_complete_failed
 
