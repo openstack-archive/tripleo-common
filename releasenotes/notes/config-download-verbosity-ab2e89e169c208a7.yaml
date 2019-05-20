@@ -1,0 +1,7 @@
+---
+fixes:
+  - The verbosity of the config-download ansible tasks now defaults to 0
+    instead of 1. This makes the tasks not verbose by default. The verbosity
+    specified on the command line with the deployment command is now honored
+    and can be used to disable verbosity or increase the verbosity level as
+    needed.

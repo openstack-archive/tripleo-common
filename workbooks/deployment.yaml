@@ -383,7 +383,7 @@ workflows:
       - plan_name: overcloud
       - ssh_network: ctlplane
       - work_dir: /var/lib/mistral
-      - verbosity: 1
+      - verbosity: 0
       - blacklist: []
       - override_ansible_cfg: ""
       - config_download_timeout: 14400
