@@ -7,3 +7,7 @@
 packages_bootstrap:
   - openstack-heat-agents
   - jq
+  - puppet-tripleo
+  - os-net-config
+  - openvswitch
+  - openstack-selinux
