@@ -70,6 +70,9 @@ class TestConfig(base.TestCase):
                 elif config == 'step_config':
                     expected_calls += [call('/tmp/tht/%s/%s.pp' %
                                             (role, config))]
+                elif config == 'param_config':
+                    expected_calls += [call('/tmp/tht/%s/%s.json' %
+                                            (role, config))]
                 else:
                     expected_calls += [call('/tmp/tht/%s/%s.yaml' %
                                             (role, config))]
@@ -607,6 +610,9 @@ class TestConfig(base.TestCase):
                     continue
                 elif config == 'step_config':
                     expected_calls += [call('/tmp/tht/%s/%s.pp' %
+                                            (role, config))]
+                elif config == 'param_config':
+                    expected_calls += [call('/tmp/tht/%s/%s.json' %
                                             (role, config))]
                 else:
                     expected_calls += [call('/tmp/tht/%s/%s.yaml' %
