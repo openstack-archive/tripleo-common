@@ -31,10 +31,12 @@ MEDIA_TYPES = (
     MEDIA_MANIFEST_V1,
     MEDIA_MANIFEST_V1_SIGNED,
     MEDIA_MANIFEST_V2,
+    MEDIA_MANIFEST_V2_LIST,
 ) = (
     'application/vnd.docker.distribution.manifest.v1+json',
     'application/vnd.docker.distribution.manifest.v1+prettyjws',
     'application/vnd.docker.distribution.manifest.v2+json',
+    'application/vnd.docker.distribution.manifest.list.v2+json',
 )
 
 TYPE_KEYS = (
@@ -167,7 +169,8 @@ def cross_repo_mount(target_image_url, image_layers, source_layers):
 def export_manifest_config(target_url,
                            manifest_str,
                            manifest_type,
-                           config_str):
+                           config_str,
+                           multi_arch=False):
     image, tag = image_tag_from_url(target_url)
     manifest = json.loads(manifest_str)
     if config_str is not None:
@@ -210,19 +213,43 @@ def export_manifest_config(target_url,
         manifest_data = manifest_str.encode('utf-8')
         f.write(manifest_data)
 
-    write_type_map_file(image, tag, manifest_digest)
+    manifest_dict = {}
+    if multi_arch:
+        if manifest_type == MEDIA_MANIFEST_V2_LIST:
+            manifest_dict[manifest_type] = manifest_digest
+            # choose one of the entries to be the default v2 manifest
+            # to return:
+            # - If architecture amd64 exists, choose that
+            # - Otherwise choose the first entry
+            entries = manifest.get('manifests')
+            if entries:
+                entry = None
+                for i in entries:
+                    if i.get('platform', {}).get('architecture') == 'amd64':
+                        entry = i
+                        break
+                if not entry:
+                    entry = entries[0]
+                manifest_dict[entry['mediaType']] = entry['digest']
+
+    else:
+        manifest_dict[manifest_type] = manifest_digest
+
+    if manifest_dict:
+        write_type_map_file(image, tag, manifest_dict)
     build_tags_list(image)
 
 
-def write_type_map_file(image, tag, manifest_digest):
+def write_type_map_file(image, tag, manifest_dict):
     manifests_path = os.path.join(
         IMAGE_EXPORT_DIR, 'v2', image, 'manifests')
     type_map_path = os.path.join(manifests_path, '%s%s' %
                                  (tag, TYPE_MAP_EXTENSION))
     with open(type_map_path, 'w+') as f:
         f.write('URI: %s\n\n' % tag)
-        f.write('Content-Type: %s\n' % MEDIA_MANIFEST_V2)
-        f.write('URI: %s/index.json\n\n' % manifest_digest)
+        for manifest_type, digest in manifest_dict.items():
+            f.write('Content-Type: %s\n' % manifest_type)
+            f.write('URI: %s/index.json\n\n' % digest)
 
 
 def parse_type_map_file(type_map_path):
@@ -250,7 +277,7 @@ def migrate_to_type_map_file(image, manifest_symlink_path):
     tag = os.path.split(manifest_symlink_path)[-1]
     manifest_dir = os.readlink(manifest_symlink_path)
     manifest_digest = os.path.split(manifest_dir)[-1]
-    write_type_map_file(image, tag, manifest_digest)
+    write_type_map_file(image, tag, {MEDIA_MANIFEST_V2: manifest_digest})
     os.remove(manifest_symlink_path)
 
 

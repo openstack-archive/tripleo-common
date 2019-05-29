@@ -239,7 +239,10 @@ Header set ETag "%s"
 
         image_export.make_dir(manifest_dir_path)
         image_export.write_type_map_file(
-            'foo/bar', 'latest', 'sha256:1234abcd')
+            'foo/bar',
+            'latest',
+            {image_export.MEDIA_MANIFEST_V2: 'sha256:1234abcd'}
+        )
 
         expected_map_file = '''URI: latest
 
