@@ -225,6 +225,95 @@ Header set ETag "%s"
         with open(manifest_htaccess_path, 'r') as f:
             self.assertEqual(expected_htaccess, f.read())
 
+    def test_write_parse_type_map_file(self):
+        manifest_dir_path = os.path.join(
+            image_export.IMAGE_EXPORT_DIR,
+            'v2/foo/bar/manifests'
+        )
+        map_file_path = os.path.join(
+            image_export.IMAGE_EXPORT_DIR,
+            manifest_dir_path, 'latest.type-map'
+        )
+
+        image_export.make_dir(manifest_dir_path)
+        image_export.write_type_map_file(
+            'foo/bar', 'latest', 'sha256:1234abcd')
+
+        expected_map_file = '''URI: latest
+
+Content-Type: application/vnd.docker.distribution.manifest.v2+json
+URI: sha256:1234abcd/index.json
+
+'''
+        # assert the file contains the expected content
+        with open(map_file_path, 'r') as f:
+            self.assertEqual(expected_map_file, f.read())
+
+        # assert parse_type_map_file correctly reads that file
+        self.assertEqual(
+            {
+                'application/vnd.docker.distribution.manifest.v2+json':
+                'sha256:1234abcd/index.json'
+            },
+            image_export.parse_type_map_file(map_file_path)
+        )
+
+        # assert a multi-entry file is correctly parsed
+        multi_map_file = '''URI: latest
+
+Content-Type: application/vnd.docker.distribution.manifest.v2+json
+URI: sha256:1234abcd/index.json
+
+Content-Type: application/vnd.docker.distribution.manifest.list.v2+json
+URI: sha256:eeeeeeee/index.json
+
+'''
+        with open(map_file_path, 'w+') as f:
+            f.write(multi_map_file)
+        self.assertEqual(
+            {
+                'application/vnd.docker.distribution.manifest.v2+json':
+                'sha256:1234abcd/index.json',
+                'application/vnd.docker.distribution.manifest.list.v2+json':
+                'sha256:eeeeeeee/index.json'
+            },
+            image_export.parse_type_map_file(map_file_path)
+        )
+
+    def test_migrate_to_type_map_file(self):
+        manifest_dir_path = os.path.join(
+            image_export.IMAGE_EXPORT_DIR,
+            'v2/foo/bar/manifests'
+        )
+        map_file_path = os.path.join(
+            image_export.IMAGE_EXPORT_DIR,
+            manifest_dir_path, 'latest.type-map'
+        )
+        symlink_path = os.path.join(
+            image_export.IMAGE_EXPORT_DIR,
+            manifest_dir_path, 'latest'
+        )
+        manifest_path = os.path.join(
+            image_export.IMAGE_EXPORT_DIR,
+            manifest_dir_path, 'sha256:1234abcd'
+        )
+        image_export.make_dir(manifest_dir_path)
+        # create legacy symlink
+        os.symlink(manifest_path, symlink_path)
+
+        # run the migration
+        image_export.migrate_to_type_map_file('foo/bar', symlink_path)
+
+        expected_map_file = '''URI: latest
+
+Content-Type: application/vnd.docker.distribution.manifest.v2+json
+URI: sha256:1234abcd/index.json
+
+'''
+        # assert the migrated file contains the expected content
+        with open(map_file_path, 'r') as f:
+            self.assertEqual(expected_map_file, f.read())
+
     def _write_test_image(self, url, manifest):
         image, tag = image_uploader.BaseImageUploader._image_tag_from_url(
             url)
@@ -256,18 +345,13 @@ Header set ETag "%s"
                 f.write('The Blob')
         return manifest_digest
 
-    def assertFiles(self, dirs, files, symlinks, deleted):
+    def assertFiles(self, dirs, files, deleted):
         for d in dirs:
             self.assertTrue(os.path.isdir(d), 'is dir: %s' % d)
         for f in files:
             self.assertTrue(os.path.isfile(f), 'is file: %s' % f)
         for d in deleted:
-            self.assertFalse(os.path.exists(d), 'not exists: %s' % d)
-        for l, f in symlinks.items():
-            self.assertTrue(os.path.islink(l), 'is link: %s' % l)
-            self.assertEqual(f, os.readlink(l))
-            self.assertTrue(os.path.exists(f),
-                            'link target exists: %s' % f)
+            self.assertFalse(os.path.exists(d), 'deleted still exists: %s' % d)
 
     def test_delete_image(self):
         url1 = urlparse('docker://localhost:8787/t/nova-api:latest')
@@ -309,7 +393,7 @@ Header set ETag "%s"
         blob_dir = os.path.join(image_dir, 'blobs')
         m_dir = os.path.join(image_dir, 'manifests')
 
-        # assert every directory, file and symlink for the 2 images
+        # assert every directory and file for the 2 images
         self.assertFiles(
             dirs=[
                 v2_dir,
@@ -326,11 +410,9 @@ Header set ETag "%s"
                 os.path.join(blob_dir, 'sha256:4dc536.gz'),
                 os.path.join(blob_dir, 'sha256:5678'),
                 os.path.join(blob_dir, 'sha256:eeeeee.gz'),
+                os.path.join(m_dir, 'latest.type-map'),
+                os.path.join(m_dir, 'abc.type-map'),
             ],
-            symlinks={
-                os.path.join(m_dir, 'latest'): os.path.join(m_dir, m1_digest),
-                os.path.join(m_dir, 'abc'): os.path.join(m_dir, m2_digest),
-            },
             deleted=[]
         )
 
@@ -349,10 +431,8 @@ Header set ETag "%s"
                 os.path.join(m_dir, m1_digest, 'index.json'),
                 os.path.join(blob_dir, 'sha256:aeb786.gz'),
                 os.path.join(blob_dir, 'sha256:4dc536.gz'),
+                os.path.join(m_dir, 'latest.type-map'),
             ],
-            symlinks={
-                os.path.join(m_dir, 'latest'): os.path.join(m_dir, m1_digest),
-            },
             deleted=[
                 os.path.join(m_dir, 'abc'),
                 os.path.join(m_dir, m2_digest),
@@ -370,7 +450,6 @@ Header set ETag "%s"
                 v2_dir,
             ],
             files=[],
-            symlinks={},
             deleted=[
                 image_dir,
                 blob_dir,
