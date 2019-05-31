@@ -8,3 +8,6 @@
         # jinja2 escape trick for simple {{ and }} strings:
         variable_start_string: "{{ '{{' }}"
         variable_end_string: "{{ '}}' }}"
+        hieradata_files:
+          - node
+          - common

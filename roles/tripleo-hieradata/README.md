@@ -12,6 +12,7 @@ Required:
 * `hieradata_variable_start_string` -- string marking the beginning of a template print statement.
 * `hieradata_variable_end_string` -- string marking the end of a template print statement.
 * `hieradata_per_host` -- whether or not we configure hieradata per host.
+* `hieradata_files` -- List of hieradata files (Order matters for Hierarchy).
 
 Test playbook
 -------------
