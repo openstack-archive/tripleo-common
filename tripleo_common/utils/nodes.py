@@ -305,6 +305,7 @@ DRIVER_INFO = {
     '(cisco\-ucs\-managed|.*_ucs)': UcsDriverInfo(),
     '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True),
     'redfish': RedfishDriverInfo(),
+    'xclarity': PrefixedDriverInfo('xclarity', has_port=True),
     # test drivers
     'staging\-ovirt': oVirtDriverInfo(),
     '.*_iboot': iBootDriverInfo(),
