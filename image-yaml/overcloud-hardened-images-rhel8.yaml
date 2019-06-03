@@ -4,4 +4,4 @@ disk_images:
     type: qcow2
     distro: rhel
     environment:
-      DIB_RELEASE: '7'
+      DIB_RELEASE: '8'
