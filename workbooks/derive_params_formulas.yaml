@@ -590,11 +590,17 @@ workflows:
           role_extra_config: <% $.environment_parameters.get(concat($.role_name, 'ExtraConfig'), {}) %>
           role_env_params: <% $.environment_parameters.get(concat($.role_name, 'Parameters'), {}) %>
           role_derive_params: <% $.derived_parameters.get(concat($.role_name, 'Parameters'), {}) %>
+        on-success: calc_osds
+
+      calc_osds:
+        publish:
+          num_dev: <% $.heat_resource_tree.parameters.get('CephAnsibleDisksConfig', {}).get('default', {}).get('devices', []).count() %>
+          num_lvm: <% $.heat_resource_tree.parameters.get('CephAnsibleDisksConfig', {}).get('default', {}).get('lvm_volumes', []).count() %>
         on-success: get_num_osds
 
       get_num_osds:
         publish:
-          num_osds: <% $.heat_resource_tree.parameters.get('CephAnsibleDisksConfig', {}).get('default', {}).get('devices', []).count() %>
+          num_osds: <% int($.num_dev + $.num_lvm) %>
         on-success:
           - get_memory_mb: <% $.num_osds %>
           # If there's no CephAnsibleDisksConfig then look for OSD configuration in hiera data
