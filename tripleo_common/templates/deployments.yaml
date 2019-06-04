@@ -28,12 +28,27 @@
         state: directory
       check_mode: no
 
-    - name: "Render deployment file for {{ item }} for check-mode"
+    - name: "Template deployment file for {{ item }}"
+      template:
+        src: "{{ tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item }}"
+        dest: "/var/lib/heat-config/check-mode/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}.rendered"
+        # variable_start/end are overridden since the Heat template must be
+        # valid yaml, so the jinja expression must be wrapped in quotes in the
+        # Heat templates. Now, the extra quotes must be removed so that they do
+        # not end up in the final rendered value. Also, $$ is used as the delimiter
+        # for the jinja expression since { and } are reserved in yaml.
+        variable_start_string: "\"$$"
+        variable_end_string: "$$\""
+
+    - name: "Slurp remote deployment file for {{ item }}"
+      slurp:
+        src: "/var/lib/heat-config/check-mode/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}.rendered"
+      register: deployment_content
+
+    - name: "Remote copy deployment file for {{ item }}"
       copy:
-        content: "[ {{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item) }} ]"
-        dest: "/var/lib/heat-config/tripleo-config-download/check-mode/{{ item ~ '-' ~ deployment_uuid }}"
-      become: true
-      check_mode: no
+        content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item) }} ]"
+        dest: "/var/lib/heat-config/check-mode/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
 
     - name: Run hiera deployment for check mode
       shell: |
@@ -98,12 +113,27 @@
     - deployment_group == 'hiera'
     - ansible_check_mode
 
+- name: "Template deployment file for {{ item }}"
+  template:
+    src: "{{ tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item }}"
+    dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}.rendered"
+    # variable_start/end are overridden since the Heat template must be
+    # valid yaml, so the jinja expression must be wrapped in quotes in the
+    # Heat templates. Now, the extra quotes must be removed so that they do
+    # not end up in the final rendered value. Also, $$ is used as the delimiter
+    # for the jinja expression since { and } are reserved in yaml.
+    variable_start_string: "\"$$"
+    variable_end_string: "$$\""
 
-- name: "Render deployment file for {{ item }}"
+- name: "Slurp remote deployment file for {{ item }}"
+  slurp:
+    src: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}.rendered"
+  register: deployment_content
+
+- name: "Remote copy deployment file for {{ item }}"
   copy:
-    content: "[ {{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item) }} ]"
+    content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item) }} ]"
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
-  become: true
 
 - name: "Check if deployed file exists for {{ item }}"
   stat:

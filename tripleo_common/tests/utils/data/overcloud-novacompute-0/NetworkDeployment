@@ -1,5 +1,3 @@
-deploy_server_id: a7db3010-a51f-4ae0-a791-2364d629d20d
-
 NetworkDeployment:
   config:
     {"hiera_key3": "hiera_value3", "hiera_key4": {"hiera_key4_subkey1": "hiera_key4_subvalue1", "hiera_key4_subkey0": "hiera_key4_subvalue0"}}
