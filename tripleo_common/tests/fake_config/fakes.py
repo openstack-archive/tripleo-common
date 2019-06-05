@@ -30,6 +30,8 @@ FAKE_STACK = {
         {'output_key': 'RoleConfig',
          'output_value': {
              'foo_config': 'foo'}},
+        {'output_key': 'HostnameNetworkConfigMap',
+         'output_value': {}},
         {'output_key': 'RoleData',
          'output_value': {
              'FakeCompute': {

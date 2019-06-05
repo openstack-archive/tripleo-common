@@ -53,6 +53,9 @@ class Config(object):
                         servers[server_id] = name.lower()
         return servers
 
+    def get_network_config_data(self, stack):
+        return self.stack_outputs.get("HostnameNetworkConfigMap")
+
     def get_deployment_data(self, stack,
                             nested_depth=constants.NESTED_DEPTH):
         deployments = self.client.resources.list(
@@ -481,6 +484,18 @@ class Config(object):
                     post_deployments=deployments['post_deployments'])
                 self.validate_config(template_data, host_var_server_path)
                 f.write(template_data)
+
+        # Render NetworkConfig data
+        network_config = self.get_network_config_data(stack)
+        for server, config in network_config.items():
+            server_deployment_dir = os.path.join(
+                config_dir, server_roles[server], server)
+            self._mkdir(server_deployment_dir)
+            network_config_path = os.path.join(
+                server_deployment_dir, "NetworkConfig")
+            s_config = self.client.software_configs.get(config)
+            with open(network_config_path, 'w') as f:
+                f.write(s_config.config)
 
         shutil.copyfile(
             os.path.join(templates_path, 'deployments.yaml'),
