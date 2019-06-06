@@ -249,7 +249,10 @@ class Config(object):
 
         role_config = self.get_role_config()
         for config_name, config in six.iteritems(role_config):
-            conf_path = os.path.join(config_dir, config_name + ".yaml")
+            conf_path = os.path.join(config_dir, config_name)
+            # Add .yaml extension only if there's no extension already
+            if '.' not in conf_path:
+                conf_path = conf_path + ".yaml"
             with self._open_file(conf_path) as conf_file:
                 if isinstance(config, list) or isinstance(config, dict):
                     yaml.safe_dump(config, conf_file, default_flow_style=False)
