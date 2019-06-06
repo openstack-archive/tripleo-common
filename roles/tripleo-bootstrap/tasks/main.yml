@@ -40,3 +40,55 @@
         name: network
         enabled: yes
       become: true
+
+- name: Find all installed puppet modules under /usr/share/openstack-puppet/modules
+  find:
+    paths:
+      - /usr/share/openstack-puppet/modules
+    file_type: directory
+  register: find_openstack_puppet_modules
+
+- name: Symlink puppet modules under /etc/puppet/modules
+  file:
+    state: link
+    src: "{{ item.path }}"
+    path: "/etc/puppet/modules/{{ item.path | basename }}"
+  loop: "{{ find_openstack_puppet_modules.files }}"
+  loop_control:
+    label: "/etc/puppet/modules/{{ item.path | basename }} -> {{ item.path }}"
+
+- name: Create empty ruleset in /etc/sysconfig/iptables and /etc/sysconfig/ip6tables
+  copy:
+    dest: "{{ item }}"
+    content: "# empty ruleset created by deployed-server bootstrap"
+  loop:
+    - /etc/sysconfig/iptables
+    - /etc/sysconfig/ip6tables
+
+- name: Check if /usr/bin/ansible-playbook exists
+  stat:
+    path: /usr/bin/ansible-playbook
+  register: stat_ansible_playbook
+
+- name: Check if /usr/bin/ansible-playbook-3 exists
+  stat:
+    path: /usr/bin/ansible-playbook-3
+  register: stat_ansible_playbook_3
+
+- name: Symlink /usr/local/bin/ansible-playbook to /usr/bin/ansible-playbook-3
+  file:
+    state: link
+    src: /usr/bin/ansible-playbook-3
+    path: /usr/local/bin/ansible-playbook
+  when:
+    - not stat_ansible_playbook.stat.exists
+    - stat_ansible_playbook_3.stat.exists
+
+- name: Symlink /usr/local/bin/ansible-playbook-3 to /usr/bin/ansible-playbook
+  file:
+    state: link
+    src: /usr/bin/ansible-playbook
+    path: /usr/local/bin/ansible-playbook-3
+  when:
+    - stat_ansible_playbook.stat.exists
+    - not stat_ansible_playbook_3.stat.exists
