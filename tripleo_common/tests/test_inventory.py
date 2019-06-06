@@ -39,7 +39,8 @@ MOCK_ENABLED_SERVICES = {
     "Compute": [
         "nova_compute",
         "kernel",
-        "tripleo_packages"
+        "tripleo_packages",
+        "ceph_client"
     ],
     "CephStorage": [
         "kernel",
@@ -60,7 +61,7 @@ class TestInventory(base.TestCase):
             {'output_key': 'EnabledServices',
              'output_value': {
                  'Controller': ['sa', 'sb'],
-                 'Compute': ['sd', 'se'],
+                 'Compute': ['sd', 'se', 'ceph_client'],
                  'CustomRole': ['sg', 'sh']}},
             {'output_key': 'KeystoneURL',
              'output_value': 'xyz://keystone'},
@@ -138,6 +139,7 @@ class TestInventory(base.TestCase):
             'keystone': ['Controller'],
             'nova_compute': ['Compute'],
             'cinder_volume': ['BlockStorage'],
+            'ceph_client': ['Compute'],
         }
         self.assertDictEqual(services, expected)
 
@@ -398,6 +400,10 @@ class TestInventory(base.TestCase):
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
             'se': {'children': {'Compute': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'ceph_client': {'children': {'Compute': {}},
+                            'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'clients': {'children': {'Compute': {}},
+                        'vars': {'ansible_ssh_user': 'heat-admin'}},
             'sg': {'children': {'CustomRole': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
             'sh': {'children': {'CustomRole': {}},

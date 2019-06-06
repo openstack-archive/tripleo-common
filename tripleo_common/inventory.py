@@ -285,6 +285,27 @@ class TripleoInventory(object):
         # Associate services with roles
         roles_by_service = self.get_roles_by_service(
             self.stack_outputs.get('EnabledServices', {}))
+
+        # tripleo-groups map to ceph-ansible groups as follows
+        ceph_group_map = {
+            'ceph_mon': 'mons',
+            'ceph_osd': 'osds',
+            'ceph_mgr': 'mgrs',
+            'ceph_rgw': 'rgws',
+            'ceph_mds': 'mdss',
+            'ceph_nfs': 'nfss',
+            'ceph_client': 'clients',
+            'ceph_rbdmirror': 'rbdmirrors'
+        }
+        # add a ceph-ansible compatible group to the inventory
+        # which has the same roles. E.g. if the inventory has
+        # a group 'ceph_mon' which has childen and vars, then
+        # the inventory will now also have a group 'mons' with
+        # the same children and vars.
+        for service, roles in roles_by_service.copy().items():
+            if service in ceph_group_map.keys():
+                roles_by_service[ceph_group_map[service]] = roles
+
         for service, roles in roles_by_service.items():
             service_children = [role for role in roles
                                 if ret.get(role) is not None]
