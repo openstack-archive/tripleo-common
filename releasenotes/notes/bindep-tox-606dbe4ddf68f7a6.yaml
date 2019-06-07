@@ -1,0 +1,12 @@
+---
+
+features:
+  - The `bindep.txt` file located in the project root contains all of the
+    basic required packages needed when running local tests.
+  - Developers can now use bindep to list system requirements. The bindep
+    command will load the list of packages for the given platform using
+    the `bindep.txt` file.
+  - Bindep can now be leveraged via tox using the environment **bindep**.
+    This tox environment will use bindep via the `bindep-install` script
+    to install any missing packages on the local system which are required
+    for development purposes.

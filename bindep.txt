@@ -1,0 +1,35 @@
+# This file facilitates OpenStack-CI package installation
+# before the execution of any tests.
+#
+# See the following for details:
+#  - https://docs.openstack.org/infra/bindep/
+#  - https://opendev.org/opendev/bindep/
+#
+# Even if the role does not make use of this facility, it
+# is better to have this file empty, otherwise OpenStack-CI
+# will fall back to installing its default packages which
+# will potentially be detrimental to the tests executed.
+
+# The gcc compiler
+gcc
+
+# Base requirements for RPM distros
+gcc-c++           [platform:rpm]
+git               [platform:rpm]
+libffi-devel      [platform:rpm]
+openssl-devel     [platform:rpm]
+python-devel      [platform:rpm]
+python2-dnf       [platform:fedora]
+
+# For SELinux
+libselinux-python  [platform:rpm]
+libsemanage-python [platform:redhat]
+
+# Required for compressing collected log files in CI
+gzip
+
+# Required to build language docs
+gettext
+
+# Required for molecule testing
+docker
