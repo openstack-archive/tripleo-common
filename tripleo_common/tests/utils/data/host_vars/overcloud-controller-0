@@ -5,3 +5,6 @@ Controller_pre_deployments:
   - MyExtraConfigPost
 
 Controller_post_deployments:  []
+
+uuid: 0
+my_var: 'foo'
