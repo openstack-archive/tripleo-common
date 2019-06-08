@@ -130,12 +130,13 @@ class OrchestrationDeployAction(base.TripleOAction):
         return actions.Result(data=body_json, error=error)
 
 
-class DeployStackAction(templates.ProcessTemplatesAction):
+class DeployStackAction(base.TripleOAction):
     """Deploys a heat stack."""
 
     def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME,
                  skip_deploy_identifier=False):
-        super(DeployStackAction, self).__init__(container)
+        super(DeployStackAction, self).__init__()
+        self.container = container
         self.timeout_mins = timeout
         self.skip_deploy_identifier = skip_deploy_identifier
 
@@ -191,7 +192,10 @@ class DeployStackAction(templates.ProcessTemplatesAction):
                 return actions.Result(error=err_msg)
 
         # process all plan files and create or update a stack
-        processed_data = super(DeployStackAction, self).run(context)
+        process_templates_action = templates.ProcessTemplatesAction(
+            container=self.container
+        )
+        processed_data = process_templates_action.run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.

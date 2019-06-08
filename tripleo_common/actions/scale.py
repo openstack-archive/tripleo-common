@@ -17,6 +17,7 @@ import logging
 
 from mistral_lib import actions
 
+from tripleo_common.actions import base
 from tripleo_common.actions import parameters as parameters_actions
 from tripleo_common.actions import templates
 from tripleo_common import constants
@@ -48,7 +49,7 @@ def get_group_resources_after_delete(groupname, res_to_delete, resources):
     return members
 
 
-class ScaleDownAction(templates.ProcessTemplatesAction):
+class ScaleDownAction(base.TripleOAction):
     """Deletes overcloud nodes
 
     Before calling this method, ensure you have updated the plan
@@ -57,9 +58,10 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
 
     def __init__(self, timeout, nodes=[],
                  container=constants.DEFAULT_CONTAINER_NAME):
+        self.container = container
         self.nodes = nodes
         self.timeout_mins = timeout
-        super(ScaleDownAction, self).__init__(container)
+        super(ScaleDownAction, self).__init__()
 
     def _update_stack(self, parameters={},
                       timeout_mins=constants.STACK_TIMEOUT_DEFAULT,
@@ -74,7 +76,10 @@ class ScaleDownAction(templates.ProcessTemplatesAction):
         if isinstance(updated_plan, actions.Result):
             return updated_plan
 
-        processed_data = super(ScaleDownAction, self).run(context)
+        process_templates_action = templates.ProcessTemplatesAction(
+            container=self.container
+        )
+        processed_data = process_templates_action.run(context)
         if isinstance(processed_data, actions.Result):
             return processed_data
 

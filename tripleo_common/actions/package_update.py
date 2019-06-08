@@ -20,6 +20,7 @@ from heatclient import exc as heat_exc
 from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
+from tripleo_common.actions import base
 from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.utils import plan as plan_utils
@@ -27,10 +28,11 @@ from tripleo_common.utils import plan as plan_utils
 LOG = logging.getLogger(__name__)
 
 
-class UpdateStackAction(templates.ProcessTemplatesAction):
+class UpdateStackAction(base.TripleOAction):
 
     def __init__(self, timeout, container=constants.DEFAULT_CONTAINER_NAME):
-        super(UpdateStackAction, self).__init__(container)
+        super(UpdateStackAction, self).__init__()
+        self.container = container
         self.timeout_mins = timeout
 
     def run(self, context):
@@ -86,7 +88,10 @@ class UpdateStackAction(templates.ProcessTemplatesAction):
             return actions.Result(error=err_msg)
 
         # process all plan files and create or update a stack
-        processed_data = super(UpdateStackAction, self).run(context)
+        process_templates_action = templates.ProcessTemplatesAction(
+            container=self.container
+        )
+        processed_data = process_templates_action.run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.

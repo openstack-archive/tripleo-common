@@ -19,7 +19,7 @@ import tempfile
 
 from swiftclient import exceptions as swiftexceptions
 
-from tripleo_common.actions import templates
+from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import config as ooo_config
 from tripleo_common.utils import swift as swiftutils
@@ -28,7 +28,7 @@ from tripleo_common.utils import tarball
 LOG = logging.getLogger(__name__)
 
 
-class GetOvercloudConfig(templates.ProcessTemplatesAction):
+class GetOvercloudConfig(base.TripleOAction):
     """Get the Overcloud Config from the Heat outputs
 
     This action gets the Overcloud config from the Heat outputs and
@@ -42,7 +42,7 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
                  config_dir=None,
                  container_config=constants.CONFIG_CONTAINER_NAME,
                  config_type=None):
-        super(GetOvercloudConfig, self).__init__(container)
+        super(GetOvercloudConfig, self).__init__()
         self.container = container
         self.config_dir = config_dir
         self.config_type = config_type
@@ -101,7 +101,7 @@ class GetOvercloudConfig(templates.ProcessTemplatesAction):
             shutil.rmtree(config_path)
 
 
-class DownloadConfigAction(templates.ProcessTemplatesAction):
+class DownloadConfigAction(base.TripleOAction):
     """Download the container config from swift
 
     This action downloads a container which contain the heat config output
@@ -111,7 +111,7 @@ class DownloadConfigAction(templates.ProcessTemplatesAction):
 
     def __init__(self, container_config=constants.CONFIG_CONTAINER_NAME,
                  work_dir=None):
-        super(DownloadConfigAction, self).__init__(container_config)
+        super(DownloadConfigAction, self).__init__()
         self.container_config = container_config
         self.work_dir = work_dir
         if not self.work_dir:

@@ -34,8 +34,12 @@ from tripleo_common.utils import plan as plan_utils
 LOG = logging.getLogger(__name__)
 
 
-class GetParametersAction(templates.ProcessTemplatesAction):
+class GetParametersAction(base.TripleOAction):
     """Gets list of available heat parameters."""
+
+    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
+        super(GetParametersAction, self).__init__()
+        self.container = container
 
     def run(self, context):
 
@@ -46,7 +50,10 @@ class GetParametersAction(templates.ProcessTemplatesAction):
         if cached is not None:
             return cached
 
-        processed_data = super(GetParametersAction, self).run(context)
+        process_templates_action = templates.ProcessTemplatesAction(
+            container=self.container
+        )
+        processed_data = process_templates_action.run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
@@ -122,7 +129,7 @@ class ResetParametersAction(base.TripleOAction):
         return env
 
 
-class UpdateParametersAction(templates.ProcessTemplatesAction):
+class UpdateParametersAction(base.TripleOAction):
     """Updates plan environment with parameters."""
 
     def __init__(self, parameters,
@@ -159,7 +166,10 @@ class UpdateParametersAction(templates.ProcessTemplatesAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        processed_data = super(UpdateParametersAction, self).run(context)
+        process_templates_action = templates.ProcessTemplatesAction(
+            container=self.container
+        )
+        processed_data = process_templates_action.run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
@@ -653,16 +663,19 @@ class RotateFernetKeysAction(GetPasswordsAction):
         return keys_map
 
 
-class GetNetworkConfigAction(templates.ProcessTemplatesAction):
+class GetNetworkConfigAction(base.TripleOAction):
     """Gets network configuration details from available heat parameters."""
 
     def __init__(self, role_name, container=constants.DEFAULT_CONTAINER_NAME):
-        super(GetNetworkConfigAction, self).__init__(container=container)
+        super(GetNetworkConfigAction, self).__init__()
+        self.container = container
         self.role_name = role_name
 
     def run(self, context):
-
-        processed_data = super(GetNetworkConfigAction, self).run(context)
+        process_templates_action = templates.ProcessTemplatesAction(
+            container=self.container
+        )
+        processed_data = process_templates_action.run(context)
 
         # If we receive a 'Result' instance it is because the parent action
         # had an error.
