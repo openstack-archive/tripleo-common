@@ -213,6 +213,10 @@ class Config(object):
                     filepath = os.path.join(role_path, 'step_config.pp')
                     with self._open_file(filepath) as step_config:
                         step_config.write(role[config])
+                elif config == 'param_config':
+                    filepath = os.path.join(role_path, 'param_config.json')
+                    with self._open_file(filepath) as param_config:
+                        param_config.write(json.dumps(role[config]))
                 elif config == 'ansible_group_vars':
                     # NOTE(aschultz): ansible group vars are for specific role
                     # services so we merge them in with the others so they
