@@ -15,7 +15,7 @@ A common library for TripleO workflows.
 
 * Free software: Apache license
 * Documentation: https://docs.openstack.org/tripleo-common/latest/
-* Source: http://git.openstack.org/cgit/openstack/tripleo-common
+* Source: http://opendev.org/openstack/tripleo-common
 * Bugs: https://bugs.launchpad.net/tripleo-common
 * Release notes: https://docs.openstack.org/releasenotes/tripleo-common
 
@@ -68,7 +68,7 @@ Prerequisites
 If you haven't installed the undercloud with the ``enable_validations`` set to
 true, you will have to prepare your undercloud to run the validations::
 
-    $ sudo pip install git+https://git.openstack.org/openstack/tripleo-validations
+    $ sudo pip install git+https://opendev.org/openstack/tripleo-validations
     $ sudo yum install ansible
     $ sudo useradd validations
 
