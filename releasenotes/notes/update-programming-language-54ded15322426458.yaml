@@ -1,0 +1,5 @@
+---
+update:
+  - |
+    As py35 has been dropped and py36, py37 jobs are running, so
+    update programming language mentioned in setup.cfg accordingly.
