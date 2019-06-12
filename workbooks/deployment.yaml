@@ -619,7 +619,7 @@ workflows:
         input:
           container: <% $.plan %>-config
           obj: "<% $.plan %>-config.tar.gz"
-          valid: 3600
+          valid: 14400
         publish-on-error:
           status: FAILED
           message: <% task().result %>
