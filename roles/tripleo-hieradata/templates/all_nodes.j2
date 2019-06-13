@@ -1,0 +1,51 @@
+{
+  "enabled_services": {{ enabled_services | unique | to_nice_json }},
+
+  {% for service in enabled_services %}
+
+  {# <service>_enabled: true #}
+  {{ '"' ~ service ~ '_enabled": true,' }}
+
+  {# <service>_node_ips: <list of ips> #}
+  {{ '"' ~ service ~ '_node_ips": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_ip') | list | to_json) ~ ',' }}
+
+  {# <service>_node_names: <list of hostnames> #}
+  {{ '"' ~ service ~ '_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_hostname') | list | to_json) ~ ',' }}
+
+  {# <service>_short_node_names: <list of hostnames> #}
+  {{ '"' ~ service ~ '_short_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, 'inventory_hostname') | list | to_json) ~ ',' }}
+
+  {# <service>_short_bootstrap_node_name: hostname #}
+  {% set services = (groups[service] | default ([]) | map('extract', hostvars, 'inventory_hostname')) | list %}
+  {% if (services | length) > 0 %}
+  {{ '"' ~ service ~ '_short_bootstrap_node_name": ' ~ (services | first | to_json) ~ ',' }}
+  {% endif %}
+
+  {# <service>_bootstrap_node_ip: hostname #}
+  {% set services = (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_ip')) | list %}
+  {% if (services | length) > 0 %}
+  {{ '"' ~ service ~ '_short_bootstrap_node_ip": ' ~ (services | first | to_json) ~ ',' }}
+  {% endif %}
+
+  {% endfor %}
+
+  {# <service>_network: <network> #}
+  {% for service, network in service_net_map.iteritems() %}
+  {{ '"' ~ service ~ '": "' ~ network ~ '",' }}
+  {% endfor %}
+
+  {{ '"deploy_identifier": "' ~ deploy_identifier ~ '"' }},
+
+  {{ '"stack_action": "' ~ stack_action ~ '"' }},
+
+  {{ '"stack_update_type": "' ~ stack_update_type ~ '"' }},
+
+  {{ '"container_cli": "' ~ container_cli ~ '"' }},
+
+  {{ '"controller_node_ips": "' ~ groups[primary_role_name] | default([]) | map('extract', hostvars, 'ctlplane_ip') | list | join(',') ~ '"' }},
+
+  {{ '"controller_node_names": "' ~ groups[primary_role_name] | default([]) | map('extract', hostvars, 'inventory_hostname') | list | join(',') ~ '"' }}
+
+
+
+}
