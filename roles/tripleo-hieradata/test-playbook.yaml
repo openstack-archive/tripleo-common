@@ -11,3 +11,10 @@
         hieradata_files:
           - node
           - common
+
+- hosts: overcloud
+  tasks:
+    - name: Create hieradata from templates
+      include_role:
+        name: tripleo-hieradata
+        tasks_from: hieradata_vars.yaml

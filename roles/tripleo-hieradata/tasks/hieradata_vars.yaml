@@ -1,0 +1,5 @@
+- name: Render hieradata from template
+  template:
+    src: templates/{{ item }}.j2
+    dest: "{{ dest_path | default('/etc/puppet/hieradata/' ~ item ~ '.json') }}"
+  loop: "{{ hieradata_templates_list }}"
