@@ -306,29 +306,29 @@ DRIVER_INFO = {
                                           hardware_type='idrac'),
     '(ilo|.*_ilo)': PrefixedDriverInfo('ilo', has_port=True,
                                        hardware_type='ilo'),
-    '(cisco\-ucs\-managed|.*_ucs)': UcsDriverInfo(),
+    r'(cisco\-ucs\-managed|.*_ucs)': UcsDriverInfo(),
     '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True,
                                          hardware_type='irmc'),
     'redfish': RedfishDriverInfo(),
     'xclarity': PrefixedDriverInfo('xclarity', has_port=True),
     # test drivers
-    'staging\-ovirt': oVirtDriverInfo(),
-    '(staging\-iboot|.*_iboot)': iBootDriverInfo(),
-    '(staging\-wol|.*wol)': DriverInfo(
+    r'staging\-ovirt': oVirtDriverInfo(),
+    r'(staging\-iboot|.*_iboot)': iBootDriverInfo(),
+    r'(staging\-wol|.*wol)': DriverInfo(
         'wol',
         mapping={
             'pm_addr': 'wol_host',
             'pm_port': 'wol_port',
         },
         hardware_type='staging-wol'),
-    '(staging\-amt|.*_amt)': PrefixedDriverInfo('amt',
-                                                hardware_type='staging-amt'),
+    r'(staging\-amt|.*_amt)': PrefixedDriverInfo('amt',
+                                                 hardware_type='staging-amt'),
     # fake_pxe was used when no management interface was supported, now
     # manual-management is used for the same purpose
-    '(manual\-management|fake_pxe|fake_agent)': DriverInfo(
+    r'(manual\-management|fake_pxe|fake_agent)': DriverInfo(
         'fake', mapping={}, hardware_type='manual-management'),
-    '^fake(|\-hardware)$': DriverInfo('fake', mapping={},
-                                      hardware_type='fake-hardware'),
+    r'^fake(|\-hardware)$': DriverInfo('fake', mapping={},
+                                       hardware_type='fake-hardware'),
 }
 
 

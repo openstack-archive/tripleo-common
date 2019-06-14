@@ -57,7 +57,7 @@ def _workbook_to_rst(name, workbook):
             yield ''
 
         if 'description' in workflow:
-            if len(workflow['description'].split("\n"))>2:
+            if len(workflow['description'].split("\n")) > 2:
                 for _line in workflow['description'].split("\n"):
                     _new_line = '   ' + _line
                     yield _new_line
@@ -71,7 +71,7 @@ def _workbook_to_rst(name, workbook):
                 try:
                     yield '   :input {}: Default: {}'.format(
                         *input_param.items()[0])
-                except:
+                except Exception:
                     yield '   :input {}: Required.'.format(input_param)
             yield ''
 

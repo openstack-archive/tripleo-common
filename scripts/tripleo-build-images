@@ -14,11 +14,8 @@
 # under the License.
 
 
-import argparse
 import os
-import subprocess
 import sys
-import yaml
 
 from oslo_config import cfg
 from oslo_config import types
@@ -39,17 +36,14 @@ _opts = [
                  item_type=types.String(),
                  default=['disk_images.yaml'],
                  help=("""Path to configuration file. Can be specified """
-                       """multiple times"""),
-                ),
+                       """multiple times""")),
     cfg.StrOpt('output-directory',
                default=env.get('TRIPLEO_ROOT', '.'),
                help=("""output directory for images. """
-                     """Defaults to $TRIPLEO_ROOT, or current directory""")
-              ),
+                     """Defaults to $TRIPLEO_ROOT, or current directory""")),
     cfg.BoolOpt('skip',
                 default=False,
-                help="""Skip build if cached image exists."""
-               ),
+                help="""Skip build if cached image exists."""),
     cfg.BoolOpt('json-output',
                 default=False,
                 help="""Skip build and only output the configuration in a """
@@ -65,6 +59,7 @@ CONF.register_cli_opts(_opts, group=image_opt_group)
 CONF.set_default('use_stderr', True)
 log.setup(CONF, 'build-overcloud-images')
 
+
 def main(argv=sys.argv):
     CONF(argv[1:])
     LOG.info('Using config files at: %s' % CONF.image.config_file)
@@ -77,6 +72,7 @@ def main(argv=sys.argv):
         manager.json_output()
     else:
         manager.build()
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

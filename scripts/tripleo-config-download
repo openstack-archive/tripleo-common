@@ -29,8 +29,8 @@ def get_orchestration_client():
 
 def get_args():
     parser = argparse.ArgumentParser(
-                description=("tripleo-config-download"),
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description=("tripleo-config-download"),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--stack-name', '-s',
                         default='overcloud',
                         help="Heat stack name")
@@ -40,6 +40,7 @@ def get_args():
 
     args = parser.parse_args(sys.argv[1:])
     return args
+
 
 if __name__ == '__main__':
     args = get_args()

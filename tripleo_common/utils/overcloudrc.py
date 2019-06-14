@@ -60,6 +60,7 @@ def bracket_ipv6(address):
     except socket.error:
         return address
 
+
 CLEAR_ENV = """# Clear any old environment that may conflict.
 for key in $( set | awk '{FS=\"=\"}  /^OS_/ {print $1}' ); do unset $key ; done
 """
@@ -67,7 +68,7 @@ CLOUDPROMPT = """
 # Add OS_CLOUDNAME to PS1
 if [ -z "${CLOUDPROMPT_ENABLED:-}" ]; then
     export PS1=${PS1:-""}
-    export PS1=\${OS_CLOUDNAME:+"(\$OS_CLOUDNAME)"}\ $PS1
+    export PS1=\\${OS_CLOUDNAME:+"(\\$OS_CLOUDNAME)"}\\ $PS1
     export CLOUDPROMPT_ENABLED=1
 fi
 """
