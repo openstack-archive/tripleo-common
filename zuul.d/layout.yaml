@@ -14,14 +14,14 @@
       - tripleo-standalone-scenarios-full
     check:
       jobs:
-        - openstack-tox-pep8
+        - openstack-tox-linters
         - openstack-tox-py27
         - openstack-tox-py35
         - openstack-tox-py36
         - openstack-tox-py37
         - tripleo-ci-centos-7-containers-multinode:
             dependencies: &deps_unit_lint
-              - openstack-tox-pep8
+              - openstack-tox-linters
               - openstack-tox-py27
               - openstack-tox-py35
               - openstack-tox-py36
@@ -80,6 +80,7 @@
     gate:
       queue: tripleo
       jobs:
+        - openstack-tox-linters
         - openstack-tox-lower-constraints
         - tripleo-ci-centos-7-scenario009-multinode-oooq-container:
             files:
