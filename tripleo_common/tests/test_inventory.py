@@ -213,12 +213,12 @@ class TestInventory(base.TestCase):
                          'plan': 'overcloud',
                          'project_name': 'admin',
                          'undercloud_service_list': [
-                             'openstack-nova-compute',
-                             'openstack-heat-engine',
-                             'openstack-ironic-conductor',
-                             'openstack-swift-container',
-                             'openstack-swift-object',
-                             'openstack-mistral-engine'],
+                             'tripleo_nova_compute',
+                             'tripleo_heat_engine',
+                             'tripleo_ironic_conductor',
+                             'tripleo_swift_container_server',
+                             'tripleo_swift_object_server',
+                             'tripleo_mistral_engine'],
                          'undercloud_swift_url': 'anendpoint',
                          'username': 'admin'}}}
         inv_list = inventory.list()
@@ -297,12 +297,12 @@ class TestInventory(base.TestCase):
                          'plan': 'overcloud',
                          'project_name': 'admin',
                          'undercloud_service_list': [
-                             'openstack-nova-compute',
-                             'openstack-heat-engine',
-                             'openstack-ironic-conductor',
-                             'openstack-swift-container',
-                             'openstack-swift-object',
-                             'openstack-mistral-engine'],
+                             'tripleo_nova_compute',
+                             'tripleo_heat_engine',
+                             'tripleo_ironic_conductor',
+                             'tripleo_swift_container_server',
+                             'tripleo_swift_object_server',
+                             'tripleo_mistral_engine'],
                          'undercloud_swift_url':
                          'anendpoint' if session else None,
                          'username': 'admin'}}}
@@ -399,12 +399,12 @@ class TestInventory(base.TestCase):
                                     'plan': 'overcloud',
                                     'project_name': 'admin',
                                     'undercloud_service_list': [
-                                        'openstack-nova-compute',
-                                        'openstack-heat-engine',
-                                        'openstack-ironic-conductor',
-                                        'openstack-swift-container',
-                                        'openstack-swift-object',
-                                        'openstack-mistral-engine'],
+                                        'tripleo_nova_compute',
+                                        'tripleo_heat_engine',
+                                        'tripleo_ironic_conductor',
+                                        'tripleo_swift_container_server',
+                                        'tripleo_swift_object_server',
+                                        'tripleo_mistral_engine'],
                                     'undercloud_swift_url': 'anendpoint',
                                     'username': 'admin'}}}
         if extra_vars:
