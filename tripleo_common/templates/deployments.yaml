@@ -1,10 +1,10 @@
 - name: Lookup deployment UUID
   set_fact:
-    deployment_uuid: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.id')}}"
+    deployment_uuid: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.id') }}"
 
 - name: Lookup deployment group
   set_fact:
-    deployment_group: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.group')}}"
+    deployment_group: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.group') }}"
 
 
 - name: Hiera check and diff mode

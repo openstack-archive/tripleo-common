@@ -1,12 +1,12 @@
 - name: ensure local storage directory exists and has correct permissions
   file:
-    path: "{{tripleo_persist_storage_root_dir}}"
+    path: "{{ tripleo_persist_storage_root_dir }}"
     # Attempting to set an owner fails with "chown failed: failed to
     # look up user" so we at least ensure the permissions.
     mode: 0700
     state: directory
   delegate_to: localhost
-  become: "{{tripleo_persist_storage_root_become}}"
+  become: "{{ tripleo_persist_storage_root_become }}"
 
 - name: create tempfile for the archive
   tempfile:
@@ -15,7 +15,7 @@
 
 - name: make sure we don't have a trailing forward slash
   set_fact:
-    tripleo_persist_dir_safe: "{{tripleo_persist_dir|regex_replace('\\/$', '')}}"
+    tripleo_persist_dir_safe: "{{ tripleo_persist_dir|regex_replace('\\/$', '') }}"
     cacheable: no
 
 # Using the "archive" module lists lists all tarred files in module
@@ -23,15 +23,15 @@
 # "no_log: true".
 - name: create the archive
   shell: |
-    tar -czf "{{tripleo_persist_tempfile.path}}" -C "{{tripleo_persist_dir_safe|dirname}}" "{{tripleo_persist_dir_safe|basename}}"
+    tar -czf "{{ tripleo_persist_tempfile.path }}" -C "{{ tripleo_persist_dir_safe|dirname }}" "{{ tripleo_persist_dir_safe|basename }}"
 
 - name: fetch the archive
   fetch:
-    src: "{{tripleo_persist_tempfile.path}}"
-    dest: "{{tripleo_persist_storage_root_dir}}/{{inventory_hostname}}{{tripleo_persist_dir_safe}}.tar.gz"
+    src: "{{ tripleo_persist_tempfile.path }}"
+    dest: "{{ tripleo_persist_storage_root_dir }}/{{ inventory_hostname }}{{ tripleo_persist_dir_safe }}.tar.gz"
     flat: yes
 
 - name: remove tempfile
   file:
-    name: "{{tripleo_persist_tempfile.path}}"
+    name: "{{ tripleo_persist_tempfile.path }}"
     state: absent

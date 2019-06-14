@@ -34,9 +34,10 @@
 
       - name: fail if ssh pub key file does not exist or is not readable
         fail: msg="{{ amp_ssh_key_path }} does not exist or is not readable by user {{ ansible_user }}"
-        when: key_file_result|failed or key_file_result.stat.exists == False or key_file_result.stat.readable == False
+        when: key_file_result|failed or not key_file_result.stat.exists or not key_file_result.stat.readable
 
-      - set_fact:
+      - name: set amp_ssh_key_path_final
+        set_fact:
           amp_ssh_key_path_final: "{{ amp_ssh_key_path }}"
     when: amp_ssh_key_path is defined and amp_ssh_key_path != ""
 
@@ -49,7 +50,8 @@
       - name: copy ssh public key content to temp file
         copy: content="{{ amp_ssh_key_data }}" dest="{{ ssh_key_tmp_file.path }}"
 
-      - set_fact:
+      - name: set amp_ssh_key_path_final
+        set_fact:
           amp_ssh_key_path_final: "{{ ssh_key_tmp_file.path }}"
     when: amp_ssh_key_path is not defined or amp_ssh_key_path == ""
 

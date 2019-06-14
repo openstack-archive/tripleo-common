@@ -28,10 +28,16 @@
     become: true
     shell: |
       openssl genrsa -passout pass:{{ ca_passphrase }} -des3 -out {{ openssl_temp_dir }}/private/cakey.pem 2048
+    tags:
+      - skip_ansible_lint
+
   - name: Reading private key
     become: true
     shell: cat {{ openssl_temp_dir }}/private/cakey.pem
     register: private_key_data
+    tags:
+      - skip_ansible_lint
+
   - name: Setting private key fact
     set_fact:
       private_key_content: "{{ private_key_data.stdout }}"
@@ -43,10 +49,16 @@
                   -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com" \
                   -days 365 -config {{ openssl_temp_dir }}/openssl.cnf \
                   -out {{ openssl_temp_dir }}/ca_01.pem
+    tags:
+      - skip_ansible_lint
+
   - name: Reading CA certificate
     become: true
     shell: cat {{ openssl_temp_dir }}/ca_01.pem
     register: ca_cert_data
+    tags:
+      - skip_ansible_lint
+
   - name: Setting CA certificate fact
     set_fact:
       ca_cert_content: "{{ ca_cert_data.stdout }}"

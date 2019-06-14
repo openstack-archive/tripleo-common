@@ -6,6 +6,7 @@
       selevel: s0
       setype: svirt_sandbox_file_t
     become: true
+
   - name: setting [controller_worker]/amp_boot_network_list
     become: true
     become_user: root
@@ -16,6 +17,7 @@
       value: "{{ lb_mgmt_net_id }}"
       selevel: s0
       setype: svirt_sandbox_file_t
+
   - name: setting [controller_worker]/amp_secgroup_list
     become: true
     become_user: root
@@ -26,25 +28,29 @@
       value: "{{ lb_mgmt_secgroup_id }}"
       selevel: s0
       setype: svirt_sandbox_file_t
+
   - name: making sure octavia health manager configuration directory exists
     file:
-      path: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager"
+      path: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/octavia-health-manager"
       state: directory
       selevel: s0
       setype: svirt_sandbox_file_t
     become: true
+
   - name: create octavia health manager configuration file
     become: true
     become_user: root
     template:
-      dest: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf"
+      dest: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/octavia-health-manager/manager-post-deploy.conf"
       src: "manager-post-deploy.conf.j2"
       selevel: s0
       setype: svirt_sandbox_file_t
+
   - name: gather facts about the service project
     shell: |
       openstack project show "{{ auth_project_name }}" -c id -f value
     register: project_id_result
+
   - name: setting [controller_worker]/amp_image_owner_id
     become: true
     become_user: root

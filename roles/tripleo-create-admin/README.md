@@ -42,7 +42,7 @@ None
       - import_role:
           name: tripleo-create-admin
           tasks_from: create_user.yml
-        vars: 
+        vars:
           tripleo_admin_generate_key: true
 
 ### Authorize existing user ###

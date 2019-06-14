@@ -40,10 +40,13 @@
     - name: Abort playbook run if consistency check fails
       fail:
         msg: "object.ring.gz does not match reference checksum"
-      when: (result.stat.exists == True) and (result_reference.stat.exists == True) and (result_reference.stat.checksum != result.stat.checksum)
+      when:
+        - result.stat.exists
+        - result_reference.stat.exists
+        - result_reference.stat.checksum != result.stat.checksum
 
     - name: Deploy missing Swift rings
-      when: result.stat.exists == False
+      when: not result.stat.exists
       block:
         - name: Fetch missing Swift rings from undercloud
           command: swift --insecure download -o /tmp/swift-rings.tar.gz overcloud-swift-rings swift-rings.tar.gz
@@ -63,7 +66,9 @@
     - name: Check if it is safe to continue rebalancing
       set_fact:
         rebalance_is_safe: True
-      when: (result.stat.exists == True) and ((recon.stdout | from_json).object_replication_last | int) > ((result.stat.mtime) | int)
+      when:
+        - result.stat.exists
+        - ((recon.stdout | from_json).object_replication_last | int) > ((result.stat.mtime) | int)
 
     - name: Show warning and stop playbook run if unsafe
       debug:

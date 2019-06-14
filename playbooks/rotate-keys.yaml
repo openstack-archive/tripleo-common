@@ -9,13 +9,15 @@
   - name: populate service facts
     service_facts:
 
-  - set_fact:
+  - name: Determine facts
+    set_fact:
       is_container: containerized_keystone_dir.stat.isdir is defined and containerized_keystone_dir.stat.isdir
       podman_enabled: '"tripleo_keystone.service" in ansible_facts.services'
 
   - name: Rotate fernet keys for keystone container
     block:
-      - set_fact:
+      - name: set keystone_base
+        set_fact:
           keystone_base: /var/lib/config-data/puppet-generated/keystone
 
       - name: Remove previous fernet keys
@@ -33,12 +35,18 @@
 
       - name: Set permissions to match container's user
         shell: chown --reference={{ keystone_base }}/etc/keystone/fernet-keys {{ keystone_base }}{{ item.key }}
+        args:
+          warn: false
         with_dict: "{{ fernet_keys }}"
         no_log: true
+        tags:
+          - skip_ansible_lint
 
       - name: Restart keystone container with docker
         shell: docker restart keystone
         when: not podman_enabled
+        tags:
+          - skip_ansible_lint
 
       - name: Restart keystone container
         service:

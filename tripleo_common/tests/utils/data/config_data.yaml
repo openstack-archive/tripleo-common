@@ -119,19 +119,15 @@ servers:
   - physical_resource_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
     name: overcloud-controller-0
     OS::stack_id: 00b3a5e1-5e8e-4b55-878b-2fa2271f15ad
-    name: overcloud-controller-0
   - physical_resource_id: a7db3010-a51f-4ae0-a791-2364d629d20d
     name: overcloud-novacompute-0
     OS::stack_id: a7db3010-a51f-4ae0-a791-2364d629d20d
-    name: overcloud-novacompute-0
   - physical_resource_id: 8b07cd31-3083-4b88-a433-955f72039e2c
     name: overcloud-novacompute-1
     OS::stack_id: 8b07cd31-3083-4b88-a433-955f72039e2c
-    name: overcloud-novacompute-1
   - physical_resource_id: 169b46f8-1965-4d90-a7de-f36fb4a830fe
     name: overcloud-novacompute-2
     OS::stack_id: 169b46f8-1965-4d90-a7de-f36fb4a830fe
-    name: overcloud-novacompute-2
 
 server_id_data:
   Controller:

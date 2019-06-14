@@ -18,5 +18,5 @@
 - name: write the updated tripleo-upgrade hiera data
   copy:
     content: "{{ tripleo_upgrade_hiera_data_del | to_nice_json }}"
-    dest: "{{tripleo_upgrade_hiera_file}}"
+    dest: "{{ tripleo_upgrade_hiera_file }}"
   become: yes

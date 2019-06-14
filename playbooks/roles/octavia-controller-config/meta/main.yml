@@ -1,2 +1,10 @@
 dependencies:
   - common
+galaxy_info:
+  author: Red Hat
+  description: octavia-controller-config
+  license: Apache
+  min_ansible_version: 2.5
+  platforms:
+    - name: CentOS
+    - name: Fedora
