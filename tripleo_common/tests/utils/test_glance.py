@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import collections
-import tempfile
 
 from glanceclient import exc as exceptions
 import mock
@@ -42,7 +41,7 @@ class GlanceTest(base.TestCase):
     def test_raise_exception_kernel(self):
         client = mock.MagicMock()
         client.images.find.side_effect = exceptions.NotFound
-        message = "Kernel image not found in Glance, and no path specified."
+        message = "Kernel image bm-kernel not found in Glance"
         with testtools.ExpectedException(ValueError, message):
             glance.create_or_find_kernel_and_ramdisk(client, 'bm-kernel',
                                                      None)
@@ -51,50 +50,23 @@ class GlanceTest(base.TestCase):
         client = mock.MagicMock()
         client.images.find.side_effect = (self.image('aaa'),
                                           exceptions.NotFound)
-        message = "Ramdisk image not found in Glance, and no path specified."
+        message = "Ramdisk image bm-ramdisk not found in Glance"
         with testtools.ExpectedException(ValueError, message):
             glance.create_or_find_kernel_and_ramdisk(client, 'bm-kernel',
                                                      'bm-ramdisk')
 
-    def test_skip_missing_no_kernel(self):
+    def test_return_files(self):
         client = mock.MagicMock()
-        client.images.find.side_effect = (exceptions.NotFound,
-                                          self.image('bbb'))
-        expected = {'kernel': None, 'ramdisk': 'bbb'}
+        expected = {'kernel': 'file:///kernel', 'ramdisk': 'file:///ramdisk'}
         ids = glance.create_or_find_kernel_and_ramdisk(
-            client, 'bm-kernel', 'bm-ramdisk', skip_missing=True)
-        self.assertEqual(ids, expected)
+            client, 'file:///kernel', 'file:///ramdisk')
+        client.images.assert_not_called()
+        self.assertEqual(expected, ids)
 
-    def test_skip_missing_no_ramdisk(self):
+    def test_return_urls(self):
         client = mock.MagicMock()
-        client.images.find.side_effect = (self.image('aaa'),
-                                          exceptions.NotFound)
-        expected = {'kernel': 'aaa', 'ramdisk': None}
+        expected = {'kernel': 'http://kernel', 'ramdisk': 'http://ramdisk'}
         ids = glance.create_or_find_kernel_and_ramdisk(
-            client, 'bm-kernel', 'bm-ramdisk', skip_missing=True)
-        self.assertEqual(ids, expected)
-
-    def test_skip_missing_kernel_and_ramdisk(self):
-        client = mock.MagicMock()
-        client.images.find.side_effect = exceptions.NotFound
-        expected = {'kernel': None, 'ramdisk': None}
-        ids = glance.create_or_find_kernel_and_ramdisk(
-            client, 'bm-kernel', 'bm-ramdisk', skip_missing=True)
-        self.assertEqual(ids, expected)
-
-    def test_create_kernel_and_ramdisk(self):
-        client = mock.MagicMock()
-        client.images.find.side_effect = exceptions.NotFound
-        client.images.create.side_effect = (self.image('aaa'),
-                                            self.image('zzz'))
-        expected = {'kernel': 'aaa', 'ramdisk': 'zzz'}
-        with tempfile.NamedTemporaryFile() as imagefile:
-            ids = glance.create_or_find_kernel_and_ramdisk(
-                client, 'bm-kernel', 'bm-ramdisk', kernel_path=imagefile.name,
-                ramdisk_path=imagefile.name)
-        kernel_create = mock.call(name='bm-kernel', disk_format='aki',
-                                  is_public=True, data=mock.ANY)
-        ramdisk_create = mock.call(name='bm-ramdisk', disk_format='ari',
-                                   is_public=True, data=mock.ANY)
-        client.images.create.assert_has_calls([kernel_create, ramdisk_create])
+            client, 'http://kernel', 'http://ramdisk')
+        client.images.assert_not_called()
         self.assertEqual(expected, ids)
