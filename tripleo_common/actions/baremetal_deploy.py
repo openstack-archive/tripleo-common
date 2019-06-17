@@ -390,13 +390,43 @@ class PopulateEnvironmentAction(base.TripleOAction):
         self.ctlplane_network = ctlplane_network
 
     def run(self, context):
+
+        network_keys = (
+            'mtu',
+            'tags',
+        )
+        subnet_keys = (
+            'cidr',
+            'gateway_ip',
+            'host_routes',
+            'dns_nameservers',
+        )
+        resource_registry = self.environment.setdefault(
+            'resource_registry', {})
+        resource_registry.setdefault(
+            'OS::TripleO::DeployedServer::ControlPlanePort',
+            '/usr/share/openstack-tripleo-heat-templates'
+            '/deployed-server/deployed-neutron-port.yaml')
         port_map = (self.environment.setdefault('parameter_defaults', {})
                     .setdefault('DeployedServerPortMap', {}))
         for hostname, nets in self.port_map.items():
-            ctlplane = nets.get(self.ctlplane_network)
-            if not ctlplane:
+            ctlplane_network = nets.get(self.ctlplane_network)
+            if not ctlplane_network:
                 LOG.warning('No ctlplane ports information for %s', hostname)
                 continue
+            fixed_ips = ctlplane_network.get('fixed_ips', [])
+            network_all = ctlplane_network.get('network', {})
+            network = {k: v for k, v in network_all.items()
+                       if k in network_keys}
+            subnets = []
+            for subnet in ctlplane_network.get('subnets', []):
+                subnets.append({k: v for k, v in subnet.items()
+                                if k in subnet_keys})
+            ctlplane = {
+                'fixed_ips': fixed_ips,
+                'network': network,
+                'subnets': subnets
+            }
 
             port_map['%s-%s' % (hostname, self.ctlplane_network)] = ctlplane
 

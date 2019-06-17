@@ -687,9 +687,22 @@ class TestPopulateEnvironment(base.TestCase):
         port_map = {
             'compute-0': {
                 'ctlplane': {
-                    'network': {'tags': ['foo']},
+                    'network': {
+                        'tags': ['foo'],
+                        'mtu': 1350,
+                        'id': 'aaaa'  # will be filtered out
+                    },
                     'fixed_ips': [{'ip_address': '1.2.3.5'}],
-                    'subnets': [{'cidr': '1.2.3.0/24'}],
+                    'subnets': [{
+                        'cidr': '1.2.3.0/24',
+                        'gateway_ip': '192.168.24.1',
+                        'host_routes': [{
+                            'destination': '169.254.169.254/32',
+                            'nexthop': '192.168.24.3'
+                        }],
+                        'dns_nameservers': ['8.8.8.8'],
+                        'id': 'bbbb'  # will be filtered out
+                    }],
                 },
                 'foobar': {
                     'network': {},
@@ -714,12 +727,28 @@ class TestPopulateEnvironment(base.TestCase):
         result = action.run(mock.Mock())
         self.assertEqual(
             {
+                'resource_registry': {
+                    'OS::TripleO::DeployedServer::ControlPlanePort':
+                    '/usr/share/openstack-tripleo-heat-templates/'
+                    'deployed-server/deployed-neutron-port.yaml'
+                },
                 'parameter_defaults': {
                     'DeployedServerPortMap': {
                         'compute-0-ctlplane': {
                             'fixed_ips': [{'ip_address': '1.2.3.5'}],
-                            'subnets': [{'cidr': '1.2.3.0/24'}],
-                            'network': {'tags': ['foo']},
+                            'subnets': [{
+                                'cidr': '1.2.3.0/24',
+                                'gateway_ip': '192.168.24.1',
+                                'host_routes': [{
+                                    'destination': '169.254.169.254/32',
+                                    'nexthop': '192.168.24.3'
+                                }],
+                                'dns_nameservers': ['8.8.8.8'],
+                            }],
+                            'network': {
+                                'tags': ['foo'],
+                                'mtu': 1350,
+                            },
                         },
                         'controller-0-ctlplane': {
                             'fixed_ips': [{'ip_address': '1.2.3.4'}],
