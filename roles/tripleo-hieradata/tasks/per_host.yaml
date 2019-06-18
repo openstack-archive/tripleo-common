@@ -1,0 +1,9 @@
+- name: Copy hieradata for host {{ host }}
+  copy:
+    dest: "/etc/puppet/hieradata/{{ filename }}.json"
+    mode: 0600
+    content: "{{ data['datafiles'][filename] }}"
+  loop: "{{ data['datafiles'] | list }}"
+  loop_control:
+    loop_var: filename
+  when: "'datafiles' in data"

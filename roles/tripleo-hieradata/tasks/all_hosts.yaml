@@ -1,0 +1,8 @@
+- name: Copy hieradata files
+  copy:
+    dest: /etc/puppet/hieradata/{{ item.key }}.json
+    mode: 0600
+    content: "{{ item.value }}"
+  loop: "{{ hieradata_content['datafiles'] | default({})| dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"

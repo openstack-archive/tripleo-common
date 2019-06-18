@@ -1,3 +1,4 @@
 hieradata_template: ""
 hieradata_variable_start_string: "{{"
 hieradata_variable_end_string: "}}"
+hieradata_per_host: false
