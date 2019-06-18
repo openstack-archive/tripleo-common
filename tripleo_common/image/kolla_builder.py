@@ -48,6 +48,7 @@ def init_prepare_defaults(defaults_file):
     global CONTAINER_IMAGES_DEFAULTS
     CONTAINER_IMAGES_DEFAULTS = CONTAINER_IMAGE_PREPARE_PARAM[0]['set']
 
+
 DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                      'container-images',
                                      'overcloud_containers.yaml.j2')

@@ -29,14 +29,14 @@ def execute(*cmd, **kwargs):
     Executes and logs results from a system command. See docs for
     oslo_concurrency.processutils.execute for usage.
 
-    :param \*cmd: positional arguments to pass to processutils.execute()
+    :param \\*cmd: positional arguments to pass to processutils.execute()
     :param use_standard_locale: keyword-only argument. True | False.
                                 Defaults to False. If set to True,
                                 execute command with standard locale
                                 added to environment variables.
     :param log_stdout: keyword-only argument. True | False. Defaults
                        to True. If set to True, logs the output.
-    :param \*\*kwargs: keyword arguments to pass to processutils.execute()
+    :param \\*\\*kwargs: keyword arguments to pass to processutils.execute()
     :returns: (stdout, stderr) from process execution
     :raises: UnknownArgumentError on receiving unknown arguments
     :raises: ProcessExecutionError

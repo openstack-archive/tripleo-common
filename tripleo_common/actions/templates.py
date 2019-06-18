@@ -127,7 +127,7 @@ class ProcessTemplatesAction(base.TripleOAction):
             LOG.info("Writing rendered template %s" % yaml_f)
             swiftutils.put_object_string(swift, self.container, yaml_f,
                                          r_template)
-        except swiftexceptions.ClientException as ex:
+        except swiftexceptions.ClientException:
             error_msg = ("Error storing file %s in container %s"
                          % (yaml_f, self.container))
             LOG.error(error_msg)
