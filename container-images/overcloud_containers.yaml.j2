@@ -3,8 +3,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}aodh-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerAodhApiImage
-  - DockerAodhConfigImage
+  - ContainerAodhApiImage
+  - ContainerAodhConfigImage
   services:
   - OS::TripleO::Services::AodhApi
   - OS::TripleO::Services::AodhEvaluator
@@ -18,7 +18,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}aodh-evaluator{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerAodhEvaluatorImage
+  - ContainerAodhEvaluatorImage
   services:
   - OS::TripleO::Services::AodhEvaluator
   - OS::TripleO::Services::UndercloudAodhEvaluator
@@ -26,7 +26,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}aodh-listener{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerAodhListenerImage
+  - ContainerAodhListenerImage
   services:
   - OS::TripleO::Services::AodhListener
   - OS::TripleO::Services::UndercloudAodhListener
@@ -34,7 +34,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}aodh-notifier{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerAodhNotifierImage
+  - ContainerAodhNotifierImage
   services:
   - OS::TripleO::Services::AodhNotifier
   - OS::TripleO::Services::UndercloudAodhNotifier
@@ -42,16 +42,16 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}barbican-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerBarbicanApiImage
-  - DockerBarbicanConfigImage
+  - ContainerBarbicanApiImage
+  - ContainerBarbicanConfigImage
   services:
   - OS::TripleO::Services::BarbicanApi
 
 - imagename: "{{namespace}}/{{name_prefix}}barbican-keystone-listener{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerBarbicanKeystoneListenerImage
-  - DockerBarbicanKeystoneListenerConfigImage
+  - ContainerBarbicanKeystoneListenerImage
+  - ContainerBarbicanKeystoneListenerConfigImage
   services:
   - OS::TripleO::Services::BarbicanApi
   - OS::TripleO::Services::BarbicanKeystoneListener
@@ -59,8 +59,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}barbican-worker{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerBarbicanWorkerImage
-  - DockerBarbicanWorkerConfigImage
+  - ContainerBarbicanWorkerImage
+  - ContainerBarbicanWorkerConfigImage
   services:
   - OS::TripleO::Services::BarbicanApi
   - OS::TripleO::Services::BarbicanWorker
@@ -68,8 +68,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-central{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCeilometerCentralImage
-  - DockerCeilometerConfigImage
+  - ContainerCeilometerCentralImage
+  - ContainerCeilometerConfigImage
   services:
   - OS::TripleO::Services::CeilometerAgentCentral
   - OS::TripleO::Services::CeilometerAgentIpmi
@@ -82,14 +82,14 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-compute{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCeilometerComputeImage
+  - ContainerCeilometerComputeImage
   services:
   - OS::TripleO::Services::ComputeCeilometerAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-notification{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCeilometerNotificationImage
+  - ContainerCeilometerNotificationImage
   services:
   - OS::TripleO::Services::CeilometerAgentNotification
   - OS::TripleO::Services::UndercloudCeilometerAgentNotification
@@ -97,7 +97,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-ipmi{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCeilometerIpmiImage
+  - ContainerCeilometerIpmiImage
   services:
   - OS::TripleO::Services::CeilometerAgentIpmi
   - OS::TripleO::Services::UndercloudCeilometerAgentIpmi
@@ -105,8 +105,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}cinder-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCinderApiImage
-  - DockerCinderConfigImage
+  - ContainerCinderApiImage
+  - ContainerCinderConfigImage
   services:
   - OS::TripleO::Services::BlockStorageCinderVolume
   - OS::TripleO::Services::CinderApi
@@ -120,14 +120,14 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}cinder-backup{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCinderBackupImage
+  - ContainerCinderBackupImage
   services:
   - OS::TripleO::Services::CinderBackup
 
 - imagename: "{{namespace}}/{{name_prefix}}cinder-scheduler{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCinderSchedulerImage
+  - ContainerCinderSchedulerImage
   services:
   - OS::TripleO::Services::CinderScheduler
   - OS::TripleO::Services::UndercloudCinderScheduler
@@ -135,7 +135,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}cinder-volume{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCinderVolumeImage
+  - ContainerCinderVolumeImage
   services:
   - OS::TripleO::Services::BlockStorageCinderVolume
   - OS::TripleO::Services::CinderVolume
@@ -144,23 +144,23 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}collectd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCollectdConfigImage
-  - DockerCollectdImage
+  - ContainerCollectdConfigImage
+  - ContainerCollectdImage
   services:
   - OS::TripleO::Services::Collectd
 
 - imagename: "{{namespace}}/{{name_prefix}}cron{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerCrondConfigImage
-  - DockerCrondImage
+  - ContainerCrondConfigImage
+  - ContainerCrondImage
   services:
   - OS::TripleO::Services::ContainersLogrotateCrond
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerDesignateApiImage
+  - ContainerDesignateApiImage
   services:
   - OS::TripleO::Services::DesignateApi
   - OS::TripleO::Services::DesignateCentral
@@ -172,68 +172,68 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}designate-backend-bind9{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerDesignateBackendBIND9Image
+  - ContainerDesignateBackendBIND9Image
   services:
   - OS::TripleO::Services::DesignateWorker
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-central{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerDesignateCentralImage
+  - ContainerDesignateCentralImage
   services:
   - OS::TripleO::Services::DesignateCentral
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-mdns{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerDesignateMDNSImage
+  - ContainerDesignateMDNSImage
   services:
   - OS::TripleO::Services::DesignateMDNS
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-producer{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerDesignateProducerImage
+  - ContainerDesignateProducerImage
   services:
   - OS::TripleO::Services::DesignateProducer
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-sink{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerDesignateSinkImage
+  - ContainerDesignateSinkImage
   services:
   - OS::TripleO::Services::DesignateSink
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-worker{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerDesignateConfigImage
-  - DockerDesignateWorkerImage
+  - ContainerDesignateConfigImage
+  - ContainerDesignateWorkerImage
   services:
   - OS::TripleO::Services::DesignateWorker
 
 - imagename: "{{namespace}}/{{name_prefix}}ec2-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerEc2ApiConfigImage
-  - DockerEc2ApiImage
+  - ContainerEc2ApiConfigImage
+  - ContainerEc2ApiImage
   services:
   - OS::TripleO::Services::Ec2Api
 
 - imagename: "{{namespace}}/{{name_prefix}}etcd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerEtcdConfigImage
-  - DockerEtcdImage
+  - ContainerEtcdConfigImage
+  - ContainerEtcdImage
   services:
   - OS::TripleO::Services::Etcd
 
 - imagename: "{{namespace}}/{{name_prefix}}fluentd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerFluentdConfigImage
-  - DockerFluentdClientImage
-  - DockerFluentdImage
+  - ContainerFluentdConfigImage
+  - ContainerFluentdClientImage
+  - ContainerFluentdImage
   services:
   - OS::TripleO::Services::FluentdClient
   - OS::TripleO::Services::Fluentd
@@ -241,16 +241,16 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerGlanceApiConfigImage
-  - DockerGlanceApiImage
+  - ContainerGlanceApiConfigImage
+  - ContainerGlanceApiImage
   services:
   - OS::TripleO::Services::GlanceApi
 
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerGnocchiApiImage
-  - DockerGnocchiConfigImage
+  - ContainerGnocchiApiImage
+  - ContainerGnocchiConfigImage
   services:
   - OS::TripleO::Services::GnocchiApi
   - OS::TripleO::Services::GnocchiMetricd
@@ -262,7 +262,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-metricd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerGnocchiMetricdImage
+  - ContainerGnocchiMetricdImage
   services:
   - OS::TripleO::Services::GnocchiMetricd
   - OS::TripleO::Services::UndercloudGnocchiMetricd
@@ -270,7 +270,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-statsd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerGnocchiStatsdImage
+  - ContainerGnocchiStatsdImage
   services:
   - OS::TripleO::Services::GnocchiStatsd
   - OS::TripleO::Services::UndercloudGnocchiStatsd
@@ -278,8 +278,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}haproxy{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerHAProxyConfigImage
-  - DockerHAProxyImage
+  - ContainerHAProxyConfigImage
+  - ContainerHAProxyImage
   services:
   - OS::TripleO::Services::HAproxy
   - OS::TripleO::Services::UndercloudHAProxy
@@ -290,17 +290,17 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}heat-api-cfn{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerHeatApiCfnConfigImage
-  - DockerHeatApiCfnImage
+  - ContainerHeatApiCfnConfigImage
+  - ContainerHeatApiCfnImage
   services:
   - OS::TripleO::Services::HeatApiCfn
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerHeatApiConfigImage
-  - DockerHeatApiImage
-  - DockerHeatConfigImage
+  - ContainerHeatApiConfigImage
+  - ContainerHeatApiImage
+  - ContainerHeatConfigImage
   services:
   - OS::TripleO::Services::HeatApi
   - OS::TripleO::Services::HeatEngine
@@ -308,46 +308,46 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}heat-engine{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerHeatEngineImage
+  - ContainerHeatEngineImage
   services:
   - OS::TripleO::Services::HeatEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}horizon{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerHorizonConfigImage
-  - DockerHorizonImage
+  - ContainerHorizonConfigImage
+  - ContainerHorizonImage
   services:
   - OS::TripleO::Services::Horizon
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerIronicApiImage
-  - DockerIronicApiConfigImage
+  - ContainerIronicApiImage
+  - ContainerIronicApiConfigImage
   services:
   - OS::TripleO::Services::IronicApi
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-conductor{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerIronicConductorImage
+  - ContainerIronicConductorImage
   services:
   - OS::TripleO::Services::IronicConductor
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-inspector{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerIronicInspectorImage
-  - DockerIronicInspectorConfigImage
+  - ContainerIronicInspectorImage
+  - ContainerIronicInspectorConfigImage
   services:
   - OS::TripleO::Services::IronicInspector
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-pxe{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerIronicConfigImage
-  - DockerIronicPxeImage
+  - ContainerIronicConfigImage
+  - ContainerIronicPxeImage
   services:
   - OS::TripleO::Services::IronicConductor
   - OS::TripleO::Services::IronicPxe
@@ -355,24 +355,24 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}ironic-neutron-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerIronicNeutronAgentImage
-  - DockerNeutronConfigImage
+  - ContainerIronicNeutronAgentImage
+  - ContainerNeutronConfigImage
   services:
   - OS::TripleO::Services::IronicNeutronAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}iscsid{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerIscsidConfigImage
-  - DockerIscsidImage
+  - ContainerIscsidConfigImage
+  - ContainerIscsidImage
   services:
   - OS::TripleO::Services::Iscsid
 
 - imagename: "{{namespace}}/{{name_prefix}}keepalived{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerKeepalivedConfigImage
-  - DockerKeepalivedImage
+  - ContainerKeepalivedConfigImage
+  - ContainerKeepalivedImage
   services:
   - OS::TripleO::Services::Keepalived
   - OS::TripleO::Services::UndercloudKeepalived
@@ -380,16 +380,16 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}keystone{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerKeystoneConfigImage
-  - DockerKeystoneImage
+  - ContainerKeystoneConfigImage
+  - ContainerKeystoneImage
   services:
   - OS::TripleO::Services::Keystone
 
 - imagename: "{{namespace}}/{{name_prefix}}manila-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerManilaApiImage
-  - DockerManilaConfigImage
+  - ContainerManilaApiImage
+  - ContainerManilaConfigImage
   services:
   - OS::TripleO::Services::ManilaApi
   - OS::TripleO::Services::ManilaScheduler
@@ -398,41 +398,41 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}manila-scheduler{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerManilaSchedulerImage
+  - ContainerManilaSchedulerImage
   services:
   - OS::TripleO::Services::ManilaScheduler
 
 - imagename: "{{namespace}}/{{name_prefix}}manila-share{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerManilaShareImage
+  - ContainerManilaShareImage
   services:
   - OS::TripleO::Services::ManilaShare
 
 - imagename: "{{namespace}}/{{name_prefix}}mariadb{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerClustercheckConfigImage
-  - DockerClustercheckImage
-  - DockerMysqlConfigImage
-  - DockerMysqlImage
-  - DockerMysqlClientConfigImage
+  - ContainerClustercheckConfigImage
+  - ContainerClustercheckImage
+  - ContainerMysqlConfigImage
+  - ContainerMysqlImage
+  - ContainerMysqlClientConfigImage
   services:
   - OS::TripleO::Services::MySQL
 
 - imagename: "{{namespace}}/{{name_prefix}}memcached{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerMemcachedConfigImage
-  - DockerMemcachedImage
+  - ContainerMemcachedConfigImage
+  - ContainerMemcachedImage
   services:
   - OS::TripleO::Services::Memcached
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerMistralApiImage
-  - DockerMistralConfigImage
+  - ContainerMistralApiImage
+  - ContainerMistralConfigImage
   services:
   - OS::TripleO::Services::MistralApi
   - OS::TripleO::Services::MistralEngine
@@ -442,57 +442,57 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}mistral-engine{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerMistralEngineImage
+  - ContainerMistralEngineImage
   services:
   - OS::TripleO::Services::MistralEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-executor{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerMistralExecutorImage
+  - ContainerMistralExecutorImage
   services:
   - OS::TripleO::Services::MistralExecutor
 
 - imagename: "{{namespace}}/{{name_prefix}}mistral-event-engine{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerMistralEventEngineImage
+  - ContainerMistralEventEngineImage
   services:
   - OS::TripleO::Services::MistralEventEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}multipathd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerMultipathdConfigImage
-  - DockerMultipathdImage
+  - ContainerMultipathdConfigImage
+  - ContainerMultipathdImage
   services:
   - OS::TripleO::Services::Multipathd
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-dhcp-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNeutronDHCPImage
+  - ContainerNeutronDHCPImage
   services:
   - OS::TripleO::Services::NeutronDhcpAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-l3-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNeutronL3AgentImage
+  - ContainerNeutronL3AgentImage
   services:
   - OS::TripleO::Services::NeutronL3Agent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNeutronMetadataImage
+  - ContainerNeutronMetadataImage
   services:
   - OS::TripleO::Services::NeutronMetadataAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-openvswitch-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOpenvswitchImage
+  - ContainerOpenvswitchImage
   services:
   - OS::TripleO::Services::ComputeNeutronOvsAgent
   - OS::TripleO::Services::NeutronOvsAgent
@@ -500,7 +500,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}neutron-sriov-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNeutronSriovImage
+  - ContainerNeutronSriovImage
   services:
   - OS::TripleO::Services::NeutronSriovAgent
 
@@ -508,8 +508,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server-opendaylight{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNeutronApiImage
-  - DockerNeutronConfigImage
+  - ContainerNeutronApiImage
+  - ContainerNeutronConfigImage
   services:
   - OS::TripleO::Services::NeutronApi
   - OS::TripleO::Services::NeutronDhcpAgent
@@ -521,8 +521,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNeutronApiImage
-  - DockerNeutronConfigImage
+  - ContainerNeutronApiImage
+  - ContainerNeutronConfigImage
   services:
   - OS::TripleO::Services::NeutronApi
   - OS::TripleO::Services::NeutronServer
@@ -531,7 +531,7 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent-ovn{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOvnMetadataImage
+  - ContainerOvnMetadataImage
   services:
   - OS::TripleO::Services::OVNMetadataAgent
 
@@ -539,8 +539,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNeutronApiImage
-  - DockerNeutronConfigImage
+  - ContainerNeutronApiImage
+  - ContainerNeutronConfigImage
   services:
   - OS::TripleO::Services::ComputeNeutronOvsAgent
   - OS::TripleO::Services::NeutronApi
@@ -556,10 +556,10 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}nova-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaApiImage
-  - DockerNovaConfigImage
-  - DockerNovaMetadataImage
-  - DockerNovaMetadataConfigImage
+  - ContainerNovaApiImage
+  - ContainerNovaConfigImage
+  - ContainerNovaMetadataImage
+  - ContainerNovaMetadataConfigImage
   services:
   - OS::TripleO::Services::NovaApi
   - OS::TripleO::Services::NovaConductor
@@ -571,15 +571,15 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute-ironic{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaComputeIronicImage
+  - ContainerNovaComputeIronicImage
   services:
   - OS::TripleO::Services::NovaIronic
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-compute{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaComputeImage
-  - DockerNovaLibvirtConfigImage
+  - ContainerNovaComputeImage
+  - ContainerNovaLibvirtConfigImage
   services:
   - OS::TripleO::Services::NovaCompute
   - OS::TripleO::Services::NovaLibvirt
@@ -588,59 +588,59 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}nova-conductor{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaConductorImage
+  - ContainerNovaConductorImage
   services:
   - OS::TripleO::Services::NovaConductor
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-libvirt{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaLibvirtImage
+  - ContainerNovaLibvirtImage
   services:
   - OS::TripleO::Services::NovaLibvirt
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-novncproxy{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaVncProxyImage
+  - ContainerNovaVncProxyImage
   services:
   - OS::TripleO::Services::NovaVncProxy
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-scheduler{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaSchedulerImage
+  - ContainerNovaSchedulerImage
   services:
   - OS::TripleO::Services::NovaScheduler
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-serialproxy{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovaSerialproxyConfigImage
-  - DockerNovaSerialproxyImage
+  - ContainerNovaSerialproxyConfigImage
+  - ContainerNovaSerialproxyImage
   services:
   - OS::TripleO::Services::NovaSerialproxy
 
 - imagename: "{{namespace}}/{{name_prefix}}novajoin-notifier{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovajoinNotifierImage
+  - ContainerNovajoinNotifierImage
   services:
   - OS::TripleO::Services::Novajoin
 
 - imagename: "{{namespace}}/{{name_prefix}}novajoin-server{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerNovajoinServerImage
-  - DockerNovajoinConfigImage
+  - ContainerNovajoinServerImage
+  - ContainerNovajoinConfigImage
   services:
   - OS::TripleO::Services::Novajoin
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOctaviaApiImage
-  - DockerOctaviaConfigImage
+  - ContainerOctaviaApiImage
+  - ContainerOctaviaConfigImage
   services:
   - OS::TripleO::Services::OctaviaApi
   - OS::TripleO::Services::OctaviaHealthManager
@@ -650,21 +650,21 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}octavia-health-manager{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOctaviaHealthManagerImage
+  - ContainerOctaviaHealthManagerImage
   services:
   - OS::TripleO::Services::OctaviaHealthManager
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-housekeeping{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOctaviaHousekeepingImage
+  - ContainerOctaviaHousekeepingImage
   services:
   - OS::TripleO::Services::OctaviaHousekeeping
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-worker{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOctaviaWorkerImage
+  - ContainerOctaviaWorkerImage
   services:
   - OS::TripleO::Services::OctaviaWorker
 
@@ -672,8 +672,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}opendaylight{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOpendaylightApiImage
-  - DockerOpendaylightConfigImage
+  - ContainerOpendaylightApiImage
+  - ContainerOpendaylightConfigImage
   services:
   - OS::TripleO::Services::OpenDaylightApi
 {% endif %}
@@ -682,31 +682,31 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}ovn-controller{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOvnControllerConfigImage
-  - DockerOvnControllerImage
+  - ContainerOvnControllerConfigImage
+  - ContainerOvnControllerImage
   services:
   - OS::TripleO::Services::OVNController
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-nb-db-server{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOvnNbDbImage
+  - ContainerOvnNbDbImage
   services:
   - OS::TripleO::Services::OVNDBs
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-northd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOvnNorthdImage
-  - DockerOvnDbsImage
-  - DockerOvnDbsConfigImage
+  - ContainerOvnNorthdImage
+  - ContainerOvnDbsImage
+  - ContainerOvnDbsConfigImage
   services:
   - OS::TripleO::Services::OVNDBs
 
 - imagename: "{{namespace}}/{{name_prefix}}ovn-sb-db-server{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerOvnSbDbImage
+  - ContainerOvnSbDbImage
   services:
   - OS::TripleO::Services::OVNDBs
 {% endif %}
@@ -714,8 +714,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}panko-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerPankoApiImage
-  - DockerPankoConfigImage
+  - ContainerPankoApiImage
+  - ContainerPankoConfigImage
   services:
   - OS::TripleO::Services::PankoApi
   - OS::TripleO::Services::UndercloudPankoApi
@@ -723,18 +723,18 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}placement-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerPlacementConfigImage
-  - DockerPlacementImage
+  - ContainerPlacementConfigImage
+  - ContainerPlacementImage
   services:
   - OS::TripleO::Services::PlacementApi
 
 - imagename: "{{namespace}}/{{name_prefix}}qdrouterd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerQdrouterdConfigImage
-  - DockerQdrouterdImage
-  - DockerMetricsQdrConfigImage
-  - DockerMetricsQdrImage
+  - ContainerQdrouterdConfigImage
+  - ContainerQdrouterdImage
+  - ContainerMetricsQdrConfigImage
+  - ContainerMetricsQdrImage
   services:
   - OS::TripleO::Services::Qdr
   - OS::TripleO::Services::OsloMessagingRpc
@@ -743,8 +743,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}rabbitmq{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerRabbitmqConfigImage
-  - DockerRabbitmqImage
+  - ContainerRabbitmqConfigImage
+  - ContainerRabbitmqImage
   services:
   - OS::TripleO::Services::RabbitMQ
   - OS::TripleO::Services::OsloMessagingRpc
@@ -753,8 +753,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}redis{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerRedisConfigImage
-  - DockerRedisImage
+  - ContainerRedisConfigImage
+  - ContainerRedisImage
   services:
   - OS::TripleO::Services::Redis
   - OS::TripleO::Services::UndercloudRedis
@@ -762,8 +762,8 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}sahara-api{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSaharaApiImage
-  - DockerSaharaConfigImage
+  - ContainerSaharaApiImage
+  - ContainerSaharaConfigImage
   services:
   - OS::TripleO::Services::SaharaApi
   - OS::TripleO::Services::SaharaEngine
@@ -771,58 +771,58 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}sahara-engine{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSaharaEngineImage
+  - ContainerSaharaEngineImage
   services:
   - OS::TripleO::Services::SaharaEngine
 
 - imagename: "{{namespace}}/{{name_prefix}}sensu-client{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSensuClientImage
-  - DockerSensuConfigImage
+  - ContainerSensuClientImage
+  - ContainerSensuConfigImage
   services:
   - OS::TripleO::Services::SensuClient
 
 - imagename: "{{namespace}}/{{name_prefix}}skydive-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSkydiveAgentImage
+  - ContainerSkydiveAgentImage
   services:
   - OS::TripleO::Services::SkydiveAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}skydive-analyzer{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSkydiveAnalyzerImage
+  - ContainerSkydiveAnalyzerImage
   services:
   - OS::TripleO::Services::SkydiveAnalyzer
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-account{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSwiftAccountImage
+  - ContainerSwiftAccountImage
   services:
   - OS::TripleO::Services::SwiftStorage
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-container{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSwiftContainerImage
+  - ContainerSwiftContainerImage
   services:
   - OS::TripleO::Services::SwiftStorage
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-object{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSwiftObjectImage
+  - ContainerSwiftObjectImage
   services:
   - OS::TripleO::Services::SwiftStorage
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-proxy-server{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerSwiftConfigImage
-  - DockerSwiftProxyImage
+  - ContainerSwiftConfigImage
+  - ContainerSwiftProxyImage
   services:
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftRingBuilder
@@ -834,8 +834,8 @@ container_images_template:
 # https://bugs.launchpad.net/tripleo/+bug/1714270
 # - imagename: "{{namespace}}/{{name_prefix}}tacker{{name_suffix}}:{{tag}}"
 #   params:
-#   - DockerTackerConfigImage
-#   - DockerTackerImage
+#   - ContainerTackerConfigImage
+#   - ContainerTackerImage
 #   services:
 #   - OS::TripleO::Services::Tacker
 
@@ -844,22 +844,22 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}tripleoclient{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerTripleoclientImage
+  - ContainerTripleoclientImage
   services:
   - OS::TripleO::Services::TripleoClient
 
 - imagename: "{{namespace}}/{{name_prefix}}zaqar-wsgi{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerZaqarConfigImage
-  - DockerZaqarImage
+  - ContainerZaqarConfigImage
+  - ContainerZaqarImage
   services:
   - OS::TripleO::Services::Zaqar
 
 - imagename: "{{ceph_namespace}}/{{ceph_image}}:{{ceph_tag}}"
   image_source: ceph
   params:
-  - DockerCephDaemonImage
+  - ContainerCephDaemonImage
   services:
   - OS::TripleO::Services::CephClient
   - OS::TripleO::Services::CephExternal
@@ -873,15 +873,15 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}tempest{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerTempestImage
+  - ContainerTempestImage
   services:
   - OS::TripleO::Services::Tempest
 
 - imagename: "{{namespace}}/{{name_prefix}}rsyslog-base{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
-  - DockerRsyslogSidecarImage
-  - DockerRsyslogSidecarConfigImage
+  - ContainerRsyslogSidecarImage
+  - ContainerRsyslogSidecarConfigImage
   services:
   - OS::TripleO::Services::HAproxy
   - OS::TripleO::Services::SwiftProxy
@@ -890,28 +890,28 @@ container_images_template:
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-ansible:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftAnsibleImage
+  - ContainerOpenShiftAnsibleImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-console:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftConsoleImage
+  - ContainerOpenShiftConsoleImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-control-plane:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftControlPlaneImage
+  - ContainerOpenShiftControlPlaneImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-deployer:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftDeployerImage
+  - ContainerOpenShiftDeployerImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
   - OS::TripleO::Services::OpenShift::Master
@@ -920,28 +920,28 @@ container_images_template:
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-docker-builder:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftDockerBuilderImage
+  - ContainerOpenShiftDockerBuilderImage
   services:
   - OS::TripleO::Services::OpenShift::Worker
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-docker-registry:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftDockerRegistryImage
+  - ContainerOpenShiftDockerRegistryImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-haproxy-router:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftHAProxyRouterImage
+  - ContainerOpenShiftHAProxyRouterImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-node:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftNodeImage
+  - ContainerOpenShiftNodeImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
   - OS::TripleO::Services::OpenShift::Master
@@ -950,7 +950,7 @@ container_images_template:
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-pod:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftPodImage
+  - ContainerOpenShiftPodImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
   - OS::TripleO::Services::OpenShift::Master
@@ -959,112 +959,112 @@ container_images_template:
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-service-catalog:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftServiceCatalogImage
+  - ContainerOpenShiftServiceCatalogImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-template-service-broker:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftTemplateServiceBrokerImage
+  - ContainerOpenShiftTemplateServiceBrokerImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_asb_namespace}}/{{openshift_prefix}}-ansible-service-broker:{{openshift_asb_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftAnsibleServiceBrokerImage
+  - ContainerOpenShiftAnsibleServiceBrokerImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/{{openshift_prefix}}-web-console:{{openshift_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftWebConsoleImage
+  - ContainerOpenShiftWebConsoleImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_cockpit_namespace}}/{{openshift_cockpit_image}}:{{openshift_cockpit_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftCockpitImage
+  - ContainerOpenShiftCockpitImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_etcd_namespace}}/{{openshift_etcd_image}}:{{openshift_etcd_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftEtcdImage
+  - ContainerOpenShiftEtcdImage
   services:
   - OS::TripleO::Services::OpenShift::Master
 
 - imagename: "{{openshift_gluster_namespace}}/{{openshift_gluster_image}}:{{openshift_gluster_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftGlusterFSImage
+  - ContainerOpenShiftGlusterFSImage
   services:
   - OS::TripleO::Services::OpenShift::GlusterFS
 
 - imagename: "{{openshift_gluster_namespace}}/{{openshift_gluster_block_image}}:{{openshift_gluster_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftGlusterFSBlockImage
+  - ContainerOpenShiftGlusterFSBlockImage
   services:
   - OS::TripleO::Services::OpenShift::GlusterFS
 
 - imagename: "{{openshift_heketi_namespace}}/{{openshift_heketi_image}}:{{openshift_heketi_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftGlusterFSHeketiImage
+  - ContainerOpenShiftGlusterFSHeketiImage
   services:
   - OS::TripleO::Services::OpenShift::GlusterFS
 
 - imagename: "{{openshift_cluster_monitoring_namespace}}/{{openshift_cluster_monitoring_image}}:{{openshift_cluster_monitoring_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftClusterMonitorOperatorImage
+  - ContainerOpenShiftClusterMonitorOperatorImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_configmap_reload_namespace}}/{{openshift_configmap_reload_image}}:{{openshift_configmap_reload_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftConfigmapReloaderImage
+  - ContainerOpenShiftConfigmapReloaderImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_prometheus_operator_namespace}}/{{openshift_prometheus_operator_image}}:{{openshift_prometheus_operator_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftPrometheusOperatorImage
+  - ContainerOpenShiftPrometheusOperatorImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_prometheus_config_reload_namespace}}/{{openshift_prometheus_config_reload_image}}:{{openshift_prometheus_config_reload_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftPrometheusConfigReloaderImage
+  - ContainerOpenShiftPrometheusConfigReloaderImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/prometheus:{{openshift_prometheus_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftPrometheusImage
+  - ContainerOpenShiftPrometheusImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/prometheus-alertmanager:{{openshift_prometheus_alertmanager_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftPrometheusAlertmanagerImage
+  - ContainerOpenShiftPrometheusAlertmanagerImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_namespace}}/prometheus-node-exporter:{{openshift_prometheus_node_exporter_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftPrometheusNodeExporterImage
+  - ContainerOpenShiftPrometheusNodeExporterImage
   services:
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
@@ -1073,14 +1073,14 @@ container_images_template:
 - imagename: "{{openshift_namespace}}/oauth-proxy:{{openshift_oauth_proxy_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftOauthProxyImage
+  - ContainerOpenShiftOauthProxyImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_kube_rbac_proxy_namespace}}/{{openshift_kube_rbac_proxy_image}}:{{openshift_kube_rbac_proxy_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftKubeRbacProxyImage
+  - ContainerOpenShiftKubeRbacProxyImage
   services:
   - OS::TripleO::Services::OpenShift::Master
   - OS::TripleO::Services::OpenShift::Worker
@@ -1088,13 +1088,13 @@ container_images_template:
 - imagename: "{{openshift_kube_state_metrics_namespace}}/{{openshift_kube_state_metrics_image}}:{{openshift_kube_state_metrics_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftKubeStateMetricsImage
+  - ContainerOpenShiftKubeStateMetricsImage
   services:
   - OS::TripleO::Services::OpenShift::Infra
 
 - imagename: "{{openshift_grafana_namespace}}/grafana:{{openshift_grafana_tag}}"
   image_source: openshift
   params:
-  - DockerOpenShiftGrafanaImage
+  - ContainerOpenShiftGrafanaImage
   services:
   - OS::TripleO::Services::OpenShift::Infra

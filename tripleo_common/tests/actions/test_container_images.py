@@ -28,10 +28,10 @@ from tripleo_common.tests import base
 
 image_entries = [{
     'imagename': 't/cb-nova-compute:liberty',
-    'params': ['DockerNovaComputeImage', 'DockerNovaLibvirtConfigImage']
+    'params': ['ContainerNovaComputeImage', 'ContainerNovaLibvirtConfigImage']
 }, {
     'imagename': 't/cb-nova-libvirt:liberty',
-    'params': ['DockerNovaLibvirtImage']
+    'params': ['ContainerNovaLibvirtImage']
 }]
 
 
@@ -66,9 +66,9 @@ class PrepareContainerImageEnvTest(base.TestCase):
                           'container-images', 'overcloud_containers.yaml.j2')]
         )
         params = {
-            'DockerNovaComputeImage': 't/cb-nova-compute:liberty',
-            'DockerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
-            'DockerNovaLibvirtImage': 't/cb-nova-libvirt:liberty',
+            'ContainerNovaComputeImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtImage': 't/cb-nova-libvirt:liberty',
         }
         expected_env = yaml.safe_dump(
             {'parameter_defaults': params},
@@ -151,9 +151,9 @@ class PrepareContainerImageParametersTest(base.TestCase):
         ]}
         image_params = {
             'FooContainerImage': '192.0.2.1/foo/image',
-            'DockerNovaComputeImage': 't/cb-nova-compute:liberty',
-            'DockerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
-            'DockerNovaLibvirtImage': 't/cb-nova-libvirt:liberty',
+            'ContainerNovaComputeImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtImage': 't/cb-nova-libvirt:liberty',
         }
         image_env_contents = yaml.safe_dump(
             {'parameter_defaults': image_params},

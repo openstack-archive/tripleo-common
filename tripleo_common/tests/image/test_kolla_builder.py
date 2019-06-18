@@ -638,9 +638,10 @@ class TestPrepare(base.TestCase):
                  'imagename': '192.0.2.0:8787/t/p-nova-compute:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'DockerNovaComputeImage': '192.0.2.0:8787/t/p-nova-compute:l',
-                'DockerNovaLibvirtConfigImage': '192.0.2.0:8787/t/'
-                                                'p-nova-compute:l'
+                'ContainerNovaComputeImage':
+                    '192.0.2.0:8787/t/p-nova-compute:l',
+                'ContainerNovaLibvirtConfigImage':
+                    '192.0.2.0:8787/t/p-nova-compute:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
@@ -665,7 +666,8 @@ class TestPrepare(base.TestCase):
                  'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'DockerNovaLibvirtImage': '192.0.2.0:8787/t/p-nova-libvirt:l'
+                'ContainerNovaLibvirtImage':
+                    '192.0.2.0:8787/t/p-nova-libvirt:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
@@ -690,7 +692,8 @@ class TestPrepare(base.TestCase):
                  'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'DockerNovaLibvirtImage': '192.0.2.0:8787/t/p-nova-libvirt:l'
+                'ContainerNovaLibvirtImage':
+                    '192.0.2.0:8787/t/p-nova-libvirt:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
@@ -716,13 +719,13 @@ class TestPrepare(base.TestCase):
                 'push_destination': '192.0.2.0:8787',
             }],
             'environments/containers-default-parameters.yaml': {
-                'DockerNovaApiImage':
+                'ContainerNovaApiImage':
                 '192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaConfigImage':
+                'ContainerNovaConfigImage':
                 '192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaMetadataConfigImage':
+                'ContainerNovaMetadataConfigImage':
                 u'192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaMetadataImage':
+                'ContainerNovaMetadataImage':
                 '192.0.2.0:8787/t/p-nova-api:l'
             }},
             kb.container_images_prepare(
@@ -751,13 +754,13 @@ class TestPrepare(base.TestCase):
                 'push_destination': '192.0.2.0:8787',
             }],
             'environments/containers-default-parameters.yaml': {
-                'DockerNovaApiImage':
+                'ContainerNovaApiImage':
                 '192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaConfigImage':
+                'ContainerNovaConfigImage':
                 '192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaMetadataConfigImage':
+                'ContainerNovaMetadataConfigImage':
                 u'192.0.2.0:8787/t/p-nova-api:l',
-                'DockerNovaMetadataImage':
+                'ContainerNovaMetadataImage':
                 '192.0.2.0:8787/t/p-nova-api:l'
             }},
             kb.container_images_prepare(
@@ -783,7 +786,7 @@ class TestPrepare(base.TestCase):
                 'imagename': '192.0.2.0:8787/t/ceph:l',
             }],
             'environments/containers-default-parameters.yaml': {
-                'DockerCephDaemonImage': '192.0.2.0:8787/t/ceph:l'
+                'ContainerCephDaemonImage': '192.0.2.0:8787/t/ceph:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
@@ -806,8 +809,8 @@ class TestPrepare(base.TestCase):
                  'imagename': 't/p-neutron-server:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'DockerNeutronApiImage': 't/p-neutron-server:l',
-                'DockerNeutronConfigImage': 't/p-neutron-server:l'
+                'ContainerNeutronApiImage': 't/p-neutron-server:l',
+                'ContainerNeutronConfigImage': 't/p-neutron-server:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
@@ -836,10 +839,10 @@ class TestPrepare(base.TestCase):
                  'imagename': 't/p-ovn-controller:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'DockerNeutronApiImage': 't/p-neutron-server-ovn:l',
-                'DockerNeutronConfigImage': 't/p-neutron-server-ovn:l',
-                'DockerOvnControllerConfigImage': 't/p-ovn-controller:l',
-                'DockerOvnControllerImage': 't/p-ovn-controller:l'
+                'ContainerNeutronApiImage': 't/p-neutron-server-ovn:l',
+                'ContainerNeutronConfigImage': 't/p-neutron-server-ovn:l',
+                'ContainerOvnControllerConfigImage': 't/p-ovn-controller:l',
+                'ContainerOvnControllerImage': 't/p-ovn-controller:l'
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
@@ -869,10 +872,11 @@ class TestPrepare(base.TestCase):
                  'imagename': 't/opendaylight:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'DockerNeutronApiImage': 't/neutron-server-opendaylight:l',
-                'DockerNeutronConfigImage': 't/neutron-server-opendaylight:l',
-                'DockerOpendaylightApiImage': 't/opendaylight:l',
-                'DockerOpendaylightConfigImage': 't/opendaylight:l',
+                'ContainerNeutronApiImage': 't/neutron-server-opendaylight:l',
+                'ContainerNeutronConfigImage':
+                    't/neutron-server-opendaylight:l',
+                'ContainerOpendaylightApiImage': 't/opendaylight:l',
+                'ContainerOpendaylightConfigImage': 't/opendaylight:l',
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
