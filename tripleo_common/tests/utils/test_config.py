@@ -302,6 +302,19 @@ class TestConfig(base.TestCase):
                          '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
             {'output_key': 'HostnameNetworkConfigMap',
              'output_value': {}},
+            {'output_key': 'AnsibleHostVarsMap',
+             'output_value': {
+                 'Controller': {
+                     'overcloud-controller-0': {
+                         'uuid': 0,
+                         'my_var': 'foo'}},
+                 'Compute': {
+                     'overcloud-novacompute-0': {
+                         'uuid': 1},
+                     'overcloud-novacompute-1': {
+                         'uuid': 2},
+                     'overcloud-novacompute-2': {
+                         'uuid': 3}}}},
             {'output_key': 'RoleGroupVars',
              'output_value': {
                  'Controller': {

@@ -205,6 +205,7 @@ class Config(object):
         role_data = self.stack_outputs.get('RoleData', {})
         role_group_vars = self.stack_outputs.get('RoleGroupVars', {})
         allnodes_vars = self.stack_outputs.get('AllNodesConfig', {})
+        role_host_vars = self.stack_outputs.get('AnsibleHostVarsMap', {})
         for role_name, role in six.iteritems(role_data):
             role_path = os.path.join(config_dir, role_name)
             self._mkdir(role_path)
@@ -395,6 +396,13 @@ class Config(object):
                 if deployment_name not in server_pre_deployments:
                     server_pre_deployments.append(deployment_name)
 
+        # Make sure server_roles is populated b/c it won't be if there are no
+        # server deployments.
+        for name, server_id in server_ids.items():
+            server_roles.setdefault(
+                name,
+                self.get_role_from_server_id(stack, server_id))
+
         env, templates_path = self.get_jinja_env(config_dir)
 
         templates_dest = os.path.join(config_dir, 'templates')
@@ -473,15 +481,26 @@ class Config(object):
                                default_flow_style=False)
 
         # Render host_vars
-        for server, deployments in server_deployment_names.items():
+        for server in server_names.values():
             host_var_server_path = os.path.join(host_vars_dir, server)
             host_var_server_template = env.get_template('host_var_server.j2')
+            role = server_roles[server]
+            ansible_host_vars = (
+                yaml.safe_dump(
+                    role_host_vars[role][server],
+                    default_flow_style=False) if role_host_vars else None)
+
+            pre_deployments = server_deployment_names.get(
+                server, {}).get('pre_deployments', [])
+            post_deployments = server_deployment_names.get(
+                server, {}).get('post_deployments', [])
 
             with open(host_var_server_path, 'w') as f:
                 template_data = host_var_server_template.render(
-                    role=server_roles[server],
-                    pre_deployments=deployments['pre_deployments'],
-                    post_deployments=deployments['post_deployments'])
+                    role=role,
+                    pre_deployments=pre_deployments,
+                    post_deployments=post_deployments,
+                    ansible_host_vars=ansible_host_vars)
                 self.validate_config(template_data, host_var_server_path)
                 f.write(template_data)
 

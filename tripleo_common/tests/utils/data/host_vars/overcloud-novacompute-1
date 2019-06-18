@@ -4,3 +4,5 @@ Compute_pre_deployments:
   - MyExtraConfigPost
 
 Compute_post_deployments:  []
+
+uuid: 2
