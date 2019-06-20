@@ -50,7 +50,6 @@
 #     foo: bar
 - name: Copy hieradata files per host
   when: hieradata_per_host|bool
-  include: per_host.yaml host={{ item }} data={{ hieradata_content[item] }}
-  loop: "{{ groups[tripleo_role_name] }}"
+  include: per_host.yaml host={{ inventory_hostname }} data={{ hieradata_content[inventory_hostname] }}
   vars:
     hieradata_content: "{{ lookup('file', hieradata_template ~ '.rendered') | from_yaml }}"
