@@ -252,6 +252,7 @@ workflows:
           container: <% $.container %>
           queue_name: <% $.queue_name %>
           use_default_templates: true
+          validate: <% $.validate_stack %>
 
       update_plan:
         on-success:
