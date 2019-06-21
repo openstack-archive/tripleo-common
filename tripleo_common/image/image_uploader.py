@@ -670,7 +670,8 @@ class BaseImageUploader(object):
     def is_insecure_registry(self, registry_host):
         if registry_host in self.secure_registries:
             return False
-        if registry_host in self.insecure_registries:
+        if (registry_host in self.insecure_registries or
+                registry_host in self.no_verify_registries):
             return True
         try:
             requests.get('https://%s/v2' % registry_host, timeout=30)
@@ -681,7 +682,12 @@ class BaseImageUploader(object):
                 requests.get('https://%s/v2' % registry_host, timeout=30,
                              verify=False)
                 self.no_verify_registries.add(registry_host)
-                return False
+                # Techinically these type of registries are insecure when
+                # the container engine tries to do a pull. The python uploader
+                # ignores the certificate problem, but they are still inscure
+                # so we return True here while we'll still use https when we
+                # access the registry. LP#1833751
+                return True
             except requests.exceptions.SSLError:
                 # So nope, it's really not a certificate verification issue
                 self.insecure_registries.add(registry_host)
