@@ -1,4 +1,5 @@
 hieradata_template: ""
+hieradata_files: []
 # jinja2 escape trick for simple {{ and }} strings:
 hieradata_variable_start_string: "{{ '{{' }}"
 hieradata_variable_end_string: "{{ '}}' }}"

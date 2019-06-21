@@ -4,6 +4,22 @@
     state: directory
     mode: 0700
 
+- name: Write hiera config
+  when: hieradata_files != []
+  copy:
+    mode: 0600
+    dest:  /etc/puppet/hiera.yaml
+    # TODO(emilien) Switch to Hiera5 format once we stop calling Hiera CLI
+    # which is deprecated and should be replaced by "puppet lookup" command.
+    content: |
+      ---
+      :backends:
+        - json
+      :json:
+        :datadir: /etc/puppet/hieradata
+      :hierarchy:
+      {{ hieradata_files }}
+
 - name: Template hieradata file
   when: hieradata_template != ""
   delegate_to: localhost
