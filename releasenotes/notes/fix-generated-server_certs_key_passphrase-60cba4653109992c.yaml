@@ -1,0 +1,5 @@
+---
+fixes:
+  - The passphrase for config option 'server_certs_key_passphrase', is used as
+    a Fernet key in Octavia and thus must be 32 bytes long. TripleO will now
+    auto-generate 32 bytes long passphrase for OctaviaServerCertsKeyPassphrase.

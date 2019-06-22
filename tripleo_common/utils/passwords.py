@@ -89,6 +89,8 @@ def generate_passwords(mistralclient=None, stack_env=None,
             passwords[name] = passlib.pwd.genword(length=10)
         elif name.startswith("HeatAuthEncryptionKey"):
             passwords[name] = passlib.pwd.genword(length=32)
+        elif name.startswith("OctaviaServerCertsKeyPassphrase"):
+            passwords[name] = passlib.pwd.genword(length=32)
         elif name.startswith("DesignateRndcKey"):
             passwords[name] = create_rndc_key_secret()
         else:
