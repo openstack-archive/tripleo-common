@@ -90,6 +90,9 @@ def generate_passwords(mistralclient=None, stack_env=None):
         elif name.startswith("HeatAuthEncryptionKey"):
             passwords[name] = passutils.generate_password(
                 size=32)
+        elif name.startswith("OctaviaServerCertsKeyPassphrase"):
+            passwords[name] = passutils.generate_password(
+                size=32)
         else:
             passwords[name] = passutils.generate_password(
                 size=_MIN_PASSWORD_SIZE)
