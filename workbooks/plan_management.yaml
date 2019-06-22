@@ -316,6 +316,7 @@ workflows:
           get_url_parm: SwiftFetchDirGetTempurl
           put_url_parm: SwiftFetchDirPutTempurl
           use_default_templates: true
+          validate_stack: <% $.validate_stack %>
 
       does_ceph_ansible_fetch_directory_backup_need_rename:
         workflow: tripleo.rename_ceph_ansible_fetch_directory.v1.check_and_rename
