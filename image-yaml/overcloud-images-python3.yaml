@@ -27,7 +27,6 @@ disk_images:
     packages:
       - python3-psutil
       - python3-debtcollector
-      - plotnetcfg
       - sos
       - device-mapper-multipath
       - openstack-heat-agents
