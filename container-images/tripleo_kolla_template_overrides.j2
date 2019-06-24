@@ -30,6 +30,10 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # Cron is required by multiple services
 {% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini', 'openstack-selinux', 'ansible', 'python-shade', 'puppet-tripleo', 'python2-kubernetes'] %}
 
+# Override dumb-init installation
+{% block dumb_init_installation %}{% endblock %}
+{% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['dumb-init'] %}
+
 # This installs the novajoin package in the nova container images; This is
 # required for TLS everywhere, as nova-api will use the cloud-init script
 # provided by the novajoin package in order to enroll the nodes to the CA
