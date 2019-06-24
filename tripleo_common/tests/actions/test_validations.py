@@ -816,9 +816,8 @@ class TestCheckNodesCountAction(base.TestCase):
     def test_check_nodes_count_scale_enough_nodes(self):
         action_args = self.action_args.copy()
         action_args['parameters'] = {'ControllerCount': 2}
-        params = self.defaults.copy()
-        self.stack = mock.Mock(status='COMPLETE',
-                               parameters=params)
+        action_args['stack'] = {'parameters': self.defaults.copy(),
+                                'stack_status': 'CREATE_COMPLETE'}
 
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
@@ -839,9 +838,8 @@ class TestCheckNodesCountAction(base.TestCase):
     def test_check_nodes_count_scale_too_much(self):
         action_args = self.action_args.copy()
         action_args['parameters'] = {'ControllerCount': 3}
-        params = self.defaults.copy()
-        self.stack = mock.Mock(status='COMPLETE',
-                               parameters=params)
+        action_args['stack'] = {'parameters': self.defaults.copy(),
+                                'stack_status': 'CREATE_COMPLETE'}
 
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
@@ -866,8 +864,8 @@ class TestCheckNodesCountAction(base.TestCase):
         action_args['parameters'] = {'ControllerCount': 3}
         params = self.defaults.copy()
         del params[missing_param]
-        self.stack = mock.Mock(status='COMPLETE',
-                               parameters=params)
+        action_args['stack'] = {'parameters': self.defaults.copy(),
+                                'stack_status': 'CREATE_COMPLETE'}
         action = validations.CheckNodesCountAction(**action_args)
         result = action.run(self.ctx)
 
