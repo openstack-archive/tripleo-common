@@ -1,7 +1,0 @@
----
-# Module name as a list of hashes:
-# modules:
-#   - { name: foo, params: 'bar baz' }
-#   - { name: starwars }
-#   - { name: starwars, state: absent }
-modules: []

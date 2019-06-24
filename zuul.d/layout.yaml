@@ -5,7 +5,6 @@
       - openstack-python-jobs
       - openstack-python36-jobs
       - openstack-python37-jobs
-      - openstack-tox-molecule
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
       - tripleo-multinode-container-minimal
