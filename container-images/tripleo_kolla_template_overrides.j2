@@ -42,6 +42,9 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['iptables-services'] %}
 {% endif %}
 
+# Override dumb-init installation
+{% block dumb_init_installation %}{% endblock %}
+{% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['dumb-init'] %}
 
 # This installs the novajoin package in the nova container images; This is
 # required for TLS everywhere, as nova-api will use the cloud-init script
