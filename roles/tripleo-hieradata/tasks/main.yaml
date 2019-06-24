@@ -5,7 +5,7 @@
     mode: 0700
 
 - name: Write hiera config
-  when: hieradata_files != []
+  when: (hieradata_files | length) > 0
   copy:
     mode: 0600
     dest:  /etc/puppet/hiera.yaml
