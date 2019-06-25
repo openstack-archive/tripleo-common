@@ -64,6 +64,18 @@
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-7-containerized-undercloud-upgrades:
             dependencies: *deps_unit_lint
+        - tripleo-buildimage-overcloud-full-centos-7:
+            dependencies: *deps_unit_lint
+            files:
+              - ^image-yaml/.*$
+        - tripleo-buildimage-ironic-python-agent-centos-7:
+            dependencies: *deps_unit_lint
+            files:
+              - ^image-yaml/.*$
+        - tripleo-buildimage-overcloud-hardened-full-centos-7:
+            dependencies: *deps_unit_lint
+            files:
+              - ^image-yaml/.*$
         - openstack-tox-lower-constraints
     gate:
       queue: tripleo
@@ -74,3 +86,12 @@
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
               - scripts/tripleo-deploy-openshift
+        - tripleo-buildimage-overcloud-full-centos-7:
+            files:
+              - ^image-yaml/.*$
+        - tripleo-buildimage-ironic-python-agent-centos-7:
+            files:
+              - ^image-yaml/.*$
+        - tripleo-buildimage-overcloud-hardened-full-centos-7:
+            files:
+              - ^image-yaml/.*$
