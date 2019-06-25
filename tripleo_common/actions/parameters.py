@@ -212,7 +212,7 @@ class UpdateParametersAction(base.TripleOAction):
             # There has been an error validating we must reprocess the
             # templates with the saved working env
             plan_utils.put_env(swift, saved_env)
-            self._process_custom_roles(context)
+            process_templates_action._process_custom_roles(context)
 
             err_msg = ("Error validating environment for plan %s: %s" % (
                 self.container, err))
