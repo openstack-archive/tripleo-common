@@ -1161,6 +1161,8 @@ class TestPythonImageUploader(base.TestCase):
             source_session
         ]
         manifest = json.dumps({
+            'schemaVersion': 2,
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2,
             'config': {
                 'digest': 'sha256:1234',
             },
@@ -1211,7 +1213,7 @@ class TestPythonImageUploader(base.TestCase):
         ])
 
         _fetch_manifest.assert_called_once_with(
-            source_url, session=source_session)
+            source_url, session=source_session, multi_arch=False)
 
         _cross_repo_mount.assert_called_once_with(
             target_url,
@@ -1226,9 +1228,11 @@ class TestPythonImageUploader(base.TestCase):
         _copy_registry_to_registry.assert_called_once_with(
             source_url,
             target_url,
-            source_manifest=manifest,
+            source_manifests=[manifest],
             source_session=source_session,
-            target_session=target_session
+            target_session=target_session,
+            source_layers=['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+            multi_arch=False
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1437,7 +1441,7 @@ class TestPythonImageUploader(base.TestCase):
         ])
 
         _fetch_manifest.assert_called_once_with(
-            source_url, session=source_session)
+            source_url, session=source_session, multi_arch=False)
 
         _cross_repo_mount.assert_called_once_with(
             target_url,
@@ -1452,9 +1456,11 @@ class TestPythonImageUploader(base.TestCase):
         _copy_registry_to_registry.assert_called_once_with(
             source_url,
             target_url,
-            source_manifest=manifest,
+            source_manifests=[manifest],
             source_session=source_session,
-            target_session=target_session
+            target_session=target_session,
+            source_layers=['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+            multi_arch=False
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1486,6 +1492,8 @@ class TestPythonImageUploader(base.TestCase):
             source_session
         ]
         manifest = json.dumps({
+            'schemaVersion': 2,
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2,
             'config': {
                 'digest': 'sha256:1234',
             },
@@ -1548,7 +1556,7 @@ class TestPythonImageUploader(base.TestCase):
         ])
 
         _fetch_manifest.assert_called_once_with(
-            source_url, session=source_session)
+            source_url, session=source_session, multi_arch=False)
 
         _cross_repo_mount.assert_has_calls([
             mock.call(
@@ -1576,9 +1584,11 @@ class TestPythonImageUploader(base.TestCase):
         _copy_registry_to_registry.assert_called_once_with(
             source_url,
             unmodified_target_url,
-            source_manifest=manifest,
+            source_manifests=[manifest],
             source_session=source_session,
-            target_session=target_session
+            target_session=target_session,
+            source_layers=['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+            multi_arch=False
         )
         _copy_registry_to_local.assert_called_once_with(unmodified_target_url)
         run_modify_playbook.assert_called_once_with(
@@ -1604,7 +1614,7 @@ class TestPythonImageUploader(base.TestCase):
         session.get.return_value.text = manifest
         self.assertEqual(
             manifest,
-            self.uploader._fetch_manifest(url, session)
+            self.uploader._fetch_manifest(url, session, multi_arch=False)
         )
 
         session.get.assert_called_once_with(
@@ -1658,11 +1668,6 @@ class TestPythonImageUploader(base.TestCase):
         _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
         source_url = urlparse('docker://docker.io/t/nova-api:latest')
         target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
-        layer = {
-            'digest': 'sha256:aaaa',
-            'size': 8,
-            'mediaType': 'application/vnd.docker.image.rootfs.diff.tar'
-        }
         source_session = requests.Session()
         target_session = requests.Session()
 
@@ -1670,10 +1675,16 @@ class TestPythonImageUploader(base.TestCase):
         calc_digest = hashlib.sha256()
         calc_digest.update(blob_data)
         blob_digest = 'sha256:' + calc_digest.hexdigest()
+        layer_entry = {
+            'digest': blob_digest,
+            'size': 8,
+            'mediaType': 'application/vnd.docker.image.rootfs.diff.tar.gzip'
+        }
+        layer = layer_entry['digest']
 
         # layer already exists at destination
         self.requests.head(
-            'https://192.168.2.1:5000/v2/t/nova-api/blobs/sha256:aaaa',
+            'https://192.168.2.1:5000/v2/t/nova-api/blobs/%s' % blob_digest,
             status_code=200
         )
         self.assertIsNone(
@@ -1688,7 +1699,7 @@ class TestPythonImageUploader(base.TestCase):
 
         # layer needs transferring
         self.requests.head(
-            'https://192.168.2.1:5000/v2/t/nova-api/blobs/sha256:aaaa',
+            'https://192.168.2.1:5000/v2/t/nova-api/blobs/%s' % blob_digest,
             status_code=404
         )
         self.requests.put(
@@ -1698,7 +1709,8 @@ class TestPythonImageUploader(base.TestCase):
             'https://192.168.2.1:5000/v2/upload',
         )
         self.requests.get(
-            'https://registry-1.docker.io/v2/t/nova-api/blobs/sha256:aaaa',
+            'https://registry-1.docker.io/v2/t/nova-api/blobs/%s' %
+            blob_digest,
             content=blob_data
         )
 
@@ -1719,7 +1731,7 @@ class TestPythonImageUploader(base.TestCase):
                              'vnd.docker.image.rootfs.diff.tar.gzip',
                 'size': 8
             },
-            layer
+            layer_entry
         )
 
     def test_assert_scheme(self):
@@ -1754,8 +1766,11 @@ class TestPythonImageUploader(base.TestCase):
         source_session.get.return_value.text = '{}'
 
         manifest = json.dumps({
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2,
             'config': {
-                'digest': 'sha256:1234'
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': image_uploader.MEDIA_CONFIG
             },
             'layers': [
                 {'digest': 'sha256:aaaa'},
@@ -1768,7 +1783,7 @@ class TestPythonImageUploader(base.TestCase):
         ]
 
         self.uploader._copy_registry_to_registry(
-            source_url, target_url, manifest,
+            source_url, target_url, [manifest],
             source_session=source_session,
             target_session=target_session
         )
@@ -2208,3 +2223,154 @@ class TestPythonImageUploader(base.TestCase):
             mock.call(urlparse('containers-storage:baz')),
             mock.call(urlparse('containers-storage:foo'))
         ])
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    def test_collect_manifests_layers(self, _fetch_manifest):
+        manifest = {
+            'schemaVersion': 2,
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2,
+            'config': {
+                'mediaType': image_uploader.MEDIA_CONFIG,
+                'digest': 'sha256:1111'
+            },
+            'layers': [
+                {'digest': 'sha256:2222'},
+                {'digest': 'sha256:3333'},
+                {'digest': 'sha256:4444'}
+            ]
+        }
+        manifest_str = json.dumps(manifest, indent=2)
+        _fetch_manifest.return_value = manifest_str
+        url = urlparse('docker://docker.io/t/nova-api:latest')
+        session = requests.Session()
+        layers = []
+        manifests_str = []
+
+        self.uploader._collect_manifests_layers(
+            url, session, manifests_str, layers, False)
+        self.assertEqual([manifest_str], manifests_str)
+        self.assertEqual(
+            [
+                'sha256:2222',
+                'sha256:3333',
+                'sha256:4444',
+            ],
+            layers
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    def test_collect_manifests_layers_v1(self, _fetch_manifest):
+        manifest = {
+            'schemaVersion': 1,
+            'mediaType': image_uploader.MEDIA_MANIFEST_V1,
+            'fsLayers': [
+                {'blobSum': 'sha256:4444'},
+                {'blobSum': 'sha256:3333'},
+                {'blobSum': 'sha256:2222'},
+            ]
+        }
+        manifest_str = json.dumps(manifest, indent=2)
+        _fetch_manifest.return_value = manifest_str
+        url = urlparse('docker://docker.io/t/nova-api:latest')
+        session = requests.Session()
+        layers = []
+        manifests_str = []
+
+        self.uploader._collect_manifests_layers(
+            url, session, manifests_str, layers, False)
+        self.assertEqual([manifest_str], manifests_str)
+        self.assertEqual(
+            [
+                'sha256:2222',
+                'sha256:3333',
+                'sha256:4444',
+            ],
+            layers
+        )
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._fetch_manifest')
+    def test_collect_manifests_layers_multi_arch(self, _fetch_manifest):
+        manifest_x86 = {
+            'schemaVersion': 2,
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2,
+            'config': {
+                'mediaType': image_uploader.MEDIA_CONFIG,
+                'digest': 'sha256:1111'
+            },
+            'layers': [
+                {'digest': 'sha256:2222'},
+                {'digest': 'sha256:3333'},
+                {'digest': 'sha256:4444'}
+            ]
+        }
+        manifest_ppc = {
+            'schemaVersion': 2,
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2,
+            'config': {
+                'mediaType': image_uploader.MEDIA_CONFIG,
+                'digest': 'sha256:5555'
+            },
+            'layers': [
+                {'digest': 'sha256:6666'},
+                {'digest': 'sha256:7777'},
+                {'digest': 'sha256:8888'}
+            ]
+        }
+        manifest = {
+            'schemaVersion': 2,
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2_LIST,
+            "manifests": [
+                {
+                    "mediaType": image_uploader.MEDIA_MANIFEST_V2,
+                    "digest": "sha256:bbbb",
+                    "platform": {
+                        "architecture": "amd64",
+                        "os": "linux",
+                        "features": ["sse4"]
+                    }
+                },
+                {
+                    "mediaType": image_uploader.MEDIA_MANIFEST_V2,
+                    "digest": "sha256:aaaa",
+                    "platform": {
+                        "architecture": "ppc64le",
+                        "os": "linux",
+                    }
+                }
+            ]
+        }
+        manifest_str = json.dumps(manifest, indent=2)
+        _fetch_manifest.side_effect = [
+            manifest_str,
+            json.dumps(manifest_x86),
+            json.dumps(manifest_ppc)
+        ]
+        url = urlparse('docker://docker.io/t/nova-api:latest')
+        session = requests.Session()
+        layers = []
+        manifests_str = []
+
+        self.uploader._collect_manifests_layers(
+            url, session, manifests_str, layers, multi_arch=True)
+        self.assertEqual(
+            [
+                manifest_str,
+                json.dumps(manifest_x86),
+                json.dumps(manifest_ppc)
+            ],
+            manifests_str
+        )
+        self.assertEqual(
+            [
+                'sha256:2222',
+                'sha256:3333',
+                'sha256:4444',
+                'sha256:6666',
+                'sha256:7777',
+                'sha256:8888',
+            ],
+            layers
+        )
