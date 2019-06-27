@@ -240,6 +240,12 @@ class TripleoInventory(object):
                         hosts[name].update({
                             "%s_ip" % net:
                                 role_net_ip_map[role][net][idx]})
+                    # Add variables for hostname on each network
+                    for net in role_net_hostname_map[role]:
+                        hosts[name].update({
+                            "%s_hostname" % net:
+                                role_net_hostname_map[role][net][idx]})
+
                     networks.update(hosts[name]['enabled_networks'])
 
                 children.append(role)
