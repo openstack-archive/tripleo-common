@@ -44,7 +44,10 @@
 
 {%- for service in enabled_services %}
 {%- if net_vip_map.has_key(service_net_map.get(service ~ '_network', 'noop')) %}
+{# we set explicit vips for these services, no need to calculate them dynamically #}
+{%- if service not in ['redis', 'ganesha', 'keystone_admin_api_vip', 'keystone_public_api_vip'] %}
 ,"{{service}}_vip": "{{ net_vip_map[service_net_map[service ~ '_network']] }}"
+{%- endif %}
 {%- endif %}
 {%- endfor %}
 
