@@ -1,0 +1,51 @@
+{
+"controller_virtual_ip": "{{ control_virtual_ip }}",
+"keystone_admin_api_vip": "{{ net_vip_map[service_net_map['keystone_admin_api_network']] }}",
+"keystone_public_api_vip": "{{ net_vip_map[service_net_map['keystone_public_api_network']] }}",
+
+{%- if 'External' in enabled_networks %}
+"public_virtual_ip": "{{ net_vip_map[external_net_name] }}",
+{%- else %}
+"public_virtual_ip": "{{ net_vip_map.ctlplane }}",
+{%- endif %}
+
+{%- if 'InternalApi' in enabled_networks %}
+{# the internal_api_virtual_ip is needed for contrail only #}
+"internal_api_virtual_ip": "{{ net_vip_map[internal_api_net_name] }}",
+{%- endif %}
+
+"network_virtual_ips": {{ network_virtual_ips | to_json }},
+
+"redis_vip": "{{ net_vip_map.redis }}",
+
+{%- for network in enabled_networks if network == 'StorageNFS' %}
+"ganesha_vip": "{{ net_vip_map[storagenfs_net_name] }}"
+{%- endfor %}
+
+{# public_virtual_ip and controller_virtual_ip are needed in both HAproxy & keepalived. #}
+{%- if 'External' in enabled_networks %}
+"tripleo::haproxy::public_virtual_ip": "{{ net_vip_map[external_net_name] }}",
+"tripleo::keepalived::public_virtual_ip": "{{ net_vip_map[external_net_name] }}",
+{%- else %}
+"tripleo::haproxy::public_virtual_ip": "{{ net_vip_map.ctlplane }}",
+"tripleo::keepalived::public_virtual_ip": "{{ net_vip_map.ctlplane }}",
+{%- endif %}
+
+"tripleo::haproxy::controller_virtual_ip": "{{ net_vip_map.ctlplane }}",
+"tripleo::keepalived::controller_virtual_ip": "{{ net_vip_map.ctlplane }}",
+"tripleo::keepalived::redis_virtual_ip": "{{ net_vip_map.redis }}",
+"tripleo::redis_notification::haproxy_monitor_ip": "{{ net_vip_map.ctlplane }}",
+
+{%- for key, value in cloud_names.items() %}
+"{{key}}": "{{value}}",
+{%- endfor %}
+
+"enable_internal_tls": {{ enable_internal_tls | lower }}
+
+{%- for service in enabled_services %}
+{%- if net_vip_map.has_key(service_net_map.get(service ~ '_network', 'noop')) %}
+,"{{service}}_vip": "{{ net_vip_map[service_net_map[service ~ '_network']] }}"
+{%- endif %}
+{%- endfor %}
+
+}

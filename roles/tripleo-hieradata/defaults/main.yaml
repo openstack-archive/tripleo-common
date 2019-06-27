@@ -7,3 +7,4 @@ hieradata_per_host: false
 hieradata_templates_list:
   - bootstrap_node
   - all_nodes
+  - vip_data
