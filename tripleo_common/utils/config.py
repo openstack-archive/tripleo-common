@@ -200,6 +200,19 @@ class Config(object):
                            "error {}".format(yaml_file, e))
             raise e
 
+    def render_network_config(self, stack, config_dir, server_roles):
+        network_config = self.get_network_config_data(stack)
+        for server, config in network_config.items():
+            server_deployment_dir = os.path.join(
+                config_dir, server_roles[server], server)
+            self._mkdir(server_deployment_dir)
+            network_config_path = os.path.join(
+                server_deployment_dir, "NetworkConfig")
+            s_config = self.client.software_configs.get(config)
+            if getattr(s_config, 'config', ''):
+                with open(network_config_path, 'w') as f:
+                    f.write(s_config.config)
+
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
         role_data = self.stack_outputs.get('RoleData', {})
@@ -505,16 +518,7 @@ class Config(object):
                 f.write(template_data)
 
         # Render NetworkConfig data
-        network_config = self.get_network_config_data(stack)
-        for server, config in network_config.items():
-            server_deployment_dir = os.path.join(
-                config_dir, server_roles[server], server)
-            self._mkdir(server_deployment_dir)
-            network_config_path = os.path.join(
-                server_deployment_dir, "NetworkConfig")
-            s_config = self.client.software_configs.get(config)
-            with open(network_config_path, 'w') as f:
-                f.write(s_config.config)
+        self.render_network_config(stack, config_dir, server_roles)
 
         shutil.copyfile(
             os.path.join(templates_path, 'deployments.yaml'),
