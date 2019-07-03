@@ -1,0 +1,11 @@
+{
+  "fqdn_ctlplane": "{{ inventory_hostname ~ '.ctlplane.' ~ cloud_domain }}",
+  "fqdn_canonical": "{{ inventory_hostname ~ '.' ~ cloud_domain }}"{% if enabled_networks | length > 0 and role_networks | length > 0 %},{% endif %}
+{% for network in enabled_networks %}
+{% if network in role_networks %}
+  "fqdn_{{ networks[network]['name_lower'] }}": "{{ inventory_hostname ~ '.' ~ network | lower ~ '.' ~ cloud_domain }}"
+{%- endif %}{% if not loop.last and loop.nextitem | default("") in role_networks %},
+{% endif %}
+{%- endfor %}
+
+}
