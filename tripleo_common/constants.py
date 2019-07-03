@@ -88,6 +88,8 @@ PASSWORD_PARAMETER_NAMES = (
     'CephManilaClientKey',
     'CephMonKey',
     'CephRgwKey',
+    'CephGrafanaAdminPassword',
+    'CephDashboardAdminPassword',
     'CinderPassword',
     'CongressPassword',
     'DesignatePassword',

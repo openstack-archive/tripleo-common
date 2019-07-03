@@ -303,7 +303,8 @@ class TripleoInventory(object):
             'ceph_mds': 'mdss',
             'ceph_nfs': 'nfss',
             'ceph_client': 'clients',
-            'ceph_rbdmirror': 'rbdmirrors'
+            'ceph_rbdmirror': 'rbdmirrors',
+            'ceph_grafana-server': 'grafana-server'
         }
         # add a ceph-ansible compatible group to the inventory
         # which has the same roles. E.g. if the inventory has
