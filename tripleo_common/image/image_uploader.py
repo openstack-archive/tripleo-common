@@ -566,7 +566,10 @@ class BaseImageUploader(object):
                                    fallback_tag=None):
         labels = i.get('Labels', {})
 
-        label_keys = ', '.join(labels.keys())
+        if(hasattr(labels, 'keys')):
+            label_keys = ', '.join(labels.keys())
+        else:
+            label_keys = ""
 
         if not tag_from_label:
             raise ImageUploaderException(
@@ -587,7 +590,9 @@ class BaseImageUploader(object):
                         (image, e, label_keys)
                     )
         else:
-            tag_label = labels.get(tag_from_label)
+            tag_label = None
+            if(isinstance(labels, dict)):
+                tag_label = labels.get(tag_from_label)
             if tag_label is None:
                 if fallback_tag:
                     tag_label = fallback_tag
