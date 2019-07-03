@@ -1,0 +1,3 @@
+---
+tripleo_containers_to_stop: "{{ default([]) }}"
+tripleo_delegate_to: ["localhost"]

@@ -1,0 +1,19 @@
+---
+- name: Make sure the container is stopped even if container_cli do not match
+  become: true
+  shell: |
+    # We need to make sure that containers are stopped
+    # as we might have different CLIs to interact with
+    # them. I.e the container_cli might be setted to be podman
+    # but we might have the containers running with docker.
+    set -eu
+    if command -v podman && podman exec {{ container }} /bin/true; then
+        systemctl stop tripleo_{{ container }}.service
+    fi
+    if type docker &> /dev/null && docker exec {{ container }} /bin/true; then
+        docker stop {{ container }}
+    fi
+  delegate_to: "{{ tripleo_delegate_to_item }}"
+  with_items: "{{ tripleo_delegate_to }}"
+  loop_control:
+    loop_var: tripleo_delegate_to_item

@@ -1,0 +1,5 @@
+---
+- include_tasks: "container_stop.yaml"
+  vars:
+    container: "{{ item }}"
+  with_items: "{{ tripleo_containers_to_stop }}"
