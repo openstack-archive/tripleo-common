@@ -685,47 +685,6 @@ workflows:
             unused: <% $.get('unused_params', []) %>
             invalid_role_specific: <% $.get('invalid_role_specific', []) %>
 
-  list_roles:
-    description: Retrieve the roles_data.yaml and return a usable object
-
-    input:
-      - container: overcloud
-      - roles_data_file: 'roles_data.yaml'
-      - queue_name: tripleo
-
-    output:
-      roles_data: <% $.roles_data %>
-
-    tags:
-      - tripleo-common-managed
-
-    tasks:
-      get_roles_data:
-        action: swift.get_object
-        input:
-          container: <% $.container %>
-          obj: <% $.roles_data_file %>
-        publish:
-          roles_data: <% yaml_parse(task().result.last()) %>
-          status: SUCCESS
-        on-success: send_message
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-        on-error: send_message
-
-      send_message:
-        workflow: tripleo.messaging.v1.send
-        input:
-          queue_name: <% $.queue_name %>
-          type: <% execution().name %>
-          status: <% $.status %>
-          execution: <% execution() %>
-          plan_name: <% $.container %>
-          message: <% $.get('message', '') %>
-          payload:
-            roles_data: <% $.get('roles_data', {}) %>
-
   list_available_networks:
     input:
       - container
