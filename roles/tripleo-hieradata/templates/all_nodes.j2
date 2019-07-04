@@ -30,7 +30,7 @@
   {% endfor %}
 
   {# <service>_network: <network> #}
-  {% for service, network in service_net_map.iteritems() %}
+  {% for service, network in service_net_map.items() %}
   {{ '"' ~ service ~ '": "' ~ network ~ '",' }}
   {% endfor %}
 
