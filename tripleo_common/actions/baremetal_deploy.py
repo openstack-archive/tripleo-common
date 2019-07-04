@@ -110,6 +110,8 @@ class CheckExistingInstancesAction(base.TripleOAction):
         not_found = []
         found = []
         for request in self.instances:
+            if 'hostname' not in request:
+                continue
             try:
                 instance = provisioner.show_instance(request['hostname'])
             # TODO(dtantsur): replace Error with a specific exception
@@ -333,7 +335,8 @@ class ExpandRolesAction(base.TripleOAction):
             return actions.Result(error=six.text_type(exc))
 
         instances = []
-        parameter_defaults = {'HostnameMap': {}}
+        hostname_map = {}
+        parameter_defaults = {'HostnameMap': hostname_map}
         for role in self.roles:
             name = role['name']
             hostname_format = role.get('hostname_format')
@@ -351,12 +354,11 @@ class ExpandRolesAction(base.TripleOAction):
                 # TODO(dtantsur): ordering-dependent logic here, can we do
                 # better?
                 for index, instance in enumerate(role['instances']):
-                    # _validate_instances ensures that either of these is
-                    # not empty
-                    hostname = instance.get('hostname') or instance.get('name')
                     gen_name = (hostname_format.replace('%index%', str(index))
                                 .replace('%stackname%', self.stackname))
-                    parameter_defaults['HostnameMap'][gen_name] = hostname
+                    if 'hostname' not in instance:
+                        instance['hostname'] = gen_name
+                    hostname_map[gen_name] = instance['hostname']
                     instances.append(instance)
             else:
                 count = role.get('count', 1)
@@ -371,7 +373,7 @@ class ExpandRolesAction(base.TripleOAction):
                     if 'profile' in role:
                         inst['profile'] = role['profile']
                     instances.append(inst)
-                    parameter_defaults['HostnameMap'][hostname] = hostname
+                    hostname_map[hostname] = hostname
 
         return {'instances': instances,
                 'environment': {'parameter_defaults': parameter_defaults}}
@@ -438,10 +440,6 @@ def _validate_instances(instances, default_image='overcloud-full'):
         if inst.get('name') and not inst.get('hostname'):
             inst['hostname'] = inst['name']
 
-        if not inst.get('hostname'):
-            raise ValueError('Either hostname or name is required in %s'
-                             % inst)
-
         # Set the default image so that the source validation can succeed.
         inst.setdefault('image', default_image)
 
@@ -453,10 +451,11 @@ def _validate_instances(instances, default_image='overcloud-full'):
         # NOTE(dtantsur): validate image parameters
         _get_source(inst)
 
-        if inst['hostname'] in hostnames:
-            raise ValueError('Hostname %s is used more than once' %
-                             inst['hostname'])
-        hostnames.add(inst['hostname'])
+        if inst.get('hostname'):
+            if inst['hostname'] in hostnames:
+                raise ValueError('Hostname %s is used more than once' %
+                                 inst['hostname'])
+            hostnames.add(inst['hostname'])
 
         if inst.get('name'):
             if inst['name'] in names:
