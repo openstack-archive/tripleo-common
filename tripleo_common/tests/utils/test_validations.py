@@ -63,8 +63,8 @@ VALIDATION_WITH_METADATA = """---
     metadata:
       name: Validation with metadata
       description: A validation with extra metadata
-      foo: a foo metadata
-      bar: 42
+    foo: a foo metadata
+    bar: 42
   tasks:
   - name: Do something useful
     watch_tv:

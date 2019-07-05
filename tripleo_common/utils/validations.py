@@ -105,8 +105,11 @@ def load_validations(swift, plan, groups=None):
 
 def get_remaining_metadata(validation):
     try:
-        return {k: v for k, v in validation[0]['vars']['metadata'].items()
-                if k not in ['name', 'description', 'groups']}
+        return {
+            k: v
+            for k, v in validation[0]['vars'].items()
+            if k != 'metadata'
+        }
     except KeyError:
         return dict()
 
