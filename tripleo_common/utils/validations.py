@@ -66,7 +66,7 @@ def _get_validations_from_swift(swift, container, objects, groups, results,
                 'groups': get_validation_metadata(validation, 'groups'),
                 'description': get_validation_metadata(validation,
                                                        'description'),
-                'metadata': get_remaining_metadata(validation)
+                'parameters': get_validation_parameters(validation)
             })
 
     return results
@@ -103,7 +103,7 @@ def load_validations(swift, plan, groups=None):
     return results
 
 
-def get_remaining_metadata(validation):
+def get_validation_parameters(validation):
     try:
         return {
             k: v
