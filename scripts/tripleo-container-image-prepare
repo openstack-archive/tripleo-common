@@ -134,3 +134,4 @@ if __name__ == '__main__':
         print(result)
     except Exception as e:
         log.exception("Image prepare failed: {}".format(e))
+        sys.exit(1)
