@@ -241,6 +241,18 @@ class TestBaseImageUploader(base.TestCase):
             self.requests.request_history[0].url
         )
 
+    @mock.patch('requests.get')
+    def test_is_insecure_registry_bad_cert(self, mock_get):
+        mock_get.side_effect = [requests.exceptions.SSLError('ouch'), True]
+        self.assertTrue(
+            self.uploader.is_insecure_registry('bcert:8787'))
+        self.assertTrue(
+            self.uploader.is_insecure_registry('bcert:8787'))
+        calls = [mock.call('https://bcert:8787/v2', timeout=30),
+                 mock.call('https://bcert:8787/v2', timeout=30, verify=False)]
+        mock_get.assert_has_calls(calls)
+        self.assertEqual(mock_get.call_count, 2)
+
     def test_is_insecure_registry_timeout(self):
         self.requests.get(
             'https://192.0.2.0:8787/',
