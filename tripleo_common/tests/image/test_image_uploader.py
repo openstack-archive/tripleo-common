@@ -110,6 +110,20 @@ class TestImageUploadManager(base.TestCase):
 
     @mock.patch('netifaces.ifaddresses')
     @mock.patch('netifaces.interfaces')
+    def test_get_undercloud_registry_ipv6(self, mock_interfaces,
+                                          mock_addresses):
+
+        mock_interfaces.return_value = ['lo', 'eth0', 'br-ctlplane']
+        mock_addresses.return_value = {
+            10: [{'addr': 'fd12:3456:789a:1::1'}]
+        }
+        self.assertEqual(
+            '[fd12:3456:789a:1::1]:8787',
+            image_uploader.get_undercloud_registry()
+        )
+
+    @mock.patch('netifaces.ifaddresses')
+    @mock.patch('netifaces.interfaces')
     def test_get_push_destination(self, mock_interfaces, mock_addresses):
         mock_interfaces.return_value = ['lo', 'eth0', 'br-ctlplane']
         mock_addresses.return_value = {
