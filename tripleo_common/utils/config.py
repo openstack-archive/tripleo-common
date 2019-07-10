@@ -208,9 +208,13 @@ class Config(object):
             self._mkdir(server_deployment_dir)
             network_config_path = os.path.join(
                 server_deployment_dir, "NetworkConfig")
+            network_config_role_path = os.path.join(
+                config_dir, server_roles[server], "NetworkConfig")
             s_config = self.client.software_configs.get(config)
             if getattr(s_config, 'config', ''):
-                with open(network_config_path, 'w') as f:
+                with self._open_file(network_config_path) as f:
+                    f.write(s_config.config)
+                with self._open_file(network_config_role_path) as f:
                     f.write(s_config.config)
 
     def write_config(self, stack, name, config_dir, config_type=None):

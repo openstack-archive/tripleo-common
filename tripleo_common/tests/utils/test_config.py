@@ -823,3 +823,26 @@ class TestConfig(base.TestCase):
         mock_get_network_config_data.return_value = dict(Controller='config')
         config_dir = '/tmp/tht'
         self.config.render_network_config(stack, config_dir, server_roles)
+
+    @patch.object(ooo_config.Config, '_open_file')
+    @patch('tripleo_common.utils.config.Config.get_network_config_data')
+    def test_render_network_config(self,
+                                   mock_get_network_config_data,
+                                   mock_open):
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = fakes.create_tht_stack()
+        config_mock = mock.MagicMock()
+        config_mock.config = 'some config'
+        heat.software_configs.get.return_value = config_mock
+
+        self.config = ooo_config.Config(heat)
+        stack = mock.Mock()
+        server_roles = dict(Controller='controller')
+        mock_get_network_config_data.return_value = dict(Controller='config')
+        config_dir = '/tmp/tht'
+        self.config.render_network_config(stack, config_dir, server_roles)
+        self.assertEqual(2, mock_open.call_count)
+        self.assertEqual('/tmp/tht/controller/Controller/NetworkConfig',
+                         mock_open.call_args_list[0][0][0])
+        self.assertEqual('/tmp/tht/controller/NetworkConfig',
+                         mock_open.call_args_list[1][0][0])
