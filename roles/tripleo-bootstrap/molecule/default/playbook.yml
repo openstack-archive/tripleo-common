@@ -1,9 +1,0 @@
----
-
-- name: Converge
-  hosts: all
-  tasks:
-
-    - name: include tripleo-bootstrap role
-      include_role:
-        name: tripleo-bootstrap
