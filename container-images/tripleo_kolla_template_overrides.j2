@@ -93,6 +93,12 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # NOTE(mandre) Apache cleanup done below in swift_proxy_server_footer block
 {% set swift_proxy_server_packages_append = ['openstack-ceilometer-common', 'httpd', 'mod_ssl'] %}
 
+# TODO(mwhahaha): drop this when swift is python3
+{% if base_distro_tag.startswith('8') %}
+{% set swift_proxy_server_packages_remove = ['python-ceilometermiddleware'] %}
+{% set swift_proxy_server_packages_append = swift_proxy_server_packages_append + ['python3-ceilometermiddleware'] %}
+{% endif %}
+
 # NOTE (jaosorior): glance-api with TLS everywhere needs these packages.
 # NOTE(mandre) Apache cleanup done below in glance_api_footer block
 {% set glance_api_packages_append = ['httpd', 'mod_ssl'] %}
