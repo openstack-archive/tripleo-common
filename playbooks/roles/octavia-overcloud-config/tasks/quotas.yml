@@ -1,4 +1,0 @@
----
-  - name: increase quotas for project used for amphora
-    shell: |
-      openstack quota set --cores -1 --ram -1 --ports -1 --instances -1 --secgroups -1 --secgroup-rules -1 {{ auth_project_name }}

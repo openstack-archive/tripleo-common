@@ -28,7 +28,7 @@ workflows:
           remote_user: tripleo-admin
           become: true
           become_user: root
-          playbook: /usr/share/tripleo-common/playbooks/swift_ring_rebalance.yaml
+          playbook: /usr/share/tripleo-ansible/playbooks/swift_ring_rebalance.yaml
           inventory: <% $.get('work_dir') %>/<% $.get('container') %>/tripleo-ansible-inventory.yaml
           use_openstack_credentials: true
           execution_id: <% execution().id %>
