@@ -17,6 +17,9 @@
 import copy
 import mock
 
+from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor as tpe
+
 from tripleo_common.image.builder.buildah import BuildahBuilder as bb
 from tripleo_common.tests import base
 from tripleo_common.utils import process
@@ -25,6 +28,54 @@ from tripleo_common.utils import process
 BUILDAH_CMD_BASE = ['sudo', 'buildah']
 DEPS = {"base"}
 WORK_DIR = '/tmp/kolla'
+BUILD_ALL_LIST_CONTAINERS = ['container1', 'container2', 'container3']
+BUILD_ALL_DICT_CONTAINERS = {
+    'container1': {},
+    'container2': {},
+    'container3': {}
+}
+BUILD_ALL_STR_CONTAINER = 'container1'
+
+
+class ThreadPoolExecutorReturn(object):
+    pass
+
+
+class ThreadPoolExecutorReturnFailed(object):
+    _exception = True
+    exception_info = "This is a test failure"
+
+
+class ThreadPoolExecutorReturnSuccess(object):
+    _exception = False
+
+
+# Return values for the ThreadPoolExecutor
+R_FAILED = (
+    (
+        ThreadPoolExecutorReturnSuccess,
+        ThreadPoolExecutorReturnSuccess,
+        ThreadPoolExecutorReturnFailed
+    ),
+    set()
+)
+R_OK = (
+    (
+        ThreadPoolExecutorReturnSuccess,
+        ThreadPoolExecutorReturnSuccess,
+        ThreadPoolExecutorReturnSuccess
+    ),
+    set()
+)
+R_BROKEN = (
+    (
+        ThreadPoolExecutorReturnSuccess,
+    ),
+    (
+        ThreadPoolExecutorReturn,
+        ThreadPoolExecutorReturn
+    )
+)
 
 
 class TestBuildahBuilder(base.TestCase):
@@ -40,7 +91,10 @@ class TestBuildahBuilder(base.TestCase):
         args.extend(buildah_cmd_build)
         bb(WORK_DIR, DEPS).build('fedora-base', container_build_path)
         mock_process.assert_called_once_with(
-            *args, run_as_root=False, use_standard_locale=True
+            *args,
+            check_exit_code=True,
+            run_as_root=False,
+            use_standard_locale=True
         )
 
     @mock.patch.object(process, 'execute', autospec=True)
@@ -74,3 +128,49 @@ class TestBuildahBuilder(base.TestCase):
         builder._generate_container(container_name)
         mock_build.assert_called_once_with(builder, container_name, "")
         assert not mock_push.called
+
+    @mock.patch.object(tpe, 'submit', autospec=True)
+    @mock.patch.object(futures, 'wait', autospec=True, return_value=R_BROKEN)
+    @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_all_list_broken(self, mock_submit, mock_wait, mock_build):
+        _b = bb(WORK_DIR, DEPS)
+        self.assertRaises(
+            SystemError,
+            _b.build_all,
+            deps=BUILD_ALL_LIST_CONTAINERS
+        )
+
+    @mock.patch.object(tpe, 'submit', autospec=True)
+    @mock.patch.object(futures, 'wait', autospec=True, return_value=R_FAILED)
+    @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_all_list_failed(self, mock_submit, mock_wait, mock_build):
+        _b = bb(WORK_DIR, DEPS)
+        self.assertRaises(
+            SystemError,
+            _b.build_all,
+            deps=BUILD_ALL_LIST_CONTAINERS
+        )
+
+    @mock.patch.object(tpe, 'submit', autospec=True)
+    @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
+    @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_all_list_ok(self, mock_submit, mock_wait, mock_build):
+        bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_LIST_CONTAINERS)
+
+    @mock.patch.object(tpe, 'submit', autospec=True)
+    @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
+    @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_all_ok_no_deps(self, mock_submit, mock_wait, mock_build):
+        bb(WORK_DIR, DEPS).build_all()
+
+    @mock.patch.object(tpe, 'submit', autospec=True)
+    @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
+    @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_all_dict_ok(self, mock_submit, mock_wait, mock_build):
+        bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_DICT_CONTAINERS)
+
+    @mock.patch.object(tpe, 'submit', autospec=True)
+    @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
+    @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_all_str_ok(self, mock_submit, mock_wait, mock_build):
+        bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_STR_CONTAINER)
