@@ -215,3 +215,7 @@ MISTRAL_WORK_DIR = '/var/lib/mistral'
 EXCLUSIVE_NEUTRON_DRIVERS = ['ovn', 'openvswitch']
 
 UPGRADE_STEPS_MAX = 6
+
+# Global Directories for clouds.yaml
+GLOBAL_OS_DIR = '/etc/openstack'
+CLOUDS_YAML_FILE = 'clouds.yaml'
