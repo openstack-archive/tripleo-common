@@ -1,5 +1,9 @@
 {% extends parent_template %}
 
+# add ENV for container=oci
+# https://lists.projectatomic.io/projectatomic-archives/atomic-devel/2017-April/msg00011.html
+{% block base_header %}ENV container=oci{% endblock %}
+
 # Disable external repos
 {% set base_yum_repo_files_override = [] %}
 {% set base_yum_url_packages_override = [] %}
