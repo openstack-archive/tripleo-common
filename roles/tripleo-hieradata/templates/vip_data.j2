@@ -4,14 +4,14 @@
 "keystone_public_api_vip": "{{ net_vip_map[service_net_map['keystone_public_api_network']] }}",
 
 {%- if 'External' in enabled_networks %}
-"public_virtual_ip": "{{ net_vip_map[external_net_name] }}",
+"public_virtual_ip": "{{ net_vip_map[networks['External']['name_lower']] }}",
 {%- else %}
 "public_virtual_ip": "{{ net_vip_map.ctlplane }}",
 {%- endif %}
 
 {%- if 'InternalApi' in enabled_networks %}
 {# the internal_api_virtual_ip is needed for contrail only #}
-"internal_api_virtual_ip": "{{ net_vip_map[internal_api_net_name] }}",
+"internal_api_virtual_ip": "{{ net_vip_map[networks['InternalApi']['name_lower']] }}",
 {%- endif %}
 
 "network_virtual_ips": {{ network_virtual_ips | to_json }},
@@ -24,8 +24,8 @@
 
 {# public_virtual_ip and controller_virtual_ip are needed in both HAproxy & keepalived. #}
 {%- if 'External' in enabled_networks %}
-"tripleo::haproxy::public_virtual_ip": "{{ net_vip_map[external_net_name] }}",
-"tripleo::keepalived::public_virtual_ip": "{{ net_vip_map[external_net_name] }}",
+"tripleo::haproxy::public_virtual_ip": "{{ net_vip_map[networks['External']['name_lower']] }}",
+"tripleo::keepalived::public_virtual_ip": "{{ net_vip_map[networks['External']['name_lower']] }}",
 {%- else %}
 "tripleo::haproxy::public_virtual_ip": "{{ net_vip_map.ctlplane }}",
 "tripleo::keepalived::public_virtual_ip": "{{ net_vip_map.ctlplane }}",
