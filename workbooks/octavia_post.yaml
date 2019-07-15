@@ -36,6 +36,7 @@ workflows:
       - overcloud_password
       - overcloud_project
       - overcloud_pub_auth_uri
+      - overcloud_int_auth_uri
       - ansible_extra_env_variables:
           ANSIBLE_HOST_KEY_CHECKING: 'False'
           ANSIBLE_SSH_RETRIES: '3'
@@ -96,6 +97,7 @@ workflows:
             os_username: <% $.overcloud_admin %>
             os_project_name: <% $.overcloud_project %>
             os_auth_url: <% $.overcloud_pub_auth_uri %>
+            os_int_auth_url: <% $.overcloud_int_auth_uri %>
             os_auth_type: "password"
             os_identity_api_version: "3"
             amp_image_name: <% $.amp_image_name %>
@@ -130,6 +132,7 @@ workflows:
             os_username: <% $.overcloud_admin %>
             os_project_name: <% $.overcloud_project %>
             os_auth_url: <% $.overcloud_pub_auth_uri %>
+            os_int_auth_url: <% $.overcloud_int_auth_uri %>
             os_auth_type: "password"
             os_identity_api_version: "3"
             amp_image_tag: <% $.amp_image_tag %>
