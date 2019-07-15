@@ -37,6 +37,7 @@ from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image import image_export
+from tripleo_common.utils import common as common_utils
 
 
 LOG = logging.getLogger(__name__)
@@ -99,7 +100,10 @@ def get_undercloud_registry():
         addrs = netifaces.ifaddresses('br-ctlplane')
         if netifaces.AF_INET in addrs and addrs[netifaces.AF_INET]:
             addr = addrs[netifaces.AF_INET][0].get('addr', 'localhost')
-    return '%s:%s' % (addr, '8787')
+        elif netifaces.AF_INET6 in addrs and addrs[netifaces.AF_INET6]:
+            addr = addrs[netifaces.AF_INET6][0].get('addr', 'localhost')
+
+    return '%s:%s' % (common_utils.bracket_ipv6(addr), '8787')
 
 
 class ImageUploadManager(BaseImageManager):

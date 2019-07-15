@@ -12,11 +12,10 @@
 #   License for the specific language governing permissions and limitations
 #   under the License.
 
-import socket
-
 from six.moves import urllib
 
 from tripleo_common import constants
+from tripleo_common.utils import common as common_utils
 
 
 def get_service_ips(stack):
@@ -49,18 +48,6 @@ def get_overcloud_endpoint(stack):
             return output['output_value']
 
 
-def bracket_ipv6(address):
-    """Put a bracket around address if it is valid IPv6
-
-    Return it unchanged if it is a hostname or IPv4 address.
-    """
-    try:
-        socket.inet_pton(socket.AF_INET6, address)
-        return "[%s]" % address
-    except socket.error:
-        return address
-
-
 CLEAR_ENV = """# Clear any old environment that may conflict.
 for key in $( set | awk '{FS=\"=\"}  /^OS_/ {print $1}' ); do unset $key ; done
 """
@@ -84,7 +71,7 @@ def create_overcloudrc(stack, no_proxy, admin_password, region_name):
     overcloud_host = urllib.parse.urlparse(overcloud_endpoint).hostname
     overcloud_admin_vip = get_endpoint('KeystoneAdmin', stack)
 
-    no_proxy_list = map(bracket_ipv6,
+    no_proxy_list = map(common_utils.bracket_ipv6,
                         [no_proxy, overcloud_host, overcloud_admin_vip])
 
     rc_params = {
