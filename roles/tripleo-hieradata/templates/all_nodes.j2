@@ -9,8 +9,13 @@
   {# <service>_node_ips: <list of ips> #}
   {{ '"' ~ service ~ '_node_ips": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_ip') | list | to_json) ~ ',' }}
 
+  {% if nova_additional_cell %}
+  {# <service>_cell_node_names: <list of hostnames> #}
+  {{ '"' ~ service ~ '_cell_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_hostname') | list | to_json) ~ ',' }}
+  {% else %}
   {# <service>_node_names: <list of hostnames> #}
   {{ '"' ~ service ~ '_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_hostname') | list | to_json) ~ ',' }}
+  {% endif %}
 
   {# <service>_short_node_names: <list of hostnames> #}
   {{ '"' ~ service ~ '_short_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, 'inventory_hostname') | list | to_json) ~ ',' }}
