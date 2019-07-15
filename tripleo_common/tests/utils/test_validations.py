@@ -88,7 +88,7 @@ VALIDATION_GROUP_1_PARSED = {
     'description': 'A validation belonging to group1',
     'groups': ['group1'],
     'id': 'VALIDATION_GROUP_1',
-    'metadata': {},
+    'parameters': {},
     'name': 'First validation',
 }
 
@@ -96,7 +96,7 @@ VALIDATION_WITH_METADATA_PARSED = {
     'description': 'A validation with extra metadata',
     'groups': [],
     'id': 'VALIDATION_WITH_METADATA',
-    'metadata': {'foo': 'a foo metadata', 'bar': 42},
+    'parameters': {'foo': 'a foo metadata', 'bar': 42},
     'name': 'Validation with metadata',
 }
 
@@ -104,7 +104,7 @@ VALIDATION_GROUPS_1_2_PARSED = {
     'description': 'A validation belonging to groups 1 and 2',
     'groups': ['group1', 'group2'],
     'id': 'VALIDATION_GROUPS_1_2',
-    'metadata': {},
+    'parameters': {},
     'name': 'Validation from many groups',
 }
 
@@ -146,18 +146,18 @@ class LoadValidationsTest(base.TestCase):
         value = validations.get_validation_metadata({}, 'missing')
         self.assertEqual('default_value', value)
 
-    def test_get_remaining_metadata(self):
+    def test_get_validation_parameters(self):
         validation = yaml.safe_load(VALIDATION_WITH_METADATA)
-        value = validations.get_remaining_metadata(validation)
+        value = validations.get_validation_parameters(validation)
         expected = {
             'foo': 'a foo metadata',
             'bar': 42
         }
         self.assertEqual(expected, value)
 
-    def test_get_remaining_metadata_no_extra(self):
+    def test_get_validation_parameters_no_extra(self):
         validation = yaml.safe_load(VALIDATION_GROUP_1)
-        value = validations.get_remaining_metadata(validation)
+        value = validations.get_validation_parameters(validation)
         self.assertEqual({}, value)
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
