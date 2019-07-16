@@ -1016,12 +1016,13 @@ class TestPrepare(base.TestCase):
                     '/tht/docker/services/foo.yaml',
                     'OS::TripleO::Services::NovaCompute':
                     '/tht/docker/services/foo.yaml',
-                    'OS::TripleO::Services::OpenShift::Master':
-                    'extraconfig/services/openshift-master.yaml',
+                    'OS::TripleO::Services::OpenShift::Master': 'deployment' +
+                    '/openshift/openshift-master-baremetal-ansible.yaml',
                     'OS::TripleO::Services::Kubernetes::Worker':
-                    'extraconfig/services/kubernetes-worker.yaml',
+                    'deployment' +
+                    'kubernetes/kubernetes-worker-baremetal-ansible.yaml',
                     'OS::TripleO::Services::SkydiveAgent':
-                    'extraconfig/services/skydive-agent.yaml',
+                    'deployment/skydive/skydive-agent-baremetal-ansible.yaml',
                     'OS::TripleO::Services::Noop':
                     'OS::Heat::None'
                 }
