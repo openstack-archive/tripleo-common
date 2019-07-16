@@ -92,6 +92,31 @@ workflows:
           message: <% $.get('message', '') %>
           execution: <% execution() %>
 
+  get_key:
+    description: Get private ssh key stored in Mistral
+
+    input:
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task().result %>
+        on-success: send_message
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.private_key %>
+          execution: <% execution() %>
+
   update_nodes:
     description: Take a container and perform an update nodes by nodes
 
