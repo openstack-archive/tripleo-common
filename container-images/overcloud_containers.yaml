@@ -209,7 +209,7 @@ container_images:
   image_source: grafana
 - imagename: docker.io/tripleomaster/centos-binary-tempest:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-rsyslog-base:current-tripleo
+- imagename: docker.io/tripleomaster/centos-binary-rsyslog:current-tripleo
   image_source: kolla
 - imagename: docker.io/openshift/origin-ansible:v3.11.0
   image_source: openshift

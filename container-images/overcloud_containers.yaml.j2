@@ -905,13 +905,16 @@ container_images_template:
   services:
   - OS::TripleO::Services::Tempest
 
-- imagename: "{{namespace}}/{{name_prefix}}rsyslog-base{{name_suffix}}:{{tag}}"
+- imagename: "{{namespace}}/{{name_prefix}}rsyslog{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
+  - ContainerRsyslogImage
+  - ContainerRsyslogConfigImage
   - ContainerRsyslogSidecarImage
   - ContainerRsyslogSidecarConfigImage
   services:
   - OS::TripleO::Services::HAproxy
+  - OS::TripleO::Services::Rsyslog
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftStorage
 
