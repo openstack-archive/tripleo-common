@@ -126,7 +126,12 @@ class BuildahBuilder(base.BaseBuilder):
                                    logfile, '-t', destination,
                                    container_build_path]
         print("Building %s image with: %s" % (container_name, ' '.join(args)))
-        process.execute(*args, run_as_root=False, use_standard_locale=True)
+        process.execute(
+            *args,
+            check_exit_code=True,
+            run_as_root=False,
+            use_standard_locale=True
+        )
 
     def push(self, destination):
         """Push an image to a container registry.
@@ -153,6 +158,7 @@ class BuildahBuilder(base.BaseBuilder):
 
         if deps is None:
             deps = self.deps
+
         if isinstance(deps, (list,)):
             # Only a list of images can be multi-processed because they
             # are the last layer to build. Otherwise we could have issues
@@ -165,8 +171,26 @@ class BuildahBuilder(base.BaseBuilder):
                 future_to_build = {executor.submit(self.build_all,
                                    container): container for container in
                                    deps}
-                futures.wait(future_to_build, timeout=self.build_timeout,
-                             return_when=futures.ALL_COMPLETED)
+                done, not_done = futures.wait(
+                    future_to_build,
+                    timeout=self.build_timeout,
+                    return_when=futures.FIRST_EXCEPTION
+                )
+            # NOTE(cloudnull): Once the job has been completed all completed
+            #                  jobs are checked for exceptions. If any jobs
+            #                  failed a SystemError will be raised using the
+            #                  exception information. If any job was loaded
+            #                  but not executed a SystemError will be raised.
+            for job in done:
+                if job._exception:
+                    raise SystemError(job.exception_info)
+            else:
+                if not_done:
+                    raise SystemError(
+                        'The following jobs were incomplete: {}'.format(
+                            not_done
+                        )
+                    )
         elif isinstance(deps, (dict,)):
             for container in deps:
                 self._generate_container(container)
