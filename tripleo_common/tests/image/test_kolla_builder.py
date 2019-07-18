@@ -237,7 +237,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'namespace': 'docker.io/tripleomaster',
                 'ceph_namespace': 'docker.io/ceph',
                 'ceph_image': 'daemon',
-                'ceph_tag': 'v4.0.0-stable-4.0-nautilus-centos-7-x86_64',
+                'ceph_tag': 'v4.0.1-stable-4.0-nautilus-centos-7-x86_64',
                 'ceph_grafana_namespace': 'docker.io/grafana',
                 'ceph_grafana_image': 'grafana',
                 'ceph_grafana_tag': 'latest',
