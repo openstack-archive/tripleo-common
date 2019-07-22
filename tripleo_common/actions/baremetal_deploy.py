@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import copy
 import logging
 
 import jsonschema
@@ -34,39 +33,58 @@ def _provisioner(context):
     return metalsmith.Provisioner(session=session)
 
 
+_IMAGE_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'href': {'type': 'string'},
+        'checksum': {'type': 'string'},
+        'kernel': {'type': 'string'},
+        'ramdisk': {'type': 'string'},
+    },
+    'required': ['href'],
+    'additionalProperties': False,
+}
+
+_NIC_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'network': {'type': 'string'},
+        'port': {'type': 'string'},
+        'fixed_ip': {'type': 'string'},
+        'subnet': {'type': 'string'},
+    },
+    'additionalProperties': False
+}
+
 _INSTANCE_SCHEMA = {
     'type': 'object',
     'properties': {
         'capabilities': {'type': 'object'},
-        'hostname': {'type': 'string',
-                     'minLength': 2,
-                     'maxLength': 255},
-        'image': {'type': 'string'},
-        'image_checksum': {'type': 'string'},
-        'image_kernel': {'type': 'string'},
-        'image_ramdisk': {'type': 'string'},
+        'hostname': {
+            'type': 'string',
+            'minLength': 2,
+            'maxLength': 255
+        },
+        'image': _IMAGE_SCHEMA,
         'name': {'type': 'string'},
-        'nics': {'type': 'array',
-                 'items': {'type': 'object',
-                           'properties': {
-                               'network': {'type': 'string'},
-                               'port': {'type': 'string'},
-                               'fixed_ip': {'type': 'string'},
-                               'subnet': {'type': 'string'},
-                           },
-                           'additionalProperties': False}},
+        'nics': {
+            'type': 'array',
+            'items': _NIC_SCHEMA
+        },
         'profile': {'type': 'string'},
         'resource_class': {'type': 'string'},
         'root_size_gb': {'type': 'integer', 'minimum': 4},
         'swap_size_mb': {'type': 'integer', 'minimum': 64},
-        'traits': {'type': 'array',
-                   'items': {'type': 'string'}},
+        'traits': {
+            'type': 'array',
+            'items': {'type': 'string'}
+        },
     },
     'additionalProperties': False,
 }
 
 
-_INSTANCES_INPUT_SCHEMA = {
+_INSTANCES_SCHEMA = {
     'type': 'array',
     'items': _INSTANCE_SCHEMA
 }
@@ -79,11 +97,10 @@ _ROLES_INPUT_SCHEMA = {
         'type': 'object',
         'properties': {
             'name': {'type': 'string'},
-            'count': {'type': 'integer', 'minimum': 0},
-            'profile': {'type': 'string'},
             'hostname_format': {'type': 'string'},
-            'instances': {'type': 'array',
-                          'items': _INSTANCE_SCHEMA},
+            'count': {'type': 'integer', 'minimum': 0},
+            'defaults': _INSTANCE_SCHEMA,
+            'instances': _INSTANCES_SCHEMA,
         },
         'additionalProperties': False,
         'required': ['name'],
@@ -217,7 +234,6 @@ class DeployNodeAction(base.TripleOAction):
     def __init__(self, instance, node, ssh_keys=None,
                  # For compatibility with deployment based on heat+nova
                  ssh_user_name='heat-admin',
-                 default_image='overcloud-full',
                  default_network='ctlplane',
                  # 50 is the default for old flavors, subtracting 1G to account
                  # for partitioning and configdrive.
@@ -227,14 +243,12 @@ class DeployNodeAction(base.TripleOAction):
         self.node = node
         self.config = instance_config.CloudInitConfig(ssh_keys=ssh_keys)
         self.config.add_user(ssh_user_name, admin=True, sudo=True)
-        self.default_image = default_image
         self.default_network = default_network
         self.default_root_size = default_root_size
 
     def run(self, context):
         try:
-            _validate_instances([self.instance],
-                                default_image=self.default_image)
+            _validate_instances([self.instance])
         except Exception as exc:
             LOG.error('Failed to validate the request. %s', exc)
             return actions.Result(error=six.text_type(exc))
@@ -323,12 +337,25 @@ class UndeployInstanceAction(base.TripleOAction):
 class ExpandRolesAction(base.TripleOAction):
     """Convert a baremetal_deployment file to list of instances."""
 
-    def __init__(self, roles, stackname='overcloud'):
+    def __init__(self, roles, stackname='overcloud',
+                 default_image='overcloud-full'):
         super(ExpandRolesAction, self).__init__()
         self.roles = roles
         self.stackname = stackname
+        self.default_image = default_image
 
     def run(self, context):
+        for role in self.roles:
+            for inst in role.get('instances', []):
+                # Set the default image so that the
+                # source validation can succeed.
+                inst.setdefault('image', {'href': self.default_image})
+
+                # Set the default hostname now for duplicate hostname
+                # detection during validation
+                if 'hostname' not in inst and 'name' in inst:
+                    inst['hostname'] = inst['name']
+
         try:
             _validate_roles(self.roles, stackname=self.stackname)
         except Exception as exc:
@@ -355,12 +382,15 @@ class ExpandRolesAction(base.TripleOAction):
                 # TODO(dtantsur): ordering-dependent logic here, can we do
                 # better?
                 for index, instance in enumerate(role['instances']):
+                    inst = {}
+                    if 'defaults' in role:
+                        inst.update(role['defaults'])
+                    inst.update(instance)
                     gen_name = (hostname_format.replace('%index%', str(index))
                                 .replace('%stackname%', self.stackname))
-                    if 'hostname' not in instance:
-                        instance['hostname'] = gen_name
-                    hostname_map[gen_name] = instance['hostname']
-                    instances.append(instance)
+                    inst.setdefault('hostname', inst.get('name', gen_name))
+                    hostname_map[gen_name] = inst['hostname']
+                    instances.append(inst)
             else:
                 count = role.get('count', 1)
                 parameter_defaults['%sDeployedServerCount' % name] = count
@@ -371,10 +401,17 @@ class ExpandRolesAction(base.TripleOAction):
                     hostname = (hostname_format.replace('%index%', str(index))
                                 .replace('%stackname%', self.stackname))
                     inst = {'hostname': hostname}
-                    if 'profile' in role:
-                        inst['profile'] = role['profile']
+                    if 'defaults' in role:
+                        inst.update(role['defaults'])
+                    inst.setdefault('image', {'href': self.default_image})
                     instances.append(inst)
                     hostname_map[hostname] = hostname
+
+        try:
+            _validate_instances(instances)
+        except Exception as exc:
+            LOG.error('Failed to validate the request. %s', exc)
+            return actions.Result(error=six.text_type(exc))
 
         return {'instances': instances,
                 'environment': {'parameter_defaults': parameter_defaults}}
@@ -436,16 +473,8 @@ class PopulateEnvironmentAction(base.TripleOAction):
         return self.environment
 
 
-def _validate_instances(instances, default_image='overcloud-full'):
-    for inst in instances:
-        if inst.get('name') and not inst.get('hostname'):
-            inst['hostname'] = inst['name']
-
-        # Set the default image so that the source validation can succeed.
-        inst.setdefault('image', default_image)
-
-    jsonschema.validate(instances, _INSTANCES_INPUT_SCHEMA)
-
+def _validate_instances(instances):
+    jsonschema.validate(instances, _INSTANCES_SCHEMA)
     hostnames = set()
     names = set()
     for inst in instances:
@@ -469,17 +498,19 @@ def _validate_roles(roles, stackname='overcloud'):
     jsonschema.validate(roles, _ROLES_INPUT_SCHEMA)
 
     for item in roles:
+        name = item.get('name')
         if 'count' in item and 'instances' in item:
             raise ValueError("Count and instances cannot be provided together")
 
+        defaults = item.get('defaults', {})
+        if 'hostname' in defaults:
+            raise ValueError("%s: cannot specify hostname in defaults"
+                             % name)
+        if 'name' in defaults:
+            raise ValueError("%s: cannot specify name in defaults"
+                             % name)
         if 'instances' in item:
-            for index, inst in enumerate(item['instances']):
-                if 'profile' not in inst and 'profile' in item:
-                    inst['profile'] = item['profile']
-
-            # NOTE(dtantsur): make a copy since _validate_instances modifies
-            # the original, and we don't need it at this stage.
-            _validate_instances(copy.deepcopy(item['instances']))
+            _validate_instances(item['instances'])
 
 
 def _release_nodes(provisioner, nodes):
@@ -494,10 +525,11 @@ def _release_nodes(provisioner, nodes):
 
 
 def _get_source(instance):
-    return sources.detect(image=instance.get('image'),
-                          kernel=instance.get('image_kernel'),
-                          ramdisk=instance.get('image_ramdisk'),
-                          checksum=instance.get('image_checksum'))
+    image = instance.get('image', {})
+    return sources.detect(image=image.get('href'),
+                          kernel=image.get('kernel'),
+                          ramdisk=image.get('ramdisk'),
+                          checksum=image.get('checksum'))
 
 
 def _instance_to_dict(connection, instance):
