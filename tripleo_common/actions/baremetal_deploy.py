@@ -367,10 +367,8 @@ class ExpandRolesAction(base.TripleOAction):
         parameter_defaults = {'HostnameMap': hostname_map}
         for role in self.roles:
             name = role['name']
-            hostname_format = role.get('hostname_format')
-            if not hostname_format:
-                hostname_format = '%stackname%-{}-%index%'.format(
-                    'novacompute' if name == 'Compute' else name.lower())
+            hostname_format = _hostname_format(
+                role.get('hostname_format'), name)
             # NOTE(dtantsur): our hostname format may differ from THT defaults,
             # so override it in the resulting environment
             parameter_defaults['%sDeployedServerHostnameFormat' % name] = (
@@ -386,8 +384,8 @@ class ExpandRolesAction(base.TripleOAction):
                     if 'defaults' in role:
                         inst.update(role['defaults'])
                     inst.update(instance)
-                    gen_name = (hostname_format.replace('%index%', str(index))
-                                .replace('%stackname%', self.stackname))
+                    gen_name = _build_hostname(
+                        hostname_format, index, self.stackname)
                     inst.setdefault('hostname', inst.get('name', gen_name))
                     hostname_map[gen_name] = inst['hostname']
                     instances.append(inst)
@@ -398,8 +396,8 @@ class ExpandRolesAction(base.TripleOAction):
                     continue
 
                 for index in range(count):
-                    hostname = (hostname_format.replace('%index%', str(index))
-                                .replace('%stackname%', self.stackname))
+                    hostname = _build_hostname(
+                        hostname_format, index, self.stackname)
                     inst = {'hostname': hostname}
                     if 'defaults' in role:
                         inst.update(role['defaults'])
@@ -546,3 +544,16 @@ def _instance_to_dict(connection, instance):
             net_info['fixed_ips'].append({'ip_address': ip['ip_address']})
             net_info['subnets'].append(subnet.to_dict())
     return result
+
+
+def _hostname_format(hostname_format, role_name):
+    if not hostname_format:
+        hostname_format = '%stackname%-{}-%index%'.format(
+            'novacompute' if role_name == 'Compute' else role_name.lower())
+    return hostname_format
+
+
+def _build_hostname(hostname_format, index, stack):
+    gen_name = hostname_format.replace('%index%', str(index))
+    gen_name = gen_name.replace('%stackname%', stack)
+    return gen_name
