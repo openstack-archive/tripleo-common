@@ -673,30 +673,31 @@ class BaseImageUploader(object):
         if (registry_host in self.insecure_registries or
                 registry_host in self.no_verify_registries):
             return True
-        try:
-            requests.get('https://%s/v2' % registry_host, timeout=30)
-        except requests.exceptions.SSLError:
-            # Might be just a TLS certificate validation issue
-            # Just retry without the verification
+        with requests.Session() as s:
             try:
-                requests.get('https://%s/v2' % registry_host, timeout=30,
-                             verify=False)
-                self.no_verify_registries.add(registry_host)
-                # Techinically these type of registries are insecure when
-                # the container engine tries to do a pull. The python uploader
-                # ignores the certificate problem, but they are still inscure
-                # so we return True here while we'll still use https when we
-                # access the registry. LP#1833751
-                return True
+                s.get('https://%s/v2' % registry_host, timeout=30)
             except requests.exceptions.SSLError:
-                # So nope, it's really not a certificate verification issue
-                self.insecure_registries.add(registry_host)
-                return True
-        except Exception:
-            # for any other error assume it is a secure registry, because:
-            # - it is secure registry
-            # - the host is not accessible
-            pass
+                # Might be just a TLS certificate validation issue
+                # Just retry without the verification
+                try:
+                    s.get('https://%s/v2' % registry_host, timeout=30,
+                          verify=False)
+                    self.no_verify_registries.add(registry_host)
+                    # Techinically these type of registries are insecure when
+                    # the container engine tries to do a pull. The python
+                    # uploader ignores the certificate problem, but they are
+                    # still inscure so we return True here while we'll still
+                    # use https when we access the registry. LP#1833751
+                    return True
+                except requests.exceptions.SSLError:
+                    # So nope, it's really not a certificate verification issue
+                    self.insecure_registries.add(registry_host)
+                    return True
+            except Exception:
+                # for any other error assume it is a secure registry, because:
+                # - it is secure registry
+                # - the host is not accessible
+                pass
         self.secure_registries.add(registry_host)
         return False
 

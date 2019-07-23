@@ -16,7 +16,6 @@
 
 import mock
 import os
-import requests
 import six
 import sys
 import tempfile
@@ -582,37 +581,25 @@ class TestPrepare(base.TestCase):
             with open(imagefile.name, 'w') as f:
                 f.write(template_filedata)
 
-    @mock.patch('requests.get')
-    def test_detect_insecure_registry(self, mock_get):
+    @mock.patch.object(image_uploader.ImageUploadManager, 'uploader')
+    def test_detect_insecure_registry(self, mock_uploader):
+        mock_f = mock.MagicMock()
+        mock_f.is_insecure_registry.side_effect = [False, True]
+        mock_uploader.return_value = mock_f
         self.assertEqual(
             {},
             kb.detect_insecure_registries(
                 {'foo': 'docker.io/tripleo'}))
         self.assertEqual(
-            {},
+            {'DockerInsecureRegistryAddress': ['tripleo']},
             kb.detect_insecure_registries(
                 {'foo': 'tripleo'}))
 
-    @mock.patch('requests.get')
-    def test_detect_insecure_registry_readtimeout(self, mock_get):
-
-        mock_get.side_effect = requests.exceptions.ReadTimeout('ouch')
-        self.assertEqual(
-            {},
-            kb.detect_insecure_registries(
-                {'foo': '192.0.2.0:8787/tripleo'}))
-
-    @mock.patch('requests.get')
-    def test_detect_insecure_registry_sslerror(self, mock_get):
-        mock_get.side_effect = requests.exceptions.SSLError('ouch')
-        self.assertEqual(
-            {'DockerInsecureRegistryAddress': ['192.0.2.0:8787']},
-            kb.detect_insecure_registries(
-                {'foo': '192.0.2.0:8787/tripleo'}))
-
-    @mock.patch('requests.get')
-    def test_detect_insecure_registry_multi(self, mock_get):
-        mock_get.side_effect = requests.exceptions.SSLError('ouch')
+    @mock.patch.object(image_uploader.ImageUploadManager, 'uploader')
+    def test_detect_insecure_registry_multi(self, mock_uploader):
+        mock_f = mock.MagicMock()
+        mock_f.is_insecure_registry.return_value = True
+        mock_uploader.return_value = mock_f
         self.assertEqual(
             {'DockerInsecureRegistryAddress': [
                 '192.0.2.0:8787',
@@ -623,15 +610,17 @@ class TestPrepare(base.TestCase):
                 'baz': '192.0.2.1:8787/tripleo/baz',
             }))
 
-    @mock.patch('requests.get')
-    def test_prepare_noargs(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_noargs(self, mock_insecure):
         self.assertEqual(
             {},
             kb.container_images_prepare(template_file=TEMPLATE_PATH)
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_simple(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_simple(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
                 {'image_source': 'kolla',
@@ -657,8 +646,9 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_includes(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_includes(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
                 {'image_source': 'kolla',
@@ -681,8 +671,9 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_includes_excludes(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_includes_excludes(self, mock_insecure):
         # assert same result as includes only. includes trumps excludes
         self.assertEqual({
             'container_images.yaml': [
@@ -707,8 +698,9 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_push_dest(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_push_dest(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [{
                 'image_source': 'kolla',
@@ -740,9 +732,10 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
     @mock.patch('tripleo_common.image.image_uploader.get_undercloud_registry')
-    def test_prepare_push_dest_discover(self, mock_gur, mock_get):
+    def test_prepare_push_dest_discover(self, mock_gur, mock_insecure):
         mock_gur.return_value = '192.0.2.0:8787'
         self.assertEqual({
             'container_images.yaml': [{
@@ -775,8 +768,9 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_ceph(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_ceph(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [{
                 'image_source': 'ceph',
@@ -798,8 +792,9 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_neutron_driver_default(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_neutron_driver_default(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
                 {'image_source': 'kolla',
@@ -826,8 +821,9 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_neutron_driver_ovn(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_neutron_driver_ovn(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
                 {'image_source': 'kolla',
@@ -859,8 +855,9 @@ class TestPrepare(base.TestCase):
             )
         )
 
-    @mock.patch('requests.get')
-    def test_prepare_neutron_driver_odl(self, mock_get):
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_neutron_driver_odl(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
                 {'image_source': 'kolla',
