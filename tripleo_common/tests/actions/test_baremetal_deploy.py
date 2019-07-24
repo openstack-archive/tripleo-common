@@ -56,8 +56,17 @@ class TestReserveNodes(base.TestCase):
         action = baremetal_deploy.ReserveNodesAction(instances)
         result = action.run(mock.Mock())
 
-        self.assertIn("hostname or name is required", result.error)
-        self.assertFalse(mock_pr.return_value.reserve_node.called)
+        self.assertEqual(
+            [{'node': mock_pr.return_value.reserve_node.return_value.id,
+              'instance': req} for req in instances],
+            result['reservations'])
+        mock_pr.return_value.reserve_node.assert_has_calls([
+            mock.call(resource_class='baremetal', traits=None,
+                      capabilities=None, candidates=None),
+            mock.call(resource_class='compute', traits=None,
+                      capabilities={'answer': '42'}, candidates=None),
+        ])
+
         self.assertFalse(mock_pr.return_value.unprovision_node.called)
 
     @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
@@ -413,17 +422,6 @@ class TestCheckExistingInstances(base.TestCase):
             mock.call(host) for host in ['host1', 'host3', 'host2']
         ])
 
-    def test_missing_hostname(self, mock_pr):
-        instances = [
-            {'hostname': 'host1'},
-            {'resource_class': 'compute', 'capabilities': {'answer': '42'}}
-        ]
-        action = baremetal_deploy.CheckExistingInstancesAction(instances)
-        result = action.run(mock.Mock())
-
-        self.assertIn("hostname or name is required", result.error)
-        self.assertFalse(mock_pr.return_value.show_instance.called)
-
     def test_hostname_mismatch(self, mock_pr):
         instances = [
             {'hostname': 'host1'},
@@ -624,6 +622,7 @@ class TestExpandRoles(base.TestCase):
                  'profile': 'control-X'},
                 # Name provides the default for hostname later on.
                 {'name': 'node-0', 'profile': 'control',
+                 'hostname': 'overcloud-controller-1',
                  'traits': ['CUSTOM_FOO'], 'nics': [{'subnet': 'leaf-2'}]},
             ],
             result['instances'])
@@ -639,7 +638,7 @@ class TestExpandRoles(base.TestCase):
                     'compute-0.example.com': 'compute-0.example.com',
                     'compute-1.example.com': 'compute-1.example.com',
                     'overcloud-controller-0': 'controller-X.example.com',
-                    'overcloud-controller-1': 'node-0',
+                    'overcloud-controller-1': 'overcloud-controller-1',
                 }
             },
             result['environment']['parameter_defaults'])
@@ -678,7 +677,17 @@ class TestExpandRoles(base.TestCase):
         ]
         action = baremetal_deploy.ExpandRolesAction(roles)
         result = action.run(mock.Mock())
-        self.assertIn("Either hostname or name is required", result.error)
+        self.assertEqual(
+            [
+                {'hostname': 'compute-0.example.com', 'profile': 'compute'},
+                {'hostname': 'compute-1.example.com', 'profile': 'compute'},
+                {'hostname': 'overcloud-controller-0', 'profile': 'control-X'},
+                # Name provides the default for hostname later on.
+                {'name': 'node-0', 'profile': 'control',
+                 'hostname': 'overcloud-controller-1',
+                 'traits': ['CUSTOM_FOO'], 'nics': [{'subnet': 'leaf-2'}]},
+            ],
+            result['instances'])
 
 
 class TestPopulateEnvironment(base.TestCase):
