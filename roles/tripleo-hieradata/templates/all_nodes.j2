@@ -26,10 +26,10 @@
   {{ '"' ~ service ~ '_short_bootstrap_node_name": ' ~ (services | first | to_json) ~ ',' }}
   {% endif %}
 
-  {# <service>_bootstrap_node_ip: hostname #}
+  {# <service>_bootstrap_node_ip: ip #}
   {% set services = (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_ip')) | list %}
   {% if (services | length) > 0 %}
-  {{ '"' ~ service ~ '_short_bootstrap_node_ip": ' ~ (services | first | to_json) ~ ',' }}
+  {{ '"' ~ service ~ '_bootstrap_node_ip": ' ~ (services | first | to_json) ~ ',' }}
   {% endif %}
 
   {% endfor %}
