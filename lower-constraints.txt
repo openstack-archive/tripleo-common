@@ -34,7 +34,7 @@ keystoneauth1==3.4.0
 linecache2==1.0.0
 MarkupSafe==1.0
 mccabe==0.2.1
-metalsmith==0.9.0
+metalsmith==0.13.0
 mistral-lib==0.3.0
 mock==2.0.0
 monotonic==0.6

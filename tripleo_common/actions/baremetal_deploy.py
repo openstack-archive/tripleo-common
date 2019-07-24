@@ -17,6 +17,7 @@ import logging
 
 import jsonschema
 import metalsmith
+from metalsmith import instance_config
 from metalsmith import sources
 from mistral_lib import actions
 from openstack import exceptions as sdk_exc
@@ -224,7 +225,7 @@ class DeployNodeAction(base.TripleOAction):
         super(DeployNodeAction, self).__init__()
         self.instance = instance
         self.node = node
-        self.config = metalsmith.InstanceConfig(ssh_keys=ssh_keys)
+        self.config = instance_config.CloudInitConfig(ssh_keys=ssh_keys)
         self.config.add_user(ssh_user_name, admin=True, sudo=True)
         self.default_image = default_image
         self.default_network = default_network
