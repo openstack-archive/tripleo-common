@@ -498,9 +498,10 @@ workflows:
         on-success: send_message
 
       wait_for_introspection_to_finish_error:
-        publish:
-          message: <% "Introspection of node {0} timed out.".format($.node_uuid) %>
         on-success: send_message
+        publish:
+          status: FAILED
+          message: <% "Introspection of node {0} failed.".format($.node_uuid) %>
 
       send_message:
         workflow: tripleo.messaging.v1.send
@@ -646,6 +647,7 @@ workflows:
     input:
       - run_validations: False
       - queue_name: tripleo
+      - concurrency: 20
 
     tags:
       - tripleo-common-managed
@@ -684,6 +686,7 @@ workflows:
           node_uuids: <% $.managed_nodes %>
           run_validations: <% $.run_validations %>
           queue_name: <% $.queue_name %>
+          concurrency: <% $.concurrency %>
         publish:
           introspected_nodes: <% task().result.introspected_nodes %>
 
