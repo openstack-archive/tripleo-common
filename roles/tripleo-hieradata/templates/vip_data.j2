@@ -16,8 +16,6 @@
 
 "network_virtual_ips": {{ network_virtual_ips | to_json }},
 
-"redis_vip": "{{ net_vip_map.redis }}",
-
 {%- for network in enabled_networks if network == 'StorageNFS' %}
 "ganesha_vip": "{{ net_vip_map[storagenfs_net_name] }}"
 {%- endfor %}
