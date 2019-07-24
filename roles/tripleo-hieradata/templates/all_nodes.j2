@@ -1,27 +1,29 @@
 {
-  "enabled_services": {{ enabled_services | unique | to_nice_json }},
+  {% set all_enabled_services = (enabled_services + all_nodes_extra_map_data['enabled_services'] | default([])) | unique %}
 
-  {% for service in enabled_services %}
+  "enabled_services": {{ all_enabled_services | to_nice_json }},
+
+  {% for service in all_enabled_services %}
 
   {# <service>_enabled: true #}
   {{ '"' ~ service ~ '_enabled": true,' }}
 
   {# <service>_node_ips: <list of ips> #}
-  {{ '"' ~ service ~ '_node_ips": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_ip') | list | to_json) ~ ',' }}
+  {{ '"' ~ service ~ '_node_ips": ' ~  ((groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_ip') | list + all_nodes_extra_map_data[service ~ '_node_ips'] | default([])) | to_json) ~ ',' }}
 
   {% if nova_additional_cell %}
   {# <service>_cell_node_names: <list of hostnames> #}
   {{ '"' ~ service ~ '_cell_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_hostname') | list | to_json) ~ ',' }}
   {% else %}
   {# <service>_node_names: <list of hostnames> #}
-  {{ '"' ~ service ~ '_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_hostname') | list | to_json) ~ ',' }}
+  {{ '"' ~ service ~ '_node_names": ' ~  ((groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_hostname') | list + all_nodes_extra_map_data[service ~ '_node_names'] | default([])) | to_json) ~ ',' }}
   {% endif %}
 
   {# <service>_short_node_names: <list of hostnames> #}
-  {{ '"' ~ service ~ '_short_node_names": ' ~  (groups[service] | default ([]) | map('extract', hostvars, 'inventory_hostname') | list | to_json) ~ ',' }}
+  {{ '"' ~ service ~ '_short_node_names": ' ~  ((groups[service] | default ([]) | map('extract', hostvars, 'inventory_hostname') | list + all_nodes_extra_map_data[service ~ '_short_node_names'] | default([])) | to_json) ~ ',' }}
 
   {# <service>_short_bootstrap_node_name: hostname #}
-  {% set services = (groups[service] | default ([]) | map('extract', hostvars, 'inventory_hostname')) | list %}
+  {% set services = (groups[service] | default ([]) | map('extract', hostvars, 'inventory_hostname')) | list + [all_nodes_extra_map_data[service ~ '_short_bootstrap_node_name'] | default('') ] %}
   {% if (services | length) > 0 %}
   {{ '"' ~ service ~ '_short_bootstrap_node_name": ' ~ (services | first | to_json) ~ ',' }}
   {% endif %}
@@ -29,7 +31,7 @@
   {# <service>_bootstrap_node_ip: ip #}
   {% set services = (groups[service] | default ([]) | map('extract', hostvars, service_net_map[service ~ '_network'] | default('ctlplane') ~ '_ip')) | list %}
   {% if (services | length) > 0 %}
-  {{ '"' ~ service ~ '_bootstrap_node_ip": ' ~ (services | first | to_json) ~ ',' }}
+  {{ '"' ~ service ~ '_bootstrap_node_ip": ' ~ ((services + [all_nodes_extra_map_data[service ~ '_bootstrap_node_ip'] | default('')]) | first | to_json) ~ ',' }}
   {% endif %}
 
   {% endfor %}
