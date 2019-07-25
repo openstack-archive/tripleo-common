@@ -227,44 +227,6 @@ class iBootDriverInfoTest(base.TestCase):
                          self.driver_info.unique_id_from_node(node))
 
 
-class UcsDriverInfoTest(base.TestCase):
-    driver_info = nodes.UcsDriverInfo()
-
-    def test_convert_key(self):
-        keys = {
-            'pm_addr': 'ucs_address',
-            'pm_user': 'ucs_username',
-            'pm_password': 'ucs_password',
-            'pm_service_profile': 'ucs_service_profile'
-        }
-        for key, expected in keys.items():
-            self.assertEqual(expected, self.driver_info.convert_key(key))
-
-        self.assertIsNone(self.driver_info.convert_key('unknown'))
-
-    def test_unique_id_from_fields(self):
-        fields = {
-            'pm_addr': '127.0.0.1',
-            'pm_user': 'user',
-            'pm_password': '123456',
-            "pm_service_profile": 'org-root/org-CPC/ls-CPC-test'
-        }
-        self.assertEqual('127.0.0.1:org-root/org-CPC/ls-CPC-test',
-                         self.driver_info.unique_id_from_fields(fields))
-
-    def test_unique_id_from_node(self):
-        node = mock.Mock(
-            driver_info={
-                'ucs_address': '127.0.0.1',
-                'ucs_username': 'user',
-                'ucs_password': '123456',
-                "ucs_service_profile": 'org-root/org-CPC/ls-CPC-test'
-            }
-        )
-        self.assertEqual('127.0.0.1:org-root/org-CPC/ls-CPC-test',
-                         self.driver_info.unique_id_from_node(node))
-
-
 class FindNodeHandlerTest(base.TestCase):
     def test_found(self):
         test = [('fake', 'fake'),
@@ -275,8 +237,6 @@ class FindNodeHandlerTest(base.TestCase):
                 ('ilo', 'ilo'),
                 ('pxe_drac', 'drac'),
                 ('idrac', 'drac'),
-                ('pxe_ucs', 'ucs'),
-                ('cisco-ucs-managed', 'ucs'),
                 ('agent_irmc', 'irmc'),
                 ('irmc', 'irmc')]
         for driver, prefix in test:
@@ -862,23 +822,6 @@ class NodesTest(base.TestCase):
                                                    resource_class='baremetal',
                                                    driver_info={})
 
-    def test_register_ironic_node_ucs(self):
-        node_properties = {"cpus": "1",
-                           "memory_mb": "2048",
-                           "local_gb": "30",
-                           "cpu_arch": "amd64",
-                           "capabilities": "num_nics:6"}
-        node = self._get_node()
-        node['pm_type'] = 'cisco-ucs-managed'
-        client = mock.MagicMock()
-        nodes.register_ironic_node(node, client=client)
-        client.node.create.assert_called_once_with(
-            driver='cisco-ucs-managed', name='node1',
-            properties=node_properties,
-            resource_class='baremetal',
-            driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
-                         'ucs_username': 'test'})
-
     def test_register_ironic_node_conductor_group(self):
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",
@@ -886,34 +829,16 @@ class NodesTest(base.TestCase):
                            "cpu_arch": "amd64",
                            "capabilities": "num_nics:6"}
         node = self._get_node()
-        node['pm_type'] = 'cisco-ucs-managed'
         node['conductor_group'] = 'cg1'
         client = mock.MagicMock()
         nodes.register_ironic_node(node, client=client)
         client.node.create.assert_called_once_with(
-            driver='cisco-ucs-managed', name='node1',
+            driver='ipmi', name='node1',
             properties=node_properties,
             resource_class='baremetal',
-            driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
-                         'ucs_username': 'test'},
+            driver_info={'ipmi_password': 'random', 'ipmi_address': 'foo.bar',
+                         'ipmi_username': 'test'},
             conductor_group='cg1')
-
-    def test_register_ironic_node_pxe_ucs(self):
-        node_properties = {"cpus": "1",
-                           "memory_mb": "2048",
-                           "local_gb": "30",
-                           "cpu_arch": "amd64",
-                           "capabilities": "num_nics:6"}
-        node = self._get_node()
-        node['pm_type'] = 'pxe_ucs'
-        client = mock.MagicMock()
-        nodes.register_ironic_node(node, client=client)
-        client.node.create.assert_called_once_with(
-            driver='cisco-ucs-managed', name='node1',
-            properties=node_properties,
-            resource_class='baremetal',
-            driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
-                         'ucs_username': 'test'})
 
     def test_register_ironic_node_ipmi(self):
         node_properties = {"cpus": "1",
