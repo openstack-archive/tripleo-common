@@ -277,3 +277,56 @@ workflows:
       instances: <% $.instances %>
       new_instances: <% $.new_instances %>
       port_map: <% $.port_map %>
+
+  undeploy_roles:
+    description: Undeploy provisioned=False instances in roles.
+
+    input:
+      - roles
+      - plan: overcloud
+      - timeout: 3600
+      - concurrency: 20
+      - queue_name: tripleo
+
+    tags:
+      - tripleo-common-managed
+
+    tasks:
+
+      expand_roles:
+        action: tripleo.baremetal_deploy.expand_roles
+        input:
+          roles: <% $.roles %>
+          stackname: <% $.plan %>
+          provisioned: False
+        publish:
+          input_instances: <% task().result.instances %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-success: undeploy_instances
+        on-error: send_message
+
+      undeploy_instances:
+        workflow: tripleo.baremetal_deploy.v1.undeploy_instances
+        input:
+          instances: <% $.input_instances %>
+          timeout: <% $.timeout %>
+          queue_name: <% $.queue_name %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-success: send_message
+        on-error: send_message
+
+      send_message:
+        workflow: tripleo.messaging.v1.send
+        input:
+          queue_name: <% $.queue_name %>
+          type: <% execution().name %>
+          status: <% $.get('status', 'SUCCESS') %>
+          message: <% $.get('message', '') %>
+          execution: <% execution() %>
+          payload:
+            environment: <% $.get('environment', {}) %>
+            instances: <% $.get('instances', {}) %>
