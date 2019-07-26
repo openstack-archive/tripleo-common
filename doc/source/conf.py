@@ -40,7 +40,6 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'tripleo-common'
 copyright = u'2013, OpenStack Foundation'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
@@ -62,7 +61,7 @@ pygments_style = 'sphinx'
 # html_static_path = ['static']
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = '%sdoc' % project
+htmlhelp_basename = 'tripleo-commondoc'
 html_theme = 'openstackdocs'
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -70,8 +69,8 @@ html_theme = 'openstackdocs'
 # [howto/manual]).
 latex_documents = [
     ('index',
-     '%s.tex' % project,
-     u'%s Documentation' % project,
+     'tripleo-common.tex',
+     u'tripleo-common Documentation',
      u'OpenStack Foundation', 'manual'),
 ]
 
