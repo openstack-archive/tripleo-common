@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    In case of cell stacks we need to pass redis_vip as an input
+    to be able to use redis on the central controllers. This
+    moves the redis_vip setting to all_nodes and only set it if
+    it is not an additional cell.

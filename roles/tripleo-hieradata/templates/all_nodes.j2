@@ -39,6 +39,10 @@
   {{ '"' ~ service ~ '": "' ~ network ~ '",' }}
   {% endfor %}
 
+  {% if 'redis' in enabled_services %}
+  "redis_vip": "{{ net_vip_map.redis }}",
+  {% endif %}
+
   {{ '"deploy_identifier": "' ~ deploy_identifier ~ '"' }},
 
   {{ '"stack_action": "' ~ stack_action ~ '"' }},
