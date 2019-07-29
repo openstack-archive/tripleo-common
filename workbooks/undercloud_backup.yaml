@@ -10,7 +10,7 @@ workflows:
     tags:
       - tripleo-common-managed
     input:
-      - sources_path: '/home/stack/'
+      - sources_path: '/backup'
       - queue_name: tripleo
     tasks:
       # Action to know if there is enough available space
@@ -49,6 +49,7 @@ workflows:
         publish:
             status: SUCCESS
             message: <% task().result %>
+            undercloud_db_host: <% task().result.variables.undercloud_db_host %>
             undercloud_db_password: <% task().result.variables.undercloud_db_password %>
         on-success: create_database_backup
         on-error: send_message
@@ -61,6 +62,7 @@ workflows:
       create_database_backup:
         input:
             path: <% $.backup_path.path %>
+            dbhost: <% $.undercloud_db_host %>
             dbuser: root
             dbpassword: <% $.undercloud_db_password %>
         action: tripleo.undercloud.create_database_backup

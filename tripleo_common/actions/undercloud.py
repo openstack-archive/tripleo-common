@@ -87,8 +87,9 @@ class CreateDatabaseBackup(base.Action):
        the result in a given folder.
     """
 
-    def __init__(self, path, dbuser, dbpassword):
+    def __init__(self, path, dbhost, dbuser, dbpassword):
         self.path = path
+        self.dbhost = dbhost
         self.dbuser = dbuser
         self.dbpassword = dbpassword
         self.backup_name = os.path.join(self.path,
@@ -108,11 +109,13 @@ class CreateDatabaseBackup(base.Action):
         # Backup all databases with nice and ionice just not to create
         # a huge load on undercloud. Output will be redirected to mysqldump
         # variable and will be gzipped.
-        script = """
-        #!/bin/bash
-        nice -n 19 ionice -c2 -n7 \
-            mysqldump -u%s -p%s --opt --all-databases | gzip > %s
-        """ % (self.dbuser, self.dbpassword, self.backup_name)
+        strlocals = self.__dict__
+        script = ("#!/bin/bash\n"
+                  "nice -n 19 ionice -c2 -n7 \\\n"
+                  "    mysqldump -h'%(dbhost)s' \\\n"
+                  "        -u'%(dbuser)s' -p'%(dbpassword)s' \\\n"
+                  "        --opt --all-databases |\\\n"
+                  "    gzip > %(backup_name)s\n") % strlocals
 
         proc_failed = False
 

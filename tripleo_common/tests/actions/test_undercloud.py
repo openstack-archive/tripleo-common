@@ -76,7 +76,7 @@ class CreateDatabaseBackupTest(base.TestCase):
         super(CreateDatabaseBackupTest, self).setUp()
         self.dbback = undercloud.CreateDatabaseBackup(
             '/var/tmp/undercloud-backup-dG6hr_',
-            'root', 'dbpassword')
+            '127.0.0.1', 'root', 'dbpassword')
 
     @mock.patch(
         'tripleo_common.actions.base.TripleOAction.get_object_client')
@@ -85,12 +85,12 @@ class CreateDatabaseBackupTest(base.TestCase):
             self, mock_check_call, mock_get_object_client):
         self.dbback.logger = mock.Mock()
         self.dbback.run(mock_get_object_client)
-        assert_string = ('\n        #!/bin/bash\n        '
-                         'nice -n 19 ionice -c2 -n7             '
-                         'mysqldump -uroot -pdbpassword --opt '
-                         '--all-databases | gzip > ' +
-                         self.dbback.backup_name +
-                         '\n        ')
+        assert_string = ("#!/bin/bash\n"
+                         "nice -n 19 ionice -c2 -n7 \\\n"
+                         "    mysqldump -h'127.0.0.1' \\\n"
+                         "        -u'root' -p'dbpassword' \\\n"
+                         "        --opt --all-databases |\\\n"
+                         "    gzip > %s\n" % self.dbback.backup_name)
         mock_check_call.assert_called_once_with(assert_string, shell=True)
 
 
