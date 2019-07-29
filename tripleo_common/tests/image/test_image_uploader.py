@@ -241,57 +241,56 @@ class TestBaseImageUploader(base.TestCase):
         self.uploader._inspect.retry.sleep = mock.Mock()
         self.requests = self.useFixture(rm_fixture.Fixture())
 
-    def test_is_insecure_registry_known(self):
+    @mock.patch.object(requests.Session, 'get', return_value=True)
+    def test_is_insecure_registry_known(self, mock_session):
         self.assertFalse(
             self.uploader.is_insecure_registry('docker.io'))
 
-    def test_is_insecure_registry_secure(self):
+    @mock.patch.object(requests.Session, 'get', return_value=True)
+    def test_is_insecure_registry_secure(self, mock_session):
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        self.assertEqual(
-            'https://192.0.2.0:8787/v2',
-            self.requests.request_history[0].url
-        )
+        calls = [mock.call('https://192.0.2.0:8787/v2', timeout=30)]
+        mock_session.assert_has_calls(calls)
+        self.assertEqual(mock_session.call_count, 1)
 
-    @mock.patch('requests.get')
-    def test_is_insecure_registry_bad_cert(self, mock_get):
-        mock_get.side_effect = [requests.exceptions.SSLError('ouch'), True]
+    @mock.patch.object(requests.Session, 'get',
+                       side_effect=[requests.exceptions.SSLError('err'), True])
+    def test_is_insecure_registry_bad_cert(self, mock_session):
         self.assertTrue(
             self.uploader.is_insecure_registry('bcert:8787'))
         self.assertTrue(
             self.uploader.is_insecure_registry('bcert:8787'))
         calls = [mock.call('https://bcert:8787/v2', timeout=30),
                  mock.call('https://bcert:8787/v2', timeout=30, verify=False)]
-        mock_get.assert_has_calls(calls)
-        self.assertEqual(mock_get.call_count, 2)
+        mock_session.assert_has_calls(calls)
+        self.assertEqual(mock_session.call_count, 2)
 
-    def test_is_insecure_registry_timeout(self):
-        self.requests.get(
-            'https://192.0.2.0:8787/',
-            exc=requests.exceptions.ReadTimeout('ouch'))
+    @mock.patch.object(requests.Session, 'get',
+                       side_effect=requests.exceptions.ReadTimeout('ouch'))
+    def test_is_insecure_registry_timeout(self, mock_session):
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        self.assertEqual(
-            'https://192.0.2.0:8787/v2',
-            self.requests.request_history[0].url
-        )
+        calls = [mock.call('https://192.0.2.0:8787/v2', timeout=30)]
+        mock_session.assert_has_calls(calls)
+        self.assertEqual(mock_session.call_count, 1)
 
-    def test_is_insecure_registry_insecure(self):
-        self.requests.get(
-            'https://192.0.2.0:8787/v2',
-            exc=requests.exceptions.SSLError('ouch'))
+    @mock.patch.object(requests.Session, 'get',
+                       side_effect=requests.exceptions.SSLError('ouch'))
+    def test_is_insecure_registry_insecure(self, mock_session):
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        self.assertEqual(
-            'https://192.0.2.0:8787/v2',
-            self.requests.request_history[0].url
-        )
+        calls = [mock.call('https://192.0.2.0:8787/v2', timeout=30),
+                 mock.call('https://192.0.2.0:8787/v2', timeout=30,
+                           verify=False)]
+        mock_session.assert_has_calls(calls)
+        self.assertEqual(mock_session.call_count, 2)
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader.authenticate')
