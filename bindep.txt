@@ -31,5 +31,3 @@ gzip
 # Required to build language docs
 gettext
 
-# Required for molecule testing
-docker
