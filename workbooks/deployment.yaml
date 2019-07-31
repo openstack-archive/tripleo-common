@@ -300,6 +300,7 @@ workflows:
           plan_name: <% $.container %>
           queue_name: <% $.queue_name %>
           ssh_network: <% $.get('ssh_network') %>
+          deployment_options: <% $.get('deployment_options', {}) %>
         publish-on-error:
           message: <% task().result %>
         on-success: set_deployment_success
@@ -387,6 +388,7 @@ workflows:
       - blacklist: []
       - override_ansible_cfg: ""
       - config_download_timeout: 14400
+      - deployment_options: {}
 
     tags:
       - tripleo-common-managed
