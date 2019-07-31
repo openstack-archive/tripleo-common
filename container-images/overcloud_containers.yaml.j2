@@ -603,8 +603,11 @@ container_images_template:
   params:
   - DockerQdrouterdConfigImage
   - DockerQdrouterdImage
+  - DockerMetricsQdrConfigImage
+  - DockerMetricsQdrImage
   services:
   - OS::TripleO::Services::Qdr
+  - OS::TripleO::Services::MetricsQdr
 
 - imagename: "{{namespace}}/{{name_prefix}}rabbitmq{{name_suffix}}:{{tag}}"
   params:
