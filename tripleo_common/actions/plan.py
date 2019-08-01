@@ -30,7 +30,6 @@ from tripleo_common import exception
 from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import roles as roles_utils
 from tripleo_common.utils import swift as swiftutils
-from tripleo_common.utils import tarball
 from tripleo_common.utils.validations import pattern_validator
 
 
@@ -213,79 +212,6 @@ class ExportPlanAction(base.TripleOAction):
             return actions.Result(error=msg)
         finally:
             shutil.rmtree(tmp_dir)
-
-
-class UpdatePlanFromDirAction(base.TripleOAction):
-    """Updates a plan and associated files
-
-    Updates a plan by comparing the current files with the new ones
-    provided:
-        Updates only new files from the plan
-        Add new files from the plan
-
-    :param container: name of the Swift container / plan name
-    """
-
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
-                 templates_dir=constants.DEFAULT_TEMPLATES_PATH):
-        super(UpdatePlanFromDirAction, self).__init__()
-        self.container = container
-        self.templates_dir = templates_dir
-
-    def run(self, context):
-        try:
-            swift = self.get_object_client(context)
-            # Upload template dir to tmp container
-            container_tmp = '%s-tmp' % self.container
-            with tempfile.NamedTemporaryFile() as tmp_tarball:
-                tarball.create_tarball(self.templates_dir, tmp_tarball.name)
-                tarball.tarball_extract_to_swift_container(
-                    swift,
-                    tmp_tarball.name,
-                    container_tmp)
-            # Get all new templates:
-            new_templates = swiftutils.get_object_string(swift, container_tmp,
-                                                         '').splitlines()
-            old_templates = swiftutils.get_object_string(swift, self.container,
-                                                         '').splitlines()
-            exclude_user_data = [constants.PLAN_ENVIRONMENT,
-                                 constants.OVERCLOUD_J2_ROLES_NAME,
-                                 constants.OVERCLOUD_J2_NETWORKS_NAME,
-                                 constants.OVERCLOUD_J2_EXCLUDES]
-            # Update the old container
-            for new in new_templates:
-                # if doesn't exist, push it:
-                if new not in old_templates:
-                    swiftutils.put_object_string(
-                        swift,
-                        self.container,
-                        new,
-                        swiftutils.get_object_string(swift, container_tmp, new)
-                    )
-                else:
-                    content_new = swiftutils.get_object_string(swift,
-                                                               container_tmp,
-                                                               new)
-                    content_old = swiftutils.get_object_string(swift,
-                                                               self.container,
-                                                               new)
-                    if (not content_new == content_old and
-                       new not in exclude_user_data):
-                        swiftutils.put_object_string(
-                            swift,
-                            self.container,
-                            new,
-                            swiftutils.get_object_string(swift, container_tmp,
-                                                         new)
-                        )
-        except swiftexceptions.ClientException as err:
-            msg = "Error attempting an operation on container: %s" % err
-            LOG.exception(msg)
-            return actions.Result(error=msg)
-        except Exception as err:
-            msg = "Error while updating plan: %s" % err
-            LOG.exception(msg)
-            return actions.Result(error=msg)
 
 
 class UpdateNetworksAction(base.TripleOAction):
