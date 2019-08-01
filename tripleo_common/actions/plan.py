@@ -288,62 +288,6 @@ class UpdatePlanFromDirAction(base.TripleOAction):
             return actions.Result(error=msg)
 
 
-class UpdatePlanEnvironmentAction(base.TripleOAction):
-    """Updates the plan environment values
-
-    Updates a plan environment values - when parameter is specified
-    the value is merged with the env_key (useful for parameter_defaults)
-    otherwise the value for env_key is replaced.
-
-    :param env_key: environment key that should be one of the keys present
-                    in the plan environment dictionary
-    :param parameter: key value of the parameter add/delete/modify
-    :param value: value of the parameter or of env_key when no parameter
-    :param delete: True if the parameter should be deleted from env_key
-    :param container: name of the Swift container / plan name
-    """
-
-    def __init__(self, env_key, parameter=None, value=None, delete=False,
-                 container=constants.DEFAULT_CONTAINER_NAME):
-        super(UpdatePlanEnvironmentAction, self).__init__()
-        self.container = container
-        self.parameter = parameter
-        self.value = value
-        self.delete = delete
-        self.env_key = env_key
-
-    def run(self, context):
-        try:
-            swift = self.get_object_client(context)
-            plan_env = plan_utils.get_env(swift, self.container)
-
-            if self.env_key not in plan_env:
-                msg = "The environment key doesn't exist: %s" % self.env_key
-                return actions.Result(error=msg)
-
-            if self.delete:
-                if not self.parameter:
-                    raise ValueError("delete must specify a parameter")
-                plan_env[self.env_key].pop(self.parameter, None)
-            elif self.parameter:
-                plan_env[self.env_key][self.parameter] = self.value
-            elif self.value is not None:
-                plan_env[self.env_key] = self.value
-            else:
-                # Nothing to modify
-                return
-
-            plan_utils.update_in_env(swift, plan_env,
-                                     self.env_key,
-                                     value=plan_env[self.env_key])
-        except swiftexceptions.ClientException as err:
-            msg = "Error attempting an operation on container: %s" % err
-            return actions.Result(error=msg)
-        except Exception as err:
-            msg = "Error while updating plan: %s" % err
-            return actions.Result(error=msg)
-
-
 class UpdateNetworksAction(base.TripleOAction):
     def __init__(self, networks, current_networks, replace_all=False):
         super(UpdateNetworksAction, self).__init__()
