@@ -598,26 +598,6 @@ class UpdateRolesActionTest(base.TestCase):
         self.assertEqual(result.data, {'roles': [UPDATED_ROLE_OBJ, ]})
 
 
-class GatherRolesActionTest(base.TestCase):
-
-    def setUp(self):
-        super(GatherRolesActionTest, self).setUp()
-        self.container = 'overcloud'
-        self.ctx = mock.MagicMock()
-        self.current_roles = [SAMPLE_ROLE_OBJ, SAMPLE_ROLE_2_OBJ]
-        self.available_role = SAMPLE_ROLE_OBJ.copy()
-        self.available_role['name'] = 'test'
-
-    def test_roles_gathered(self):
-        action = plan.GatherRolesAction(['sample', 'test'], self.current_roles,
-                                        [self.available_role])
-        result = action.run(self.ctx)
-
-        # assert that a role was loaded from self.current_roles
-        self.assertTrue(result.data['gathered_roles'],
-                        [SAMPLE_ROLE_OBJ, self.available_role])
-
-
 class RemoveNoopDeployStepActionTest(base.TestCase):
 
     def setUp(self):
