@@ -73,6 +73,7 @@ class TestPasswords(base.TestCase):
 
         self.assertNotEqual(value['KeystoneCredential0'],
                             value['KeystoneCredential1'])
+        self.assertEqual(len(value['OctaviaServerCertsKeyPassphrase']), 32)
 
     def test_create_ssh_keypair(self):
 
