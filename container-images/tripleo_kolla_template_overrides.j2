@@ -143,11 +143,17 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% set neutron_metadata_agent_ovn_packages_append = ['docker', 'podman', 'libseccomp'] %}
-{% set neutron_l3_agent_packages_append = ['docker', 'podman', 'libseccomp'] %}
+{% set neutron_metadata_agent_ovn_packages_append = ['podman', 'libseccomp'] %}
+{% set neutron_l3_agent_packages_append = ['podman', 'libseccomp'] %}
 # Kolla doesn't currently neutron_dhcp_agent_packages on CentOS so the append
 # isn't valid here.
-{% set neutron_dhcp_agent_packages = ['docker', 'podman', 'libseccomp'] %}
+{% set neutron_dhcp_agent_packages = ['podman', 'libseccomp'] %}
+
+{% if distro_python_version.startswith('2') %}
+{% set neutron_metadata_agent_ovn_packages_append = neutron_metadata_agent_ovn_packages_append + ['docker'] %}
+{% set neutron_l3_agent_packages_append = neutron_l3_agent_packages_append + ['docker'] %}
+{% set neutron_dhcp_agent_packages = neutron_dhcp_agent_packages + ['docker'] %}
+{% endif %}
 
 {% if distro_python_version.startswith('3') %}
 {% set octavia_api_packages_append = ['python3-networking-ovn'] %}
@@ -235,7 +241,15 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set nova_libvirt_packages_remove = ['libvirt-daemon-driver-lxc'] %}
 # On RHEL7 /etc/pki/CA was part of base openssl package.
 # On RHEL8 it is now in openssl-perl.
-{% set nova_libvirt_packages_append = ['openstack-nova-migration', 'openssl-perl'] %}
+{% set nova_libvirt_packages_append = [
+    'openstack-nova-migration',
+    'openssl-perl',
+    'podman',
+    'seccomp'
+] %}
+{% if distro_python_version.startswith('2') %}
+{% set nova_libvirt_packages_append = nova_libvirt_packages_append + ['docker'] %}
+{% endif %}
 
 # Required to allow the mysql-migrate-db.sh data extraction script to be used
 # during an upgrade.
