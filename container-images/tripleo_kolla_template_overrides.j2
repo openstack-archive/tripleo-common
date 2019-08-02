@@ -245,7 +245,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'openstack-nova-migration',
     'openssl-perl',
     'podman',
-    'seccomp'
+    'libseccomp'
 ] %}
 {% if distro_python_version.startswith('2') %}
 {% set nova_libvirt_packages_append = nova_libvirt_packages_append + ['docker'] %}
