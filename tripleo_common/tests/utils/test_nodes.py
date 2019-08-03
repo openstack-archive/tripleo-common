@@ -879,6 +879,25 @@ class NodesTest(base.TestCase):
             driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
                          'ucs_username': 'test'})
 
+    def test_register_ironic_node_conductor_group(self):
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6"}
+        node = self._get_node()
+        node['pm_type'] = 'cisco-ucs-managed'
+        node['conductor_group'] = 'cg1'
+        client = mock.MagicMock()
+        nodes.register_ironic_node(node, client=client)
+        client.node.create.assert_called_once_with(
+            driver='cisco-ucs-managed', name='node1',
+            properties=node_properties,
+            resource_class='baremetal',
+            driver_info={'ucs_password': 'random', 'ucs_address': 'foo.bar',
+                         'ucs_username': 'test'},
+            conductor_group='cg1')
+
     def test_register_ironic_node_pxe_ucs(self):
         node_properties = {"cpus": "1",
                            "memory_mb": "2048",

@@ -418,6 +418,9 @@ def register_ironic_node(node, client):
         if field in node:
             create_map.update({field: six.text_type(node[field])})
 
+    conductor_group = node.get("conductor_group")
+    if conductor_group:
+        create_map["conductor_group"] = conductor_group
     node_id = handler.unique_id_from_fields(node)
     LOG.debug('Registering node %s with ironic.', node_id)
     ironic_node = client.node.create(**create_map)
@@ -496,6 +499,7 @@ _NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
                       'ramdisk_id': ['/driver_info/deploy_ramdisk',
                                      '/driver_info/rescue_ramdisk'],
                       'platform': '/extra/tripleo_platform',
+                      'conductor_group': '/conductor_group',
                       }
 
 _NON_DRIVER_FIELDS.update({field: '/%s' % field
