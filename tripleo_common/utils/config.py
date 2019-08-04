@@ -327,9 +327,10 @@ class Config(object):
                 deployment_stack = self.client.stacks.get(
                     deployment_stack_id, resolve_outputs=False)
                 parent_stack = deployment_stack.parent
+                grandparent_stack = self.client.stacks.get(
+                    parent_stack, resolve_outputs=False).parent
                 resources = self.client.resources.list(
-                    name,
-                    nested_depth=constants.NESTED_DEPTH,
+                    grandparent_stack,
                     filters=dict(physical_resource_id=parent_stack))
                 if not resources:
                     message = "The deployment resource grandparent name" \
