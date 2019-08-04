@@ -119,6 +119,8 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-neutron-sriov-agent:current-tripleo
   image_source: kolla
+- imagename: docker.io/tripleomaster/centos-binary-neutron-mlnx-agent:current-tripleo
+  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-neutron-server:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-neutron-server-opendaylight:current-tripleo

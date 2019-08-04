@@ -504,6 +504,13 @@ container_images_template:
   services:
   - OS::TripleO::Services::NeutronSriovAgent
 
+- imagename: "{{namespace}}/{{name_prefix}}neutron-mlnx-agent{{name_suffix}}:{{tag}}"
+  image_source: kolla
+  params:
+  - ContainerNeutronMlnxImage
+  services:
+  - OS::TripleO::Services::NeutronMlnxAgent
+
 {% if neutron_driver == "odl" %}
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server-opendaylight{{name_suffix}}:{{tag}}"
   image_source: kolla
