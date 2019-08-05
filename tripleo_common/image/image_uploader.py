@@ -346,7 +346,8 @@ class BaseImageUploader(object):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
-    def authenticate(self, image_url, username=None, password=None):
+    def authenticate(self, image_url, username=None, password=None,
+                     session=None):
         netloc = image_url.netloc
         image, tag = self._image_tag_from_url(image_url)
         self.is_insecure_registry(netloc)
@@ -381,7 +382,29 @@ class BaseImageUploader(object):
         rauth = session.get(realm, params=token_param, auth=auth, timeout=30)
         rauth.raise_for_status()
         session.headers['Authorization'] = 'Bearer %s' % rauth.json()['token']
+        setattr(session, 'reauthenticate', self.authenticate)
+        setattr(
+            session,
+            'auth_args',
+            dict(
+                image_url=image_url,
+                username=username,
+                password=password,
+                session=session
+            )
+        )
         return session
+
+    @staticmethod
+    def check_status(session, request):
+        if hasattr(session, 'reauthenticate'):
+            if request.status_code == 401:
+                session.reauthenticate(**session.auth_args)
+                if hasattr(request, 'text'):
+                    raise requests.exceptions.HTTPError(request.text)
+                else:
+                    raise SystemError()
+        request.raise_for_status()
 
     @classmethod
     def _build_url(cls, url, path):
@@ -438,13 +461,13 @@ class BaseImageUploader(object):
         tags_f = p.submit(session.get, tags_url, timeout=30)
 
         manifest_r = manifest_f.result()
-        tags_r = tags_f.result()
-
         if manifest_r.status_code in (403, 404):
             raise ImageNotFoundException('Not found image: %s' %
                                          image_url.geturl())
-        manifest_r.raise_for_status()
-        tags_r.raise_for_status()
+        cls.check_status(session=session, request=manifest_r)
+
+        tags_r = tags_f.result()
+        cls.check_status(session=session, request=tags_r)
 
         manifest_str = manifest_r.text
 
@@ -474,7 +497,7 @@ class BaseImageUploader(object):
             config_f = p.submit(
                 session.get, config_url, headers=config_headers, timeout=30)
             config_r = config_f.result()
-            config_r.raise_for_status()
+            cls.check_status(session=session, request=config_r)
             config = config_r.json()
 
         tags = tags_r.json()['tags']
@@ -753,7 +776,7 @@ class BaseImageUploader(object):
                     'from': existing_name
                 }
                 r = session.post(url, data=data, timeout=30)
-                r.raise_for_status()
+                cls.check_status(session=session, request=r)
                 LOG.debug('%s %s' % (r.status_code, r.reason))
 
 
@@ -1058,7 +1081,7 @@ class PythonImageUploader(BaseImageUploader):
         if r.status_code in (501, 403, 404, 405):
             cls.export_registries.add(image_url.netloc)
             return True
-        r.raise_for_status()
+        cls.check_status(session=session, request=r)
         cls.push_registries.add(image_url.netloc)
         return False
 
@@ -1087,7 +1110,7 @@ class PythonImageUploader(BaseImageUploader):
         r = session.get(url, headers=manifest_headers, timeout=30)
         if r.status_code in (403, 404):
             raise ImageNotFoundException('Not found image: %s' % url)
-        r.raise_for_status()
+        cls.check_status(session=session, request=r)
         return r.text
 
     def _collect_manifests_layers(cls, image_url, session,
@@ -1133,7 +1156,7 @@ class PythonImageUploader(BaseImageUploader):
             image_url,
             path=CALL_UPLOAD % {'image': image})
         r = session.post(upload_req_url, timeout=30)
-        r.raise_for_status()
+        cls.check_status(session=session, request=r)
         return r.headers['Location']
 
     @classmethod
@@ -1159,7 +1182,7 @@ class PythonImageUploader(BaseImageUploader):
         chunk_size = 2 ** 20
         with session.get(
                 source_blob_url, stream=True, timeout=30) as blob_req:
-            blob_req.raise_for_status()
+            cls.check_status(session=session, request=blob_req)
             for data in blob_req.iter_content(chunk_size):
                 if not data:
                     break
@@ -1255,7 +1278,7 @@ class PythonImageUploader(BaseImageUploader):
                     source_url, CALL_BLOB % parts)
 
                 r = source_session.get(source_config_url, timeout=30)
-                r.raise_for_status()
+                cls.check_status(session=source_session, request=r)
                 config_str = r.text
                 manifest['config']['size'] = len(config_str)
                 manifest['config']['mediaType'] = MEDIA_CONFIG
@@ -1315,7 +1338,7 @@ class PythonImageUploader(BaseImageUploader):
                     'Content-Type': 'application/octet-stream'
                 }
             )
-            r.raise_for_status(),
+            cls.check_status(session=target_session, request=r)
 
         # Upload the manifest
         image, tag = cls._image_tag_from_url(target_url)
@@ -1340,7 +1363,7 @@ class PythonImageUploader(BaseImageUploader):
         if r.status_code == 400:
             LOG.error(r.text)
             raise ImageUploaderException('Pushing manifest failed')
-        r.raise_for_status()
+        cls.check_status(session=target_session, request=r)
 
     @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -1503,7 +1526,7 @@ class PythonImageUploader(BaseImageUploader):
                     'Content-Type': 'application/octet-stream'
                 }
             )
-            upload_resp.raise_for_status()
+            cls.check_status(session=session, request=upload_resp)
             length += chunk_length
 
         layer_digest = 'sha256:%s' % calc_digest.hexdigest()
@@ -1517,7 +1540,7 @@ class PythonImageUploader(BaseImageUploader):
                 'digest': layer_digest
             },
         )
-        upload_resp.raise_for_status()
+        cls.check_status(session=session, request=upload_resp)
         layer['digest'] = layer_digest
         layer['size'] = length
         return layer_digest
