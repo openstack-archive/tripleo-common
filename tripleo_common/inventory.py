@@ -289,14 +289,15 @@ class TripleoInventory(object):
             service_children = [role for role in roles
                                 if ret.get(role) is not None]
             if service_children:
-                ret[service.lower()] = {
+                svc_host = service.lower()
+                ret[svc_host] = {
                     'children': self._hosts(service_children),
                     'vars': {
                         'ansible_ssh_user': self.ansible_ssh_user
                     }
                 }
                 if self.ansible_python_interpreter:
-                    ret[role]['vars']['ansible_python_interpreter'] = \
+                    ret[svc_host]['vars']['ansible_python_interpreter'] = \
                         self.ansible_python_interpreter
 
         if not self.hosts_format_dict:
