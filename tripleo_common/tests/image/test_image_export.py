@@ -17,6 +17,7 @@ import hashlib
 import io
 import json
 import os
+import requests
 import shutil
 import six
 from six.moves.urllib.parse import urlparse
@@ -116,7 +117,8 @@ class TestImageExport(base.TestCase):
         }
         calc_digest = hashlib.sha256()
         layer_stream = io.BytesIO(blob_compressed)
-        self.assertRaises(IOError, image_export.export_stream,
+        self.assertRaises(requests.exceptions.HTTPError,
+                          image_export.export_stream,
                           target_url, layer, layer_stream,
                           verify_digest=True)
         blob_dir = os.path.join(image_export.IMAGE_EXPORT_DIR,
