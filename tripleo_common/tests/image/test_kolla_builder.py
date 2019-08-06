@@ -253,52 +253,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_suffix': '',
                 'tag': 'current-tripleo',
                 'neutron_driver': 'ovn',
-                'openshift_namespace': 'docker.io/openshift',
-                'openshift_tag': 'v3.11.0',
-                'openshift_prefix': 'origin',
-                'openshift_cockpit_namespace': 'docker.io/cockpit',
-                'openshift_cockpit_image': 'kubernetes',
-                'openshift_cockpit_tag': 'latest',
-                'openshift_etcd_namespace': 'registry.fedoraproject.org'
-                '/latest',
-                'openshift_etcd_image': 'etcd',
-                'openshift_etcd_tag': 'latest',
-                'openshift_gluster_namespace': 'docker.io/gluster',
-                'openshift_gluster_image': 'gluster-centos',
-                'openshift_gluster_block_image': 'glusterblock-provisioner',
-                'openshift_gluster_tag': 'latest',
-                'openshift_heketi_namespace': 'docker.io/heketi',
-                'openshift_heketi_image': 'heketi',
-                'openshift_heketi_tag': 'latest',
-                'openshift_asb_namespace': 'docker.io/ansibleplaybookbundle',
-                'openshift_asb_tag': 'latest',
-                'openshift_cluster_monitoring_namespace': 'quay.io/coreos',
-                'openshift_cluster_monitoring_image':
-                    'cluster-monitoring-operator',
-                'openshift_cluster_monitoring_tag': 'v0.1.1',
-                'openshift_configmap_reload_namespace': 'quay.io/coreos',
-                'openshift_configmap_reload_image': 'configmap-reload',
-                'openshift_configmap_reload_tag': 'v0.0.1',
-                'openshift_prometheus_operator_namespace': 'quay.io/coreos',
-                'openshift_prometheus_operator_image': 'prometheus-operator',
-                'openshift_prometheus_operator_tag': 'v0.23.2',
-                'openshift_prometheus_config_reload_namespace':
-                    'quay.io/coreos',
-                'openshift_prometheus_config_reload_image':
-                    'prometheus-config-reloader',
-                'openshift_prometheus_config_reload_tag': 'v0.23.2',
-                'openshift_prometheus_tag': 'v2.3.2',
-                'openshift_prometheus_alertmanager_tag': 'v0.15.2',
-                'openshift_prometheus_node_exporter_tag': 'v0.16.0',
-                'openshift_oauth_proxy_tag': 'v1.1.0',
-                'openshift_kube_rbac_proxy_namespace': 'quay.io/coreos',
-                'openshift_kube_rbac_proxy_image': 'kube-rbac-proxy',
-                'openshift_kube_rbac_proxy_tag': 'v0.3.1',
-                'openshift_kube_state_metrics_namespace': 'quay.io/coreos',
-                'openshift_kube_state_metrics_image': 'kube-state-metrics',
-                'openshift_kube_state_metrics_tag': 'v1.3.1',
-                'openshift_grafana_namespace': 'docker.io/grafana',
-                'openshift_grafana_tag': '5.2.1',
             },
             builder.container_images_template_inputs()
         )
@@ -325,62 +279,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_suffix': '-suffix',
                 'tag': 'master',
                 'neutron_driver': 'ovn',
-                'openshift_namespace': 'docker.io/openshift3',
-                'openshift_tag': 'v3.11.0',
-                'openshift_prefix': 'ose',
-                'openshift_cockpit_namespace': 'docker.io/openshift-cockpit',
-                'openshift_cockpit_image': 'cockpit',
-                'openshift_cockpit_tag': 'cockpit-tag',
-                'openshift_etcd_namespace': 'registry.access.redhat.com/rhel7',
-                'openshift_etcd_image': 'openshift-etcd',
-                'openshift_etcd_tag': 'etcd-tag',
-                'openshift_gluster_namespace':
-                    'registry.access.redhat.com/rhgs3',
-                'openshift_gluster_image': 'rhgs-server-rhel7',
-                'openshift_gluster_block_image':
-                    'rhgs-gluster-block-prov-rhel7',
-                'openshift_gluster_tag': 'gluster-tag',
-                'openshift_heketi_namespace':
-                    'registry.access.redhat.com/rhgs3',
-                'openshift_heketi_image': 'rhgs-volmanager-rhel7',
-                'openshift_heketi_tag': 'heketi-tag',
-                'openshift_asb_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_asb_tag': 'v3.11',
-                'openshift_cluster_monitoring_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_cluster_monitoring_image':
-                    'ose-cluster-monitoring-operator',
-                'openshift_cluster_monitoring_tag': 'v3.11',
-                'openshift_configmap_reload_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_configmap_reload_image': 'ose-configmap-reloader',
-                'openshift_configmap_reload_tag': 'v3.11',
-                'openshift_prometheus_operator_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_prometheus_operator_image':
-                    'ose-prometheus-operator',
-                'openshift_prometheus_operator_tag': 'v3.11',
-                'openshift_prometheus_config_reload_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_prometheus_config_reload_image':
-                    'ose-prometheus-config-reloader',
-                'openshift_prometheus_config_reload_tag': 'v3.11',
-                'openshift_prometheus_tag': 'v3.11',
-                'openshift_prometheus_alertmanager_tag': 'v3.11',
-                'openshift_prometheus_node_exporter_tag': 'v3.11',
-                'openshift_oauth_proxy_tag': 'v3.11',
-                'openshift_kube_rbac_proxy_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_kube_rbac_proxy_image': 'ose-kube-rbac-proxy',
-                'openshift_kube_rbac_proxy_tag': 'v3.11',
-                'openshift_kube_state_metrics_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_kube_state_metrics_image': 'ose-kube-state-metrics',
-                'openshift_kube_state_metrics_tag': 'v3.11',
-                'openshift_grafana_namespace':
-                    'registry.access.redhat.com/openshift3',
-                'openshift_grafana_tag': 'v3.11',
             },
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleomaster',
@@ -391,59 +289,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 name_suffix='suffix',
                 tag='master',
                 neutron_driver='ovn',
-                openshift_namespace='docker.io/openshift3',
-                openshift_tag='v3.11.0',
-                openshift_prefix='ose',
-                openshift_cockpit_namespace='docker.io/openshift-cockpit',
-                openshift_cockpit_image='cockpit',
-                openshift_cockpit_tag='cockpit-tag',
-                openshift_etcd_namespace='registry.access.redhat.com/rhel7',
-                openshift_etcd_image='openshift-etcd',
-                openshift_etcd_tag='etcd-tag',
-                openshift_gluster_namespace='registry.access.redhat.com/rhgs3',
-                openshift_gluster_image='rhgs-server-rhel7',
-                openshift_gluster_block_image='rhgs-gluster-block-prov-rhel7',
-                openshift_gluster_tag='gluster-tag',
-                openshift_heketi_namespace='registry.access.redhat.com/rhgs3',
-                openshift_heketi_image='rhgs-volmanager-rhel7',
-                openshift_heketi_tag='heketi-tag',
-                openshift_asb_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_asb_tag='v3.11',
-                openshift_cluster_monitoring_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_cluster_monitoring_image='ose-'
-                    'cluster-monitoring-operator',
-                openshift_cluster_monitoring_tag='v3.11',
-                openshift_configmap_reload_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_configmap_reload_image='ose-configmap-reloader',
-                openshift_configmap_reload_tag='v3.11',
-                openshift_prometheus_operator_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_prometheus_operator_image='ose-'
-                    'prometheus-operator',
-                openshift_prometheus_operator_tag='v3.11',
-                openshift_prometheus_config_reload_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_prometheus_config_reload_image='ose-'
-                    'prometheus-config-reloader',
-                openshift_prometheus_config_reload_tag='v3.11',
-                openshift_prometheus_tag='v3.11',
-                openshift_prometheus_alertmanager_tag='v3.11',
-                openshift_prometheus_node_exporter_tag='v3.11',
-                openshift_oauth_proxy_tag='v3.11',
-                openshift_kube_rbac_proxy_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_kube_rbac_proxy_image='ose-kube-rbac-proxy',
-                openshift_kube_rbac_proxy_tag='v3.11',
-                openshift_kube_state_metrics_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_kube_state_metrics_image='ose-kube-state-metrics',
-                openshift_kube_state_metrics_tag='v3.11',
-                openshift_grafana_namespace='registry.'
-                    'access.redhat.com/openshift3',
-                openshift_grafana_tag='v3.11',
             )
         )
 
@@ -1001,7 +846,6 @@ class TestPrepare(base.TestCase):
                 'OS::TripleO::Services::HeatApi',
                 'OS::TripleO::Services::NovaApi',
                 'OS::TripleO::Services::NovaCompute',
-                'OS::TripleO::Services::OpenShift::Master',
                 'OS::TripleO::Services::Kubernetes::Worker',
                 'OS::TripleO::Services::SkydiveAgent',
             ]),
@@ -1013,8 +857,6 @@ class TestPrepare(base.TestCase):
                     '/tht/docker/services/foo.yaml',
                     'OS::TripleO::Services::NovaCompute':
                     '/tht/docker/services/foo.yaml',
-                    'OS::TripleO::Services::OpenShift::Master': 'deployment' +
-                    '/openshift/openshift-master-baremetal-ansible.yaml',
                     'OS::TripleO::Services::Kubernetes::Worker':
                     'deployment' +
                     'kubernetes/kubernetes-worker-baremetal-ansible.yaml',
@@ -1031,7 +873,6 @@ class TestPrepare(base.TestCase):
                         'OS::TripleO::Services::HeatApi',
                         'OS::TripleO::Services::NeutronApi',
                         'OS::TripleO::Services::NovaApi',
-                        'OS::TripleO::Services::OpenShift::Master',
                         'OS::TripleO::Services::SkydiveAgent',
                         'OS::TripleO::Services::Noop'
                     ]
