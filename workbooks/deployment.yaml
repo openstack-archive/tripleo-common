@@ -389,6 +389,7 @@ workflows:
       - override_ansible_cfg: ""
       - config_download_timeout: 14400
       - deployment_options: {}
+      - skip_tags: ""
 
     tags:
       - tripleo-common-managed
@@ -543,6 +544,7 @@ workflows:
           override_ansible_cfg: <% $.override_ansible_cfg %>
           command_timeout: <% $.config_download_timeout %>
           execution_id: <% execution().id %>
+          skip_tags: <% $.skip_tags %>
         publish:
           log_path: <% task().result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS
