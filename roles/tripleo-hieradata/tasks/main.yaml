@@ -42,7 +42,8 @@
 # other_hierafile:
 #   foo: bar3
 - name: Copy hieradata files for all hosts
-  when: not hieradata_per_host|bool
+  when: hieradata_template != "" and not hieradata_per_host|bool
+  ignore_errors: yes
   include: all_hosts.yaml
   vars:
     hieradata_content: "{{ lookup('file', hieradata_template ~ '.rendered') | from_yaml }}"
@@ -65,7 +66,8 @@
 #   other_hierafile:
 #     foo: bar
 - name: Copy hieradata files per host
-  when: hieradata_per_host|bool
+  when: hieradata_template != "" and hieradata_per_host|bool
+  ignore_errors: yes
   include: per_host.yaml host={{ inventory_hostname }} data={{ hieradata_content[inventory_hostname] }}
   vars:
     hieradata_content: "{{ lookup('file', hieradata_template ~ '.rendered') | from_yaml }}"
