@@ -207,6 +207,13 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% endif %}
 {% set openstack_base_packages_append = ['openstack-selinux'] %}
 
+{% if ansible_distribution == "RedHat" %}
+# Remove collectd-sensubility from RHEL-8 as it is not available.
+# https://bugs.launchpad.net/tripleo/+bug/1839423
+{% set collectd_packages_remove = [
+    'collectd-sensubility'
+] %}
+{% endif %}
 # Use mariadb-server-galera and xinetd for galera and clustercheck
 {#  'pv'                  # EPEL
 #}
