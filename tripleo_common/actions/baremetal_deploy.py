@@ -72,6 +72,7 @@ _INSTANCE_SCHEMA = {
             'items': _NIC_SCHEMA
         },
         'profile': {'type': 'string'},
+        'provisioned': {'type': 'boolean'},
         'resource_class': {'type': 'string'},
         'root_size_gb': {'type': 'integer', 'minimum': 4},
         'swap_size_mb': {'type': 'integer', 'minimum': 64},
@@ -338,11 +339,12 @@ class ExpandRolesAction(base.TripleOAction):
     """Convert a baremetal_deployment file to list of instances."""
 
     def __init__(self, roles, stackname='overcloud',
-                 default_image='overcloud-full'):
+                 default_image='overcloud-full', provisioned=True):
         super(ExpandRolesAction, self).__init__()
         self.roles = roles
         self.stackname = stackname
         self.default_image = default_image
+        self.provisioned = provisioned
 
     def run(self, context):
         for role in self.roles:
@@ -369,50 +371,105 @@ class ExpandRolesAction(base.TripleOAction):
             name = role['name']
             hostname_format = _hostname_format(
                 role.get('hostname_format'), name)
+            count = role.get('count', 1)
+            unprovisioned_indexes = []
+
+            # build a map of all potential generated names
+            # with the index number which generates the name
+            potential_gen_names = {}
+            for index in range(count + len(role.get('instances', []))):
+                potential_gen_names[_build_hostname(
+                    hostname_format, index, self.stackname)] = index
+
+            # build a list of instances from the specified
+            # instances list
+            role_instances = []
+            for instance in role.get('instances', []):
+                inst = {}
+                inst.update(role.get('defaults', {}))
+                inst.update(instance)
+                inst.setdefault('image', {'image': self.default_image})
+
+                if 'name' in inst and 'hostname' not in inst:
+                    inst['hostname'] = inst['name']
+
+                # create a hostname map entry now if the specified hostname
+                # is a valid generated name
+                if inst.get('hostname') in potential_gen_names:
+                    hostname_map[inst['hostname']] = inst['hostname']
+
+                role_instances.append(inst)
+
+            # add generated instance entries until the desired count of
+            # provisioned instances is reached
+            while len([i for i in role_instances
+                       if i.get('provisioned', True)]) < count:
+                inst = {}
+                inst.update(role.get('defaults', {}))
+                inst.setdefault('image', {'href': self.default_image})
+                role_instances.append(inst)
+
             # NOTE(dtantsur): our hostname format may differ from THT defaults,
             # so override it in the resulting environment
             parameter_defaults['%sDeployedServerHostnameFormat' % name] = (
                 hostname_format)
 
-            if 'instances' in role:
-                parameter_defaults['%sDeployedServerCount' % name] = len(
-                    role['instances'])
-                # TODO(dtantsur): ordering-dependent logic here, can we do
-                # better?
-                for index, instance in enumerate(role['instances']):
-                    inst = {}
-                    if 'defaults' in role:
-                        inst.update(role['defaults'])
-                    inst.update(instance)
-                    gen_name = _build_hostname(
-                        hostname_format, index, self.stackname)
-                    inst.setdefault('hostname', inst.get('name', gen_name))
-                    hostname_map[gen_name] = inst['hostname']
-                    instances.append(inst)
-            else:
-                count = role.get('count', 1)
-                parameter_defaults['%sDeployedServerCount' % name] = count
-                if not count:
-                    continue
+            # ensure each instance has a unique non-empty hostname
+            # and a hostname map entry. Also build a list of indexes
+            # for unprovisioned instances
+            index = 0
+            for inst in role_instances:
+                provisioned = inst.get('provisioned', True)
+                gen_name = None
+                hostname = inst.get('hostname')
 
-                for index in range(count):
-                    hostname = _build_hostname(
-                        hostname_format, index, self.stackname)
-                    inst = {'hostname': hostname}
-                    if 'defaults' in role:
-                        inst.update(role['defaults'])
-                    inst.setdefault('image', {'href': self.default_image})
+                if hostname not in hostname_map:
+                    while (not gen_name
+                           or gen_name in hostname_map):
+                        gen_name = _build_hostname(
+                            hostname_format, index, self.stackname)
+                        index += 1
+                    inst.setdefault('hostname', gen_name)
+                    hostname = inst.get('hostname')
+                    hostname_map[gen_name] = inst['hostname']
+
+                if not provisioned:
+                    if gen_name:
+                        unprovisioned_indexes.append(
+                            potential_gen_names[gen_name])
+                    elif hostname in potential_gen_names:
+                        unprovisioned_indexes.append(
+                            potential_gen_names[hostname])
+
+            if unprovisioned_indexes:
+                parameter_defaults['%sRemovalPolicies' % name] = [{
+                    'resource_list': unprovisioned_indexes
+                }]
+
+            provisioned_count = 0
+            for inst in role_instances:
+                provisioned = inst.pop('provisioned', True)
+
+                if provisioned:
+                    provisioned_count += 1
+
+                # Only add instances which match the desired provisioned state
+                if provisioned == self.provisioned:
                     instances.append(inst)
-                    hostname_map[hostname] = hostname
+
+            parameter_defaults['%sDeployedServerCount' % name] = (
+                provisioned_count)
 
         try:
             _validate_instances(instances)
         except Exception as exc:
             LOG.error('Failed to validate the request. %s', exc)
             return actions.Result(error=six.text_type(exc))
-
-        return {'instances': instances,
-                'environment': {'parameter_defaults': parameter_defaults}}
+        if self.provisioned:
+            env = {'parameter_defaults': parameter_defaults}
+        else:
+            env = {}
+        return {'instances': instances, 'environment': env}
 
 
 class PopulateEnvironmentAction(base.TripleOAction):
@@ -496,9 +553,16 @@ def _validate_roles(roles, stackname='overcloud'):
     jsonschema.validate(roles, _ROLES_INPUT_SCHEMA)
 
     for item in roles:
+        count = item.get('count', 1)
+        instances = item.get('instances', [])
+        instances = [i for i in instances if i.get('provisioned', True)]
         name = item.get('name')
-        if 'count' in item and 'instances' in item:
-            raise ValueError("Count and instances cannot be provided together")
+        if len(instances) > count:
+            raise ValueError(
+                "%s: number of instance entries %s "
+                "cannot be greater than count %s" %
+                (name, len(instances), count)
+            )
 
         defaults = item.get('defaults', {})
         if 'hostname' in defaults:
