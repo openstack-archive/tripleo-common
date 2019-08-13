@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    Support for the ``cisco-ucs-managed`` and ``cisco-ucs-standalone``
+    hardware types has been removed since these hardware types have been
+    removed from Ironic due to lack of maintenance.
