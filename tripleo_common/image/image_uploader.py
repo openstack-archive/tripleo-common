@@ -963,6 +963,7 @@ class PythonImageUploader(BaseImageUploader):
                     t.target_image, target_session):
                 LOG.warning('Skipping upload for modified image %s' %
                             t.target_image)
+                target_session.close()
                 return []
             copy_target_url = t.target_image_source_tag_url
         else:
@@ -1038,6 +1039,9 @@ class PythonImageUploader(BaseImageUploader):
                         t.image_name)
         for layer in source_layers:
             self.image_layers.setdefault(layer, t.target_image_url)
+
+        target_session.close()
+        source_session.close()
         return to_cleanup
 
     @classmethod
@@ -1736,6 +1740,7 @@ def discover_tag_from_inspect(args):
     session = self.authenticate(
         image_url, username=username, password=password)
     i = self._inspect(image_url, session=session)
+    session.close()
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
         path = image.rpartition(':')
