@@ -390,6 +390,20 @@ class GenerateFencingParametersAction(base.TripleOAction):
                      "bm_name": hostmap[mac_addr]["baremetal_name"]})
                 if self.delay:
                     params["delay"] = self.delay
+            elif (node['pm_type'] in {'staging-ovirt'}):
+                # fence_rhevm
+                node_data["agent"] = "fence_rhevm"
+                params["ipaddr"] = node["pm_addr"]
+                params["passwd"] = node["pm_password"]
+                params["login"] = node["pm_user"]
+                params["port"] = node["pm_vm_name"]
+                params["ssl"] = 1
+                params["ssl_insecure"] = 1
+                if hostmap:
+                    params["pcmk_host_list"] = \
+                        hostmap[mac_addr]["compute_name"]
+                if self.delay:
+                    params["delay"] = self.delay
             elif (node['pm_type'] == 'ipmi' or node["pm_type"].split('_')[1] in
                   ("ipmitool", "ilo", "drac")):
                 # IPMI fencing driver
