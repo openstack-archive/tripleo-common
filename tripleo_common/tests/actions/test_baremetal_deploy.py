@@ -465,7 +465,11 @@ class TestCheckExistingInstances(base.TestCase):
              'capabilities': {'answer': '42'},
              'image': {'href': 'overcloud-full'}}
         ]
-        existing = mock.MagicMock(hostname='host2')
+        existing = mock.MagicMock(hostname='host2', allocation=None)
+        existing.to_dict.return_value = {
+            'hostname': 'host2',
+            'allocation': None
+        }
         pr.show_instance.side_effect = [
             sdk_exc.ResourceNotFound(""),
             metalsmith.exceptions.Error(""),
@@ -475,7 +479,11 @@ class TestCheckExistingInstances(base.TestCase):
         result = action.run(mock.Mock())
 
         self.assertEqual({
-            'instances': [existing.to_dict.return_value],
+            'instances': [{
+                'hostname': 'host2',
+                'allocation': None,
+                'port_map': {}
+            }],
             'not_found': [{
                 'hostname': 'host1',
                 'image': {'href': 'overcloud-full'},
@@ -487,6 +495,41 @@ class TestCheckExistingInstances(base.TestCase):
         pr.show_instance.assert_has_calls([
             mock.call(host) for host in ['host1', 'host3', 'host2']
         ])
+
+    @mock.patch('tripleo_common.actions.baremetal_deploy.'
+                'CheckExistingInstancesAction.get_baremetal_client')
+    def test_existing_no_allocation(self, mock_gbc, mock_pr):
+        pr = mock_pr.return_value
+        instances = [
+            {'name': 'server2', 'resource_class': 'compute',
+             'hostname': 'host2',
+             'capabilities': {'answer': '42'},
+             'image': {'href': 'overcloud-full'}}
+        ]
+        existing = mock.MagicMock(
+            hostname='host2', allocation=None,
+            state=metalsmith.InstanceState.ACTIVE)
+        existing.to_dict.return_value = {
+            'hostname': 'host2',
+        }
+        pr.show_instance.return_value = existing
+        mock_create = mock_gbc.return_value.allocation.create
+
+        action = baremetal_deploy.CheckExistingInstancesAction(instances)
+        ctx = mock.Mock()
+        result = action.run(ctx)
+        mock_gbc.assert_called_once_with(ctx)
+        mock_create.assert_called_once_with(
+            name='host2', node='server2', resource_class='compute')
+
+        self.assertEqual({
+            'instances': [{
+                'hostname': 'host2',
+                'port_map': {}
+            }],
+            'not_found': []
+        }, result)
+        pr.show_instance.assert_called_once_with('server2')
 
     def test_hostname_mismatch(self, mock_pr):
         instances = [
@@ -509,7 +552,7 @@ class TestCheckExistingInstances(base.TestCase):
         action = baremetal_deploy.CheckExistingInstancesAction(instances)
         result = action.run(mock.Mock())
 
-        self.assertIn("hostname host0", result.error)
+        self.assertIn("for host0", result.error)
         self.assertIn("RuntimeError: boom", result.error)
         mock_pr.return_value.show_instance.assert_called_once_with('host0')
 
