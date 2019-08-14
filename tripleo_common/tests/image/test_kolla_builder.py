@@ -252,6 +252,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
                 'tag': 'current-tripleo',
+                'rhel_containers': False,
                 'neutron_driver': 'ovn',
                 'openshift_namespace': 'docker.io/openshift',
                 'openshift_tag': 'v3.11.0',
@@ -324,6 +325,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'name_prefix': 'prefix-',
                 'name_suffix': '-suffix',
                 'tag': 'master',
+                'rhel_containers': False,
                 'neutron_driver': 'ovn',
                 'openshift_namespace': 'docker.io/openshift3',
                 'openshift_tag': 'v3.11.0',
@@ -390,6 +392,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 name_prefix='prefix',
                 name_suffix='suffix',
                 tag='master',
+                rhel_containers=False,
                 neutron_driver='ovn',
                 openshift_namespace='docker.io/openshift3',
                 openshift_tag='v3.11.0',
@@ -488,6 +491,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self.assertEqual(container_images, result)
 
     def _test_container_images_yaml_in_sync_helper(self, neutron_driver=None,
+                                                   rhel_containers=False,
                                                    remove_images=[]):
         '''Confirm overcloud_containers.tpl.yaml equals overcloud_containers.yaml
 
@@ -508,7 +512,8 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             return entry
 
         result = tmpl_builder.container_images_from_template(
-            filter=ffunc, neutron_driver=neutron_driver)
+            filter=ffunc, neutron_driver=neutron_driver,
+            rhel_containers=rhel_containers)
 
         oc_yaml_file = os.path.join(files_dir, 'overcloud_containers.yaml')
         yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
@@ -592,6 +597,33 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                           '-opendaylight:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
+
+    def test_container_images_yaml_in_sync_for_rhel(self):
+        remove_images = [
+            {'image_source': 'kolla',
+                'imagename': 'docker.io/tripleomaster/centos-binary'
+                             '-neutron-server:current-tripleo'},
+            {'image_source': 'kolla',
+                'imagename': 'docker.io/tripleomaster/centos-binary'
+                             '-neutron-server-opendaylight:current-tripleo'},
+            {'image_source': 'kolla',
+                'imagename': 'docker.io/tripleomaster/centos-binary'
+                             '-opendaylight:current-tripleo'},
+            {'image_source': 'kolla',
+                'imagename': 'docker.io/tripleomaster/centos-binary'
+                             '-fluentd:current-tripleo'},
+            {'image_source': 'kolla',
+                'imagename': 'docker.io/tripleomaster/centos-binary'
+                             '-sensu-client:current-tripleo'},
+            {'image_source': 'kolla',
+                'imagename': 'docker.io/tripleomaster/centos-binary'
+                             '-skydive-agent:current-tripleo'},
+            {'image_source': 'kolla',
+                'imagename': 'docker.io/tripleomaster/centos-binary'
+                             '-skydive-analyzer:current-tripleo'}]
+        self._test_container_images_yaml_in_sync_helper(
+            rhel_containers=True, neutron_driver='ovn',
+            remove_images=remove_images)
 
 
 class TestPrepare(base.TestCase):

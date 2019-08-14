@@ -228,6 +228,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::Etcd
 
+{% if not rhel_containers %}
 - imagename: "{{namespace}}/{{name_prefix}}fluentd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -237,6 +238,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::FluentdClient
   - OS::TripleO::Services::Fluentd
+{% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   image_source: kolla
@@ -782,6 +784,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::SaharaEngine
 
+{% if not rhel_containers %}
 - imagename: "{{namespace}}/{{name_prefix}}sensu-client{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -803,6 +806,7 @@ container_images_template:
   - ContainerSkydiveAnalyzerImage
   services:
   - OS::TripleO::Services::SkydiveAnalyzer
+{% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-account{{name_suffix}}:{{tag}}"
   image_source: kolla

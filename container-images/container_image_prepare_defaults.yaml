@@ -17,6 +17,7 @@ parameter_defaults:
       name_prefix: centos-binary-
       name_suffix: ''
       tag: current-tripleo
+      rhel_containers: false
 
       # Substitute neutron images based on driver. Can be 'other', 'ovn' or
       # 'odl'. This is usually set automatically by detecting if odl or ovn
