@@ -26,10 +26,13 @@ class TestReserveNodes(base.TestCase):
 
     def test_success(self, mock_pr):
         instances = [
-            {'hostname': 'host1', 'profile': 'compute'},
+            {'hostname': 'host1', 'profile': 'compute',
+             'image': {'href': 'overcloud-full'}},
             {'hostname': 'host2', 'resource_class': 'compute',
-             'capabilities': {'answer': '42'}},
-            {'name': 'control-0', 'traits': ['CUSTOM_GPU']},
+             'capabilities': {'answer': '42'},
+             'image': {'href': 'overcloud-full'}},
+            {'name': 'control-0', 'traits': ['CUSTOM_GPU'],
+             'image': {'href': 'overcloud-full'}},
         ]
         action = baremetal_deploy.ReserveNodesAction(instances)
         result = action.run(mock.Mock())
@@ -50,11 +53,14 @@ class TestReserveNodes(base.TestCase):
 
     def test_missing_hostname(self, mock_pr):
         instances = [
-            {'hostname': 'host1'},
-            {'resource_class': 'compute', 'capabilities': {'answer': '42'}}
+            {'hostname': 'host1',
+             'image': {'href': 'overcloud-full'}},
+            {'resource_class': 'compute', 'capabilities': {'answer': '42'},
+             'image': {'href': 'overcloud-full'}}
         ]
         action = baremetal_deploy.ReserveNodesAction(instances)
         result = action.run(mock.Mock())
+        print('result %s' % result)
 
         self.assertEqual(
             [{'node': mock_pr.return_value.reserve_node.return_value.id,
@@ -72,10 +78,13 @@ class TestReserveNodes(base.TestCase):
     @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
     def test_failure(self, mock_log, mock_pr):
         instances = [
-            {'hostname': 'host1'},
+            {'hostname': 'host1',
+             'image': {'href': 'overcloud-full'}},
             {'hostname': 'host2', 'resource_class': 'compute',
-             'capabilities': {'answer': '42'}},
-            {'hostname': 'host3'},
+             'capabilities': {'answer': '42'},
+             'image': {'href': 'overcloud-full'}},
+            {'hostname': 'host3',
+             'image': {'href': 'overcloud-full'}},
         ]
         success_node = mock.Mock(uuid='uuid1')
         mock_pr.return_value.reserve_node.side_effect = [
@@ -99,10 +108,13 @@ class TestReserveNodes(base.TestCase):
     @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
     def test_failure_to_clean_up(self, mock_log, mock_pr):
         instances = [
-            {'hostname': 'host1'},
+            {'hostname': 'host1',
+             'image': {'href': 'overcloud-full'}},
             {'hostname': 'host2', 'resource_class': 'compute',
-             'capabilities': {'answer': '42'}},
-            {'hostname': 'host3'},
+             'capabilities': {'answer': '42'},
+             'image': {'href': 'overcloud-full'}},
+            {'hostname': 'host3',
+             'image': {'href': 'overcloud-full'}},
         ]
         success_node = mock.Mock(uuid='uuid1')
         mock_pr.return_value.reserve_node.side_effect = [
@@ -129,9 +141,10 @@ class TestReserveNodes(base.TestCase):
 
     def test_duplicate_hostname(self, mock_pr):
         instances = [
-            {'hostname': 'host1'},
-            # name is used as the default for hostname
-            {'name': 'host1'},
+            {'hostname': 'host1',
+             'image': {'href': 'overcloud-full'}},
+            {'hostname': 'host1',
+             'image': {'href': 'overcloud-full'}},
         ]
         action = baremetal_deploy.ReserveNodesAction(instances)
         result = action.run(mock.Mock())
@@ -141,9 +154,11 @@ class TestReserveNodes(base.TestCase):
 
     def test_duplicate_name(self, mock_pr):
         instances = [
-            {'hostname': 'host1', 'name': 'node-1'},
+            {'hostname': 'host1', 'name': 'node-1',
+             'image': {'href': 'overcloud-full'}},
             # name is used as the default for hostname
-            {'name': 'node-1'},
+            {'name': 'node-1',
+             'image': {'href': 'overcloud-full'}},
         ]
         action = baremetal_deploy.ReserveNodesAction(instances)
         result = action.run(mock.Mock())
@@ -157,7 +172,8 @@ class TestDeployNode(base.TestCase):
 
     def test_success_defaults(self, mock_pr):
         action = baremetal_deploy.DeployNodeAction(
-            instance={'hostname': 'host1'},
+            instance={'hostname': 'host1',
+                      'image': {'href': 'overcloud-full'}},
             node='1234'
         )
         result = action.run(mock.Mock())
@@ -184,7 +200,11 @@ class TestDeployNode(base.TestCase):
 
     def test_success_with_name(self, mock_pr):
         action = baremetal_deploy.DeployNodeAction(
-            instance={'name': 'host1'},
+            instance={
+                'name': 'host1',
+                'hostname': 'host1',
+                'image': {'href': 'overcloud-full'}
+            },
             node='1234'
         )
         result = action.run(mock.Mock())
@@ -209,6 +229,7 @@ class TestDeployNode(base.TestCase):
     def test_success_advanced_nic(self, mock_pr):
         action = baremetal_deploy.DeployNodeAction(
             instance={'hostname': 'host1',
+                      'image': {'href': 'overcloud-full'},
                       'nics': [{'subnet': 'ctlplane-subnet'},
                                {'network': 'ctlplane',
                                 'fixed_ip': '10.0.0.2'}]},
@@ -238,7 +259,7 @@ class TestDeployNode(base.TestCase):
         pr = mock_pr.return_value
         action = baremetal_deploy.DeployNodeAction(
             instance={'hostname': 'host1',
-                      'image': 'overcloud-alt',
+                      'image': {'href': 'overcloud-alt'},
                       'nics': [{'port': 'abcd'}],
                       'root_size_gb': 100,
                       'swap_size_mb': 4096},
@@ -269,11 +290,15 @@ class TestDeployNode(base.TestCase):
 
     def test_success_http_partition_image(self, mock_pr):
         action = baremetal_deploy.DeployNodeAction(
-            instance={'hostname': 'host1',
-                      'image': 'https://example/image',
-                      'image_kernel': 'https://example/kernel',
-                      'image_ramdisk': 'https://example/ramdisk',
-                      'image_checksum': 'https://example/checksum'},
+            instance={
+                'hostname': 'host1',
+                'image': {
+                    'href': 'https://example/image',
+                    'kernel': 'https://example/kernel',
+                    'ramdisk': 'https://example/ramdisk',
+                    'checksum': 'https://example/checksum'
+                }
+            },
             node='1234'
         )
         result = action.run(mock.Mock())
@@ -303,11 +328,15 @@ class TestDeployNode(base.TestCase):
 
     def test_success_file_partition_image(self, mock_pr):
         action = baremetal_deploy.DeployNodeAction(
-            instance={'hostname': 'host1',
-                      'image': 'file:///var/lib/ironic/image',
-                      'image_kernel': 'file:///var/lib/ironic/kernel',
-                      'image_ramdisk': 'file:///var/lib/ironic/ramdisk',
-                      'image_checksum': 'abcd'},
+            instance={
+                'hostname': 'host1',
+                'image': {
+                    'href': 'file:///var/lib/ironic/image',
+                    'kernel': 'file:///var/lib/ironic/kernel',
+                    'ramdisk': 'file:///var/lib/ironic/ramdisk',
+                    'checksum': 'abcd'
+                }
+            },
             node='1234'
         )
         result = action.run(mock.Mock())
@@ -340,7 +369,8 @@ class TestDeployNode(base.TestCase):
     @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
     def test_failure(self, mock_log, mock_pr):
         pr = mock_pr.return_value
-        instance = {'hostname': 'host1'}
+        instance = {'hostname': 'host1',
+                    'image': {'href': 'overcloud-full'}}
         action = baremetal_deploy.DeployNodeAction(
             instance=instance,
             node='1234'
@@ -366,7 +396,8 @@ class TestDeployNode(base.TestCase):
     @mock.patch.object(baremetal_deploy.LOG, 'exception', autospec=True)
     def test_failure_to_clean_up(self, mock_log, mock_pr):
         pr = mock_pr.return_value
-        instance = {'hostname': 'host1'}
+        instance = {'hostname': 'host1',
+                    'image': {'href': 'overcloud-full'}}
         action = baremetal_deploy.DeployNodeAction(
             instance=instance,
             node='1234'
@@ -399,10 +430,13 @@ class TestCheckExistingInstances(base.TestCase):
     def test_success(self, mock_pr):
         pr = mock_pr.return_value
         instances = [
-            {'hostname': 'host1'},
-            {'hostname': 'host3'},
+            {'hostname': 'host1',
+             'image': {'href': 'overcloud-full'}},
+            {'hostname': 'host3',
+             'image': {'href': 'overcloud-full'}},
             {'hostname': 'host2', 'resource_class': 'compute',
-             'capabilities': {'answer': '42'}}
+             'capabilities': {'answer': '42'},
+             'image': {'href': 'overcloud-full'}}
         ]
         existing = mock.MagicMock(hostname='host2')
         pr.show_instance.side_effect = [
@@ -415,8 +449,13 @@ class TestCheckExistingInstances(base.TestCase):
 
         self.assertEqual({
             'instances': [existing.to_dict.return_value],
-            'not_found': [{'hostname': 'host1', 'image': 'overcloud-full'},
-                          {'hostname': 'host3', 'image': 'overcloud-full'}]
+            'not_found': [{
+                'hostname': 'host1',
+                'image': {'href': 'overcloud-full'},
+            }, {
+                'hostname': 'host3',
+                'image': {'href': 'overcloud-full'},
+            }]
         }, result)
         pr.show_instance.assert_has_calls([
             mock.call(host) for host in ['host1', 'host3', 'host2']
@@ -424,7 +463,8 @@ class TestCheckExistingInstances(base.TestCase):
 
     def test_hostname_mismatch(self, mock_pr):
         instances = [
-            {'hostname': 'host1'},
+            {'hostname': 'host1',
+             'image': {'href': 'overcloud-full'}},
         ]
         mock_pr.return_value.show_instance.return_value.hostname = 'host2'
         action = baremetal_deploy.CheckExistingInstancesAction(instances)
@@ -435,7 +475,8 @@ class TestCheckExistingInstances(base.TestCase):
 
     def test_unexpected_error(self, mock_pr):
         instances = [
-            {'hostname': 'host%d' % i} for i in range(3)
+            {'image': {'href': 'overcloud-full'},
+             'hostname': 'host%d' % i} for i in range(3)
         ]
         mock_pr.return_value.show_instance.side_effect = RuntimeError('boom')
         action = baremetal_deploy.CheckExistingInstancesAction(instances)
@@ -455,7 +496,8 @@ class TestWaitForDeployment(base.TestCase):
         inst.to_dict.return_value = {'hostname': 'compute.cloud'}
 
         action = baremetal_deploy.WaitForDeploymentAction(
-            {'hostname': 'compute.cloud', 'uuid': 'uuid1'})
+            {'hostname': 'compute.cloud', 'uuid': 'uuid1',
+             'image': {'href': 'overcloud-full'}})
         result = action.run(mock.Mock())
 
         pr.wait_for_provisioning.assert_called_once_with(['uuid1'],
@@ -544,8 +586,10 @@ class TestExpandRoles(base.TestCase):
         result = action.run(mock.Mock())
         self.assertEqual(
             [
-                {'hostname': 'overcloud-novacompute-0'},
-                {'hostname': 'overcloud-controller-0'},
+                {'hostname': 'overcloud-novacompute-0',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'overcloud-controller-0',
+                 'image': {'href': 'overcloud-full'}},
             ],
             result['instances'])
         self.assertEqual(
@@ -564,21 +608,35 @@ class TestExpandRoles(base.TestCase):
             result['environment']['parameter_defaults'])
 
     def test_with_parameters(self):
-        roles = [
-            {'name': 'Compute', 'count': 2, 'profile': 'compute',
-             'hostname_format': 'compute-%index%.example.com'},
-            {'name': 'Controller', 'count': 3, 'profile': 'control',
-             'hostname_format': 'controller-%index%.example.com'},
-        ]
+        roles = [{
+            'name': 'Compute',
+            'count': 2,
+            'defaults': {
+                'profile': 'compute'
+            },
+            'hostname_format': 'compute-%index%.example.com'
+        }, {
+            'name': 'Controller',
+            'count': 3,
+            'defaults': {
+                'profile': 'control'
+            },
+            'hostname_format': 'controller-%index%.example.com'
+        }]
         action = baremetal_deploy.ExpandRolesAction(roles)
         result = action.run(mock.Mock())
         self.assertEqual(
             [
-                {'hostname': 'compute-0.example.com', 'profile': 'compute'},
-                {'hostname': 'compute-1.example.com', 'profile': 'compute'},
-                {'hostname': 'controller-0.example.com', 'profile': 'control'},
-                {'hostname': 'controller-1.example.com', 'profile': 'control'},
-                {'hostname': 'controller-2.example.com', 'profile': 'control'},
+                {'hostname': 'compute-0.example.com', 'profile': 'compute',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'compute-1.example.com', 'profile': 'compute',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'controller-0.example.com', 'profile': 'control',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'controller-1.example.com', 'profile': 'control',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'controller-2.example.com', 'profile': 'control',
+                 'image': {'href': 'overcloud-full'}},
             ],
             result['instances'])
         self.assertEqual(
@@ -600,29 +658,42 @@ class TestExpandRoles(base.TestCase):
             result['environment']['parameter_defaults'])
 
     def test_explicit_instances(self):
-        roles = [
-            {'name': 'Compute', 'count': 2, 'profile': 'compute',
-             'hostname_format': 'compute-%index%.example.com'},
-            {'name': 'Controller',
-             'profile': 'control',
-             'instances': [
-                 {'hostname': 'controller-X.example.com',
-                  'profile': 'control-X'},
-                 {'name': 'node-0', 'traits': ['CUSTOM_FOO'],
-                  'nics': [{'subnet': 'leaf-2'}]},
-             ]},
+        roles = [{
+            'name': 'Compute',
+            'count': 2,
+            'defaults': {
+                'profile': 'compute'
+            },
+            'hostname_format': 'compute-%index%.example.com'
+        }, {
+            'name': 'Controller',
+            'defaults': {
+                'profile': 'control'
+            },
+            'instances': [{
+                'hostname': 'controller-X.example.com',
+                'profile': 'control-X'
+            }, {
+                'name': 'node-0',
+                'traits': ['CUSTOM_FOO'],
+                'nics': [{'subnet': 'leaf-2'}]},
+            ]},
         ]
         action = baremetal_deploy.ExpandRolesAction(roles)
         result = action.run(mock.Mock())
         self.assertEqual(
             [
-                {'hostname': 'compute-0.example.com', 'profile': 'compute'},
-                {'hostname': 'compute-1.example.com', 'profile': 'compute'},
+                {'hostname': 'compute-0.example.com', 'profile': 'compute',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'compute-1.example.com', 'profile': 'compute',
+                 'image': {'href': 'overcloud-full'}},
                 {'hostname': 'controller-X.example.com',
+                 'image': {'href': 'overcloud-full'},
                  'profile': 'control-X'},
                 # Name provides the default for hostname later on.
                 {'name': 'node-0', 'profile': 'control',
-                 'hostname': 'overcloud-controller-1',
+                 'hostname': 'node-0',
+                 'image': {'href': 'overcloud-full'},
                  'traits': ['CUSTOM_FOO'], 'nics': [{'subnet': 'leaf-2'}]},
             ],
             result['instances'])
@@ -638,53 +709,104 @@ class TestExpandRoles(base.TestCase):
                     'compute-0.example.com': 'compute-0.example.com',
                     'compute-1.example.com': 'compute-1.example.com',
                     'overcloud-controller-0': 'controller-X.example.com',
-                    'overcloud-controller-1': 'overcloud-controller-1',
+                    'overcloud-controller-1': 'node-0',
                 }
             },
             result['environment']['parameter_defaults'])
 
     def test_count_with_instances(self):
-        roles = [
-            {'name': 'Compute', 'count': 2, 'profile': 'compute',
-             'hostname_format': 'compute-%index%.example.com'},
-            {'name': 'Controller',
-             'profile': 'control',
-             # Count makes no sense with instances and thus is disallowed.
-             'count': 3,
-             'instances': [
-                 {'hostname': 'controller-X.example.com',
-                  'profile': 'control-X'},
-                 {'name': 'node-0', 'traits': ['CUSTOM_FOO'],
-                  'nics': [{'subnet': 'leaf-2'}]},
-             ]},
+        roles = [{
+            'name': 'Compute',
+            'count': 2,
+            'defaults': {
+                'profile': 'compute',
+            },
+            'hostname_format': 'compute-%index%.example.com'
+        }, {
+            'name': 'Controller',
+            'defaults': {
+                'profile': 'control',
+            },
+            # Count makes no sense with instances and thus is disallowed.
+            'count': 3,
+            'instances': [{
+                'hostname': 'controller-X.example.com',
+                'profile': 'control-X'
+            }, {
+                'name': 'node-0',
+                'traits': ['CUSTOM_FOO'],
+                'nics': [{'subnet': 'leaf-2'}]},
+            ]},
         ]
         action = baremetal_deploy.ExpandRolesAction(roles)
         result = action.run(mock.Mock())
         self.assertIn("Count and instances cannot be provided together",
                       result.error)
 
+    def test_name_in_defaults(self):
+        roles = [{
+            'name': 'Compute',
+            'count': 2,
+            'defaults': {
+                'profile': 'compute',
+                'name': 'compute-0'
+            }
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertIn('Compute: cannot specify name in defaults',
+                      result.error)
+
+    def test_hostname_in_defaults(self):
+        roles = [{
+            'name': 'Compute',
+            'count': 2,
+            'defaults': {
+                'profile': 'compute',
+                'hostname': 'compute-0'
+            }
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertIn('Compute: cannot specify hostname in defaults',
+                      result.error)
+
     def test_instances_without_hostname(self):
-        roles = [
-            {'name': 'Compute', 'count': 2, 'profile': 'compute',
-             'hostname_format': 'compute-%index%.example.com'},
-            {'name': 'Controller',
-             'profile': 'control',
-             'instances': [
-                 {'profile': 'control-X'},  # missing hostname here
-                 {'name': 'node-0', 'traits': ['CUSTOM_FOO'],
-                  'nics': [{'subnet': 'leaf-2'}]},
-             ]},
+        roles = [{
+            'name': 'Compute',
+            'count': 2,
+            'defaults': {
+                'profile': 'compute'
+            },
+            'hostname_format': 'compute-%index%.example.com'
+        }, {
+            'name': 'Controller',
+            'defaults': {
+                'profile': 'control'
+            },
+            'instances': [{
+                'profile': 'control-X'
+                # missing hostname here
+            }, {
+                'name': 'node-0',
+                'traits': ['CUSTOM_FOO'],
+                'nics': [{'subnet': 'leaf-2'}]},
+            ]},
         ]
         action = baremetal_deploy.ExpandRolesAction(roles)
         result = action.run(mock.Mock())
         self.assertEqual(
             [
-                {'hostname': 'compute-0.example.com', 'profile': 'compute'},
-                {'hostname': 'compute-1.example.com', 'profile': 'compute'},
-                {'hostname': 'overcloud-controller-0', 'profile': 'control-X'},
-                # Name provides the default for hostname later on.
+                {'hostname': 'compute-0.example.com', 'profile': 'compute',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'compute-1.example.com', 'profile': 'compute',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'overcloud-controller-0', 'profile': 'control-X',
+                 'image': {'href': 'overcloud-full'}},
+                # Name provides the default for hostname
                 {'name': 'node-0', 'profile': 'control',
-                 'hostname': 'overcloud-controller-1',
+                 'hostname': 'node-0',
+                 'image': {'href': 'overcloud-full'},
                  'traits': ['CUSTOM_FOO'], 'nics': [{'subnet': 'leaf-2'}]},
             ],
             result['instances'])
