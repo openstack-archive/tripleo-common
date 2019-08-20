@@ -166,6 +166,34 @@ class TestReserveNodes(base.TestCase):
         self.assertIn('Node node-1 is requested more than once', result.error)
         self.assertFalse(mock_pr.return_value.reserve_node.called)
 
+    def test_hostname_format(self, mock_pr):
+        self.assertEqual(
+            '%stackname%-controller-%index%',
+            baremetal_deploy._hostname_format(None, 'Controller')
+        )
+        self.assertEqual(
+            '%stackname%-novacompute-%index%',
+            baremetal_deploy._hostname_format(None, 'Compute')
+        )
+        self.assertEqual(
+            'server-%index%',
+            baremetal_deploy._hostname_format('server-%index%', 'Compute')
+        )
+
+    def test_build_hostname(self, mock_pr):
+        self.assertEqual(
+            'overcloud-controller-2',
+            baremetal_deploy._build_hostname(
+                '%stackname%-controller-%index%', 2, 'overcloud'
+            )
+        )
+        self.assertEqual(
+            'server-2',
+            baremetal_deploy._build_hostname(
+                'server-%index%', 2, 'overcloud'
+            )
+        )
+
 
 @mock.patch.object(baremetal_deploy, '_provisioner', autospec=True)
 class TestDeployNode(base.TestCase):
