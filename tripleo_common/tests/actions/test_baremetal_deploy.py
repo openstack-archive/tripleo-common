@@ -60,7 +60,6 @@ class TestReserveNodes(base.TestCase):
         ]
         action = baremetal_deploy.ReserveNodesAction(instances)
         result = action.run(mock.Mock())
-        print('result %s' % result)
 
         self.assertEqual(
             [{'node': mock_pr.return_value.reserve_node.return_value.id,
@@ -695,6 +694,7 @@ class TestExpandRoles(base.TestCase):
             'hostname_format': 'compute-%index%.example.com'
         }, {
             'name': 'Controller',
+            'count': 2,
             'defaults': {
                 'profile': 'control'
             },
@@ -755,7 +755,6 @@ class TestExpandRoles(base.TestCase):
             'defaults': {
                 'profile': 'control',
             },
-            # Count makes no sense with instances and thus is disallowed.
             'count': 3,
             'instances': [{
                 'hostname': 'controller-X.example.com',
@@ -768,8 +767,315 @@ class TestExpandRoles(base.TestCase):
         ]
         action = baremetal_deploy.ExpandRolesAction(roles)
         result = action.run(mock.Mock())
-        self.assertIn("Count and instances cannot be provided together",
-                      result.error)
+        self.assertEqual([
+            {
+                'hostname': 'compute-0.example.com',
+                'profile': 'compute',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'compute-1.example.com',
+                'profile': 'compute',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'controller-X.example.com',
+                'profile': 'control-X',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'node-0',
+                'name': 'node-0',
+                'nics': [{'subnet': 'leaf-2'}],
+                'profile': 'control',
+                'traits': ['CUSTOM_FOO'],
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-2',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({
+            'ComputeDeployedServerCount': 2,
+            'ComputeDeployedServerHostnameFormat':
+                'compute-%index%.example.com',
+            'ControllerDeployedServerCount': 3,
+            'ControllerDeployedServerHostnameFormat':
+                '%stackname%-controller-%index%',
+            'HostnameMap': {
+                'compute-0.example.com': 'compute-0.example.com',
+                'compute-1.example.com': 'compute-1.example.com',
+                'overcloud-controller-0': 'controller-X.example.com',
+                'overcloud-controller-1': 'node-0',
+                'overcloud-controller-2': 'overcloud-controller-2'}
+            },
+            result['environment']['parameter_defaults'])
+
+    def test_unprovisioned(self):
+        roles = [{
+            'name': 'Controller',
+            'defaults': {
+                'profile': 'control',
+            },
+            'count': 2,
+            'instances': [{
+                'hostname': 'overcloud-controller-1',
+                'provisioned': False
+            }, {
+                'hostname': 'overcloud-controller-2',
+                'provisioned': False
+            }]
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'overcloud-controller-0',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-3',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({
+            'ControllerDeployedServerCount': 2,
+            'ControllerRemovalPolicies': [
+                {'resource_list': [1, 2]}
+            ],
+            'ControllerDeployedServerHostnameFormat':
+                '%stackname%-controller-%index%',
+            'HostnameMap': {
+                'overcloud-controller-0': 'overcloud-controller-0',
+                'overcloud-controller-1': 'overcloud-controller-1',
+                'overcloud-controller-2': 'overcloud-controller-2',
+                'overcloud-controller-3': 'overcloud-controller-3'}
+            },
+            result['environment']['parameter_defaults'])
+
+        # action for an unprovision workflow
+        action = baremetal_deploy.ExpandRolesAction(roles, provisioned=False)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'overcloud-controller-1',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-2',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({}, result['environment'])
+
+    def test_reprovisioned(self):
+        roles = [{
+            'name': 'Controller',
+            'defaults': {
+                'profile': 'control',
+            },
+            'count': 4,
+            'instances': [{
+                'hostname': 'overcloud-controller-1',
+                'provisioned': False
+            }, {
+                'hostname': 'overcloud-controller-2',
+                'provisioned': False
+            }]
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'overcloud-controller-0',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-3',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-4',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-5',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({
+            'ControllerDeployedServerCount': 4,
+            'ControllerRemovalPolicies': [
+                {'resource_list': [1, 2]}
+            ],
+            'ControllerDeployedServerHostnameFormat':
+                '%stackname%-controller-%index%',
+            'HostnameMap': {
+                'overcloud-controller-0': 'overcloud-controller-0',
+                'overcloud-controller-1': 'overcloud-controller-1',
+                'overcloud-controller-2': 'overcloud-controller-2',
+                'overcloud-controller-3': 'overcloud-controller-3',
+                'overcloud-controller-4': 'overcloud-controller-4',
+                'overcloud-controller-5': 'overcloud-controller-5'}
+            },
+            result['environment']['parameter_defaults'])
+
+        # action for an unprovision workflow
+        action = baremetal_deploy.ExpandRolesAction(roles, provisioned=False)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'overcloud-controller-1',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-2',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({}, result['environment'])
+
+    def test_unprovisioned_instances(self):
+        roles = [{
+            'name': 'Controller',
+            'defaults': {
+                'profile': 'control',
+            },
+            'count': 2,
+            'instances': [{
+                'name': 'node-0',
+                'hostname': 'controller-0'
+            }, {
+                'name': 'node-1',
+                'hostname': 'controller-1',
+                'provisioned': False
+            }, {
+                'name': 'node-2',
+                'hostname': 'controller-2',
+                'provisioned': False
+            }, {
+                'name': 'node-3',
+                'hostname': 'controller-3',
+                'provisioned': True
+            }]
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'controller-0',
+                'name': 'node-0',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'controller-3',
+                'name': 'node-3',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({
+            'ControllerDeployedServerCount': 2,
+            'ControllerRemovalPolicies': [
+                {'resource_list': [1, 2]}
+            ],
+            'ControllerDeployedServerHostnameFormat':
+                '%stackname%-controller-%index%',
+            'HostnameMap': {
+                'overcloud-controller-0': 'controller-0',
+                'overcloud-controller-1': 'controller-1',
+                'overcloud-controller-2': 'controller-2',
+                'overcloud-controller-3': 'controller-3'}
+            },
+            result['environment']['parameter_defaults'])
+
+        # action for an unprovision workflow
+        action = baremetal_deploy.ExpandRolesAction(roles, provisioned=False)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'controller-1',
+                'name': 'node-1',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'controller-2',
+                'name': 'node-2',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({}, result['environment'])
+
+    def test_unprovisioned_no_hostname(self):
+        roles = [{
+            'name': 'Controller',
+            'defaults': {
+                'profile': 'control',
+            },
+            'count': 2,
+            'instances': [{
+                'name': 'node-0',
+            }, {
+                'name': 'node-1',
+                'provisioned': False
+            }, {
+                'name': 'node-2',
+                'provisioned': False
+            }, {
+                'name': 'node-3',
+                'provisioned': True
+            }]
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'node-0',
+                'name': 'node-0',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'node-3',
+                'name': 'node-3',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({
+            'ControllerDeployedServerCount': 2,
+            'ControllerRemovalPolicies': [
+                {'resource_list': [1, 2]}
+            ],
+            'ControllerDeployedServerHostnameFormat':
+                '%stackname%-controller-%index%',
+            'HostnameMap': {
+                'overcloud-controller-0': 'node-0',
+                'overcloud-controller-1': 'node-1',
+                'overcloud-controller-2': 'node-2',
+                'overcloud-controller-3': 'node-3'}
+            },
+            result['environment']['parameter_defaults'])
+
+        # action for an unprovision workflow
+        action = baremetal_deploy.ExpandRolesAction(roles, provisioned=False)
+        result = action.run(mock.Mock())
+        self.assertEqual([
+            {
+                'hostname': 'node-1',
+                'name': 'node-1',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'node-2',
+                'name': 'node-2',
+                'profile': 'control',
+                'image': {'href': 'overcloud-full'}
+            }],
+            result['instances'])
+        self.assertEqual({}, result['environment'])
 
     def test_name_in_defaults(self):
         roles = [{
@@ -809,6 +1115,7 @@ class TestExpandRoles(base.TestCase):
             'hostname_format': 'compute-%index%.example.com'
         }, {
             'name': 'Controller',
+            'count': 2,
             'defaults': {
                 'profile': 'control'
             },
@@ -838,6 +1145,30 @@ class TestExpandRoles(base.TestCase):
                  'traits': ['CUSTOM_FOO'], 'nics': [{'subnet': 'leaf-2'}]},
             ],
             result['instances'])
+
+    def test_more_instances_than_count(self):
+        roles = [{
+            'name': 'Compute',
+            'count': 3,
+            'defaults': {
+                'profile': 'compute',
+                'name': 'compute-0'
+            },
+            'instances': [{
+                'name': 'node-0'
+            }, {
+                'name': 'node-1'
+            }, {
+                'name': 'node-2'
+            }, {
+                'name': 'node-3'
+            }]
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertIn('Compute: number of instance entries 4 '
+                      'cannot be greater than count 3',
+                      result.error)
 
 
 class TestPopulateEnvironment(base.TestCase):
