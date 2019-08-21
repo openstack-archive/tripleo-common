@@ -322,9 +322,12 @@ class UndeployInstanceAction(base.TripleOAction):
 
     def run(self, context):
         provisioner = _provisioner(context)
-
+        if isinstance(self.instance, dict):
+            inst = self.instance['hostname']
+        else:
+            inst = self.instance
         try:
-            instance = provisioner.show_instance(self.instance)
+            instance = provisioner.show_instance(inst)
         except Exception:
             LOG.warning('Cannot get instance %s, assuming already deleted',
                         self.instance)
