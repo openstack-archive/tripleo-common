@@ -50,7 +50,7 @@ def write_default_ansible_cfg(work_dir,
                     '/usr/share/ansible/plugins/modules:'
                     '%s/library' % constants.DEFAULT_VALIDATIONS_BASEDIR)
     lookups_path = (
-        'root/.ansible/plugins/lookup:'
+        '/root/.ansible/plugins/lookup:'
         '/usr/share/ansible/tripleo-plugins/lookup:'
         '/usr/share/ansible/plugins/lookup:'
         '%s/lookup_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
@@ -64,6 +64,11 @@ def write_default_ansible_cfg(work_dir,
         '/usr/share/ansible/plugins/action:'
         '/usr/share/ansible/tripleo-plugins/action:'
         '%s/action_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+    filter_plugins_path = (
+        '~/.ansible/plugins/filter:'
+        '/usr/share/ansible/plugins/filter:'
+        '/usr/share/ansible/tripleo-plugins/filter:'
+        '%s/filter_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
     roles_path = ('%(work_dir)s/roles:'
                   '/root/.ansible/roles:'
                   '/usr/share/ansible/tripleo-roles:'
@@ -84,6 +89,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'callback_plugins', callbacks_path)
     config.set('defaults', 'action_plugins', action_plugins_path)
     config.set('defaults', 'lookup_plugins', lookups_path)
+    config.set('defaults', 'filter_plugins', filter_plugins_path)
 
     log_path = os.path.join(work_dir, 'ansible.log')
     config.set('defaults', 'log_path', log_path)
