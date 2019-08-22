@@ -17,6 +17,7 @@ import collections
 import hashlib
 import json
 import os
+import requests
 import shutil
 
 from oslo_log import log as logging
@@ -76,7 +77,7 @@ def image_tag_from_url(image_url):
 
 
 def export_stream(target_url, layer, layer_stream, verify_digest=True):
-    image, tag = image_tag_from_url(target_url)
+    image, _ = image_tag_from_url(target_url)
     digest = layer['digest']
     blob_dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'blobs')
     make_dir(blob_dir_path)
@@ -86,37 +87,54 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
 
     length = 0
     calc_digest = hashlib.sha256()
+
     try:
-        with open(blob_path, 'w+b') as f:
+        with open(blob_path, 'wb') as f:
             for chunk in layer_stream:
                 if not chunk:
                     break
                 f.write(chunk)
                 calc_digest.update(chunk)
                 length += len(chunk)
-
-        layer_digest = 'sha256:%s' % calc_digest.hexdigest()
-        LOG.debug('Calculated layer digest: %s' % layer_digest)
-
-        if verify_digest:
-            if digest != layer_digest:
-                raise IOError('Expected digest %s '
-                              'does not match calculated %s' %
-                              (digest, layer_digest))
-        else:
-            # if the original layer is uncompressed
-            # the digest may change on export
-            expected_blob_path = os.path.join(
-                blob_dir_path, '%s.gz' % layer_digest)
-            if blob_path != expected_blob_path:
-                os.rename(blob_path, expected_blob_path)
-
     except Exception as e:
-        LOG.error('Error while writing blob %s' % blob_path)
-        # cleanup blob file
+        write_error = 'Write Failure: {}'.format(str(e))
+        LOG.error(write_error)
         if os.path.isfile(blob_path):
             os.remove(blob_path)
-        raise e
+            LOG.error('Broken layer found and removed: %s' % blob_path)
+        raise IOError(write_error)
+    else:
+        LOG.info('Layer written successfully: %s' % blob_path)
+
+    layer_digest = 'sha256:%s' % calc_digest.hexdigest()
+    LOG.debug('Provided layer digest: %s' % digest)
+    LOG.debug('Calculated layer digest: %s' % layer_digest)
+
+    if verify_digest:
+        if digest != layer_digest:
+            hash_request_id = hashlib.sha1(str(target_url.geturl()).encode())
+            error_msg = (
+                'Image ID: %s, Expected digest "%s" does not match'
+                ' calculated digest "%s", Blob path "%s". Blob'
+                ' path will be cleaned up.' % (
+                    hash_request_id.hexdigest(),
+                    digest,
+                    layer_digest,
+                    blob_path
+                )
+            )
+            LOG.error(error_msg)
+            if os.path.isfile(blob_path):
+                os.remove(blob_path)
+            raise requests.exceptions.HTTPError(error_msg)
+    else:
+        # if the original layer is uncompressed
+        # the digest may change on export
+        expected_blob_path = os.path.join(
+            blob_dir_path, '%s.gz' % layer_digest
+        )
+        if blob_path != expected_blob_path:
+            os.rename(blob_path, expected_blob_path)
 
     layer['digest'] = layer_digest
     layer['size'] = length

@@ -54,6 +54,8 @@ class TestImageUploadManager(base.TestCase):
         self.filelist = files
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._fetch_manifest')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._copy_registry_to_registry')
@@ -75,7 +77,8 @@ class TestImageUploadManager(base.TestCase):
                 'get_undercloud_registry', return_value='192.0.2.0:8787')
     def test_file_parsing(self, mock_gur, mockioctl, mockpath,
                           mock_images_match, mock_is_insecure, mock_inspect,
-                          mock_auth, mock_copy, mock_manifest):
+                          mock_auth, mock_copy, mock_manifest,
+                          check_status):
 
         mock_manifest.return_value = '{"layers": []}'
         mock_inspect.return_value = {}
@@ -541,7 +544,7 @@ class TestBaseImageUploader(base.TestCase):
         insecure_reg.add('registry-1.docker.io')
         secure_reg.add('192.0.2.1:8787')
         self.assertEqual(
-            'http://registry-1.docker.io/v2/t/nova-api/manifests/latest',
+            'https://registry-1.docker.io/v2/t/nova-api/manifests/latest',
             build(url2, '/t/nova-api/manifests/latest')
         )
         self.assertEqual(
@@ -884,6 +887,8 @@ class TestSkopeoImageUploader(base.TestCase):
         self.uploader._copy.retry.sleep = mock.Mock()
         self.uploader._inspect.retry.sleep = mock.Mock()
 
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
     @mock.patch('os.environ')
     @mock.patch('subprocess.Popen')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -891,7 +896,7 @@ class TestSkopeoImageUploader(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader.authenticate')
     def test_upload_image(self, mock_auth, mock_inspect,
-                          mock_popen, mock_environ):
+                          mock_popen, mock_environ, check_status):
         mock_process = mock.Mock()
         mock_process.communicate.return_value = ('copy complete', '')
         mock_process.returncode = 0
@@ -1163,10 +1168,11 @@ class TestPythonImageUploader(base.TestCase):
         u._copy_layer_local_to_registry.retry.sleep = mock.Mock()
         u._copy_layer_registry_to_registry.retry.sleep = mock.Mock()
         u._copy_registry_to_registry.retry.sleep = mock.Mock()
-        u._copy_registry_to_local.retry.sleep = mock.Mock()
         u._copy_local_to_registry.retry.sleep = mock.Mock()
         self.requests = self.useFixture(rm_fixture.Fixture())
 
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1177,7 +1183,7 @@ class TestPythonImageUploader(base.TestCase):
                 'PythonImageUploader._copy_registry_to_registry')
     def test_upload_image(
             self, _copy_registry_to_registry, _cross_repo_mount,
-            _fetch_manifest, authenticate):
+            _fetch_manifest, authenticate, check_status):
 
         target_session = mock.Mock()
         source_session = mock.Mock()
@@ -1261,6 +1267,8 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._fetch_manifest')
@@ -1270,7 +1278,7 @@ class TestPythonImageUploader(base.TestCase):
                 'PythonImageUploader._copy_registry_to_registry')
     def test_authenticate_upload_image(
             self, _copy_registry_to_registry, _cross_repo_mount,
-            _fetch_manifest, authenticate):
+            _fetch_manifest, authenticate, check_status):
 
         self.uploader.registry_credentials = {
             'docker.io': {'my_username': 'my_password'},
@@ -1333,6 +1341,8 @@ class TestPythonImageUploader(base.TestCase):
         ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._fetch_manifest')
@@ -1342,7 +1352,7 @@ class TestPythonImageUploader(base.TestCase):
                 'PythonImageUploader._copy_registry_to_registry')
     def test_insecure_registry(
             self, _copy_registry_to_registry, _cross_repo_mount,
-            _fetch_manifest, authenticate):
+            _fetch_manifest, authenticate, check_status):
         target_session = mock.Mock()
         source_session = mock.Mock()
         authenticate.side_effect = [
@@ -1400,6 +1410,8 @@ class TestPythonImageUploader(base.TestCase):
         ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._fetch_manifest')
@@ -1409,7 +1421,7 @@ class TestPythonImageUploader(base.TestCase):
                 'PythonImageUploader._copy_registry_to_registry')
     def test_upload_image_v1_manifest(
             self, _copy_registry_to_registry, _cross_repo_mount,
-            _fetch_manifest, authenticate):
+            _fetch_manifest, authenticate, check_status):
 
         target_session = mock.Mock()
         source_session = mock.Mock()
@@ -1489,6 +1501,8 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._image_exists')
@@ -1507,7 +1521,8 @@ class TestPythonImageUploader(base.TestCase):
     def test_upload_image_modify(
             self, _copy_local_to_registry, run_modify_playbook,
             _copy_registry_to_local, _copy_registry_to_registry,
-            _cross_repo_mount, _fetch_manifest, _image_exists, authenticate):
+            _cross_repo_mount, _fetch_manifest, _image_exists, authenticate,
+            check_status):
 
         _image_exists.return_value = False
         target_session = mock.Mock()
@@ -1632,7 +1647,9 @@ class TestPythonImageUploader(base.TestCase):
             session=target_session
         )
 
-    def test_fetch_manifest(self):
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    def test_fetch_manifest(self, check_status):
         url = urlparse('docker://docker.io/t/nova-api:tripleo-current')
         manifest = '{"layers": []}'
         session = mock.Mock()
@@ -1651,8 +1668,9 @@ class TestPythonImageUploader(base.TestCase):
                           '.manifest.v2+json'
             }
         )
-
-    def test_upload_url(self):
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    def test_upload_url(self, check_status):
         # test with previous request
         previous_request = mock.Mock()
         previous_request.headers = {
@@ -1776,11 +1794,14 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._upload_url')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.'
                 '_copy_layer_registry_to_registry')
-    def test_copy_registry_to_registry(self, _copy_layer, _upload_url):
+    def test_copy_registry_to_registry(self, _copy_layer, _upload_url,
+                                       check_status):
         source_url = urlparse('docker://docker.io/t/nova-api:latest')
         target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
         _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
@@ -1844,7 +1865,6 @@ class TestPythonImageUploader(base.TestCase):
                 params={'digest': 'sha256:1234'},
                 timeout=30
             ),
-            mock.call().raise_for_status(),
             mock.call(
                 'https://192.168.2.1:5000/v2/t/nova-api/manifests/latest',
                 data=mock.ANY,
@@ -1854,7 +1874,6 @@ class TestPythonImageUploader(base.TestCase):
                 },
                 timeout=30
             ),
-            mock.call().raise_for_status(),
         ])
         put_manifest = json.loads(
             target_session.put.call_args[1]['data'].decode('utf-8')
