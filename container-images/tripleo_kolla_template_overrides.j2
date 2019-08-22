@@ -255,6 +255,19 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 # during an upgrade.
 {% set placement_api_packages_append = ['mariadb'] %}
 
+# NOTE(cloudnull): Remove "td-agent" packages and plugins from the fluentd container.
+{% set fluentd_packages_remove = ['td-agent'] %}
+{% set fluentd_packages_append = ['fluentd', 'hostname'] %}
+{% set fluentd_plugins_remove = [
+    'fluent-plugin-grep',
+    'fluent-plugin-grok-parser',
+    'fluent-plugin-kubernetes_metadata_filter',
+    'fluent-plugin-parser',
+    'fluent-plugin-rewrite-tag-filter',
+    'fluent-plugin-secure-forward'
+  ]
+%}
+
 ############################ service container footers #########################
 
 {% block aodh_api_footer %}
