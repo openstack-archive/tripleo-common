@@ -1,0 +1,38 @@
+disk_images:
+  -
+    imagename: overcloud-realtime-compute
+    type: qcow2
+    elements:
+      - baremetal
+      - dhcp-all-interfaces
+      - openvswitch
+      - overcloud-agent
+      - overcloud-compute
+      - puppet-modules
+      - stable-interface-names
+      - grub2
+      - element-manifest
+      - dynamic-login
+      - iptables
+      - enable-packages-install
+      - override-pip-and-virtualenv
+      - dracut-regenerate
+      - remove-machine-id
+      - remove-resolvconf
+      - realtime-kernel
+      - openssh
+      - disable-nouveau
+    packages:
+      - python3-psutil
+      - python3-debtcollector
+      - sos
+      - device-mapper-multipath
+      - openstack-heat-agents
+      - os-net-config
+      - jq
+    options:
+      - "--min-tmpfs=7"
+    environment:
+      DIB_PYTHON_VERSION: '3'
+      DIB_BAREMETAL_KERNEL_PATTERN: 'vmlinuz*.rt*'
+      DIB_BAREMETAL_INITRD_PATTERN: 'initramfs-*.rt*'
