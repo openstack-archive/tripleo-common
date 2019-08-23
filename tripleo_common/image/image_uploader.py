@@ -1911,10 +1911,16 @@ class UploadTask(object):
             image = image_name
             self.source_tag = 'latest'
         if pull_source:
+            # prevent a double // in the url which causes auth problems
+            # with docker.io
+            if pull_source.endswith('/'):
+                pull_source = pull_source[:-1]
             self.repo = pull_source + '/' + image
         else:
             self.repo = image
 
+        if push_destination.endswith('/'):
+            push_destination = push_destination[:-1]
         self.target_image_no_tag = (push_destination + '/' +
                                     self.repo.partition('/')[2])
         self.target_tag = self.source_tag + self.append_tag

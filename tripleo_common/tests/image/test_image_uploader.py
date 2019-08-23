@@ -235,6 +235,54 @@ class TestImageUploadManager(base.TestCase):
         )
 
 
+class TestUploadTask(base.TestCase):
+    def test_basics(self):
+        obj = image_uploader.UploadTask(
+            image_name='foo:bar',
+            pull_source='docker.io/namespace',
+            push_destination='127.0.0.1:8787',
+            append_tag='baz',
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup=False,
+            multi_arch=False)
+        self.assertEqual(obj.repo, 'docker.io/namespace/foo')
+        self.assertEqual(obj.source_tag, 'bar')
+        self.assertEqual(obj.target_tag, 'barbaz')
+        self.assertEqual(obj.target_image_no_tag,
+                         '127.0.0.1:8787/namespace/foo')
+        self.assertEqual(obj.target_image,
+                         '127.0.0.1:8787/namespace/foo:barbaz')
+
+    def test_repo_pull_source_trailing_slash(self):
+        obj = image_uploader.UploadTask(
+            image_name='foo:bar',
+            pull_source='docker.io/namespace/',
+            push_destination='127.0.0.1:8787',
+            append_tag=None,
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup=False,
+            multi_arch=False)
+        self.assertEqual(obj.repo, 'docker.io/namespace/foo')
+
+    def test_repo_push_destination_trailing_slash(self):
+        obj = image_uploader.UploadTask(
+            image_name='foo:bar',
+            pull_source='docker.io/namespace',
+            push_destination='127.0.0.1:8787/',
+            append_tag=None,
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup=False,
+            multi_arch=False)
+        self.assertEqual(obj.target_image_no_tag,
+                         '127.0.0.1:8787/namespace/foo')
+
+
 class TestBaseImageUploader(base.TestCase):
 
     def setUp(self):
