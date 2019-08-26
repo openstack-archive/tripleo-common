@@ -293,8 +293,6 @@ class ProcessTemplatesAction(base.TripleOAction):
                             # that specify {{role}} vs {{role.name}}
                             j2_data = {'role': role, 'networks': network_data}
                             LOG.debug("role legacy path for role %s" % role)
-                            if r_map[role].get('disable_constraints', False):
-                                j2_data['disable_constraints'] = True
                             self._j2_render_and_put(j2_template,
                                                     j2_data,
                                                     out_f_path,

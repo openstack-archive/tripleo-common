@@ -79,41 +79,10 @@ name:
 J2_EXCLUDES_EMPTY_FILE = r"""
 """
 
-ROLE_DATA_DISABLE_CONSTRAINTS_YAML = r"""
-- name: RoleWithDisableConstraints
-  disable_constraints: True
-"""
-
 ROLE_DATA_ENABLE_NETWORKS = r"""
 - name: RoleWithNetworks
   networks:
     - InternalApi
-"""
-
-JINJA_SNIPPET_DISABLE_CONSTRAINTS_OLD = r"""
-  {{role}}Image:
-    type: string
-    default: overcloud-full
-{% if disable_constraints is not defined %}
-    constraints:
-      - custom_constraint: glance.image
-{% endif %}
-"""
-
-JINJA_SNIPPET_DISABLE_CONSTRAINTS = r"""
-  {{role.name}}Image:
-    type: string
-    default: overcloud-full
-{% if role.disable_constraints is not defined %}
-    constraints:
-      - custom_constraint: glance.image
-{% endif %}
-"""
-
-EXPECTED_JINJA_RESULT_DISABLE_CONSTRAINTS = r"""
-  RoleWithDisableConstraintsImage:
-    type: string
-    default: overcloud-full
 """
 
 JINJA_SNIPPET_ROLE_NETWORKS = r"""
@@ -323,49 +292,6 @@ class ProcessTemplatesActionTest(base.TestCase):
         ]
         swift.put_object.assert_has_calls(
             put_object_mock_calls, any_order=True)
-
-    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
-                '._heat_resource_exists')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_orchestration_client')
-    def _process_custom_roles_disable_constraints(
-            self, snippet, get_heat_client_mock, get_obj_client_mock,
-            resource_exists_mock):
-        resource_exists_mock.return_value = False
-        swift = self._custom_roles_mock_objclient(
-            'disable-constraints.role.j2.yaml', snippet,
-            ROLE_DATA_DISABLE_CONSTRAINTS_YAML)
-        get_obj_client_mock.return_value = swift
-
-        # Test
-        action = templates.ProcessTemplatesAction()
-        mock_ctx = mock.MagicMock()
-        action._process_custom_roles(mock_ctx)
-
-        expected = EXPECTED_JINJA_RESULT.replace(
-            'CustomRole', 'RoleWithDisableConstraints')
-        put_object_mock_call = mock.call(
-            constants.DEFAULT_CONTAINER_NAME,
-            'overcloud.yaml',
-            expected)
-        self.assertEqual(swift.put_object.call_args_list[0],
-                         put_object_mock_call)
-
-        put_object_mock_call = mock.call(
-            constants.DEFAULT_CONTAINER_NAME,
-            "rolewithdisableconstraints-disable-constraints.yaml",
-            EXPECTED_JINJA_RESULT_DISABLE_CONSTRAINTS)
-        self.assertEqual(put_object_mock_call,
-                         swift.put_object.call_args_list[1])
-
-    def test_process_custom_roles_disable_constraints_old(self):
-        self._process_custom_roles_disable_constraints(
-            JINJA_SNIPPET_DISABLE_CONSTRAINTS_OLD)
-
-    def test_process_custom_roles_disable_constraints(self):
-        self._process_custom_roles_disable_constraints(
-            JINJA_SNIPPET_DISABLE_CONSTRAINTS)
 
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
                 '._heat_resource_exists')
