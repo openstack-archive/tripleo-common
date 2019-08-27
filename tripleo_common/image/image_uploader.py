@@ -1095,9 +1095,24 @@ class PythonImageUploader(BaseImageUploader):
     """Upload images using a direct implementation of the registry API"""
 
     def upload_image(self, task):
+        """Upload image from a task
+
+        This function takes an UploadTask and pushes it to the appropriate
+        target destinations. It should be noted that if the source container
+        is prefix with 'containers-storage:' instead of 'docker://' or no
+        prefix, this process will assume that the source container is already
+        local to the system.  The local container upload does not currently
+        support any of the modification actions. In order to run the
+        modification actions on a container prior to upload, the source must
+        be a remote image.  Additionally, cleanup has no affect when
+        uploading a local image as well.
+
+        :param: task: UploadTask with container information
+        """
         t = task
         LOG.info('imagename: %s' % t.image_name)
 
+        source_local = t.source_image.startswith('containers-storage:')
         target_image_local_url = parse.urlparse('containers-storage:%s' %
                                                 t.target_image)
         if t.dry_run:
@@ -1112,6 +1127,24 @@ class PythonImageUploader(BaseImageUploader):
         )
 
         self._detect_target_export(t.target_image_url, target_session)
+
+        if source_local:
+            if t.modify_role:
+                raise NotImplementedError('Modify role not implemented for '
+                                          'local containers')
+            if t.cleanup:
+                LOG.warning('Cleanup has no effect with a local source '
+                            'container.')
+
+            source_local_url = parse.urlparse(t.source_image)
+            # Copy from local storage to target registry
+            self._copy_local_to_registry(
+                source_local_url,
+                t.target_image_url,
+                session=target_session
+            )
+            target_session.close()
+            return []
 
         if t.modify_role:
             if self._image_exists(
