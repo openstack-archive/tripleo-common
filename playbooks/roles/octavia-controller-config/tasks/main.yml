@@ -6,7 +6,10 @@
   - set_fact:
       node_hostname: "{{ hostname.stdout }}"
   - include_tasks: certificate.yml
-    when: generate_certs
+    when:
+      - private_key_content|length > 0
+      - ca_cert_content|length > 0
+      - service_pem_content|length > 0
   - include_tasks: netport.yml
   - include_tasks: netinterface.yml
   - name: making sure octavia common configuration directory exists

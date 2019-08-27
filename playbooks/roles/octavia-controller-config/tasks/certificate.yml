@@ -6,7 +6,7 @@
       selevel: s0
       setype: svirt_sandbox_file_t
     become: true
-  - name: Copying key info to octavia
+  - name: Copying key info to octaviai if not already there
     become: true
     copy:
       content: "{{ item.content }}"
