@@ -69,8 +69,8 @@ LOCAL_CACERT_PATH = '/etc/pki/ca-trust/source/anchors/cm-local-ca.pem'
 # Swift via SwiftPlanStorageBackend to identify them from other containers
 TRIPLEO_META_USAGE_KEY = 'x-container-meta-usage-tripleo'
 
-# 45 minutes maximum to build the child layers at the same time.
-BUILD_TIMEOUT = 2700
+# 60 minutes maximum to build the child layers at the same time.
+BUILD_TIMEOUT = 3600
 
 #: List of names of parameters that contain passwords
 PASSWORD_PARAMETER_NAMES = (
