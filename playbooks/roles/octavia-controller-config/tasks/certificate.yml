@@ -2,7 +2,7 @@
   - name: making sure octavia worker configuration directory exists
     file: path="{{ octavia_confd_prefix }}{{ ca_private_key_path | dirname }}" state=directory
     become: true
-  - name: Copying ca private key to octavia
+  - name: Copying key info to octavia if not already there
     become: true
     copy: content="{{ private_key_content }}" dest="{{ octavia_confd_prefix }}{{ ca_private_key_path }}"
   - name: copying ca certificate to octavia
