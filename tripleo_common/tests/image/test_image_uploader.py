@@ -1696,6 +1696,57 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._detect_target_export')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.credentials_for_registry')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._copy_local_to_registry')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader.authenticate')
+    def test_upload_image_local(self, authenticate, mock_copy, mock_creds,
+                                mock_detect):
+
+        mock_creds.return_value = (None, None)
+        target_session = mock.Mock()
+        authenticate.side_effect = [
+            target_session
+        ]
+
+        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        tag = 'latest'
+        push_destination = 'localhost:8787'
+        source_image = 'containers-storage:%s:%s' % (image, tag)
+        task = image_uploader.UploadTask(
+            image_name=source_image,
+            pull_source=None,
+            push_destination=push_destination,
+            append_tag=None,
+            modify_role=None,
+            modify_vars=None,
+            dry_run=False,
+            cleanup='full',
+            multi_arch=False
+        )
+
+        self.assertEqual(
+            [],
+            self.uploader.upload_image(task)
+        )
+        source_url = urlparse(source_image)
+        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+                              'heat-docker-agents-centos:latest')
+        authenticate.assert_has_calls([
+            mock.call(
+                target_url,
+                username=None,
+                password=None
+            )
+        ])
+        mock_detect.assert_called_once_with(target_url, target_session)
+        mock_copy.assert_called_once_with(source_url, target_url,
+                                          session=target_session)
+
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader.check_status')
     def test_fetch_manifest(self, check_status):
         url = urlparse('docker://docker.io/t/nova-api:tripleo-current')
