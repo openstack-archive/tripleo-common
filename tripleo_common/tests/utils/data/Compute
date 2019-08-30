@@ -5,3 +5,11 @@ Compute_pre_deployments:
   - AnsibleDeployment
 
 Compute_post_deployments:  []
+
+pre_deployments_Compute:
+  - ComputeHostEntryDeployment
+  - NetworkDeployment
+  - MyExtraConfigPost
+  - AnsibleDeployment
+
+post_deployments_Compute:  []
