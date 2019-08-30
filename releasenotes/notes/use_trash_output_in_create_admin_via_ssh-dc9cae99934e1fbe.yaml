@@ -1,0 +1,8 @@
+---
+fixes:
+  - When deploying a large amount of nodes, the create_admin_via_ssh workflow
+    could fail due to the large amount of ansible output generated.  This patch
+    updates the tripleo.ansible-playbook action in the workflow with
+    trash_output:true so that the output is not saved in the mistral DB.  There
+    is a log file saved already in case the output is needed for debug
+    purposes.
