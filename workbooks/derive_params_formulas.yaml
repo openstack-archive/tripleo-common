@@ -144,7 +144,7 @@ workflows:
       # Gets the physical network and NUMA nodes mappings
       get_phy_nw_numa_nodes_mappings:
         publish:
-          phy_nw_numa_nodes_mappings: <% let(br_numa_mappings => bridge_numa_nodes_mappings) -> $.phy_nw_bridge_mappings.items().select(dict($[0]=>$br_numa_mappings.get($[1], []))).sum() %>
+          phy_nw_numa_nodes_mappings: <% let(br_numa_mappings => $.bridge_numa_nodes_mappings.items()) -> $.phy_nw_bridge_mappings.items().select(dict($[0]=>$br_numa_mappings.select($[1]))).sum() %>
         on-success: get_neutron_network_type
 
       get_neutron_network_type:
