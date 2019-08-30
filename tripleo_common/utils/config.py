@@ -373,7 +373,7 @@ class Config(object):
 
         shutil.copyfile(
             os.path.join(templates_path, 'deployments.yaml'),
-            os.path.join(config_dir, 'deployments.yaml'))
+            os.path.join(tmp_path, 'deployments.yaml'))
 
         # Also copy deployments.yaml to the role dir for temporary backwards
         # compatibility until https://review.openstack.org/574474 merges.
