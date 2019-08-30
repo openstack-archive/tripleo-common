@@ -1,16 +1,8 @@
-Controller_pre_deployments:
-  - ControllerHostEntryDeployment
-  - NetworkDeployment
-  - MyPostConfig
-  - MyExtraConfigPost
-
 pre_deployments_Controller:
   - ControllerHostEntryDeployment
   - NetworkDeployment
   - MyPostConfig
   - MyExtraConfigPost
-
-Controller_post_deployments:  []
 
 post_deployments_Controller:  []
 
