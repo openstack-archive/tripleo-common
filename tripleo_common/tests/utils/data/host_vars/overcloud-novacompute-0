@@ -3,6 +3,13 @@ Compute_pre_deployments:
   - NetworkDeployment
   - MyExtraConfigPost
 
+pre_deployments_Compute:
+  - ComputeHostEntryDeployment
+  - NetworkDeployment
+  - MyExtraConfigPost
+
 Compute_post_deployments:  []
+
+post_deployments_Compute:  []
 
 uuid: 1
