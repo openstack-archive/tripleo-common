@@ -113,6 +113,7 @@ class TestImageUploadManager(base.TestCase):
 
     @mock.patch('netifaces.ifaddresses')
     @mock.patch('netifaces.interfaces')
+    @mock.patch('netifaces.AF_INET6', 10)
     def test_get_undercloud_registry_ipv6(self, mock_interfaces,
                                           mock_addresses):
 
