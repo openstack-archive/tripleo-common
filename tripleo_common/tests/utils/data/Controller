@@ -6,5 +6,13 @@ Controller_pre_deployments:
 
 Controller_post_deployments:  []
 
+pre_deployments_Controller:
+  - ControllerHostEntryDeployment
+  - NetworkDeployment
+  - MyPostConfig
+  - MyExtraConfigPost
+
+post_deployments_Controller:  []
+
 max_fail_percentage: 15
 any_errors_fatal: yes
