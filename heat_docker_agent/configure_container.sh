@@ -48,6 +48,7 @@ yum install -y \
         initscripts \
         jq \
         puppet-tripleo \
+        openstack-ironic-python-agent-builder \
         openstack-tripleo-image-elements \
         openstack-tripleo-puppet-elements \
         openvswitch \
