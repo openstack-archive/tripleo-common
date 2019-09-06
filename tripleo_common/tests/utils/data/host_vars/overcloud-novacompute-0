@@ -1,14 +1,7 @@
-Compute_pre_deployments:
-  - ComputeHostEntryDeployment
-  - NetworkDeployment
-  - MyExtraConfigPost
-
 pre_deployments_Compute:
   - ComputeHostEntryDeployment
   - NetworkDeployment
   - MyExtraConfigPost
-
-Compute_post_deployments:  []
 
 post_deployments_Compute:  []
 
