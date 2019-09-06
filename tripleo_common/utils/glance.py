@@ -20,16 +20,16 @@ from glanceclient.v2.client import Client as real_glance_client
 
 
 def create_or_find_kernel_and_ramdisk(glanceclient, kernel_name, ramdisk_name):
-    """Find or create a given kernel and ramdisk in Glance.
+    """Map kernel and ramdisk to file/HTTP path or Glance ID.
 
-    If either kernel_path or ramdisk_path is None, they will not be created,
-    and an exception will be raised if it does not exist in Glance.
+    An exception will be raised if kernel_name or ramdisk_name is not a path
+    and instead refers to a non-existent Glance image.
 
     :param glanceclient: A client for Glance.
-    :param kernel_name: Name to search for or create for the kernel.
-    :param ramdisk_name: Name to search for or create for the ramdisk.
+    :param kernel_name: Name to search for the kernel or path to kernel.
+    :param ramdisk_name: Name to search for the ramdisk or path to ramdisk.
 
-    :returns: A dictionary mapping kernel or ramdisk to the ID in Glance.
+    :returns: A dictionary mapping kernel or ramdisk to path or Glance ID.
     """
     kernel_image = _check_image(glanceclient, kernel_name, disk_format='aki',
                                 image_type='Kernel')
