@@ -640,6 +640,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 *command, cwd=self.work_dir,
                 env_variables=env_variables,
                 log_errors=processutils.LogErrors.ALL)
+            if self.trash_output:
+                stdout = ""
+                stderr = ""
             return {"stderr": stderr, "stdout": stdout,
                     "log_path": os.path.join(self.work_dir, 'ansible.log')}
         finally:

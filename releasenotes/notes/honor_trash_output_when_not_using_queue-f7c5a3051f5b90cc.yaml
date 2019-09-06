@@ -1,0 +1,6 @@
+---
+fixes:
+  - Previously, trash_output was not honored if a queue was not being used to
+    post messages.  The behavior has changed so that trash_output will be
+    honored even if a queue is not being used, and all stdout/stderr will be
+    discarded.
