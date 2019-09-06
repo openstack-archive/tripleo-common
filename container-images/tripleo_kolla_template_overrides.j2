@@ -383,6 +383,7 @@ RUN mkdir -p /openstack && \
 {% endblock %}
 # make sure no gems are installed
 {% block fluentd_plugins_install %}{% endblock %}
+{% block fluentd_monasca_plugin_install %}{% endblock %}
 
 {% block glance_api_footer %}
 RUN mkdir -p /openstack && \
