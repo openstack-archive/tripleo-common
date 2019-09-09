@@ -10,21 +10,51 @@
       tempfile:
         state: file
       register: ssh_known_hosts_tmp
+
+    - name: Check for ssh_known_hosts file
+      stat:
+        path: /etc/ssh/ssh_known_hosts
+      register: _ssh_known_hosts
+
     - name: Create a temporary copy of ssh_known_hosts
-      shell: |
-        if [[ -e /etc/ssh/ssh_known_hosts ]]; then
-          cat /etc/ssh/ssh_known_hosts > '{{ ssh_known_hosts_tmp.path }}'
-        fi
+      slurp:
+        src: "/etc/ssh/ssh_known_hosts"
+      register: existing_ssh_known_hosts
+      when:
+        - _ssh_known_hosts.stat.exists | bool
+
+    - name: Write temporary file
+      copy:
+        content: "{{ existing_ssh_known_hosts['content'] | b64decode }}"
+        dest: "{{ ssh_known_hosts_tmp.path }}"
+      when:
+        - _ssh_known_hosts.stat.exists | bool
+
+    - name: Set ssh_known_hosts fact
+      run_once: true
+      set_fact:
+        ssh_known_hosts_lines: |-
+          {%- for item in groups['overcloud'] | intersect(play_hosts) %}
+          {{ ssh_known_hosts[hostvars[item]['ansible_hostname'] | lower] ~ ' ssh-rsa ' ~ hostvars[item]['ansible_ssh_host_key_rsa_public'] }}
+          {% endfor %}
+
     - name: Add host keys to temporary ssh_known_hosts
-      lineinfile:
+      blockinfile:
         path: "{{ ssh_known_hosts_tmp.path }}"
-        line: "{{ ssh_known_hosts[hostvars[item]['ansible_hostname'] | lower] + ' ssh-rsa ' + hostvars[item]['ansible_ssh_host_key_rsa_public'] }}"
-        create: yes
-      with_items: "{{ groups['overcloud']|intersect(play_hosts) }}"
+        block: "{{ ssh_known_hosts_lines }}"
+        create: true
+
+    # Workaround https://bugs.launchpad.net/tripleo/+bug/1810932
+    # Ansible modules perform a replace instead of in-place modification.
+    # This breaks propagation of changes to containers that bind mount ssh_known_hosts
     - name: In-place update of /etc/ssh_known_hosts
-      shell: |
+      shell: |-
         cat '{{ ssh_known_hosts_tmp.path }}' > /etc/ssh/ssh_known_hosts
-        rm -f '{{ ssh_known_hosts_tmp.path }}'
+
+    - name: Remove temp file
+      file:
+        path: "{{ ssh_known_hosts_tmp.path }}"
+        state: absent
   tags:
     - tripleo_ssh_known_hosts
 
