@@ -184,6 +184,7 @@ workflows:
       write_tmp_playbook:
         action: tripleo.ansible-playbook
         input:
+          trash_output: true
           inventory:
             overcloud:
               hosts: <% $.ssh_servers.toDict($, {}) %>
