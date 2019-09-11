@@ -4,6 +4,26 @@
 : ${HEALTHCHECK_CURL_WRITE_OUT:='\n%{http_code} %{remote_ip}:%{remote_port} %{time_total} seconds\n'}
 : ${HEALTHCHECK_CURL_OUTPUT:='/dev/null'}
 
+get_user_from_process() {
+    process=$1
+
+    # This helps to capture the actual pids running the process
+    pids=$(pgrep -d '|' -f $process)
+
+    # 'cmd' is added to help in case part of the pid is in another pid from
+    # another process.
+    # $ ps -eo user,pid,cmd
+    # USER         PID CMD
+    # nova           1 dumb-init --single-child -- kolla_start
+    # nova           7 /usr/bin/python2 /usr/bin/nova-conductor
+    # nova          25 /usr/bin/python2 /usr/bin/nova-conductor
+    # nova          26 /usr/bin/python2 /usr/bin/nova-conductor
+    # root        8311 ps -eo user,pid,cmd
+    # The following "ps" command will capture the user from PID 7 which
+    # is safe enough to assert this is the user running the process.
+    ps -eo user,pid,cmd | grep $process | grep -E $pids | awk 'NR==1{print $1}'
+}
+
 healthcheck_curl () {
     export NSS_SDB_USE_CACHE=no
     curl -g -k -q -s -S --fail -o "${HEALTHCHECK_CURL_OUTPUT}" \
@@ -18,9 +38,14 @@ healthcheck_port () {
 
     shift 1
     args=$@
+    puser=$(get_user_from_process $process)
     ports=${args// /|}
     pids=$(pgrep -d '|' -f $process)
-    ss -ntp | grep -qE ":($ports).*,pid=($pids),"
+    # https://bugs.launchpad.net/tripleo/+bug/1843555
+    # "ss" output is different if run as root vs as the user actually running
+    # the process. So we verify that the process is connected to the
+    # port by using "sudo -u" to get the right output.
+    sudo -u $puser ss -ntp | grep -qE ":($ports).*,pid=($pids),"
 }
 
 healthcheck_listen () {
