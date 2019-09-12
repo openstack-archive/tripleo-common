@@ -43,9 +43,11 @@ healthcheck_port () {
     pids=$(pgrep -d '|' -f $process)
     # https://bugs.launchpad.net/tripleo/+bug/1843555
     # "ss" output is different if run as root vs as the user actually running
-    # the process. So we verify that the process is connected to the
+    # the process. So we also verify that the process is connected to the
     # port by using "sudo -u" to get the right output.
-    sudo -u $puser ss -ntp | grep -qE ":($ports).*,pid=($pids),"
+    # Note: the privileged containers have the correct ss output with root
+    # user; which is why we need to run with both users, as a best effort.
+    (ss -ntp; sudo -u $puser ss -ntp) | sort -u | grep -qE ":($ports).*,pid=($pids),"
 }
 
 healthcheck_listen () {
