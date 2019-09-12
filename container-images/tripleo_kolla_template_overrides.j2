@@ -29,6 +29,11 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
 {% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini', 'openstack-selinux', 'ansible', 'python-shade', 'puppet-tripleo', 'python2-kubernetes'] %}
+
+# Override dumb-init installation
+{% block dumb_init_installation %}{% endblock %}
+{% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['dumb-init'] %}
+
 {% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
 
 # Required for mistral-db-populate to load tripleo custom actions on
