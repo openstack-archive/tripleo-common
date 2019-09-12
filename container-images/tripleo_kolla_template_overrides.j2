@@ -31,7 +31,9 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini', 'openstack-selinux', 'ansible', 'python-shade', 'puppet-tripleo', 'python2-kubernetes'] %}
 
 # Override dumb-init installation
-{% block dumb_init_installation %}{% endblock %}
+{% block dumb_init_installation %}
+ENTRYPOINT ["dumb-init", "--single-child", "--"]
+{% endblock %}
 {% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['dumb-init'] %}
 
 {% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
