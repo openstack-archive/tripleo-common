@@ -206,10 +206,7 @@ workflows:
 
       cell_v2_discover_hosts:
         action: tripleo.baremetal.cell_v2_discover_hosts
-        publish-on-error:
-          message: <% task().result %>
-        on-success: send_stack_deployment_message
-        on-error: set_deployment_failed
+        on-complete: send_stack_deployment_message
 
       send_stack_deployment_message:
         workflow: tripleo.messaging.v1.send
