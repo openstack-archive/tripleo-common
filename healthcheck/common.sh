@@ -47,7 +47,7 @@ healthcheck_port () {
     # port by using "sudo -u" to get the right output.
     # Note: the privileged containers have the correct ss output with root
     # user; which is why we need to run with both users, as a best effort.
-    (ss -ntp; sudo -u $puser ss -ntp) | sort -u | grep -qE ":($ports).*,pid=($pids),"
+    (ss -ntuap; sudo -u $puser ss -ntuap) | sort -u | grep -qE ":($ports).*,pid=($pids),"
 }
 
 healthcheck_listen () {
