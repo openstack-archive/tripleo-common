@@ -1026,11 +1026,3 @@ RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-rsync /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
-
-
-{# tacker #}
-{% block tacker_server_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/tacker /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
