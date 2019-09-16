@@ -137,7 +137,6 @@ PASSWORD_PARAMETER_NAMES = (
     'SnmpdReadonlyUserPassword',
     'SwiftHashSuffix',
     'SwiftPassword',
-    'TrovePassword',
     'ZaqarPassword',
 )
 # List of legacy resource names from overcloud.yaml
