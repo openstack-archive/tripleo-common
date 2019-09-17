@@ -50,15 +50,18 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% block dumb_init_installation %}{% endblock %}
 {% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['dumb-init'] %}
 
-# This installs the novajoin package in the nova container images; This is
-# required for TLS everywhere, as nova-api will use the cloud-init script
-# provided by the novajoin package in order to enroll the nodes to the CA
+# This installs the novajoin package in the nova/mistral container images; This
+# is required for TLS everywhere, as config_drive will contain the cloud-init
+# script provided by the novajoin package in order to enroll the nodes to the
+# CA
 {% if distro_python_version.startswith('3') %}
 {% set nova_api_packages_append = ['python3-novajoin'] %}
 {% set nova_compute_ironic_packages_append = ['python3-novajoin'] %}
+{% set mistral_executor_packages_append = ['python3-novajoin'] %}
 {% else %}
 {% set nova_api_packages_append = ['python-novajoin'] %}
 {% set nova_compute_ironic_packages_append = ['python-novajoin'] %}
+{% set mistral_executor_packages_append = ['python-novajoin'] %}
 {% endif %}
 
 {% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
@@ -84,7 +87,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 #   tripleo-heat-templates: to load the default plan from the CLI/UI
 #   ipmitool: for baremetal node discovery
 #   qemu-img: convert Octavia amphora qcow2 to raw
-{% set mistral_executor_packages_append = [
+{% set mistral_executor_packages_append = mistral_executor_packages_append + [
   'openstack-tripleo-validations',
   'openstack-nova-common',
   'openstack-tripleo-heat-templates',
