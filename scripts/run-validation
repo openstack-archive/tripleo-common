@@ -30,6 +30,14 @@ export ANSIBLE_RETRY_FILES_ENABLED=False
 # Add `-E` to the sudo flags to preserve the shell environment. The `-H -S -n`
 # options are Ansible's default values.
 export ANSIBLE_SUDO_FLAGS="-H -S -n -E"
+# Use a fact cache to improve performance
+# The defaults from tripleo_common/actions/ansible.py cannot be used
+# beause they will clash with the 'mistral' user owning the fact cache
+# path.
+export ANSIBLE_GATHERING=smart
+export ANSIBLE_CACHE_PLUGIN=jsonfile
+export ANSIBLE_CACHE_PLUGIN_CONNECTION=~/ansible_fact_cache
+export ANSIBLE_GATHER_TIMEOUT=7200 # 7200s = 2h
 
 export ANSIBLE_PRIVATE_KEY_FILE=$IDENTITY_FILE
 
