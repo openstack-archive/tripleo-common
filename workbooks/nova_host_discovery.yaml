@@ -1,0 +1,53 @@
+---
+version: '2.0'
+name: tripleo.nova.v1
+description: TripleO nova workflows
+
+workflows:
+
+  cellv2_discovery:
+    description: cellv2 host discovery
+    input:
+      - nova_host_discovery_ansible_playbook
+      - nova_host_discovery_container
+      - nova_host_discovery_service
+      - ansible_extra_env_variables:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_SSH_RETRIES: '3'
+    tags:
+      - tripleo-common-managed
+    tasks:
+      get_overcloud_stack_details:
+        publish:
+          nova_discovery_ips: <% env().get('service_ips', {}).get($.nova_host_discovery_service + '_ctlplane_node_ips', []) %>
+        on-success: enable_ssh_admin
+
+      enable_ssh_admin:
+        workflow: tripleo.access.v1.enable_ssh_admin
+        input:
+          ssh_servers: <% $.nova_discovery_ips %>
+        on-success: get_private_key
+
+      get_private_key:
+        action: tripleo.validations.get_privkey
+        publish:
+          private_key: <% task().result %>
+        on-success: discover_hosts
+
+      discover_hosts:
+        action: tripleo.ansible-playbook
+        input:
+          inventory:
+            nova_discovery_nodes:
+              hosts: <% $.nova_discovery_ips.toDict($, {}) %>
+          verbosity: 0
+          playbook: <% $.nova_host_discovery_ansible_playbook %>
+          remote_user: tripleo-admin
+          become: true
+          become_user: root
+          ssh_private_key: <% $.private_key %>
+          ssh_common_args: '-o StrictHostKeyChecking=no'
+          ssh_extra_args: '-o UserKnownHostsFile=/dev/null'
+          extra_env_variables: <% $.ansible_extra_env_variables %>
+          extra_vars:
+            nova_host_discovery_container: <% $.nova_host_discovery_container %>
