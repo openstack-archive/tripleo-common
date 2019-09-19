@@ -712,7 +712,9 @@ class GetNetworkConfigAction(base.TripleOAction):
                     ns_len = len(net_script)
                     start_index = (net_script.find(
                         "echo '{\"network_config\"", 0, ns_len) + 6)
-                    end_index = net_script.find("'", start_index, ns_len)
+                    # In file network/scripts/run-os-net-config.sh
+                    end_str = "' > /etc/os-net-config/config.json"
+                    end_index = net_script.find(end_str, start_index, ns_len)
                     if (end_index > start_index):
                         net_config = net_script[start_index:end_index]
                         if net_config:
