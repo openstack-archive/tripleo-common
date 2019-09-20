@@ -34,12 +34,14 @@ def write_default_ansible_cfg(work_dir,
     ansible_config_path = os.path.join(work_dir, 'ansible.cfg')
     shutil.copy(base_ansible_cfg, ansible_config_path)
 
+    callbacks_whitelist = ','.join(['profile_tasks'])
     config = configparser.ConfigParser()
     config.read(ansible_config_path)
 
     config.set('defaults', 'retry_files_enabled', 'False')
     config.set('defaults', 'log_path',
                os.path.join(work_dir, 'ansible.log'))
+    config.set('defaults', 'callback_whitelist', callbacks_whitelist)
     config.set('defaults', 'forks', '25')
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
