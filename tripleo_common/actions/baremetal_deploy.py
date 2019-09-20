@@ -113,9 +113,10 @@ _ROLES_INPUT_SCHEMA = {
 class CheckExistingInstancesAction(base.TripleOAction):
     """Detect which requested instances have already been provisioned."""
 
-    def __init__(self, instances):
+    def __init__(self, instances, default_resource_class='baremetal'):
         super(CheckExistingInstancesAction, self).__init__()
         self.instances = instances
+        self.default_resource_class = default_resource_class
 
     def run(self, context):
         try:
@@ -129,16 +130,16 @@ class CheckExistingInstancesAction(base.TripleOAction):
         not_found = []
         found = []
         for request in self.instances:
-            if 'hostname' not in request:
-                continue
+            ident = request.get('name', request['hostname'])
+
             try:
-                instance = provisioner.show_instance(request['hostname'])
+                instance = provisioner.show_instance(ident)
             # TODO(dtantsur): replace Error with a specific exception
             except (sdk_exc.ResourceNotFound, metalsmith.exceptions.Error):
                 not_found.append(request)
             except Exception as exc:
-                message = ('Failed to request instance information for '
-                           'hostname %s' % request['hostname'])
+                message = ('Failed to request instance information for %s'
+                           % ident)
                 LOG.exception(message)
                 return actions.Result(
                     error="%s. %s: %s" % (message, type(exc).__name__, exc)
@@ -155,13 +156,24 @@ class CheckExistingInstancesAction(base.TripleOAction):
                              "hostname") % (request['hostname'], instance.uuid)
                     return actions.Result(error=error)
 
+                if (not instance.allocation
+                        and instance.state == metalsmith.InstanceState.ACTIVE
+                        and 'name' in request):
+                    # Existing node is missing an allocation record,
+                    # so create one without triggering allocation
+                    LOG.debug('Reserving existing %s' % request['name'])
+                    self.get_baremetal_client(context).allocation.create(
+                        resource_class=request.get('resource_class') or
+                        self.default_resource_class,
+                        name=request['hostname'],
+                        node=request['name']
+                    )
                 found.append(_instance_to_dict(provisioner.connection,
                                                instance))
 
         if found:
             LOG.info('Found existing instances: %s',
-                     ', '.join('%s (on node %s)' % (i['hostname'], i['uuid'])
-                               for i in found))
+                     ', '.join(r['hostname'] for r in found))
         if not_found:
             LOG.info('Instance(s) %s do not exist',
                      ', '.join(r['hostname'] for r in not_found))
