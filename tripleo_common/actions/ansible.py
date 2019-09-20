@@ -48,6 +48,8 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'retry_files_enabled', 'False')
     config.set('defaults', 'log_path',
                os.path.join(work_dir, 'ansible.log'))
+    # suppress tasks if all hosts skip, was previously full_skip callback
+    config.set('defaults', 'display_skipped_hosts', 'no')
     config.set('defaults', 'forks', '25')
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
