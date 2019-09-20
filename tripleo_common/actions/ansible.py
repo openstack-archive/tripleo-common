@@ -56,6 +56,7 @@ def write_default_ansible_cfg(work_dir,
         '~/.ansible/plugins/callback:'
         '/usr/share/ansible/plugins/callback:'
         '%s/callback_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+    callbacks_whitelist = ','.join(['profile_tasks'])
     roles_path = ('%(work_dir)s/roles:'
                   '/root/.ansible/roles:'
                   '/usr/share/ansible/roles:'
@@ -73,6 +74,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'roles_path', roles_path)
     config.set('defaults', 'library', modules_path)
     config.set('defaults', 'callback_plugins', callbacks_path)
+    config.set('defaults', 'callback_whitelist', callbacks_whitelist)
     config.set('defaults', 'lookup_plugins', lookups_path)
 
     log_path = os.path.join(work_dir, 'ansible.log')
