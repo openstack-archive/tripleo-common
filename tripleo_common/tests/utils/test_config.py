@@ -449,3 +449,22 @@ class TestConfig(base.TestCase):
         with warnings.catch_warnings(record=True) as w:
             self.config.download_config(stack, self.tmp_dir)
             assert "Skipping deployment" in str(w[-1].message)
+
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    def test_config_download_no_deployment_name(self, mock_deployment_data):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+        stack = mock.MagicMock()
+        heat.stacks.get.return_value = stack
+
+        deployment_data, _ = self._get_config_data('config_data.yaml')
+
+        # Delete the name of the first deployment and his parent.
+        del deployment_data[0].attributes['value']['name']
+        deployment_data[0].parent_resource = None
+
+        mock_deployment_data.return_value = deployment_data
+
+        self.tmp_dir = self.useFixture(fixtures.TempDir()).path
+        self.assertRaises(ValueError,
+                          self.config.download_config, stack, self.tmp_dir)

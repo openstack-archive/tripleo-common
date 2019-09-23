@@ -207,7 +207,7 @@ class Config(object):
         server_names = self.get_server_names()
         server_ids = dict([(v, k) for (k, v) in server_names.items()])
         # role_deployment_names is a dict of role names to deployment names for
-        # that role. The deployment names are futher separated in their own
+        # that role. The deployment names are further separated in their own
         # dict with keys of pre_deployment/post_deployment.
         role_deployment_names = {}
         # server_roles is a dict of server name to server role for easier
@@ -238,6 +238,11 @@ class Config(object):
             # or empty string, default to the name of the parent_resource.
             deployment_name = deployment.attributes['value'].get(
                 'name') or deployment.parent_resource
+            if not deployment_name:
+                message = "The deployment name cannot be determined. It " \
+                          "should be set via the name property on the " \
+                          "Deployment resources in the templates."
+                raise ValueError(message)
 
             try:
                 int(deployment_name)
@@ -269,6 +274,7 @@ class Config(object):
                               "not be determined."
                     raise ValueError(message)
                 deployment_name = resources[0].resource_name
+
             config_dict['deployment_name'] = deployment_name
 
             # reset deploy_server_id to the actual server_id since we have to
