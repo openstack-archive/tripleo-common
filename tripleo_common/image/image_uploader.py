@@ -294,6 +294,7 @@ class BaseImageUploader(object):
             run_vars, default_flow_style=False))
         playbook = [{
             'hosts': 'localhost',
+            'gather_facts': 'no',
             'tasks': [{
                 'name': 'Import role %s' % modify_role,
                 'import_role': {

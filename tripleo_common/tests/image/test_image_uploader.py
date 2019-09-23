@@ -954,7 +954,8 @@ class TestSkopeoImageUploader(base.TestCase):
                     'container_build_tool': 'buildah'
                 }
             }],
-            'hosts': 'localhost'
+            'hosts': 'localhost',
+            'gather_facts': 'no'
         }]
 
         # test response for a partial cleanup
