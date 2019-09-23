@@ -341,8 +341,24 @@ class BaseImageUploader(object):
         LOG.info('Playbook: \n%s' % yaml.safe_dump(
             playbook, default_flow_style=False))
         work_dir = tempfile.mkdtemp(prefix='tripleo-modify-image-playbook-')
+        log_name = 'tripleo-container-image-prepare-ansible.log'
         try:
-            action = ansible.AnsiblePlaybookAction(
+            for handler in LOG.logger.root.handlers:
+                if hasattr(handler, 'baseFilename'):
+                    if os.path.isfile(handler.baseFilename):
+                        log_f = os.path.join(
+                            os.path.dirname(handler.baseFilename),
+                            log_name
+                        )
+                        break
+            else:
+                raise OSError('Log output is not a file.')
+        except (AttributeError, OSError):
+            tmp_dir = tempfile.gettempdir()
+            log_f = os.path.join(tmp_dir, log_name)
+        try:
+            LOG.info('Ansible action starting')
+            ansible.AnsiblePlaybookAction(
                 playbook=playbook,
                 work_dir=work_dir,
                 verbosity=1,
@@ -350,20 +366,26 @@ class BaseImageUploader(object):
                 override_ansible_cfg=(
                     "[defaults]\n"
                     "stdout_callback=yaml\n"
+                    "log_path=%s\n" % log_f
+                )
+            ).run(None)
+        except processutils.ProcessExecutionError as e:
+            LOG.error(
+                '%s\n'
+                'Error running playbook in directory: %s\n'
+                'Playbook log information can be reviewed here: %s' % (
+                    e.stdout,
+                    work_dir,
+                    log_f
                 )
             )
-            result = action.run(None)
-            log_path = result.get('log_path')
-            if log_path and os.path.isfile(log_path):
-                with open(log_path) as f:
-                    for line in f:
-                        LOG.info(line.rstrip())
-            shutil.rmtree(work_dir)
-        except processutils.ProcessExecutionError as e:
-            LOG.error('%s\nError running playbook in directory: %s'
-                      % (e.stdout, work_dir))
             raise ImageUploaderException(
-                'Modifying image %s failed' % target_image)
+                'Modifying image %s failed' % target_image
+            )
+        else:
+            LOG.info('Ansible action completed')
+        finally:
+            shutil.rmtree(work_dir)
 
     @classmethod
     def _images_match(cls, image1, image2, session1=None):

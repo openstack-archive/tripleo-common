@@ -1068,6 +1068,8 @@ class TestSkopeoImageUploader(base.TestCase):
             override_ansible_cfg=(
                 "[defaults]\n"
                 "stdout_callback=yaml\n"
+                "log_path=%s/tripleo-container-image-prepare-ansible.log\n"
+                % os.path.dirname(logfile.name)
             )
         )
 
