@@ -1270,7 +1270,8 @@ class PythonImageUploader(BaseImageUploader):
         }
         source_blob_url = cls._build_url(
             source_url, CALL_BLOB % parts)
-        chunk_size = 2 ** 20
+        # NOTE(aschultz): We specify None and let requests figure it out
+        chunk_size = None
         with session.get(
                 source_blob_url, stream=True, timeout=30) as blob_req:
             # TODO(aschultz): unsure if necessary or if only when using .text
