@@ -14,15 +14,15 @@
 # under the License.
 
 
-import eventlet
 from eventlet.green import subprocess
+import eventlet.patcher as patcher
 
 # Due to an eventlet issue subprocess is not being correctly patched
-# on git module so it has to be done manually
+# on git.refs
+patcher.inject('git.refs', None, ('subprocess', subprocess), )
 
-git = eventlet.import_patched('git', ('subprocess', subprocess))
+# this has to be loaded after the inject.
+
+import git  # noqa: E402
+
 Repo = git.Repo
-
-# git.refs is lazy loaded when there's a new commit, this needs to be
-# patched as well.
-eventlet.import_patched('git.refs')
