@@ -59,6 +59,7 @@ def write_default_ansible_cfg(work_dir,
         '/usr/share/ansible/tripleo-plugins/callback:'
         '/usr/share/ansible/plugins/callback:'
         '%s/callback_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+    callbacks_whitelist = ','.join(['profile_tasks'])
     action_plugins_path = (
         '~/.ansible/plugins/action:'
         '/usr/share/ansible/plugins/action:'
@@ -87,6 +88,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'roles_path', roles_path)
     config.set('defaults', 'library', modules_path)
     config.set('defaults', 'callback_plugins', callbacks_path)
+    config.set('defaults', 'callback_whitelist', callbacks_whitelist)
     config.set('defaults', 'action_plugins', action_plugins_path)
     config.set('defaults', 'lookup_plugins', lookups_path)
     config.set('defaults', 'filter_plugins', filter_plugins_path)
