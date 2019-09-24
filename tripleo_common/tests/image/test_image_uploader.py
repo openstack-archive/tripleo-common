@@ -416,11 +416,13 @@ class TestBaseImageUploader(base.TestCase):
 
     @mock.patch('concurrent.futures.ThreadPoolExecutor')
     def test_discover_image_tags(self, mock_pool):
-        mock_pool.return_value.map.return_value = (
+        mock_map = mock.Mock()
+        mock_map.return_value = (
             ('docker.io/t/foo', 'a'),
             ('docker.io/t/bar', 'b'),
             ('docker.io/t/baz', 'c')
         )
+        mock_pool.return_value.__enter__.return_value.map = mock_map
         images = [
             'docker.io/t/foo',
             'docker.io/t/bar',
@@ -434,7 +436,7 @@ class TestBaseImageUploader(base.TestCase):
             },
             self.uploader.discover_image_tags(images, 'rdo_release')
         )
-        mock_pool.return_value.map.assert_called_once_with(
+        mock_map.assert_called_once_with(
             image_uploader.discover_tag_from_inspect,
             [
                 (self.uploader, 'docker.io/t/foo', 'rdo_release'),
@@ -769,12 +771,14 @@ class TestBaseImageUploader(base.TestCase):
 
     @mock.patch('concurrent.futures.ThreadPoolExecutor')
     def test_list(self, mock_pool):
-        mock_pool.return_value.map.return_value = (
+        mock_map = mock.Mock()
+        mock_map.return_value = (
             ('localhost:8787/t/foo', ['a']),
             ('localhost:8787/t/bar', ['b']),
             ('localhost:8787/t/baz', ['c', 'd']),
             ('localhost:8787/t/bink', [])
         )
+        mock_pool.return_value.__enter__.return_value.map = mock_map
         session = mock.Mock()
         response = mock.Mock()
         response.status_code = 200
@@ -791,7 +795,7 @@ class TestBaseImageUploader(base.TestCase):
             ],
             self.uploader.list('localhost:8787', session=session)
         )
-        mock_pool.return_value.map.assert_called_once_with(
+        mock_map.assert_called_once_with(
             image_uploader.tags_for_image,
             [
                 (self.uploader, 'localhost:8787/t/foo', session),
@@ -800,14 +804,12 @@ class TestBaseImageUploader(base.TestCase):
                 (self.uploader, 'localhost:8787/t/bink', session)
             ])
 
-    @mock.patch('concurrent.futures.ThreadPoolExecutor')
-    def test_list_404(self, mock_pool):
+    def test_list_404(self):
         # setup bits
         session = mock.Mock()
         response = mock.Mock()
         response.status_code = 404
         session.get.return_value = response
-        mock_pool.return_value.map.return_value = ()
         # execute function
         return_val = self.uploader.list('localhost:8787', session=session)
         # check status of things
