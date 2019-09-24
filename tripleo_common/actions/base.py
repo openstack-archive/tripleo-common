@@ -19,7 +19,7 @@ import zlib
 from glanceclient.v2 import client as glanceclient
 from heatclient.v1 import client as heatclient
 import ironic_inspector_client
-from ironicclient.v1 import client as ironicclient
+from ironicclient import client as ironicclient
 from keystoneauth1 import session as ks_session
 from keystoneauth1.token_endpoint import Token
 from mistral_lib import actions
@@ -88,12 +88,9 @@ class TripleOAction(actions.Action):
         ironic_endpoint = keystone_utils.get_endpoint_for_project(
             security_ctx, 'ironic')
 
-        # FIXME(lucasagomes): Use ironicclient.get_client() instead
-        # of ironicclient.Client(). Client() might cause errors since
-        # it doesn't verify the provided arguments, get_client() is the
-        # prefered way
-        return ironicclient.Client(
-            ironic_endpoint.url,
+        return ironicclient.get_client(
+            1,
+            endpoint=ironic_endpoint.url,
             token=security_ctx.auth_token,
             region_name=ironic_endpoint.region,
             # 1.58 for allocations backfill
