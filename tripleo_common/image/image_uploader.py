@@ -952,12 +952,21 @@ class SkopeoImageUploader(BaseImageUploader):
             password=target_password
         )
 
-        if t.modify_role and self._image_exists(
-                t.target_image, target_session):
+        image_exists = False
+        try:
+            image_exists = self._image_exists(t.target_image,
+                                              target_session)
+        except Exception:
+            LOG.warning('Failed to check if the target '
+                        'image %s exists' % t.target_image)
+            pass
+        if t.modify_role and image_exists:
             LOG.warning('Skipping upload for modified image %s' %
                         t.target_image)
+            target_session.close()
             return []
 
+        # Keep the target session open yet
         source_username, source_password = self.credentials_for_registry(
             t.source_image_url.netloc)
         source_session = self.authenticate(
@@ -965,14 +974,22 @@ class SkopeoImageUploader(BaseImageUploader):
             username=source_username,
             password=source_password
         )
+        try:
+            source_inspect = self._inspect(
+                t.source_image_url,
+                session=source_session)
+            source_layers = source_inspect.get('Layers', [])
+            self._cross_repo_mount(
+                t.target_image_url, self.image_layers, source_layers,
+                session=target_session)
+        except Exception:
+            LOG.error('Failed uploading the target '
+                      'image %s' % t.target_image)
+            raise
+        finally:
+            source_session.close()
+            target_session.close()
 
-        source_inspect = self._inspect(
-            t.source_image_url,
-            session=source_session)
-        source_layers = source_inspect.get('Layers', [])
-        self._cross_repo_mount(
-            t.target_image_url, self.image_layers, source_layers,
-            session=target_session)
         to_cleanup = []
 
         if t.modify_role:
@@ -1133,29 +1150,48 @@ class PythonImageUploader(BaseImageUploader):
             password=target_password
         )
 
-        self._detect_target_export(t.target_image_url, target_session)
+        try:
+            self._detect_target_export(t.target_image_url, target_session)
+        except Exception:
+            LOG.error('Failed uploading the target image %s' % t.target_image)
+            # Close the session before raising it for more of retrying perhaps
+            target_session.close()
+            raise
 
         if source_local:
             if t.modify_role:
+                target_session.close()
                 raise NotImplementedError('Modify role not implemented for '
                                           'local containers')
             if t.cleanup:
                 LOG.warning('Cleanup has no effect with a local source '
                             'container.')
 
-            source_local_url = parse.urlparse(t.source_image)
-            # Copy from local storage to target registry
-            self._copy_local_to_registry(
-                source_local_url,
-                t.target_image_url,
-                session=target_session
-            )
+            try:
+                source_local_url = parse.urlparse(t.source_image)
+                # Copy from local storage to target registry
+                self._copy_local_to_registry(
+                    source_local_url,
+                    t.target_image_url,
+                    session=target_session
+                )
+            except Exception:
+                LOG.warning('Failed copying the target image %s '
+                            'to the target registry' % t.target_image)
+                pass
             target_session.close()
             return []
 
         if t.modify_role:
-            if self._image_exists(
-                    t.target_image, target_session):
+            image_exists = False
+            try:
+                image_exists = self._image_exists(t.target_image,
+                                                  target_session)
+            except Exception:
+                LOG.warning('Failed to check if the target '
+                            'image %s exists' % t.target_image)
+                pass
+            if image_exists:
                 LOG.warning('Skipping upload for modified image %s' %
                             t.target_image)
                 target_session.close()
@@ -1163,6 +1199,7 @@ class PythonImageUploader(BaseImageUploader):
             copy_target_url = t.target_image_source_tag_url
         else:
             copy_target_url = t.target_image_url
+        # Keep the target session open yet
 
         source_username, source_password = self.credentials_for_registry(
             t.source_image_url.netloc)
@@ -1174,27 +1211,36 @@ class PythonImageUploader(BaseImageUploader):
 
         source_layers = []
         manifests_str = []
-        self._collect_manifests_layers(
-            t.source_image_url, source_session,
-            manifests_str, source_layers,
-            t.multi_arch
-        )
+        try:
+            self._collect_manifests_layers(
+                t.source_image_url, source_session,
+                manifests_str, source_layers,
+                t.multi_arch
+            )
 
-        self._cross_repo_mount(
-            copy_target_url, self.image_layers, source_layers,
-            session=target_session)
-        to_cleanup = []
+            self._cross_repo_mount(
+                copy_target_url, self.image_layers, source_layers,
+                session=target_session)
+            to_cleanup = []
 
-        # Copy unmodified images from source to target
-        self._copy_registry_to_registry(
-            t.source_image_url,
-            copy_target_url,
-            source_manifests=manifests_str,
-            source_session=source_session,
-            target_session=target_session,
-            source_layers=source_layers,
-            multi_arch=t.multi_arch
-        )
+            # Copy unmodified images from source to target
+            self._copy_registry_to_registry(
+                t.source_image_url,
+                copy_target_url,
+                source_manifests=manifests_str,
+                source_session=source_session,
+                target_session=target_session,
+                source_layers=source_layers,
+                multi_arch=t.multi_arch
+            )
+        except Exception:
+            LOG.error('Failed uploading the target '
+                      'image %s' % t.target_image)
+            # Close the sessions before raising it for more of
+            # retrying perhaps
+            source_session.close()
+            target_session.close()
+            raise
 
         if not t.modify_role:
             LOG.warning('Completed upload for image %s' % t.image_name)
@@ -1204,38 +1250,52 @@ class PythonImageUploader(BaseImageUploader):
                     t.image_name
                 )
             )
-            self._copy_registry_to_local(t.target_image_source_tag_url)
+            try:
+                self._copy_registry_to_local(t.target_image_source_tag_url)
 
-            if t.cleanup in (CLEANUP_FULL, CLEANUP_PARTIAL):
-                to_cleanup.append(t.target_image_source_tag)
+                if t.cleanup in (CLEANUP_FULL, CLEANUP_PARTIAL):
+                    to_cleanup.append(t.target_image_source_tag)
 
-            self.run_modify_playbook(
-                t.modify_role,
-                t.modify_vars,
-                t.target_image_source_tag,
-                t.target_image_source_tag,
-                t.append_tag,
-                container_build_tool='buildah')
-            if t.cleanup == CLEANUP_FULL:
-                to_cleanup.append(t.target_image)
+                self.run_modify_playbook(
+                    t.modify_role,
+                    t.modify_vars,
+                    t.target_image_source_tag,
+                    t.target_image_source_tag,
+                    t.append_tag,
+                    container_build_tool='buildah')
+                if t.cleanup == CLEANUP_FULL:
+                    to_cleanup.append(t.target_image)
 
-            # cross-repo mount the unmodified image to the modified image
-            self._cross_repo_mount(
-                t.target_image_url, self.image_layers, source_layers,
-                session=target_session)
+                # cross-repo mount the unmodified image to the modified image
+                self._cross_repo_mount(
+                    t.target_image_url, self.image_layers, source_layers,
+                    session=target_session)
 
-            # Copy from local storage to target registry
-            self._copy_local_to_registry(
-                target_image_local_url,
-                t.target_image_url,
-                session=target_session
-            )
+                # Copy from local storage to target registry
+                self._copy_local_to_registry(
+                    target_image_local_url,
+                    t.target_image_url,
+                    session=target_session
+                )
+            except Exception:
+                LOG.error('Failed processing the target '
+                          'image %s' % t.target_image)
+                # Close the sessions before raising it for more of
+                # retrying perhaps
+                source_session.close()
+                target_session.close()
+                raise
+
             LOG.warning('Completed modify and upload for image %s' %
                         t.image_name)
 
-        for layer in source_layers:
-            self.image_layers.setdefault(layer, t.target_image_url)
-
+        try:
+            for layer in source_layers:
+                self.image_layers.setdefault(layer, t.target_image_url)
+        except Exception:
+            LOG.warning('Failed setting default layer for the target '
+                        'image %s' % t.target_image)
+            pass
         target_session.close()
         source_session.close()
         return to_cleanup
