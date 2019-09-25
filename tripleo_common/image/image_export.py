@@ -83,40 +83,48 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
     make_dir(blob_dir_path)
     blob_path = os.path.join(blob_dir_path, '%s.gz' % digest)
 
-    LOG.debug('export layer to %s' % blob_path)
+    LOG.debug('[%s] Export layer to %s' % (image, blob_path))
 
     length = 0
     calc_digest = hashlib.sha256()
 
     try:
         with open(blob_path, 'wb') as f:
+            count = 0
             for chunk in layer_stream:
+                count += 1
                 if not chunk:
                     break
+                LOG.debug('[%s] Writing chunk %i for %s' %
+                          (image, count, digest))
                 f.write(chunk)
                 calc_digest.update(chunk)
                 length += len(chunk)
+                LOG.debug('[%s] Written %i bytes for %s' %
+                          (image, length, digest))
     except Exception as e:
-        write_error = 'Write Failure: {}'.format(str(e))
+        write_error = '[{}] Write Failure: {}'.format(image, str(e))
         LOG.error(write_error)
         if os.path.isfile(blob_path):
             os.remove(blob_path)
-            LOG.error('Broken layer found and removed: %s' % blob_path)
+            LOG.error('[%s] Broken layer found and removed %s' %
+                      (image, blob_path))
         raise IOError(write_error)
     else:
-        LOG.info('Layer written successfully: %s' % blob_path)
+        LOG.info('[%s] Layer written successfully %s' % (image, blob_path))
 
     layer_digest = 'sha256:%s' % calc_digest.hexdigest()
-    LOG.debug('Provided layer digest: %s' % digest)
-    LOG.debug('Calculated layer digest: %s' % layer_digest)
+    LOG.debug('[%s] Provided digest: %s, Calculated digest: %s' %
+              (image, digest, layer_digest))
 
     if verify_digest:
         if digest != layer_digest:
             hash_request_id = hashlib.sha1(str(target_url.geturl()).encode())
             error_msg = (
-                'Image ID: %s, Expected digest "%s" does not match'
+                '[%s] Image ID: %s, Expected digest "%s" does not match'
                 ' calculated digest "%s", Blob path "%s". Blob'
                 ' path will be cleaned up.' % (
+                    image,
                     hash_request_id.hexdigest(),
                     digest,
                     layer_digest,
@@ -138,6 +146,7 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
 
     layer['digest'] = layer_digest
     layer['size'] = length
+    LOG.debug('[%s] Done exporting image layer %s' % (image, digest))
     return layer_digest
 
 
@@ -151,7 +160,7 @@ def cross_repo_mount(target_image_url, image_layers, source_layers):
         dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'blobs')
         blob_path = os.path.join(dir_path, '%s.gz' % layer)
         if not os.path.exists(blob_path):
-            LOG.debug('Layer not found: %s' % blob_path)
+            LOG.debug('[%s] Layer not found: %s' % (image, blob_path))
             continue
 
         target_image, tag = image_tag_from_url(target_image_url)
@@ -161,7 +170,8 @@ def cross_repo_mount(target_image_url, image_layers, source_layers):
         target_blob_path = os.path.join(target_dir_path, '%s.gz' % layer)
         if os.path.exists(target_blob_path):
             continue
-        LOG.debug('Linking layers: %s -> %s' % (blob_path, target_blob_path))
+        LOG.debug('[%s] Linking layers: %s -> %s' %
+                  (image, blob_path, target_blob_path))
         # make a hard link so the layers can have independent lifecycles
         os.link(blob_path, target_blob_path)
 
@@ -286,7 +296,7 @@ def build_tags_list(image):
         IMAGE_EXPORT_DIR, 'v2', image, 'manifests')
     tags_dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'tags')
     tags_list_path = os.path.join(tags_dir_path, 'list')
-    LOG.debug('Rebuilding %s' % tags_dir_path)
+    LOG.debug('[%s] Rebuilding %s' % (image, tags_dir_path))
     make_dir(tags_dir_path)
     tags = []
     for f in os.listdir(manifests_path):
@@ -330,13 +340,14 @@ def delete_image(image_url):
 
     manifest_symlink_path = os.path.join(manifests_path, tag)
     if os.path.exists(manifest_symlink_path):
-        LOG.debug('Deleting legacy tag symlink %s' % manifest_symlink_path)
+        LOG.debug('[%s] Deleting legacy tag symlink %s' %
+                  (image, manifest_symlink_path))
         os.remove(manifest_symlink_path)
 
     type_map_path = os.path.join(manifests_path, '%s%s' %
                                  (tag, TYPE_MAP_EXTENSION))
     if os.path.exists(type_map_path):
-        LOG.debug('Deleting typemap file %s' % type_map_path)
+        LOG.debug('[%s] Deleting typemap file %s' % (image, type_map_path))
         os.remove(type_map_path)
 
     build_tags_list(image)
@@ -358,7 +369,7 @@ def delete_image(image_url):
 
     # delete list of manifest_dir_path without symlinks
     for manifest_dir in delete_manifest_dirs:
-        LOG.debug('Deleting manifest %s' % manifest_dir)
+        LOG.debug('[%s] Deleting manifest %s' % (image, manifest_dir))
         shutil.rmtree(manifest_dir)
 
     # load all remaining manifests and build the set of of in-use blobs,
@@ -392,14 +403,14 @@ def delete_image(image_url):
                      for b in os.listdir(blobs_path)])
     delete_blobs = all_blobs.difference(reffed_blobs)
     for blob in delete_blobs:
-        LOG.debug('Deleting layer blob %s' % blob)
+        LOG.debug('[%s] Deleting layer blob %s' % (image, blob))
         os.remove(blob)
 
     # if no files left in manifests_path, delete the whole image
     remaining = os.listdir(manifests_path)
     if not remaining or remaining == ['.htaccess']:
         image_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image)
-        LOG.debug('Deleting image directory %s' % image_path)
+        LOG.debug('[%s] Deleting image directory %s' % (image, image_path))
         shutil.rmtree(image_path)
 
     # rebuild the catalog for the current image list
