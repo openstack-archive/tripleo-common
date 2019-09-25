@@ -1213,11 +1213,9 @@ class PythonImageUploader(BaseImageUploader):
                 t.target_image_url,
                 session=target_session
             )
-
-            for layer in source_layers:
-                self.image_layers.setdefault(layer, t.target_image_url)
             LOG.warning('Completed modify and upload for image %s' %
                         t.image_name)
+
         for layer in source_layers:
             self.image_layers.setdefault(layer, t.target_image_url)
 
