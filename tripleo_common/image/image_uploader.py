@@ -19,6 +19,7 @@ import hashlib
 import json
 import netifaces
 import os
+import random
 import re
 import requests
 from requests import auth as requests_auth
@@ -222,6 +223,7 @@ class ImageUploadManager(BaseImageManager):
         container_images = self.load_config_files(self.CONTAINER_IMAGES) or []
         upload_images = uploads + container_images
 
+        tasks = []
         for item in upload_images:
             image_name = item.get('imagename')
             uploader = item.get('uploader', DEFAULT_UPLOADER)
@@ -236,10 +238,24 @@ class ImageUploadManager(BaseImageManager):
             multi_arch = item.get('multi_arch', self.multi_arch)
 
             uploader = self.uploader(uploader)
-            task = UploadTask(
+            tasks.append(UploadTask(
                 image_name, pull_source, push_destination,
                 append_tag, modify_role, modify_vars, self.dry_run,
-                self.cleanup, multi_arch)
+                self.cleanup, multi_arch))
+
+        # NOTE(mwhahaha): We want to randomize the upload process because of
+        # the shared nature of container layers. Because we multiprocess the
+        # handling of containers, if performed in an alphabetical order (the
+        # default) we end up duplicating fetching of container layers. Things
+        # Like cinder-volume and cinder-backup share almost all of the same
+        # layers so when they are fetched at the same time, we will duplicate
+        # the processing. By randomizing the list we will reduce the amount
+        # of duplicating that occurs. In my testing I went from ~30mins to
+        # ~20mins to run. In the future this could be improved if we added
+        # some locking to the container fetching based on layer hashes but
+        # will require a significant rewrite.
+        random.shuffle(tasks)
+        for task in tasks:
             uploader.add_upload_task(task)
 
         for uploader in self.uploaders.values():
