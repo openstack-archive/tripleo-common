@@ -103,15 +103,18 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
-
+    log_format = ('%(asctime)s.%(msecs)03d %(process)d %(levelname)s '
+                  '%(name)s [  ] %(message)s')
     logging.basicConfig(
         datefmt='%Y-%m-%d %H:%M:%S',
-        format=('%(asctime)s.%(msecs)03d %(process)d %(levelname)s '
-                '%(name)s [  ] %(message)s')
+        format=log_format
     )
     log = logging.getLogger()
     if args.log_file:
-        log.addHandler(logging.FileHandler(filename=args.log_file))
+        formatter = logging.Formatter(log_format)
+        fh = logging.FileHandler(filename=args.log_file)
+        fh.setFormatter(formatter)
+        log.addHandler(fh)
     if args.debug:
         log_level = logging.DEBUG
     else:
