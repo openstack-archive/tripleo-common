@@ -16,7 +16,7 @@ import zlib
 
 import mock
 
-from ironicclient.v1 import client as ironicclient
+from ironicclient import client as ironicclient
 
 from tripleo_common.actions import base
 from tripleo_common.tests import base as tests_base
@@ -32,15 +32,16 @@ class TestActionsBase(tests_base.TestCase):
         super(TestActionsBase, self).setUp()
         self.action = base.TripleOAction()
 
-    @mock.patch.object(ironicclient, 'Client')
+    @mock.patch.object(ironicclient, 'get_client', autospec=True)
     def test_get_baremetal_client(self, mock_client, mock_endpoint):
         mock_cxt = mock.MagicMock()
         mock_endpoint.return_value = mock.Mock(
             url='http://ironic/v1', region='ironic-region')
         self.action.get_baremetal_client(mock_cxt)
         mock_client.assert_called_once_with(
-            'http://ironic/v1', max_retries=12, os_ironic_api_version='1.58',
-            region_name='ironic-region', retry_interval=5, token=mock.ANY)
+            1, endpoint='http://ironic/v1', max_retries=12,
+            os_ironic_api_version='1.58', region_name='ironic-region',
+            retry_interval=5, token=mock.ANY)
         mock_endpoint.assert_called_once_with(mock_cxt.security, 'ironic')
         mock_cxt.assert_not_called()
 
