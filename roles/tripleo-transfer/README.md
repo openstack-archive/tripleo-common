@@ -33,6 +33,11 @@ Optional:
 * `tripleo_transfer_dest_wipe` -- whether to wipe the destination
   directory before transferring the content
   (defaults to true)
+* `tripleo_transfer_flag_file` -- if set, path to a file which will be
+  created when transfer is attempted. If the file already exists, the
+  transfer will stop with a failure. The intent is to prevent repeated
+  transfers (overwriting with stale data).
+  (defaults to null which allows overwrites)
 
 Test playbook
 -------------

@@ -49,6 +49,8 @@
   become: "{{tripleo_transfer_src_become}}"
   delegate_to: "{{tripleo_transfer_src_host}}"
 
+- import_tasks: flag.yml
+
 - name: wipe the destination directory
   file:
     path: "{{tripleo_transfer_dest_dir_safe}}"

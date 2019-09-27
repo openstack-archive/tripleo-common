@@ -1,0 +1,36 @@
+- name: check flag file existence in destination host
+  stat:
+    path: "{{tripleo_transfer_flag_file}}"
+  register: tripleo_transfer_flag_stat
+  when: tripleo_transfer_flag_file|length > 0
+  become: "{{ tripleo_transfer_dest_become }}"
+  delegate_to: "{{ tripleo_transfer_dest_host }}"
+
+- name: fail if flag file exists
+  fail:
+    msg: >
+      Data transfer to '{{tripleo_transfer_dest_dir}}' was prevented
+      by flag file existence. This means the transfer was attempted
+      before and another one would overwrite the data. If this is
+      desired, remove the flag file at '{{tripleo_transfer_flag_file}}'
+      and re-run the data transfer.
+  when:
+    - tripleo_transfer_flag_file|length > 0
+    - tripleo_transfer_flag_stat.stat.exists
+  delegate_to: "{{ tripleo_transfer_dest_host }}"
+
+- name: ensure directory for flag file exists
+  file:
+    path: "{{tripleo_transfer_flag_file|dirname}}"
+    state: directory
+  when: tripleo_transfer_flag_file|length > 0
+  become: "{{ tripleo_transfer_dest_become }}"
+  delegate_to: "{{ tripleo_transfer_dest_host }}"
+
+- name: create the flag file
+  file:
+    path: "{{tripleo_transfer_flag_file}}"
+    state: touch
+  when: tripleo_transfer_flag_file|length > 0
+  become: "{{ tripleo_transfer_dest_become }}"
+  delegate_to: "{{ tripleo_transfer_dest_host }}"
