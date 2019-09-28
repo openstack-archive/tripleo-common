@@ -257,6 +257,7 @@ workflows:
         input:
           plan: <% $.plan %>
           role_name: <% $.role_name %>
+          heat_resource_tree: <% $.heat_resource_tree %>
           hw_data: <% $.hw_data %>
           user_inputs: <% $.user_inputs %>
         publish:
