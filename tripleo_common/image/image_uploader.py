@@ -346,7 +346,8 @@ class BaseImageUploader(object):
             log_path = result.get('log_path')
             if log_path and os.path.isfile(log_path):
                 with open(log_path) as f:
-                    LOG.info(f.read())
+                    for line in f:
+                        LOG.info(line.rstrip())
             shutil.rmtree(work_dir)
         except processutils.ProcessExecutionError as e:
             LOG.error('%s\nError running playbook in directory: %s'
