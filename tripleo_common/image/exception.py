@@ -26,5 +26,10 @@ class ImageUploaderException(Exception):
     pass
 
 
+class ImageUploaderThreadException(Exception):
+    """Conflict during thread processing"""
+    pass
+
+
 class ImageNotFoundException(Exception):
     pass
