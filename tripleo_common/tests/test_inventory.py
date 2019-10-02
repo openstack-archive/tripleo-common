@@ -158,6 +158,12 @@ class TestInventory(base.TestCase):
         self.assertTrue(self.hclient.called_once_with('overcloud',
                                                       'KeystoneURL'))
 
+    def test_no_ips(self):
+        for output in self.outputs_data['outputs']:
+            if output['output_key'] == 'RoleNetIpMap':
+                output['output_value'] = dict(Controller=dict(ctlplane=[]))
+        self.assertRaises(Exception, self.inventory.list)  # noqa: H202
+
     def test_outputs_invalid_key_raises_keyerror(self):
         self.assertRaises(KeyError, lambda: self.outputs['Invalid'])
 
