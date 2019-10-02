@@ -1,0 +1,21 @@
+---
+- hosts: nova_discovery_nodes
+  gather_facts: True
+  vars:
+    container_name: "{{ nova_host_discovery_container }}"
+  tasks:
+    - block:
+      - name: Check if discovery container exist
+        shell: docker ps | grep {{ container_name }}$
+        register: is_discovery_container_running
+        ignore_errors: True
+      - name: Set fact discover_hosts
+        set_fact:
+          discover_hosts: "{{ is_discovery_container_running.rc == 0 }}"
+    - name: Discovering nova hosts
+      command: docker exec {{ container_name }} nova-manage cell_v2 discover_hosts --by-service
+      become: true
+      changed_when: false
+      delegate_to: '{{ groups[''nova_discovery_nodes''][0] }}'
+      when:
+        - discover_hosts|bool
