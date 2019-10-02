@@ -210,6 +210,9 @@ class TripleoInventory(object):
                               for n in names]
                 # Create a group per hostname to map hostname to IP
                 ips = role_net_ip_map[role][self.host_network]
+                if not ips:
+                    raise Exception("No IPs found for %s role on %s network"
+                                    % (role, self.host_network))
                 hosts = {}
                 for idx, name in enumerate(shortnames):
                     hosts[name] = {}
