@@ -222,6 +222,9 @@ class TripleoInventory(object):
                 shortnames = [n.split(".%s." % self.host_network)[0].lower()
                               for n in names]
                 ips = role_net_ip_map[role][self.host_network]
+                if not ips:
+                    raise Exception("No IPs found for %s role on %s network"
+                                    % (role, self.host_network))
                 hosts = {}
                 for idx, name in enumerate(shortnames):
                     hosts[name] = {}
