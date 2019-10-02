@@ -31,7 +31,6 @@ import subprocess
 import tempfile
 import tenacity
 import threading
-import time
 import yaml
 
 from oslo_concurrency import processutils
@@ -1128,10 +1127,10 @@ class PythonImageUploader(BaseImageUploader):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10)
     )
     def _layer_fetch_lock(cls, layer):
-        LOG.debug('[%s] Locking layer' % layer)
-        while layer in cls.uploader_lock_info:
+        if layer in cls.uploader_lock_info:
             LOG.debug('[%s] Layer is being fetched by another thread' % layer)
-            time.sleep(0.5)
+            raise ImageUploaderThreadException('layer being fetched')
+        LOG.debug('[%s] Locking layer' % layer)
         LOG.debug('[%s] Starting acquire for lock' % layer)
         with cls.uploader_lock:
             if layer in cls.uploader_lock_info:
