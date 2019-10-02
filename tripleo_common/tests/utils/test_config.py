@@ -519,6 +519,40 @@ class TestConfig(base.TestCase):
 
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    def test_config_download_warn_grandparent_resource_name(
+        self, mock_deployment_data, mock_deployment_resource_id,
+        mock_git_init):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+        stack = mock.MagicMock()
+        heat.stacks.get.return_value = stack
+        heat.resources.get.return_value = mock.MagicMock()
+
+        deployment_data, _ = self._get_config_data('config_data.yaml')
+
+        # Set the name of the deployment to an integer to trigger looking up
+        # the grandparent resource name
+        deployment_data[0].attributes['value']['name'] = 1
+        self.deployments = deployment_data
+
+        mock_deployment_data.return_value = deployment_data
+        mock_deployment_resource_id.side_effect = self._get_deployment_id
+
+        self.tmp_dir = self.useFixture(fixtures.TempDir()).path
+        with warnings.catch_warnings(record=True) as w:
+            self.assertRaises(ValueError,
+                              self.config.download_config, stack, self.tmp_dir)
+            self.assertGreaterEqual(len(w), 1)
+            self.assertGreaterEqual(len([x for x in w
+                                         if "grandparent"
+                                         in str(x.message)]),
+                                    1)
+
+        mock_git_init.assert_called_once_with(self.tmp_dir)
+
+    @patch.object(ooo_config.Config, 'initialize_git_repo')
+    @patch('tripleo_common.utils.config.Config.get_deployment_resource_id')
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
     def test_config_download_no_deployment_uuid(self, mock_deployment_data,
