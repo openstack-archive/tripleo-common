@@ -1315,7 +1315,8 @@ class TestPythonImageUploader(base.TestCase):
             source_session=source_session,
             target_session=target_session,
             source_layers=['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
-            multi_arch=False
+            multi_arch=False,
+            lock=None
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1549,7 +1550,8 @@ class TestPythonImageUploader(base.TestCase):
             source_session=source_session,
             target_session=target_session,
             source_layers=['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
-            multi_arch=False
+            multi_arch=False,
+            lock=None
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1680,7 +1682,8 @@ class TestPythonImageUploader(base.TestCase):
             source_session=source_session,
             target_session=target_session,
             source_layers=['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
-            multi_arch=False
+            multi_arch=False,
+            lock=None
         )
         _copy_registry_to_local.assert_called_once_with(unmodified_target_url)
         run_modify_playbook.assert_called_once_with(
