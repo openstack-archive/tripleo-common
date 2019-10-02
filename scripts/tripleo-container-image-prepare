@@ -22,6 +22,7 @@ import sys
 from tripleo_common import constants
 from tripleo_common.image import image_uploader
 from tripleo_common.image import kolla_builder
+from tripleo_common.utils.locks import processlock
 import yaml
 
 
@@ -130,8 +131,10 @@ if __name__ == '__main__':
         env = yaml.safe_load(f)
 
     try:
+        lock = processlock.ProcessLock()
         params = kolla_builder.container_images_prepare_multi(
-            env, roles_data, cleanup=args.cleanup, dry_run=args.dry_run)
+            env, roles_data, cleanup=args.cleanup, dry_run=args.dry_run,
+            lock=lock)
         result = yaml.safe_dump(params, default_flow_style=False)
         log.info(result)
         print(result)

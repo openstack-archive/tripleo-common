@@ -26,6 +26,7 @@ import yaml
 
 from tripleo_common.image import base
 from tripleo_common.image import image_uploader
+from tripleo_common.utils.locks import threadinglock
 
 CONTAINER_IMAGE_PREPARE_PARAM_STR = None
 
@@ -131,7 +132,8 @@ def set_neutron_driver(pd, mapping_args):
 
 
 def container_images_prepare_multi(environment, roles_data, dry_run=False,
-                                   cleanup=image_uploader.CLEANUP_FULL):
+                                   cleanup=image_uploader.CLEANUP_FULL,
+                                   lock=None):
     """Perform multiple container image prepares and merge result
 
     Given the full heat environment and roles data, perform multiple image
@@ -142,9 +144,13 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
 
     :param environment: Heat environment for deployment
     :param roles_data: Roles file data used to filter services
+    :param lock: a locking object to use when handling uploads
     :returns: dict containing merged container image parameters from all
               prepare operations
     """
+
+    if not lock:
+        lock = threadinglock.ThreadingLock()
 
     pd = environment.get('parameter_defaults', {})
     cip = pd.get('ContainerImagePrepare')
@@ -200,7 +206,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             modify_only_with_labels=modify_only_with_labels,
             mirrors=mirrors,
             registry_credentials=creds,
-            multi_arch=multi_arch
+            multi_arch=multi_arch,
+            lock=lock
         )
         env_params.update(prepare_data['image_params'])
 
@@ -215,7 +222,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
                     cleanup=cleanup,
                     mirrors=mirrors,
                     registry_credentials=creds,
-                    multi_arch=multi_arch
+                    multi_arch=multi_arch,
+                    lock=lock
                 )
                 uploader.upload()
     return env_params
@@ -239,7 +247,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              append_tag=None, modify_role=None,
                              modify_vars=None, modify_only_with_labels=None,
                              mirrors=None, registry_credentials=None,
-                             multi_arch=False):
+                             multi_arch=False, lock=None):
     """Perform container image preparation
 
     :param template_file: path to Jinja2 file containing all image entries
@@ -273,12 +281,17 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                                  value.
     :param multi_arch: boolean whether to prepare every architecture of
                        each image
+
+    :param lock: a locking object to use when handling uploads
     :returns: dict with entries for the supplied output_env_file or
               output_images_file
     """
 
     if mapping_args is None:
         mapping_args = {}
+
+    if not lock:
+        lock = threadinglock.ThreadingLock()
 
     def ffunc(entry):
         imagename = entry.get('imagename', '')
@@ -305,7 +318,8 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     manager = image_uploader.ImageUploadManager(
         mirrors=mirrors,
         registry_credentials=registry_credentials,
-        multi_arch=multi_arch
+        multi_arch=multi_arch,
+        lock=lock
     )
     uploader = manager.uploader('python')
     images = [i.get('imagename', '') for i in result]

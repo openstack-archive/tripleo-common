@@ -1026,6 +1026,7 @@ class TestPrepare(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.ImageUploadManager',
                 autospec=True)
     def test_container_images_prepare_multi(self, mock_im, mock_cip):
+        mock_lock = mock.MagicMock()
         mapping_args = {
             'namespace': 't',
             'name_prefix': '',
@@ -1079,7 +1080,8 @@ class TestPrepare(base.TestCase):
             },
         ]
 
-        image_params = kb.container_images_prepare_multi(env, roles_data)
+        image_params = kb.container_images_prepare_multi(env, roles_data,
+                                                         lock=mock_lock)
 
         mock_cip.assert_has_calls([
             mock.call(
@@ -1102,7 +1104,8 @@ class TestPrepare(base.TestCase):
                 registry_credentials={
                     'docker.io': {'my_username': 'my_password'}
                 },
-                multi_arch=False
+                multi_arch=False,
+                lock=mock_lock
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -1124,7 +1127,8 @@ class TestPrepare(base.TestCase):
                 registry_credentials={
                     'docker.io': {'my_username': 'my_password'}
                 },
-                multi_arch=False
+                multi_arch=False,
+                lock=mock_lock
             )
         ])
 
@@ -1144,6 +1148,7 @@ class TestPrepare(base.TestCase):
     @mock.patch('tripleo_common.image.image_uploader.ImageUploadManager',
                 autospec=True)
     def test_container_images_prepare_multi_dry_run(self, mock_im, mock_cip):
+        mock_lock = mock.MagicMock()
         mapping_args = {
             'namespace': 't',
             'name_prefix': '',
@@ -1192,7 +1197,8 @@ class TestPrepare(base.TestCase):
             },
         ]
 
-        image_params = kb.container_images_prepare_multi(env, roles_data, True)
+        image_params = kb.container_images_prepare_multi(env, roles_data, True,
+                                                         lock=mock_lock)
 
         mock_cip.assert_has_calls([
             mock.call(
@@ -1211,7 +1217,8 @@ class TestPrepare(base.TestCase):
                 modify_vars=None,
                 mirrors={},
                 registry_credentials=None,
-                multi_arch=False
+                multi_arch=False,
+                lock=mock_lock
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -1229,13 +1236,14 @@ class TestPrepare(base.TestCase):
                 modify_vars={'foo_version': '1.0.1'},
                 mirrors={},
                 registry_credentials=None,
-                multi_arch=False
+                multi_arch=False,
+                lock=mock_lock
             )
         ])
 
         mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full',
                                         mirrors={}, registry_credentials=None,
-                                        multi_arch=False)
+                                        multi_arch=False, lock=mock_lock)
 
         self.assertEqual(
             {

@@ -30,7 +30,6 @@ from six.moves.urllib import parse
 import subprocess
 import tempfile
 import tenacity
-import threading
 import yaml
 
 from oslo_concurrency import processutils
@@ -41,6 +40,7 @@ from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image.exception import ImageUploaderThreadException
 from tripleo_common.image import image_export
+from tripleo_common.utils.locks import threadinglock
 
 
 LOG = logging.getLogger(__name__)
@@ -148,13 +148,13 @@ class ImageUploadManager(BaseImageManager):
     def __init__(self, config_files=None,
                  dry_run=False, cleanup=CLEANUP_FULL,
                  mirrors=None, registry_credentials=None,
-                 multi_arch=False):
+                 multi_arch=False, lock=None):
         if config_files is None:
             config_files = []
         super(ImageUploadManager, self).__init__(config_files)
         self.uploaders = {
             'skopeo': SkopeoImageUploader(),
-            'python': PythonImageUploader()
+            'python': PythonImageUploader(lock)
         }
         self.dry_run = dry_run
         self.cleanup = cleanup
@@ -167,6 +167,7 @@ class ImageUploadManager(BaseImageManager):
             for uploader in self.uploaders.values():
                 uploader.registry_credentials = registry_credentials
         self.multi_arch = multi_arch
+        self.lock = lock
 
     @staticmethod
     def validate_registry_credentials(creds_data):
@@ -239,7 +240,7 @@ class ImageUploadManager(BaseImageManager):
             tasks.append(UploadTask(
                 image_name, pull_source, push_destination,
                 append_tag, modify_role, modify_vars, self.dry_run,
-                self.cleanup, multi_arch))
+                self.cleanup, multi_arch, self.lock))
 
         # NOTE(mwhahaha): We want to randomize the upload process because of
         # the shared nature of container layers. Because we multiprocess the
@@ -271,12 +272,13 @@ class BaseImageUploader(object):
     export_registries = set()
     push_registries = set()
 
-    def __init__(self):
+    def __init__(self, lock=None):
         self.upload_tasks = []
         # A mapping of layer hashs to the image which first copied that
         # layer to the target
         self.image_layers = {}
         self.registry_credentials = {}
+        self.lock = lock
 
     @classmethod
     def init_registries_cache(cls):
@@ -1114,39 +1116,42 @@ class SkopeoImageUploader(BaseImageUploader):
 class PythonImageUploader(BaseImageUploader):
     """Upload images using a direct implementation of the registry API"""
 
-    uploader_lock = threading.Lock()
-    uploader_lock_info = set()
-
     @classmethod
     @tenacity.retry(  # Retry until we no longer have collisions
         retry=tenacity.retry_if_exception_type(ImageUploaderThreadException),
         wait=tenacity.wait_random_exponential(multiplier=1, max=10)
     )
-    def _layer_fetch_lock(cls, layer):
-        if layer in cls.uploader_lock_info:
+    def _layer_fetch_lock(cls, layer, lock=None):
+        if not lock:
+            LOG.warning('No lock information provided for layer %s' % layer)
+            return
+        if layer in lock.objects():
             LOG.debug('[%s] Layer is being fetched by another thread' % layer)
             raise ImageUploaderThreadException('layer being fetched')
-        LOG.debug('[%s] Locking layer' % layer)
-        LOG.debug('[%s] Starting acquire for lock' % layer)
-        with cls.uploader_lock:
-            if layer in cls.uploader_lock_info:
-                LOG.debug('[%s] Collision for lock' % layer)
+        LOG.debug('Locking layer %s' % layer)
+        LOG.debug('Starting acquire for lock %s' % layer)
+        with lock.get_lock():
+            if layer in lock.objects():
+                LOG.debug('Collision for lock %s' % layer)
                 raise ImageUploaderThreadException('layer conflict')
-            LOG.debug('[%s] Acquired for lock' % layer)
-            cls.uploader_lock_info.add(layer)
-            LOG.debug('[%s] Updated lock info' % layer)
-        LOG.debug('[%s] Got lock on layer' % layer)
+            LOG.debug('Acquired for lock %s' % layer)
+            lock.objects().append(layer)
+            LOG.debug('Updated lock info %s' % layer)
+        LOG.debug('Got lock on layer %s' % layer)
 
     @classmethod
-    def _layer_fetch_unlock(cls, layer):
-        LOG.debug('[%s] Unlocking layer' % layer)
-        LOG.debug('[%s] Starting acquire for lock' % layer)
-        with cls.uploader_lock:
-            LOG.debug('[%s] Acquired for unlock' % layer)
-            if layer in cls.uploader_lock_info:
-                cls.uploader_lock_info.remove(layer)
-            LOG.debug('[%s] Updated lock info' % layer)
-        LOG.debug('[%s] Released lock on layer' % layer)
+    def _layer_fetch_unlock(cls, layer, lock=None):
+        if not lock:
+            LOG.warning('No lock information provided for layer %s' % layer)
+            return
+        LOG.debug('Unlocking layer %s' % layer)
+        LOG.debug('Starting acquire for lock %s' % layer)
+        with lock.get_lock():
+            LOG.debug('Acquired for unlock %s' % layer)
+            if layer in lock.objects():
+                lock.objects().remove(layer)
+            LOG.debug('Updated lock info %s' % layer)
+        LOG.debug('Released lock on layer %s' % layer)
 
     def upload_image(self, task):
         """Upload image from a task
@@ -1171,6 +1176,8 @@ class PythonImageUploader(BaseImageUploader):
                                                 t.target_image)
         if t.dry_run:
             return []
+
+        lock = t.lock
 
         target_username, target_password = self.credentials_for_registry(
             t.target_image_url.netloc)
@@ -1262,7 +1269,8 @@ class PythonImageUploader(BaseImageUploader):
                 source_session=source_session,
                 target_session=target_session,
                 source_layers=source_layers,
-                multi_arch=t.multi_arch
+                multi_arch=t.multi_arch,
+                lock=lock
             )
         except Exception:
             LOG.error('[%s] Failed uploading the target '
@@ -1478,19 +1486,20 @@ class PythonImageUploader(BaseImageUploader):
     def _copy_layer_registry_to_registry(cls, source_url, target_url,
                                          layer,
                                          source_session=None,
-                                         target_session=None):
+                                         target_session=None,
+                                         lock=None):
         layer_entry = {'digest': layer}
         cls._layer_fetch_lock(layer)
         try:
             if cls._target_layer_exists_registry(
                     target_url, layer_entry, [layer_entry], target_session):
-                cls._layer_fetch_unlock(layer)
+                cls._layer_fetch_unlock(layer, lock)
                 return
         except ImageUploaderThreadException:
             # skip trying to unlock, because that's what threw the exception
             raise
         except Exception:
-            cls._layer_fetch_unlock(layer)
+            cls._layer_fetch_unlock(layer, lock)
             raise
 
         digest = layer_entry['digest']
@@ -1508,7 +1517,7 @@ class PythonImageUploader(BaseImageUploader):
         else:
             return layer_val
         finally:
-            cls._layer_fetch_unlock(layer)
+            cls._layer_fetch_unlock(layer, lock)
 
     @classmethod
     def _assert_scheme(cls, url, scheme):
@@ -1530,7 +1539,8 @@ class PythonImageUploader(BaseImageUploader):
                                    source_session=None,
                                    target_session=None,
                                    source_layers=None,
-                                   multi_arch=False):
+                                   multi_arch=False,
+                                   lock=None):
         cls._assert_scheme(source_url, 'docker')
         cls._assert_scheme(target_url, 'docker')
 
@@ -1552,7 +1562,8 @@ class PythonImageUploader(BaseImageUploader):
                         source_url, target_url,
                         layer=layer,
                         source_session=source_session,
-                        target_session=target_session
+                        target_session=target_session,
+                        lock=lock
                     ))
 
             jobs_count = len(copy_jobs)
@@ -2053,6 +2064,24 @@ class PythonImageUploader(BaseImageUploader):
             image_url = parse.urlparse('containers-storage:%s' % image)
             self._delete(image_url)
 
+    def _get_executor(self):
+        """Get executor type based on lock object
+
+        We check to see if the lock object is not set or if it is a threading
+        lock. We cannot check if it is a ProcessLock due to the side effect
+        of trying to include ProcessLock when running under Mistral breaks
+        Mistral.
+        """
+        if not self.lock or isinstance(self.lock, threadinglock.ThreadingLock):
+            # workers will scale from 2 to 8 based on the cpu count // 2
+            workers = min(max(2, processutils.get_worker_count() // 2), 8)
+            return futures.ThreadPoolExecutor(max_workers=workers)
+        else:
+            # there really isn't an improvement with > 4 workers due to the
+            # container layer overlaps. The higher the workers, the more
+            # RAM required which can lead to OOMs. It's best to limit to 4
+            return futures.ProcessPoolExecutor(max_workers=4)
+
     def run_tasks(self):
         if not self.upload_tasks:
             return
@@ -2062,9 +2091,7 @@ class PythonImageUploader(BaseImageUploader):
         # same base layers
         local_images.extend(upload_task(args=self.upload_tasks.pop()))
 
-        # workers will be half the CPU, with a minimum of 2
-        workers = max(2, processutils.get_worker_count() // 2)
-        with futures.ThreadPoolExecutor(max_workers=workers) as p:
+        with self._get_executor() as p:
             for result in p.map(upload_task, self.upload_tasks):
                 local_images.extend(result)
             LOG.info('result %s' % local_images)
@@ -2078,7 +2105,7 @@ class UploadTask(object):
 
     def __init__(self, image_name, pull_source, push_destination,
                  append_tag, modify_role, modify_vars, dry_run, cleanup,
-                 multi_arch):
+                 multi_arch, lock=None):
         self.image_name = image_name
         self.pull_source = pull_source
         self.push_destination = push_destination
@@ -2088,6 +2115,7 @@ class UploadTask(object):
         self.dry_run = dry_run
         self.cleanup = cleanup
         self.multi_arch = multi_arch
+        self.lock = lock
 
         if ':' in image_name:
             image = image_name.rpartition(':')[0]
