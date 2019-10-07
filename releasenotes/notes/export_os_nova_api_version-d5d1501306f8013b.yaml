@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    openstack cli doesn't negotiate a microversion. Live migration and
+    multiattach are 2 examples of operations which require arcane incantations
+    to make them work correctly, and therefore usually don't.
+    This adds ``OS_COMPUTE_API_VERSION=2.latest`` to the overcloudrc file to
+    fix it.
