@@ -67,6 +67,14 @@ fi
 export ANSIBLE_HOST_KEY_CHECKING=False
 # Disable retry files until we find a good use and location for them
 export ANSIBLE_RETRY_FILES_ENABLED=False
+# Use a fact cache to improve performance
+# The defaults from tripleo_common/actions/ansible.py cannot be used
+# beause they will clash with the 'mistral' user owning the fact cache
+# path.
+export ANSIBLE_GATHERING=smart
+export ANSIBLE_CACHE_PLUGIN=jsonfile
+export ANSIBLE_CACHE_PLUGIN_CONNECTION=~/ansible_fact_cache
+export ANSIBLE_GATHER_TIMEOUT=7200 # 7200s = 2h
 # ANSIBLE_SUDO_FLAGS is deprecated in favor of become and will be removed in
 # version 2.8. We now have to use ANSIBLE_BECOME_FLAGS to pass Flags to the
 # privilege escalation sudo executable.

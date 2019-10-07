@@ -90,6 +90,15 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
 
+    # Setup fact cache to improve playbook execution speed
+    config.set('defaults', 'gathering', 'smart')
+    config.set('defaults', 'fact_caching', 'jsonfile')
+    config.set('defaults', 'fact_caching_connection',
+               '/var/tmp/ansible_fact_cache')
+
+    # Expire facts in the fact cache after 7200s (2h)
+    config.set('defaults', 'fact_caching_timeout', '7200')
+
     # mistral user has no home dir set, so no place to save a known hosts file
     config.set('ssh_connection', 'ssh_args',
                '-o UserKnownHostsFile=/dev/null '
