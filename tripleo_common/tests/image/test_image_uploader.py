@@ -93,49 +93,52 @@ class TestImageUploadManager(base.TestCase):
                                     key=operator.itemgetter('imagename'))
         self.assertEqual(sorted_expected_data, sorted_parsed_data)
 
-    @mock.patch('netifaces.ifaddresses')
-    @mock.patch('netifaces.interfaces')
-    def test_get_undercloud_registry(self, mock_interfaces, mock_addresses):
-        mock_interfaces.return_value = ['lo', 'eth0']
-        self.assertEqual(
-            'localhost:8787',
-            image_uploader.get_undercloud_registry()
-        )
+    @mock.patch('subprocess.Popen', autospec=True)
+    @mock.patch('socket.gethostname', return_value='uc.somedomain')
+    def test_get_undercloud_registry_ipv4(self, mock_gethostname,
+                                          mock_popen):
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = (
+            '192.0.2.1 uc.ctlplane.localdomain uc.ctlplane', '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        self.assertEqual('uc.ctlplane.localdomain:8787',
+                         image_uploader.get_undercloud_registry())
 
-        mock_interfaces.return_value = ['lo', 'eth0', 'br-ctlplane']
-        mock_addresses.return_value = {
-            2: [{'addr': '192.0.2.0'}]
-        }
-        self.assertEqual(
-            '192.0.2.0:8787',
-            image_uploader.get_undercloud_registry()
-        )
+    @mock.patch('subprocess.Popen', autospec=True)
+    @mock.patch('socket.gethostname', return_value='uc.somedomain')
+    def test_get_undercloud_registry_ipv6(self, mock_gethostname,
+                                          mock_popen):
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = (
+            'fd12::1 uc.ctlplane.localdomain uc.ctlplane', '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        self.assertEqual('uc.ctlplane.localdomain:8787',
+                         image_uploader.get_undercloud_registry())
 
-    @mock.patch('netifaces.ifaddresses')
-    @mock.patch('netifaces.interfaces')
-    @mock.patch('netifaces.AF_INET6', 10)
-    def test_get_undercloud_registry_ipv6(self, mock_interfaces,
-                                          mock_addresses):
+    @mock.patch('subprocess.Popen', autospec=True)
+    @mock.patch('socket.gethostname', return_value='undercloud.somedomain')
+    def test_get_undercloud_registry_no_etc_hosts(self, mock_gethostname,
+                                                  mock_popen):
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = ('', '')
+        mock_process.returncode = 2
+        mock_popen.return_value = mock_process
+        self.assertRaises(ImageUploaderException,
+                          image_uploader.get_undercloud_registry)
 
-        mock_interfaces.return_value = ['lo', 'eth0', 'br-ctlplane']
-        mock_addresses.return_value = {
-            10: [{'addr': 'fd12:3456:789a:1::1'}]
-        }
-        self.assertEqual(
-            '[fd12:3456:789a:1::1]:8787',
-            image_uploader.get_undercloud_registry()
-        )
-
-    @mock.patch('netifaces.ifaddresses')
-    @mock.patch('netifaces.interfaces')
-    def test_get_push_destination(self, mock_interfaces, mock_addresses):
-        mock_interfaces.return_value = ['lo', 'eth0', 'br-ctlplane']
-        mock_addresses.return_value = {
-            2: [{'addr': '192.0.2.0'}]
-        }
+    @mock.patch('subprocess.Popen', autospec=True)
+    @mock.patch('socket.gethostname', return_value='undercloud.somedomain')
+    def test_get_push_destination(self, mock_gethostname, mock_popen):
+        mock_process = mock.Mock()
+        mock_process.communicate.return_value = (
+            'fd12::1 uc.ctlplane.localdomain uc.ctlplane', '')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
         manager = image_uploader.ImageUploadManager(self.filelist)
         self.assertEqual(
-            '192.0.2.0:8787',
+            'uc.ctlplane.localdomain:8787',
             manager.get_push_destination({})
         )
         self.assertEqual(
@@ -144,15 +147,15 @@ class TestImageUploadManager(base.TestCase):
                                           '192.0.2.1:8787'})
         )
         self.assertEqual(
-            '192.0.2.0:8787',
+            'uc.ctlplane.localdomain:8787',
             manager.get_push_destination({'push_destination': False})
         )
         self.assertEqual(
-            '192.0.2.0:8787',
+            'uc.ctlplane.localdomain:8787',
             manager.get_push_destination({'push_destination': True})
         )
         self.assertEqual(
-            '192.0.2.0:8787',
+            'uc.ctlplane.localdomain:8787',
             manager.get_push_destination({'push_destination': None})
         )
 

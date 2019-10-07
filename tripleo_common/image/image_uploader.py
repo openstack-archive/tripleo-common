@@ -17,7 +17,6 @@ import base64
 from concurrent import futures
 import hashlib
 import json
-import netifaces
 import os
 import random
 import re
@@ -27,6 +26,7 @@ from requests.adapters import HTTPAdapter
 import shutil
 import six
 from six.moves.urllib import parse
+import socket
 import subprocess
 import tempfile
 import tenacity
@@ -40,7 +40,6 @@ from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image.exception import ImageUploaderThreadException
 from tripleo_common.image import image_export
-from tripleo_common.utils import common as common_utils
 from tripleo_common.utils.locks import threadinglock
 
 
@@ -99,15 +98,19 @@ DEFAULT_UPLOADER = 'python'
 
 
 def get_undercloud_registry():
-    addr = 'localhost'
-    if 'br-ctlplane' in netifaces.interfaces():
-        addrs = netifaces.ifaddresses('br-ctlplane')
-        if netifaces.AF_INET in addrs and addrs[netifaces.AF_INET]:
-            addr = addrs[netifaces.AF_INET][0].get('addr', 'localhost')
-        elif netifaces.AF_INET6 in addrs and addrs[netifaces.AF_INET6]:
-            addr = addrs[netifaces.AF_INET6][0].get('addr', 'localhost')
+    ctlplane_hostname = '.'.join([socket.gethostname().split('.')[0],
+                                  'ctlplane'])
+    cmd = ['getent', 'hosts', ctlplane_hostname]
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    out, err = process.communicate()
 
-    return '%s:%s' % (common_utils.bracket_ipv6(addr), '8787')
+    if process.returncode != 0:
+        raise ImageUploaderException('No entry for %s in /etc/hosts'
+                                     % ctlplane_hostname)
+
+    address = out.split()[1]
+
+    return '%s:%s' % (address, '8787')
 
 
 class MakeSession(object):
