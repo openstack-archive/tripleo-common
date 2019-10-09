@@ -19,4 +19,4 @@ import threading
 class ThreadingLock(base.BaseLock):
     def __init__(self):
         self._lock = threading.Lock()
-        self._objects = set()
+        self._objects = []
