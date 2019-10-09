@@ -1,0 +1,5 @@
+---
+deprecations:
+  - |
+    The SkopeoImageUploader is deprecated. It does not work with the Stein
+    image repository and will be removed in a future release.
