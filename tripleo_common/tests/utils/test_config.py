@@ -397,6 +397,34 @@ class TestConfig(base.TestCase):
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "group:os-apply-config is deprecated" in str(w[-1].message)
 
+    @patch('tripleo_common.utils.config.Config.get_deployment_data')
+    def test_config_download_warn_grandparent_resource_name(
+            self, mock_deployment_data):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+        stack = mock.MagicMock()
+        heat.stacks.get.return_value = stack
+        heat.resources.get.return_value = mock.MagicMock()
+
+        deployment_data, _ = self._get_config_data('config_data.yaml')
+
+        # Set the name of the deployment to an integer to trigger looking up
+        # the grandparent resource name
+        deployment_data[0].attributes['value']['name'] = 1
+        self.deployments = deployment_data
+
+        mock_deployment_data.return_value = deployment_data
+
+        self.tmp_dir = self.useFixture(fixtures.TempDir()).path
+        with warnings.catch_warnings(record=True) as w:
+            self.assertRaises(ValueError,
+                              self.config.download_config, stack, self.tmp_dir)
+            self.assertGreaterEqual(len(w), 1)
+            self.assertGreaterEqual(len([x for x in w
+                                         if "grandparent"
+                                         in str(x.message)]),
+                                    1)
+
     @patch('tripleo_common.utils.config.Config.get_config_dict')
     @patch('tripleo_common.utils.config.Config.get_deployment_data')
     def test_config_download_no_deployment_uuid(self, mock_deployment_data,
