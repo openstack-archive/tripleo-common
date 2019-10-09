@@ -303,6 +303,11 @@ class Config(object):
                 # We can't have an integer here, let's figure out the
                 # grandparent resource name
                 deployment_ref = deployment.attributes['value']['deployment']
+                warnings.warn('Determining grandparent resource name for '
+                              'deployment %s. Ensure the name property is '
+                              'set on the deployment resource in the '
+                              'templates.' % deployment_ref)
+
                 if '/' in deployment_ref:
                     deployment_stack_id = deployment_ref.split('/')[-1]
                 else:
