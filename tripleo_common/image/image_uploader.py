@@ -1146,7 +1146,7 @@ class PythonImageUploader(BaseImageUploader):
         LOG.debug('Starting acquire for lock %s' % layer)
         with lock.get_lock():
             LOG.debug('Acquired for unlock %s' % layer)
-            if layer in lock.objects():
+            while layer in lock.objects():
                 lock.objects().remove(layer)
             LOG.debug('Updated lock info %s' % layer)
         LOG.debug('Released lock on layer %s' % layer)
