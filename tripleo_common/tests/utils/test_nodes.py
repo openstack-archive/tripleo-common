@@ -353,6 +353,33 @@ class NodesTest(base.TestCase):
         ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
         ironic.port.create.assert_has_calls([port_call])
 
+    def test_register_all_nodes_with_platform(self):
+        node_list = [self._get_node()]
+        node_list[0]['root_device'] = {"serial": "abcdef"}
+        node_properties = {"cpus": "1",
+                           "memory_mb": "2048",
+                           "local_gb": "30",
+                           "cpu_arch": "amd64",
+                           "capabilities": "num_nics:6",
+                           "root_device": {"serial": "abcdef"}}
+        node_list[0].update({'platform': 'SNB'})
+        node_extra = {"tripleo_platform": "SNB"}
+        ironic = mock.MagicMock()
+        nodes.register_all_nodes(node_list, client=ironic)
+        pxe_node_driver_info = {"ipmi_address": "foo.bar",
+                                "ipmi_username": "test",
+                                "ipmi_password": "random"}
+        pxe_node = mock.call(driver="ipmi",
+                             name='node1',
+                             driver_info=pxe_node_driver_info,
+                             resource_class='baremetal',
+                             properties=node_properties,
+                             extra=node_extra)
+        port_call = mock.call(node_uuid=ironic.node.create.return_value.uuid,
+                              address='aaa', physical_network='ctlplane')
+        ironic.node.create.assert_has_calls([pxe_node, mock.ANY])
+        ironic.port.create.assert_has_calls([port_call])
+
     def test_register_all_nodes_kernel_ramdisk(self):
         node_list = [self._get_node()]
         node_properties = {"cpus": "1",
@@ -540,7 +567,7 @@ class NodesTest(base.TestCase):
                 {'path': '/properties/cpu_arch', 'value': 'amd64'},
                 {'path': '/properties/cpus', 'value': '1'},
                 {'path': '/properties/capabilities',
-                 'value': 'num_nics:6,profile:compute'},
+                 'value': {'num_nics': 6, 'profile': 'compute'}},
                 {'path': '/properties/root_device',
                  'value': {'serial': 'abcdef'}},
                 {'path': '/driver_info/ipmi_username', 'value': 'test'}]
@@ -999,6 +1026,12 @@ VALID_NODE_JSON = [
      'pm_user': 'root',
      'pm_password': 'foobar',
      'pm_system_id': '/redfish/v1/Systems/1'},
+    {'pm_type': 'ipmi',
+     'pm_addr': '1.1.1.1',
+     'pm_user': 'root',
+     'pm_password': 'p@$$w0rd',
+     'arch': 'x86_64',
+     'platform': 'SNB'},
 ]
 
 
@@ -1117,6 +1150,20 @@ class TestValidateNodes(base.TestCase):
             self.assertRaisesRegex(exception.InvalidNode,
                                    'fields are missing: %s' % field,
                                    nodes.validate_nodes, nodes_json)
+
+    def test_missing_arch_with_platform_fail(self):
+        nodes_json = [
+            {'pm_type': 'ipmi',
+             'pm_addr': '1.1.1.1',
+             'pm_user': 'root',
+             'pm_password': 'p@$$w0rd',
+             'platform': 'SNB'},
+        ]
+
+        msg = 'You have specified a platform without an architecture'
+        self.assertRaisesRegex(exception.InvalidNode,
+                               msg,
+                               nodes.validate_nodes, nodes_json)
 
     def test_ipmi_missing_user_ok(self):
         nodes_json = [

@@ -369,6 +369,11 @@ def register_ironic_node(node, client):
                   for k, v in mapping.items()
                   if node.get(v) is not None}
 
+    extra = {}
+    platform = node.get('platform')
+    if platform:
+        extra = dict(tripleo_platform=platform)
+
     if 'capabilities' in node:
         caps = node['capabilities']
         if isinstance(caps, dict):
@@ -380,6 +385,8 @@ def register_ironic_node(node, client):
                   "driver_info": driver_info,
                   "resource_class": resource_class}
     create_map.update(interface_fields)
+    if extra:
+        create_map["extra"] = extra
 
     for field in ('name', 'uuid'):
         if field in node:
@@ -454,8 +461,10 @@ _NON_DRIVER_FIELDS = {'cpu': '/properties/cpus',
                       'name': '/name',
                       'resource_class': '/resource_class',
                       'kernel_id': '/driver_info/deploy_kernel',
-                      'ramdisk_id': '/driver_info/deploy_ramdisk'}
-
+                      'ramdisk_id': '/driver_info/deploy_ramdisk',
+                      'capabilities': '/properties/capabilities',
+                      'platform': '/extra/tripleo_platform',
+                      }
 
 _NON_DRIVER_FIELDS.update({field: '/%s' % field
                            for field in _KNOWN_INTERFACE_FIELDS})
@@ -593,6 +602,11 @@ def validate_nodes(nodes_list):
                     (index, 'Name "%s" is not unique' % node['name']))
             else:
                 names.add(node['name'])
+
+        if node.get('platform') and not node.get('arch'):
+            failures.append(
+                (index,
+                 'You have specified a platform without an architecture'))
 
         try:
             capabilities_to_dict(node.get('capabilities'))
