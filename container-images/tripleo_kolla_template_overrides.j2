@@ -1,13 +1,13 @@
 {% extends parent_template %}
+{# ======================= HEADERS ====================== #}
+
+{# base #}
 
 # add ENV for container=oci
 # https://lists.projectatomic.io/projectatomic-archives/atomic-devel/2017-April/msg00011.html
 {% block base_header %}ENV container=oci{% endblock %}
 
-# Disable external repos
-{% set base_yum_repo_files_override = [] %}
-{% set base_yum_url_packages_override = [] %}
-{% set base_yum_repo_keys_override = [] %}
+{# opendaylight #}
 
 # Enable ODL repo in ODL Dockerfile
 {% block opendaylight_header %}
@@ -22,166 +22,46 @@ enabled=1\n\
 gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% endblock %}
 
+{# ======================= PACKAGES ====================== #}
+
+{# base #}
+
+# Disable external repos
+{% set base_yum_repo_files_override = [] %}
+{% set base_yum_url_packages_override = [] %}
+{% set base_yum_repo_keys_override = [] %}
+
+{% block dumb_init_installation %}{% endblock %}
+
 # Remove EPEL and the dependencies requiring it
-{% set base_centos_yum_repo_packages_remove = ['epel-release', 'centos-release-ceph-jewel', 'centos-release-ceph-luminous'] %}
-{% set base_centos_yum_repo_packages_append = ['centos-release-ceph-nautilus', 'centos-release-opstools'] %}
+{% set base_centos_yum_repo_packages_remove = [
+    'centos-release-ceph-jewel',
+    'centos-release-ceph-luminous',
+    'epel-release'
+] %}
+{% set base_centos_yum_repo_packages_append = [
+    'centos-release-ceph-nautilus',
+    'centos-release-opstools'
+] %}
+
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
-{% set cinder_volume_packages_remove = ['scsi-target-utils'] %}
-{% set ironic_conductor_packages_remove = ['shellinabox'] %}
-{% if distro_python_version.startswith('3') %}
-{% set barbican_api_packages_remove = ['uwsgi-plugin-python3'] %}
-{% else %}
-{% set barbican_api_packages_remove = ['uwsgi-plugin-python'] %}
-{% endif %}
-# remove the block to override the behavior
-{% block cinder_volume_redhat_setup %}{% endblock %}
 
 # This installs the puppet dependency in the base container and includes helper scripts
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
-{% set base_centos_binary_packages_append = ['openstack-tripleo-common-container-base', 'rsync', 'cronie', 'crudini', 'puppet-tripleo'] %}
+# Override dumb-init installation
+{% set base_centos_binary_packages_append = [
+    'cronie',
+    'crudini',
+    'dumb-init',
+    'openstack-tripleo-common-container-base',
+    'puppet-tripleo',
+    'rsync'
+] %}
 
 {% if distro_python_version.startswith('3') %}
 # NOTE(aschultz): puppet-firewall throws errors when trying to query the rules
 {% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['iptables-services'] %}
-{% endif %}
-
-# Override dumb-init installation
-{% block dumb_init_installation %}{% endblock %}
-{% set base_centos_binary_packages_append = base_centos_binary_packages_append + ['dumb-init'] %}
-
-# This installs the novajoin package in the nova/mistral container images; This
-# is required for TLS everywhere, as config_drive will contain the cloud-init
-# script provided by the novajoin package in order to enroll the nodes to the
-# CA
-{% if distro_python_version.startswith('3') %}
-{% set nova_api_packages_append = ['python3-novajoin'] %}
-{% set nova_compute_ironic_packages_append = ['python3-novajoin'] %}
-{% set mistral_executor_packages_append = ['python3-novajoin'] %}
-{% else %}
-{% set nova_api_packages_append = ['python-novajoin'] %}
-{% set nova_compute_ironic_packages_append = ['python-novajoin'] %}
-{% set mistral_executor_packages_append = ['python-novajoin'] %}
-{% endif %}
-
-{% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
-
-# Required for mistral-db-populate to load tripleo custom actions on
-# the undercloud
-{% set mistral_base_packages_append = ['openstack-tripleo-common'] %}
-{% if distro_python_version.startswith('3') %}
-{% set mistral_base_packages_append = mistral_base_packages_append + [
-  'python3-shade',
-  'python3dist\(ansible\)',
-] %}
-{% else %}
-{% set mistral_base_packages_append = mistral_base_packages_append + [
-  'python-shade',
-  'ansible',
-] %}
-{% endif %}
-
-# NOTE: Mistral executor needs:
-#   openstack-tripleo-validations: validations
-#   nova-common: to run nova-manage cells_v2 commands on
-#   tripleo-heat-templates: to load the default plan from the CLI/UI
-#   ipmitool: for baremetal node discovery
-#   qemu-img: convert Octavia amphora qcow2 to raw
-{% set mistral_executor_packages_append = mistral_executor_packages_append + [
-  'openstack-tripleo-validations',
-  'openstack-nova-common',
-  'openstack-tripleo-heat-templates',
-  'ipmitool',
-  'qemu-img',
-] %}
-
-# FIXME (kolla review to add ceilometer to swift proxy image)
-# NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
-# NOTE(mandre) Apache cleanup done below in swift_proxy_server_footer block
-{% set swift_proxy_server_packages_append = ['openstack-ceilometer-common', 'httpd', 'mod_ssl'] %}
-
-# TODO(mwhahaha): drop this when swift is python3
-{% if base_distro_tag.startswith('8') %}
-{% set swift_proxy_server_packages_remove = ['python-ceilometermiddleware'] %}
-{% set swift_proxy_server_packages_append = swift_proxy_server_packages_append + ['python3-ceilometermiddleware'] %}
-{% endif %}
-
-# NOTE (jaosorior): glance-api with TLS everywhere needs these packages.
-# NOTE(mandre) Apache cleanup done below in glance_api_footer block
-{% set glance_api_packages_append = ['httpd', 'mod_ssl'] %}
-
-# NOTE (ratailor): ec2-api with TLS needs these packages.
-{% set ec2_api_packages_append = ['httpd', 'mod_ssl'] %}
-{% block ec2_api_footer %}
-RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
-    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
-    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
-{% endblock %}
-
-# NOTE (jaosorior): neutron-server with TLS everywhere needs httpd and mod_ssl packages.
-# NOTE (hjensas): python2-networking-baremetal ML2 plug-in for ironic neutron integration.
-# NOTE (ramishra): python2-networking-ansible ML2 plug-in for neutron ansible integration.
-{% set neutron_server_packages_append = [
-  'httpd',
-  'mod_ssl',
-] %}
-{% if distro_python_version.startswith('3') %}
-{% set neutron_server_packages_append = neutron_server_packages_append + [
-  'python3-networking-baremetal',
-  'python3-networking-ansible'
-] %}
-{% else %}
-{% set neutron_server_packages_append = neutron_server_packages_append + [
-  'python2-networking-baremetal',
-  'python2-networking-ansible'
-] %}
-{% endif %}
-
-{% block neutron_server_footer %}
-RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
-    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
-    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_neutron_extend_start; \
-    mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-api /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
-{% set neutron_metadata_agent_ovn_packages_append = ['podman', 'libseccomp'] %}
-{% set neutron_l3_agent_packages_append = ['podman', 'libseccomp'] %}
-# Kolla doesn't currently neutron_dhcp_agent_packages on CentOS so the append
-# isn't valid here.
-{% set neutron_dhcp_agent_packages = ['podman', 'libseccomp'] %}
-
-{% if distro_python_version.startswith('2') %}
-{% set neutron_metadata_agent_ovn_packages_append = neutron_metadata_agent_ovn_packages_append + ['docker'] %}
-{% set neutron_l3_agent_packages_append = neutron_l3_agent_packages_append + ['docker'] %}
-{% set neutron_dhcp_agent_packages = neutron_dhcp_agent_packages + ['docker'] %}
-{% endif %}
-
-{% if distro_python_version.startswith('3') %}
-{% set octavia_api_packages_append = ['python3-networking-ovn'] %}
-{% else %}
-{% set octavia_api_packages_append = ['python-networking-ovn'] %}
-{% endif %}
-
-# NOTE (jaosorior): redis with TLS everywhere needs these packages.
-# redis resource-agent requires pidof
-{% set redis_packages_append = [
-  'stunnel',
-  'pacemaker',
-  'pacemaker-remote',
-  'pcs',
-  'libqb',
-  'resource-agents'
-] %}
-{% if distro_python_version.startswith('3') %}
-{% set redis_packages_append = redis_packages_append + [
-  'procps-ng',
-] %}
-{% else %}
-{% set redis_packages_append = redis_packages_append + [
-  'sysvinit-tools',
-] %}
 {% endif %}
 
 # Remove packages not present in repos
@@ -195,7 +75,7 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'python3-muranoclient',
     'python3-pika',
     'python3-troveclient',
-    'python3-vitrageclient',
+    'python3-vitrageclient'
 ] %}
 {% else %}
 {% set openstack_base_packages_remove = [
@@ -205,10 +85,107 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'python-muranoclient',
     'python-troveclient',
     'python-vitrageclient',
-    'python2-pika',
+    'python2-pika'
 ] %}
 {% endif %}
 {% set openstack_base_packages_append = ['openstack-selinux'] %}
+
+
+{# barbican #}
+
+{% if distro_python_version.startswith('3') %}
+{% set barbican_api_packages_remove = ['uwsgi-plugin-python3'] %}
+{% else %}
+{% set barbican_api_packages_remove = ['uwsgi-plugin-python'] %}
+{% endif %}
+
+
+{# cinder #}
+
+{% set cinder_volume_packages_append = [
+    'libqb',
+    'pacemaker',
+    'pacemaker-remote',
+    'pcs',
+    'resource-agents'
+] %}
+{% set cinder_volume_packages_remove = ['scsi-target-utils'] %}
+
+
+{# ec2 api #}
+
+# NOTE (ratailor): ec2-api with TLS needs these packages.
+{% set ec2_api_packages_append = ['httpd', 'mod_ssl'] %}
+
+
+{# fluentd #}
+
+# NOTE(cloudnull): Remove "td-agent" packages and plugins from the fluentd container.
+{% set fluentd_packages_remove = ['td-agent'] %}
+{% set fluentd_packages_append = ['fluentd', 'hostname'] %}
+{% set fluentd_plugins_remove = [
+    'fluent-plugin-grep',
+    'fluent-plugin-grok-parser',
+    'fluent-plugin-kubernetes_metadata_filter',
+    'fluent-plugin-parser',
+    'fluent-plugin-rewrite-tag-filter',
+    'fluent-plugin-secure-forward'
+] %}
+
+# make sure no gems are installed
+{% block fluentd_plugins_install %}{% endblock %}
+{% block fluentd_monasca_plugin_install %}{% endblock %}
+
+
+{# glance #}
+
+# NOTE (jaosorior): glance-api with TLS everywhere needs these packages.
+# NOTE(mandre) Apache cleanup done below in glance_api_footer block
+{% set glance_api_packages_append = [
+    'httpd',
+    'mod_ssl'
+] %}
+
+
+{# haproxy #}
+
+{% set haproxy_packages_append = [
+    'libqb',
+    'pacemaker',
+    'pacemaker-remote',
+    'pcs',
+    'resource-agents'
+] %}
+
+
+{# horizon #}
+
+# Horizon dashboards we do not support
+# See LP#1767520
+{% set horizon_packages_remove = [
+    'openstack-cloudkitty-ui',
+    'openstack-murano-ui',
+    'openstack-trove-ui'
+] %}
+
+
+{# ironic #}
+
+{% set ironic_conductor_packages_remove = ['shellinabox'] %}
+
+
+{# manila #}
+
+{% set manila_share_packages_append = [
+    'libqb',
+    'pacemaker',
+    'pacemaker-remote',
+    'pcs',
+    'resource-agents'
+] %}
+
+
+{# mariadb #}
 
 # Use mariadb-server-galera and xinetd for galera and clustercheck
 {#  'pv'                  # EPEL
@@ -216,8 +193,199 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
 {% set mariadb_packages_remove = [
     'pv'
 ] %}
-{% set mariadb_packages_append = ['xinetd', 'pacemaker', 'pacemaker-remote',
-    'pcs', 'libqb', 'resource-agents'] %}
+{% set mariadb_packages_append = [
+    'libqb',
+    'pacemaker',
+    'pacemaker-remote',
+    'pcs',
+    'resource-agents',
+    'xinetd'
+] %}
+
+
+{# mistral #}
+
+# tripleo-common: Required for mistral-db-populate to load tripleo custom
+# actions on the undercloud
+{% set mistral_base_packages_append = ['openstack-tripleo-common'] %}
+{% if distro_python_version.startswith('3') %}
+{% set mistral_base_packages_append = mistral_base_packages_append + [
+  'python3-shade',
+  'python3dist\(ansible\)'
+] %}
+{% else %}
+{% set mistral_base_packages_append = mistral_base_packages_append + [
+  'ansible',
+  'python-shade'
+] %}
+{% endif %}
+# NOTE: Mistral executor needs:
+#   ipmitool: for baremetal node discovery
+#   nova-common: to run nova-manage cells_v2 commands on
+#   openstack-tripleo-validations: validations
+#   qemu-img: convert Octavia amphora qcow2 to raw
+#   tripleo-heat-templates: to load the default plan from the CLI/UI
+{% set mistral_executor_packages_append = [
+  'ipmitool',
+  'openstack-nova-common',
+  'openstack-tripleo-heat-templates',
+  'openstack-tripleo-validations',
+  'qemu-img'
+] %}
+# novajoin: This is required for TLS everywhere, as config_drive will contain
+# the cloud-init script provided by the novajoin package in order to enroll the
+# nodes to the CA
+{% if distro_python_version.startswith('3') %}
+{% set mistral_executor_packages_append = mistral_executor_packages_append + ['python3-novajoin'] %}
+{% else %}
+{% set mistral_executor_packages_append = mistral_executor_packages_append + ['python-novajoin'] %}
+{% endif %}
+
+
+{# neutron #}
+
+# NOTE (jaosorior): neutron-server with TLS everywhere needs httpd and mod_ssl packages.
+# NOTE (hjensas): python2-networking-baremetal ML2 plug-in for ironic neutron integration.
+# NOTE (ramishra): python2-networking-ansible ML2 plug-in for neutron ansible integration.
+{% set neutron_server_packages_append = [
+  'httpd',
+  'mod_ssl'
+] %}
+{% if distro_python_version.startswith('3') %}
+{% set neutron_server_packages_append = neutron_server_packages_append + [
+  'python3-networking-ansible',
+  'python3-networking-baremetal'
+] %}
+{% else %}
+{% set neutron_server_packages_append = neutron_server_packages_append + [
+  'python2-networking-ansible',
+  'python2-networking-baremetal'
+] %}
+{% endif %}
+
+{% set neutron_metadata_agent_ovn_packages_append = [
+    'libseccomp',
+    'podman'
+] %}
+{% set neutron_l3_agent_packages_append = [
+    'libseccomp',
+    'podman'
+] %}
+# Kolla doesn't currently neutron_dhcp_agent_packages on CentOS so the append
+# isn't valid here.
+{% set neutron_dhcp_agent_packages = [
+    'libseccomp',
+    'podman'
+] %}
+
+{% if distro_python_version.startswith('2') %}
+{% set neutron_metadata_agent_ovn_packages_append = neutron_metadata_agent_ovn_packages_append + ['docker'] %}
+{% set neutron_l3_agent_packages_append = neutron_l3_agent_packages_append + ['docker'] %}
+{% set neutron_dhcp_agent_packages = neutron_dhcp_agent_packages + ['docker'] %}
+{% endif %}
+
+
+{# nova #}
+
+# This installs the novajoin package in the nova container images; This is
+# required for TLS everywhere, as config_driuve will contain  the cloud-init
+# script provided by the novajoin package in order to enroll the nodes to the
+# CA
+{% if distro_python_version.startswith('3') %}
+{% set nova_api_packages_append = ['python3-novajoin'] %}
+{% set nova_compute_ironic_packages_append = ['python3-novajoin'] %}
+{% else %}
+{% set nova_api_packages_append = ['python-novajoin'] %}
+{% set nova_compute_ironic_packages_append = ['python-novajoin'] %}
+{% endif %}
+
+{% set nova_scheduler_packages_append = ['openstack-tripleo-common'] %}
+
+# Required for nova migration
+{% set nova_compute_packages_append = [
+    'openssh-server',
+    'openstack-nova-migration'
+] %}
+{% set nova_libvirt_packages_remove = ['libvirt-daemon-driver-lxc'] %}
+# On RHEL7 /etc/pki/CA was part of base openssl package.
+# On RHEL8 it is now in openssl-perl.
+{% set nova_libvirt_packages_append = [
+    'libseccomp',
+    'openssl-perl',
+    'openstack-nova-migration',
+    'podman'
+] %}
+{% if distro_python_version.startswith('2') %}
+{% set nova_libvirt_packages_append = nova_libvirt_packages_append + ['docker'] %}
+{% endif %}
+
+
+{# octavia #}
+
+{% if distro_python_version.startswith('3') %}
+{% set octavia_api_packages_append = ['python3-networking-ovn'] %}
+{% else %}
+{% set octavia_api_packages_append = ['python-networking-ovn'] %}
+{% endif %}
+
+
+{# ovn #}
+
+{% set ovn_northd_packages_append = [
+    'libqb',
+    'pacemaker',
+    'pacemaker-remote',
+    'pcs',
+    'resource-agents'
+] %}
+
+
+{# placement #}
+
+# Required to allow the mysql-migrate-db.sh data extraction script to be used
+# during an upgrade.
+{% set placement_api_packages_append = ['mariadb'] %}
+
+
+{# rabbitmq #}
+
+{% block rabbitmq_install_plugins %}
+# External rabbitmq plugins installation is disabled
+{% endblock %}
+# workaround for LP #1814233
+# Review https://review.opendev.org/#/c/634365/
+# Remove when https://review.opendev.org/#/c/634402/ is merged
+{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10'] %}
+{% set rabbitmq_packages_append = [
+    'libqb',
+    'pacemaker',
+    'pacemaker-remote',
+    'pcs',
+    'rabbitmq-server',
+    'resource-agents'
+] %}
+
+
+{# redis #}
+
+# NOTE (jaosorior): redis with TLS everywhere needs these packages.
+# redis resource-agent requires pidof
+{% set redis_packages_append = [
+  'libqb',
+  'pacemaker',
+  'pacemaker-remote',
+  'pcs',
+  'resource-agents',
+  'stunnel'
+] %}
+{% if distro_python_version.startswith('3') %}
+{% set redis_packages_append = redis_packages_append + ['procps-ng'] %}
+{% else %}
+{% set redis_packages_append = redis_packages_append + ['sysvinit-tools'] %}
+{% endif %}
+
+
+{# sensu #}
 
 {% if base_distro == 'rhel' and base_distro_tag.startswith('8') %}
   {% set sensu_client_packages_append = ['systemd-udev'] %}
@@ -235,47 +403,45 @@ RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     'python3-pymongo',
     'ruby-devel'
 ] %}
-# Horizon dashboards we do not support
-# See LP#1767520
-{% set horizon_packages_remove = [
-    'openstack-cloudkitty-ui',
-    'openstack-murano-ui',
-    'openstack-trove-ui'
+
+{% block sensu_clients_install %}{% endblock %}
+
+
+{# swift #}
+
+# FIXME (kolla review to add ceilometer to swift proxy image)
+# NOTE (jaosorior): swift proxy with TLS everywhere needs these packages.
+# NOTE(mandre) Apache cleanup done below in swift_proxy_server_footer block
+{% set swift_proxy_server_packages_append = [
+    'httpd',
+    'mod_ssl',
+    'openstack-ceilometer-common'
 ] %}
 
-# Required for nova migration
-{% set nova_compute_packages_append = ['openstack-nova-migration', 'openssh-server'] %}
-{% set nova_libvirt_packages_remove = ['libvirt-daemon-driver-lxc'] %}
-# On RHEL7 /etc/pki/CA was part of base openssl package.
-# On RHEL8 it is now in openssl-perl.
-{% set nova_libvirt_packages_append = [
-    'openstack-nova-migration',
-    'openssl-perl',
-    'podman',
-    'libseccomp'
-] %}
-{% if distro_python_version.startswith('2') %}
-{% set nova_libvirt_packages_append = nova_libvirt_packages_append + ['docker'] %}
+# TODO(mwhahaha): drop this when swift is python3
+{% if base_distro_tag.startswith('8') %}
+{% set swift_proxy_server_packages_remove = ['python-ceilometermiddleware'] %}
+{% set swift_proxy_server_packages_append = swift_proxy_server_packages_append + ['python3-ceilometermiddleware'] %}
 {% endif %}
 
-# Required to allow the mysql-migrate-db.sh data extraction script to be used
-# during an upgrade.
-{% set placement_api_packages_append = ['mariadb'] %}
+{# ======================= FOOTERS ====================== #}
 
-# NOTE(cloudnull): Remove "td-agent" packages and plugins from the fluentd container.
-{% set fluentd_packages_remove = ['td-agent'] %}
-{% set fluentd_packages_append = ['fluentd', 'hostname'] %}
-{% set fluentd_plugins_remove = [
-    'fluent-plugin-grep',
-    'fluent-plugin-grok-parser',
-    'fluent-plugin-kubernetes_metadata_filter',
-    'fluent-plugin-parser',
-    'fluent-plugin-rewrite-tag-filter',
-    'fluent-plugin-secure-forward'
-  ]
-%}
+{# base #}
 
-############################ service container footers #########################
+{% block base_footer %}
+# workaround LP1696283
+RUN mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_hosts
+# workaround for LP#1765802
+STOPSIGNAL SIGTERM
+# In order to ensure that we have the last base packages, we would like to do
+# a yum update in the kolla base image. All the other images should inherit this
+# but if the base distro container is out of date (i.g. 7.4 but 7.5 is out) this
+# will pull in the updated packages available. Related issue LP#1770355
+RUN yum update -y && yum clean all && rm -rf /var/cache/yum
+{% endblock %}
+
+
+{# aodh #}
 
 {% block aodh_api_footer %}
 RUN mkdir -p /openstack && \
@@ -301,6 +467,9 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# barbican #}
+
 {% block barbican_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/barbican-api /openstack/healthcheck && \
@@ -319,6 +488,8 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# ceilometer #}
 {% block ceilometer_central_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-central /openstack/healthcheck && \
@@ -363,13 +534,16 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% set cinder_volume_packages_append = [
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
+# remove the block to override the behavior
+{% block cinder_volume_redhat_setup %}{% endblock %}
 {% block cinder_volume_footer %}
 RUN mkdir -p /etc/libqb /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-volume /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+
+{# collectd #}
 
 {% block collectd_footer %}
 RUN mkdir -p /openstack && \
@@ -377,20 +551,35 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# ec2 #}
+
+{% block ec2_api_footer %}
+RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
+    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
+    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_extend_start
+{% endblock %}
+
+
+{# etcd #}
+
 {% block etcd_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/etcd /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# fluentd #}
+
 {% block fluentd_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/fluentd /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
-# make sure no gems are installed
-{% block fluentd_plugins_install %}{% endblock %}
-{% block fluentd_monasca_plugin_install %}{% endblock %}
+
+
+{# glance #}
 
 {% block glance_api_footer %}
 RUN mkdir -p /openstack && \
@@ -400,6 +589,9 @@ RUN mkdir -p /openstack && \
     sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf && \
     echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_glance_extend_start
 {% endblock %}
+
+
+{# gnocchi #}
 
 {% block gnocchi_api_footer %}
 RUN mkdir -p /openstack && \
@@ -419,6 +611,16 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# haproxy #}
+
+{% block haproxy_footer %}
+RUN mkdir /etc/libqb
+{% endblock %}
+
+
+{# heat #}
+
 {% block heat_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/heat-api /openstack/healthcheck && \
@@ -437,16 +639,8 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% set haproxy_packages_append = [
-    'libqb',
-    'pacemaker',
-    'pacemaker-remote',
-    'pcs',
-    'resource-agents',
-] %}
-{% block haproxy_footer %}
-RUN mkdir /etc/libqb
-{% endblock %}
+
+{# ironic #}
 
 {% block ironic_api_footer %}
 RUN mkdir -p /openstack && \
@@ -472,11 +666,17 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# iscsi #}
+
 {% block iscsid_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/iscsid /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+
+{# keystone #}
 
 {% block keystone_footer %}
 RUN mkdir -p /openstack && \
@@ -484,17 +684,21 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# manila #}
+
 {% block manila_scheduler_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/manila-scheduler /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% set manila_share_packages_append = [
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
 {% block manila_share_footer %}
 RUN mkdir /etc/libqb
 {% endblock %}
+
+
+{# mariadb #}
 
 {% block mariadb_footer %}
 # We'll configure mariadb with galera.cnf.
@@ -507,11 +711,17 @@ RUN mkdir -p /etc/libqb /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# memcache #}
+
 {% block memcached_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/memcached /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+
+{# mistral #}
 
 {% block mistral_api_footer %}
 RUN mkdir -p /openstack && \
@@ -544,9 +754,24 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# multipathd #}
+
 {% block multipathd_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/multipathd /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+
+{# neutron #}
+
+{% block neutron_server_footer %}
+RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
+    && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
+    && echo "if [[ "\$\(whoami\)" == 'root' ]]; then rm -rf /var/run/httpd/* /run/httpd/* /tmp/httpd*; fi" >> /usr/local/bin/kolla_neutron_extend_start; \
+    mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-api /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
@@ -579,6 +804,15 @@ RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-sriov-agent /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+{% block neutron_metadata_agent_ovn_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-metadata /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+
+{# nova #}
 
 {% block nova_api_footer %}
 RUN mkdir -p /openstack && \
@@ -622,6 +856,9 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# octavia #}
+
 {% block octavia_api_footer %}
 RUN sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf \
     && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf \
@@ -649,11 +886,32 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# opendaylight #}
+
 {% block opendaylight_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/opendaylight-api /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+
+{# ovn #}
+
+{% block ovn_controller_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-controller /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+{% block ovn_northd_footer %}
+RUN mkdir /etc/libqb && mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-dbs /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+
+{# panko #}
 
 {% block panko_api_footer %}
 RUN mkdir -p /openstack && \
@@ -661,11 +919,17 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# placement #}
+
 {% block placement_api_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/placement-api /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+
+{# qrouterd #}
 
 {% block qdrouterd_footer %}
 RUN mkdir -p /openstack && \
@@ -673,16 +937,8 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% block rabbitmq_install_plugins %}
-# External rabbitmq plugins installation is disabled
-{% endblock %}
 
-# workaround for LP #1814233
-# Review https://review.opendev.org/#/c/634365/
-# Remove when https://review.opendev.org/#/c/634402/ is merged
-{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10'] %}
-{% set rabbitmq_packages_append = [
-    'rabbitmq-server', 'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
+{# rabbitmq #}
 
 {% block rabbitmq_footer %}
 RUN mkdir -p /etc/libqb /openstack && \
@@ -690,11 +946,17 @@ RUN mkdir -p /etc/libqb /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# redis #}
+
 {% block redis_footer %}
 RUN mkdir /etc/libqb; mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/redis /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+
+{# sahara #}
 
 {% block sahara_api_footer %}
 RUN mkdir -p /openstack && \
@@ -708,14 +970,17 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
-{% block sensu_clients_install %}
-{% endblock %}
+
+{# sensu #}
 
 {% block sensu_client_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/sensu-client /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
+
+{# swift #}
 
 {% block swift_account_footer %}
 RUN mkdir -p /openstack && \
@@ -762,40 +1027,10 @@ RUN mkdir -p /openstack && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
 
+
+{# tacker #}
 {% block tacker_server_footer %}
 RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/tacker /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
-{% endblock %}
-
-{% block ovn_controller_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-controller /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
-{% set ovn_northd_packages_append = [
-    'pacemaker', 'pacemaker-remote', 'pcs', 'libqb', 'resource-agents'] %}
-{% block ovn_northd_footer %}
-RUN mkdir /etc/libqb && mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-dbs /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
-{% block neutron_metadata_agent_ovn_footer %}
-RUN mkdir -p /openstack && \
-    ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-metadata /openstack/healthcheck && \
-    chmod a+rx /openstack/healthcheck
-{% endblock %}
-
-{% block base_footer %}
-# workaround LP1696283
-RUN mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_hosts
-# workaround for LP#1765802
-STOPSIGNAL SIGTERM
-# In order to ensure that we have the last base packages, we would like to do
-# a yum update in the kolla base image. All the other images should inherit this
-# but if the base distro container is out of date (i.g. 7.4 but 7.5 is out) this
-# will pull in the updated packages available. Related issue LP#1770355
-RUN yum update -y && yum clean all && rm -rf /var/cache/yum
 {% endblock %}
