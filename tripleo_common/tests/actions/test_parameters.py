@@ -1484,7 +1484,8 @@ class GetNetworkConfigActionTest(base.TestCase):
         mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
             "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
             "resource_name": "OsNetConfigImpl",
-            "properties": {"config": "echo \'{\"network_config\": {}}\'"}
+            "properties": {"config": "echo \'{\"network_config\": {}}\'"
+                           " > /etc/os-net-config/config.json"}
             }])
 
         mock_get_orchestration_client.return_value = mock_heat
