@@ -44,7 +44,7 @@ disk_images:
     # So we just override the extension instead
     imageext: initramfs
     elements:
-      - ironic-agent
+      - ironic-python-agent-ramdisk
       - ironic-agent-multipath
       - dynamic-login
       - element-manifest

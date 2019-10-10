@@ -82,6 +82,7 @@ class DibImageBuilder(ImageBuilder):
             env['ELEMENTS_PATH'] = os.pathsep.join([
                 "/usr/share/tripleo-puppet-elements",
                 '/usr/share/tripleo-image-elements',
+                '/usr/share/ironic-python-agent-builder/dib',
             ])
             os.environ.update(env)
 
