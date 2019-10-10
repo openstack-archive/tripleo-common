@@ -1101,7 +1101,8 @@ class TestPrepare(base.TestCase):
                 },
                 registry_credentials={
                     'docker.io': {'my_username': 'my_password'}
-                }
+                },
+                multi_arch=False
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -1122,7 +1123,8 @@ class TestPrepare(base.TestCase):
                 },
                 registry_credentials={
                     'docker.io': {'my_username': 'my_password'}
-                }
+                },
+                multi_arch=False
             )
         ])
 
@@ -1208,7 +1210,8 @@ class TestPrepare(base.TestCase):
                 modify_only_with_labels=None,
                 modify_vars=None,
                 mirrors={},
-                registry_credentials=None
+                registry_credentials=None,
+                multi_arch=False
             ),
             mock.call(
                 excludes=['nova', 'neutron'],
@@ -1225,12 +1228,14 @@ class TestPrepare(base.TestCase):
                 modify_only_with_labels=['kolla_version'],
                 modify_vars={'foo_version': '1.0.1'},
                 mirrors={},
-                registry_credentials=None
+                registry_credentials=None,
+                multi_arch=False
             )
         ])
 
         mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full',
-                                        mirrors={}, registry_credentials=None)
+                                        mirrors={}, registry_credentials=None,
+                                        multi_arch=False)
 
         self.assertEqual(
             {

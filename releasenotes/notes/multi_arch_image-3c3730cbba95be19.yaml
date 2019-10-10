@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    If the `AdditionalArchitectures` parameter has entries then the container
+    image prepare will prepare images for all architectures instead of just
+    the default one. A new boolean field `multi_arch` can also be set in
+    `ContainerImagePrepare` entries to determine the multi arch behaviour for
+    images in that entry. If any entry sets a `multi_arch` value then
+    `AdditionalArchitectures` is ignored.
