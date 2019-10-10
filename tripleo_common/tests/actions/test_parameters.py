@@ -50,7 +50,6 @@ _EXISTING_PASSWORDS = {
     'NotifyPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
     'CephAdminKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
     'HAProxyStatsPassword': 'P8tbdK6n4YUkTaUyy8XgEVTe6',
-    'TrovePassword': 'V7A7zegkMdRFnYuN23gdc4KQC',
     'CeilometerPassword': 'RRdpwK6qf2pbKz2UtzxqauAdk',
     'GnocchiPassword': 'cRYHcUkMuJeK3vyU9pCaznUZc',
     'HeatStackDomainAdminPassword': 'GgTRyWzKYsxK4mReTJ4CM6sMc',
