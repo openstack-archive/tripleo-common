@@ -77,6 +77,7 @@ MEDIA_TYPES = (
     MEDIA_MANIFEST_V1,
     MEDIA_MANIFEST_V1_SIGNED,
     MEDIA_MANIFEST_V2,
+    MEDIA_MANIFEST_V2_LIST,
     MEDIA_CONFIG,
     MEDIA_BLOB,
     MEDIA_BLOB_COMPRESSED
@@ -84,6 +85,7 @@ MEDIA_TYPES = (
     'application/vnd.docker.distribution.manifest.v1+json',
     'application/vnd.docker.distribution.manifest.v1+prettyjws',
     'application/vnd.docker.distribution.manifest.v2+json',
+    'application/vnd.docker.distribution.manifest.list.v2+json',
     'application/vnd.docker.container.image.v1+json',
     'application/vnd.docker.image.rootfs.diff.tar',
     'application/vnd.docker.image.rootfs.diff.tar.gzip'
@@ -545,7 +547,10 @@ class BaseImageUploader(object):
 
     @classmethod
     def _image_tag_from_url(cls, image_url):
-        parts = image_url.path.split(':')
+        if '@' in image_url.path:
+            parts = image_url.path.split('@')
+        else:
+            parts = image_url.path.split(':')
         tag = parts[-1]
         image = ':'.join(parts[:-1])
         return image, tag
@@ -810,6 +815,11 @@ class BaseImageUploader(object):
         return images_with_labels
 
     def add_upload_task(self, task):
+        if task.modify_role and task.multi_arch:
+            raise ImageUploaderException(
+                'Cannot run a modify role on multi-arch image %s' %
+                task.image_name
+            )
         # prime insecure_registries
         if task.pull_source:
             self.is_insecure_registry(
@@ -1109,16 +1119,13 @@ class PythonImageUploader(BaseImageUploader):
             password=source_password
         )
 
-        manifest_str = self._fetch_manifest(
-            t.source_image_url,
-            session=source_session
+        source_layers = []
+        manifests_str = []
+        self._collect_manifests_layers(
+            t.source_image_url, source_session,
+            manifests_str, source_layers,
+            t.multi_arch
         )
-        manifest = json.loads(manifest_str)
-        if manifest.get('schemaVersion', 2) == 1:
-            source_layers = list(reversed([l['blobSum']
-                                          for l in manifest['fsLayers']]))
-        else:
-            source_layers = [l['digest'] for l in manifest['layers']]
 
         self._cross_repo_mount(
             copy_target_url, self.image_layers, source_layers,
@@ -1129,9 +1136,11 @@ class PythonImageUploader(BaseImageUploader):
         self._copy_registry_to_registry(
             t.source_image_url,
             copy_target_url,
-            source_manifest=manifest_str,
+            source_manifests=manifests_str,
             source_session=source_session,
-            target_session=target_session
+            target_session=target_session,
+            source_layers=source_layers,
+            multi_arch=t.multi_arch
         )
 
         if not t.modify_role:
@@ -1215,7 +1224,7 @@ class PythonImageUploader(BaseImageUploader):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
-    def _fetch_manifest(cls, url, session):
+    def _fetch_manifest(cls, url, session, multi_arch):
         image, tag = cls._image_tag_from_url(url)
         parts = {
             'image': image,
@@ -1224,12 +1233,40 @@ class PythonImageUploader(BaseImageUploader):
         url = cls._build_url(
             url, CALL_MANIFEST % parts
         )
-        manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
+        if multi_arch:
+            manifest_headers = {'Accept': MEDIA_MANIFEST_V2_LIST}
+        else:
+            manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
         r = session.get(url, headers=manifest_headers, timeout=30)
         if r.status_code in (403, 404):
             raise ImageNotFoundException('Not found image: %s' % url)
         cls.check_status(session=session, request=r)
         return cls._get_response_text(r)
+
+    def _collect_manifests_layers(cls, image_url, session,
+                                  manifests_str, layers,
+                                  multi_arch):
+        manifest_str = cls._fetch_manifest(
+            image_url,
+            session=session,
+            multi_arch=multi_arch
+        )
+        manifests_str.append(manifest_str)
+        manifest = json.loads(manifest_str)
+        if manifest.get('schemaVersion', 2) == 1:
+            layers.extend(reversed([l['blobSum']
+                                    for l in manifest['fsLayers']]))
+        elif manifest.get('mediaType') == MEDIA_MANIFEST_V2:
+            layers.extend(l['digest'] for l in manifest['layers'])
+        elif manifest.get('mediaType') == MEDIA_MANIFEST_V2_LIST:
+            image, _, tag = image_url.geturl().rpartition(':')
+            for man in manifest.get('manifests', []):
+                # replace image tag with the manifest hash in the list
+                man_url = parse.urlparse('%s@%s' % (image, man['digest']))
+                cls._collect_manifests_layers(
+                    man_url, session, manifests_str, layers,
+                    multi_arch=False
+                )
 
     @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -1298,18 +1335,19 @@ class PythonImageUploader(BaseImageUploader):
                                          layer,
                                          source_session=None,
                                          target_session=None):
-        if cls._target_layer_exists_registry(target_url, layer, [layer],
-                                             target_session):
+        layer_entry = {'digest': layer}
+        if cls._target_layer_exists_registry(target_url, layer_entry,
+                                             [layer_entry], target_session):
             return
 
-        digest = layer['digest']
+        digest = layer_entry['digest']
         LOG.debug('Uploading layer: %s' % digest)
 
         calc_digest = hashlib.sha256()
         layer_stream = cls._layer_stream_registry(
             digest, source_url, calc_digest, source_session)
-        return cls._copy_stream_to_registry(target_url, layer, calc_digest,
-                                            layer_stream, target_session)
+        return cls._copy_stream_to_registry(
+            target_url, layer_entry, calc_digest, layer_stream, target_session)
 
     @classmethod
     def _assert_scheme(cls, url, scheme):
@@ -1327,9 +1365,11 @@ class PythonImageUploader(BaseImageUploader):
         stop=tenacity.stop_after_attempt(5)
     )
     def _copy_registry_to_registry(cls, source_url, target_url,
-                                   source_manifest,
+                                   source_manifests,
                                    source_session=None,
-                                   target_session=None):
+                                   target_session=None,
+                                   source_layers=None,
+                                   multi_arch=False):
         cls._assert_scheme(source_url, 'docker')
         cls._assert_scheme(target_url, 'docker')
 
@@ -1339,37 +1379,18 @@ class PythonImageUploader(BaseImageUploader):
             'tag': tag
         }
 
-        manifest = json.loads(source_manifest)
-        v1manifest = manifest.get('schemaVersion', 2) == 1
-        # config = json.loads(manifest['history'][0]['v1Compatibility'])
-        if v1manifest:
-            layers = list(reversed([{'digest': l['blobSum']}
-                                    for l in manifest['fsLayers']]))
-            config_str = None
-        else:
-            layers = manifest['layers']
-            config_digest = manifest['config']['digest']
-            LOG.debug('Uploading config with digest: %s' % config_digest)
-
-            parts['digest'] = config_digest
-            source_config_url = cls._build_url(
-                source_url, CALL_BLOB % parts)
-
-            r = source_session.get(source_config_url, timeout=30)
-            r.raise_for_status()
-            config_str = r.text
-
         # Upload all layers
         copy_jobs = []
         p = futures.ThreadPoolExecutor(max_workers=4)
-        for layer in layers:
-            copy_jobs.append(p.submit(
-                cls._copy_layer_registry_to_registry,
-                source_url, target_url,
-                layer=layer,
-                source_session=source_session,
-                target_session=target_session
-            ))
+        if source_layers:
+            for layer in source_layers:
+                copy_jobs.append(p.submit(
+                    cls._copy_layer_registry_to_registry,
+                    source_url, target_url,
+                    layer=layer,
+                    source_session=source_session,
+                    target_session=target_session
+                ))
         for job in copy_jobs:
             e = job.exception()
             if e:
@@ -1377,31 +1398,60 @@ class PythonImageUploader(BaseImageUploader):
             image = job.result()
             if image:
                 LOG.debug('Upload complete for layer: %s' % image)
-        cls._copy_manifest_config_to_registry(
-            target_url=target_url,
-            manifest_str=source_manifest,
-            config_str=config_str,
-            target_session=target_session
-        )
+
+        for source_manifest in source_manifests:
+            manifest = json.loads(source_manifest)
+            config_str = None
+            LOG.debug(
+                'Current image manifest: [%s]' % json.dumps(
+                    manifest,
+                    indent=4
+                )
+            )
+            if manifest.get('mediaType') == MEDIA_MANIFEST_V2:
+                config_digest = manifest['config']['digest']
+                LOG.debug('Uploading config with digest: %s' % config_digest)
+
+                parts['digest'] = config_digest
+                source_config_url = cls._build_url(
+                    source_url,
+                    CALL_BLOB % parts
+                )
+
+                r = source_session.get(source_config_url, timeout=30)
+                cls.check_status(
+                    session=source_session,
+                    request=r
+                )
+                config_str = cls._get_response_text(r)
+                manifest['config']['size'] = len(config_str)
+                manifest['config']['mediaType'] = MEDIA_CONFIG
+
+            cls._copy_manifest_config_to_registry(
+                target_url=target_url,
+                manifest_str=source_manifest,
+                config_str=config_str,
+                target_session=target_session,
+                multi_arch=multi_arch
+            )
 
     @classmethod
     def _copy_manifest_config_to_registry(cls, target_url,
                                           manifest_str,
                                           config_str,
-                                          target_session=None):
+                                          target_session=None,
+                                          multi_arch=False):
 
         manifest = json.loads(manifest_str)
-        if config_str is not None:
-            manifest['config']['size'] = len(config_str)
-            manifest['config']['mediaType'] = MEDIA_CONFIG
-            manifest['mediaType'] = MEDIA_MANIFEST_V2
-            manifest_type = MEDIA_MANIFEST_V2
-            manifest_str = json.dumps(manifest, indent=3)
-        else:
+        if manifest.get('schemaVersion', 2) == 1:
             if 'signatures' in manifest:
                 manifest_type = MEDIA_MANIFEST_V1_SIGNED
             else:
                 manifest_type = MEDIA_MANIFEST_V1
+        else:
+            manifest_type = manifest.get(
+                'mediaType', MEDIA_MANIFEST_V2)
+            manifest_str = json.dumps(manifest, indent=3)
 
         export = target_url.netloc in cls.export_registries
         if export:
@@ -1409,7 +1459,8 @@ class PythonImageUploader(BaseImageUploader):
                 target_url,
                 manifest_str,
                 manifest_type,
-                config_str
+                config_str,
+                multi_arch=multi_arch
             )
             return
 
@@ -1738,6 +1789,8 @@ class PythonImageUploader(BaseImageUploader):
             six.b(config_digest)).decode("utf-8")
         config_str = cls._containers_file('overlay-images', image_id,
                                           config_id)
+        manifest['config']['size'] = len(config_str)
+        manifest['config']['mediaType'] = MEDIA_CONFIG
         return image, manifest, config_str
 
     @classmethod
