@@ -1012,8 +1012,6 @@ class SkopeoImageUploader(BaseImageUploader):
                 target_image_local_url,
                 t.target_image_url,
             )
-            for layer in source_layers:
-                self.image_layers.setdefault(layer, t.target_image_url)
             LOG.warning('[%s] Completed modify and upload for '
                         'image' % t.image_name)
         else:
