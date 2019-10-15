@@ -89,7 +89,7 @@ class TestImageExport(base.TestCase):
         }
         calc_digest = hashlib.sha256()
         layer_stream = io.BytesIO(blob_compressed)
-        layer_digest = image_export.export_stream(
+        layer_digest, _ = image_export.export_stream(
             target_url, layer, layer_stream, verify_digest=False
         )
         self.assertEqual(compressed_digest, layer_digest)
@@ -145,7 +145,8 @@ class TestImageExport(base.TestCase):
         target_blob_path = os.path.join(target_blob_dir, 'sha256:1234.gz')
 
         # call with missing source, no change
-        image_export.cross_repo_mount(target_url, image_layers, source_layers)
+        image_export.cross_repo_mount(target_url, image_layers, source_layers,
+                                      uploaded_layers={})
         self.assertFalse(os.path.exists(source_blob_path))
         self.assertFalse(os.path.exists(target_blob_path))
 
@@ -155,7 +156,8 @@ class TestImageExport(base.TestCase):
         self.assertTrue(os.path.exists(source_blob_path))
 
         # call with existing source
-        image_export.cross_repo_mount(target_url, image_layers, source_layers)
+        image_export.cross_repo_mount(target_url, image_layers, source_layers,
+                                      uploaded_layers={})
         self.assertTrue(os.path.exists(target_blob_path))
         with open(target_blob_path, 'r') as f:
             self.assertEqual('blob', f.read())
