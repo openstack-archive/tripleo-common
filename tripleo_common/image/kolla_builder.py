@@ -378,7 +378,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
             del(entry['services'])
 
     params.update(
-        detect_insecure_registries(params))
+        detect_insecure_registries(params, lock=lock))
 
     return_data = {}
     if output_env_file:
@@ -388,7 +388,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     return return_data
 
 
-def detect_insecure_registries(params):
+def detect_insecure_registries(params, lock=None):
     """Detect insecure registries in image parameters
 
     :param params: dict of container image parameters
@@ -396,7 +396,7 @@ def detect_insecure_registries(params):
               merged into other parameters
     """
     insecure = set()
-    uploader = image_uploader.ImageUploadManager().uploader('python')
+    uploader = image_uploader.ImageUploadManager(lock=lock).uploader('python')
     for image in params.values():
         host = image.split('/')[0]
         if uploader.is_insecure_registry(host):
