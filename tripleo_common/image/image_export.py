@@ -21,6 +21,7 @@ import requests
 import shutil
 
 from oslo_log import log as logging
+from tripleo_common.utils import image as image_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -143,37 +144,66 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
         )
         if blob_path != expected_blob_path:
             os.rename(blob_path, expected_blob_path)
+            blob_path = expected_blob_path
 
     layer['digest'] = layer_digest
     layer['size'] = length
     LOG.debug('[%s] Done exporting image layer %s' % (image, digest))
-    return layer_digest
+    return (layer_digest, blob_path)
 
 
-def cross_repo_mount(target_image_url, image_layers, source_layers):
-    for layer in source_layers:
-        if layer not in image_layers:
-            continue
-
-        image_url = image_layers[layer]
-        image, tag = image_tag_from_url(image_url)
-        dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'blobs')
-        blob_path = os.path.join(dir_path, '%s.gz' % layer)
-        if not os.path.exists(blob_path):
-            LOG.debug('[%s] Layer not found: %s' % (image, blob_path))
-            continue
-
-        target_image, tag = image_tag_from_url(target_image_url)
-        target_dir_path = os.path.join(
-            IMAGE_EXPORT_DIR, 'v2', target_image, 'blobs')
-        make_dir(target_dir_path)
-        target_blob_path = os.path.join(target_dir_path, '%s.gz' % layer)
-        if os.path.exists(target_blob_path):
-            continue
+def layer_cross_link(layer, image, blob_path, target_image_url):
+    target_image, _ = image_tag_from_url(target_image_url)
+    target_dir_path = os.path.join(
+        IMAGE_EXPORT_DIR, 'v2', target_image, 'blobs')
+    make_dir(target_dir_path)
+    target_blob_path = os.path.join(target_dir_path, '%s.gz' % layer)
+    if not os.path.exists(target_blob_path):
         LOG.debug('[%s] Linking layers: %s -> %s' %
                   (image, blob_path, target_blob_path))
         # make a hard link so the layers can have independent lifecycles
         os.link(blob_path, target_blob_path)
+
+
+def cross_repo_mount(target_image_url, image_layers, source_layers,
+                     uploaded_layers=None):
+    linked_layers = {}
+    target_image, _ = image_tag_from_url(target_image_url)
+    for layer in source_layers:
+        known_path, ref_image = image_utils.uploaded_layers_details(
+            uploaded_layers, layer, scope='local')
+
+        if layer not in image_layers and not ref_image:
+            continue
+
+        image_url = image_layers.get(layer, None)
+        if image_url:
+            image, _ = image_tag_from_url(image_url)
+        else:
+            image = ref_image
+        if not image:
+            continue
+
+        if known_path and ref_image:
+            blob_path = known_path
+            image = ref_image
+            if ref_image != image:
+                LOG.debug('[%s] Layer ref. by image %s already exists '
+                          'at %s' % (image, ref_image, known_path))
+            else:
+                LOG.debug('[%s] Layer already exists at %s'
+                          % (image, known_path))
+        else:
+            dir_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', image, 'blobs')
+            blob_path = os.path.join(dir_path, '%s.gz' % layer)
+            if not os.path.exists(blob_path):
+                LOG.debug('[%s] Layer not found: %s' % (image, blob_path))
+                continue
+
+        layer_cross_link(layer, image, blob_path, target_image_url)
+        linked_layers.update({layer: {'known_path': blob_path,
+                                      'ref_image': image}})
+    return linked_layers
 
 
 def export_manifest_config(target_url,

@@ -23,6 +23,7 @@ from tripleo_common.utils.locks import base
 class ProcessLock(base.BaseLock):
     # the manager cannot live in __init__
     _mgr = multiprocessing.Manager()
+    _global_view = _mgr.dict()
 
     def __init__(self):
         self._lock = self._mgr.Lock()
