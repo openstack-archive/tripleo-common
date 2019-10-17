@@ -31,3 +31,6 @@ gzip
 # Required to build language docs
 gettext
 
+# debian requirements (linters)
+libffi-dev        [platform:dpkg]
+libssl-dev        [platform:dpkg]
