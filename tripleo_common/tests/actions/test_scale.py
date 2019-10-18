@@ -139,7 +139,8 @@ class ScaleDownActionTest(base.TestCase):
             template={'heat_template_version': '2016-04-30'}
         )
 
-        clear_list = list(['ComputeCount', 'ComputeRemovalPolicies'])
+        clear_list = list(['ComputeCount', 'ComputeRemovalPolicies',
+                           'ComputeRemovalPoliciesMode'])
         _, kwargs = heatclient.stacks.update.call_args
         self.assertEqual(set(kwargs['clear_parameters']), set(clear_list))
         self.assertEqual(kwargs['environment'], env)
