@@ -118,6 +118,11 @@ class ScaleDownAction(base.TripleOAction):
                 'resource_list': [r.resource_name for r in role_resources]
             }]
 
+            # force reset the removal_policies_mode to 'append'
+            # as 'update' can lead to deletion of unintended nodes.
+            removal_mode = "{0}RemovalPoliciesMode".format(role)
+            stack_params[removal_mode] = 'append'
+
         return stack_params
 
     def run(self, context):
