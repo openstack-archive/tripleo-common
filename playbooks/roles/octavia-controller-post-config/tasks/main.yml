@@ -11,7 +11,7 @@
     become: true
     become_user: root
     shell: |
-        awk -F '=' -e '/^controller_ip_port_list/ { print $2; }' "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf"
+        awk -F '=' -e '/^controller_ip_port_list/ { print $2; }' "{{octavia_confd_prefix}}/etc/octavia/post-deploy.conf"
     register: config_contents
     failed_when: config_contents.rc != 0
     changed_when: false
@@ -27,17 +27,25 @@
       octavia_config_updated: true
     when: current_ip_list != o_hm_ip_list
 
-  - name: update octavia worker config file
+  - name: setting [health_manager]/controller_ip_port_list
     become: true
     become_user: root
     ini_file:
       section: "health_manager"
       option: "controller_ip_port_list"
       value: "{{ o_hm_ip_list }}"
-      path: "{{octavia_confd_prefix}}/etc/octavia/conf.d/octavia-worker/worker-post-deploy.conf"
+      path: "{{ octavia_confd_prefix }}/etc/octavia/post-deploy.conf"
       selevel: s0
       setype: svirt_sandbox_file_t
     when: octavia_config_updated
+
+  - name: create a symbolic link conf.d/post-deploy -> post-deploy.conf (LP#1836074)
+    file:
+      src: "../../post-deploy.conf"
+      dest: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/common/post-deploy.conf"
+      state: link
+      selevel: s0
+      setype: svirt_sandbox_file_t
 
   - name: restart octavia containers
     become: true
