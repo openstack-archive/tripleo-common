@@ -1487,8 +1487,8 @@ class PythonImageUploader(BaseImageUploader):
                                          target_session=None,
                                          lock=None):
         layer_entry = {'digest': layer}
-        cls._layer_fetch_lock(layer)
         try:
+            cls._layer_fetch_lock(layer, lock)
             if cls._target_layer_exists_registry(
                     target_url, layer_entry, [layer_entry], target_session):
                 cls._layer_fetch_unlock(layer, lock)
