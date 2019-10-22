@@ -101,7 +101,8 @@ def get_undercloud_registry():
     ctlplane_hostname = '.'.join([socket.gethostname().split('.')[0],
                                   'ctlplane'])
     cmd = ['getent', 'hosts', ctlplane_hostname]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                               universal_newlines=True)
     out, err = process.communicate()
 
     if process.returncode != 0:
