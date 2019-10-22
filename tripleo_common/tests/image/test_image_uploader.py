@@ -118,15 +118,15 @@ class TestImageUploadManager(base.TestCase):
                          image_uploader.get_undercloud_registry())
 
     @mock.patch('subprocess.Popen', autospec=True)
-    @mock.patch('socket.gethostname', return_value='undercloud.somedomain')
+    @mock.patch('socket.gethostname', return_value='localhost.localdomain')
     def test_get_undercloud_registry_no_etc_hosts(self, mock_gethostname,
                                                   mock_popen):
         mock_process = mock.Mock()
         mock_process.communicate.return_value = ('', '')
         mock_process.returncode = 2
         mock_popen.return_value = mock_process
-        self.assertRaises(ImageUploaderException,
-                          image_uploader.get_undercloud_registry)
+        self.assertEqual('localhost:8787',
+                         image_uploader.get_undercloud_registry())
 
     @mock.patch('subprocess.Popen', autospec=True)
     @mock.patch('socket.gethostname', return_value='undercloud.somedomain')
