@@ -106,10 +106,12 @@ def get_undercloud_registry():
     out, err = process.communicate()
 
     if process.returncode != 0:
-        raise ImageUploaderException('No entry for %s in /etc/hosts'
-                                     % ctlplane_hostname)
-
-    address = out.split()[1]
+        LOG.warning('No entry for %s in /etc/hosts. Falling back to use the '
+                    'default (localhost) undercloud registry.'
+                    % ctlplane_hostname)
+        address = 'localhost'
+    else:
+        address = out.split()[1]
 
     return '%s:%s' % (address, '8787')
 
