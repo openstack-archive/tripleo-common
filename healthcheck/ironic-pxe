@@ -8,7 +8,7 @@ if grep "/httpd " /run_command 2>/dev/null ; then
     protocol=http
     path=
 else
-    bind_host=$(ps -ef | grep -oe '--address \([0-9]\+\.\?\)\+' | awk '{print $2}')
+    bind_host=$(hiera ironic::pxe::tftp_bind_host)
     bind_port=69
     protocol=tftp
     path=map-file
