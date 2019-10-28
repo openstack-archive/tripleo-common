@@ -34,13 +34,15 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {% block dumb_init_installation %}{% endblock %}
 
 # Remove EPEL and the dependencies requiring it
+{% set base_centos_yum_repo_keys_remove = [
+    '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Cloud',
+] %}
+
 {% set base_centos_yum_repo_packages_remove = [
-    'centos-release-ceph-jewel',
-    'centos-release-ceph-luminous',
+    'centos-release-openstack-train',
     'epel-release'
 ] %}
 {% set base_centos_yum_repo_packages_append = [
-    'centos-release-ceph-nautilus',
     'centos-release-opstools'
 ] %}
 
