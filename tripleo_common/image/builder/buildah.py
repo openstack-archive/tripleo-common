@@ -183,7 +183,7 @@ class BuildahBuilder(base.BaseBuilder):
             #                  but not executed a SystemError will be raised.
             for job in done:
                 if job._exception:
-                    raise SystemError(job.exception_info)
+                    raise SystemError(job._exception)
             else:
                 if not_done:
                     raise SystemError(
