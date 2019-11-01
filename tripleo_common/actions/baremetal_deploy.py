@@ -363,10 +363,12 @@ class ExpandRolesAction(base.TripleOAction):
 
     def run(self, context):
         for role in self.roles:
+            role.setdefault('defaults', {})
+            role['defaults'].setdefault(
+                'image', {'href': self.default_image})
             for inst in role.get('instances', []):
-                # Set the default image so that the
-                # source validation can succeed.
-                inst.setdefault('image', {'href': self.default_image})
+                for k, v in role['defaults'].items():
+                    inst.setdefault(k, v)
 
                 # Set the default hostname now for duplicate hostname
                 # detection during validation
@@ -401,12 +403,7 @@ class ExpandRolesAction(base.TripleOAction):
             role_instances = []
             for instance in role.get('instances', []):
                 inst = {}
-                inst.update(role.get('defaults', {}))
                 inst.update(instance)
-                inst.setdefault('image', {'image': self.default_image})
-
-                if 'name' in inst and 'hostname' not in inst:
-                    inst['hostname'] = inst['name']
 
                 # create a hostname map entry now if the specified hostname
                 # is a valid generated name
@@ -420,8 +417,7 @@ class ExpandRolesAction(base.TripleOAction):
             while len([i for i in role_instances
                        if i.get('provisioned', True)]) < count:
                 inst = {}
-                inst.update(role.get('defaults', {}))
-                inst.setdefault('image', {'href': self.default_image})
+                inst.update(role['defaults'])
                 role_instances.append(inst)
 
             # NOTE(dtantsur): our hostname format may differ from THT defaults,
