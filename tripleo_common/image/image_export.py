@@ -89,6 +89,12 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
     length = 0
     calc_digest = hashlib.sha256()
 
+    def remove_layer(image, blob_path):
+        if os.path.isfile(blob_path):
+            os.remove(blob_path)
+            LOG.error('[%s] Broken layer found and removed %s' %
+                      (image, blob_path))
+
     try:
         with open(blob_path, 'wb') as f:
             count = 0
@@ -103,13 +109,15 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
                 length += len(chunk)
                 LOG.debug('[%s] Written %i bytes for %s' %
                           (image, length, digest))
+    except MemoryError as e:
+        memory_error = '[{}] Memory Error: {}'.format(image, str(e))
+        LOG.error(memory_error)
+        remove_layer(image, blob_path)
+        raise MemoryError(memory_error)
     except Exception as e:
         write_error = '[{}] Write Failure: {}'.format(image, str(e))
         LOG.error(write_error)
-        if os.path.isfile(blob_path):
-            os.remove(blob_path)
-            LOG.error('[%s] Broken layer found and removed %s' %
-                      (image, blob_path))
+        remove_layer(image, blob_path)
         raise IOError(write_error)
     else:
         LOG.info('[%s] Layer written successfully %s' % (image, blob_path))
