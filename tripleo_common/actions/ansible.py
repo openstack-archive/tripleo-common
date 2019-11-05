@@ -92,8 +92,6 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'action_plugins', action_plugins_path)
     config.set('defaults', 'lookup_plugins', lookups_path)
     config.set('defaults', 'filter_plugins', filter_plugins_path)
-    # suppress tasks if all hosts skip, was previously full_skip callback
-    config.set('defaults', 'display_skipped_hosts', 'no')
 
     log_path = os.path.join(work_dir, 'ansible.log')
     config.set('defaults', 'log_path', log_path)
