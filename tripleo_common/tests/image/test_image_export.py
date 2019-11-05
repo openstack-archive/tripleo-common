@@ -16,6 +16,7 @@
 import hashlib
 import io
 import json
+import mock
 import os
 import requests
 import shutil
@@ -104,6 +105,23 @@ class TestImageExport(base.TestCase):
         self.assertTrue(os.path.isfile(blob_path))
         with open(blob_path, 'rb') as f:
             self.assertEqual(blob_compressed, f.read())
+
+    @mock.patch('tripleo_common.image.image_export.open',
+                side_effect=MemoryError())
+    def test_export_stream_memory_error(self, mock_open):
+        blob_data = six.b('The Blob')
+        blob_compressed = zlib.compress(blob_data)
+        calc_digest = hashlib.sha256()
+        calc_digest.update(blob_compressed)
+
+        target_url = urlparse('docker://localhost:8787/t/nova-api:latest')
+        layer = {
+            'digest': 'sha256:somethingelse'
+        }
+        calc_digest = hashlib.sha256()
+        layer_stream = io.BytesIO(blob_compressed)
+        self.assertRaises(MemoryError, image_export.export_stream,
+                          target_url, layer, layer_stream, verify_digest=False)
 
     def test_export_stream_verify_failed(self):
         blob_data = six.b('The Blob')
