@@ -118,6 +118,9 @@ class ConfigureBootAction(base.TripleOAction):
     def run(self, context):
         baremetal_client = self.get_baremetal_client(context)
         image_client = self.get_image_client(context)
+        return self.configure_boot(baremetal_client, image_client)
+
+    def configure_boot(self, baremetal_client, image_client):
 
         try:
             image_ids = {'kernel': None, 'ramdisk': None}
@@ -192,16 +195,22 @@ class ConfigureRootDeviceAction(base.TripleOAction):
             return
 
         baremetal_client = self.get_baremetal_client(context)
+        inspector_client = self.get_baremetal_introspection_client(context)
+
+        return self.configure_root_device(baremetal_client, inspector_client)
+
+    def configure_root_device(self, baremetal_client, inspector_client):
         node = baremetal_client.node.get(self.node_uuid)
         self._apply_root_device_strategy(
             node,
             self.root_device,
             self.minimum_size,
             self.overwrite,
-            context=context)
+            baremetal_client, inspector_client)
 
     def _apply_root_device_strategy(self, node, strategy, minimum_size,
-                                    overwrite=False, context=None):
+                                    overwrite=False, baremetal_client=None,
+                                    inspector_client=None):
         if node.properties.get('root_device') and not overwrite:
             # This is a correct situation, we still want to allow people to
             # fine-tune the root device setting for a subset of nodes.
@@ -215,7 +224,6 @@ class ConfigureRootDeviceAction(base.TripleOAction):
                         node.uuid)
             return
 
-        inspector_client = self.get_baremetal_introspection_client(context)
         try:
             data = inspector_client.get_data(node.uuid)
         except ironic_inspector_client.ClientError:
@@ -281,8 +289,7 @@ class ConfigureRootDeviceAction(base.TripleOAction):
         # This -1 is what we always do to account for partitioning
         new_size -= 1
 
-        bm_client = self.get_baremetal_client(context)
-        bm_client.node.update(
+        baremetal_client.node.update(
             node.uuid,
             [{'op': 'add', 'path': '/properties/root_device', 'value': hint},
              {'op': 'add', 'path': '/properties/local_gb', 'value': new_size}])
