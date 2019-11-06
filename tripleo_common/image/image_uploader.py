@@ -1743,8 +1743,7 @@ class PythonImageUploader(BaseImageUploader):
         }
         source_blob_url = cls._build_url(
             source_url, CALL_BLOB % parts)
-        # NOTE(aschultz): We specify None and let requests figure it out
-        chunk_size = None
+        chunk_size = 2 ** 20
         LOG.info("[%s] Fetching layer %s from %s" %
                  (image, digest, source_blob_url))
         with session.get(
