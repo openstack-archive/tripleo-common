@@ -36,12 +36,12 @@ from tripleo_common.tests.image import fakes
 
 filedata = six.u(
     """container_images:
-    - imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
+    - imagename: docker.io/tripleotrain/heat-docker-agents-centos:latest
       push_destination: localhost:8787
-    - imagename: docker.io/tripleomaster/centos-binary-nova-compute:liberty
+    - imagename: docker.io/tripleotrain/centos-binary-nova-compute:liberty
       push_destination: localhost:8787
-    - imagename: docker.io/tripleomaster/centos-binary-nova-libvirt:liberty
-    - imagename: docker.io/tripleomaster/image-with-missing-tag
+    - imagename: docker.io/tripleotrain/centos-binary-nova-libvirt:liberty
+    - imagename: docker.io/tripleotrain/image-with-missing-tag
       push_destination: localhost:8787
 """)
 
@@ -1260,10 +1260,10 @@ class TestPythonImageUploader(base.TestCase):
         })
         _fetch_manifest.return_value = manifest
 
-        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        image = 'docker.io/tripleotrain/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
-        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        # push_image = 'localhost:8787/tripleotrain/heat-docker-agents-centos'
         task = image_uploader.UploadTask(
             image_name=image + ':' + tag,
             pull_source=None,
@@ -1280,9 +1280,9 @@ class TestPythonImageUploader(base.TestCase):
             [],
             self.uploader.upload_image(task)
         )
-        source_url = urlparse('docker://docker.io/tripleomaster/'
+        source_url = urlparse('docker://docker.io/tripleotrain/'
                               'heat-docker-agents-centos:latest')
-        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+        target_url = urlparse('docker://localhost:8787/tripleotrain/'
                               'heat-docker-agents-centos:latest')
 
         authenticate.assert_has_calls([
@@ -1358,10 +1358,10 @@ class TestPythonImageUploader(base.TestCase):
         })
         _fetch_manifest.return_value = manifest
 
-        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        image = 'docker.io/tripleotrain/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
-        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        # push_image = 'localhost:8787/tripleotrain/heat-docker-agents-centos'
         task = image_uploader.UploadTask(
             image_name=image + ':' + tag,
             pull_source=None,
@@ -1378,9 +1378,9 @@ class TestPythonImageUploader(base.TestCase):
             [],
             self.uploader.upload_image(task)
         )
-        source_url = urlparse('docker://docker.io/tripleomaster/'
+        source_url = urlparse('docker://docker.io/tripleotrain/'
                               'heat-docker-agents-centos:latest')
-        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+        target_url = urlparse('docker://localhost:8787/tripleotrain/'
                               'heat-docker-agents-centos:latest')
 
         authenticate.assert_has_calls([
@@ -1427,10 +1427,10 @@ class TestPythonImageUploader(base.TestCase):
         })
         _fetch_manifest.return_value = manifest
 
-        image = '192.0.2.0:8787/tripleomaster/heat-docker-agents-centos'
+        image = '192.0.2.0:8787/tripleotrain/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
-        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        # push_image = 'localhost:8787/tripleotrain/heat-docker-agents-centos'
         task = image_uploader.UploadTask(
             image_name=image + ':' + tag,
             pull_source=None,
@@ -1447,9 +1447,9 @@ class TestPythonImageUploader(base.TestCase):
             [],
             self.uploader.upload_image(task)
         )
-        source_url = urlparse('docker://192.0.2.0:8787/tripleomaster/'
+        source_url = urlparse('docker://192.0.2.0:8787/tripleotrain/'
                               'heat-docker-agents-centos:latest')
-        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+        target_url = urlparse('docker://localhost:8787/tripleotrain/'
                               'heat-docker-agents-centos:latest')
 
         authenticate.assert_has_calls([
@@ -1495,10 +1495,10 @@ class TestPythonImageUploader(base.TestCase):
         })
         _fetch_manifest.return_value = manifest
 
-        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        image = 'docker.io/tripleotrain/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
-        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        # push_image = 'localhost:8787/tripleotrain/heat-docker-agents-centos'
         task = image_uploader.UploadTask(
             image_name=image + ':' + tag,
             pull_source=None,
@@ -1515,9 +1515,9 @@ class TestPythonImageUploader(base.TestCase):
             [],
             self.uploader.upload_image(task)
         )
-        source_url = urlparse('docker://docker.io/tripleomaster/'
+        source_url = urlparse('docker://docker.io/tripleotrain/'
                               'heat-docker-agents-centos:latest')
-        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+        target_url = urlparse('docker://localhost:8787/tripleotrain/'
                               'heat-docker-agents-centos:latest')
 
         authenticate.assert_has_calls([
@@ -1602,11 +1602,11 @@ class TestPythonImageUploader(base.TestCase):
         })
         _fetch_manifest.return_value = manifest
 
-        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        image = 'docker.io/tripleotrain/heat-docker-agents-centos'
         tag = 'latest'
         append_tag = 'modify-123'
         push_destination = 'localhost:8787'
-        # push_image = 'localhost:8787/tripleomaster/heat-docker-agents-centos'
+        # push_image = 'localhost:8787/tripleotrain/heat-docker-agents-centos'
         task = image_uploader.UploadTask(
             image_name=image + ':' + tag,
             pull_source=None,
@@ -1620,22 +1620,22 @@ class TestPythonImageUploader(base.TestCase):
         )
 
         source_url = urlparse(
-            'docker://docker.io/tripleomaster/'
+            'docker://docker.io/tripleotrain/'
             'heat-docker-agents-centos:latest')
         unmodified_target_url = urlparse(
-            'docker://localhost:8787/tripleomaster/'
+            'docker://localhost:8787/tripleotrain/'
             'heat-docker-agents-centos:latest')
         local_modified_url = urlparse(
-            'containers-storage:localhost:8787/tripleomaster/'
+            'containers-storage:localhost:8787/tripleotrain/'
             'heat-docker-agents-centos:latestmodify-123')
         target_url = urlparse(
-            'docker://localhost:8787/tripleomaster/'
+            'docker://localhost:8787/tripleotrain/'
             'heat-docker-agents-centos:latestmodify-123')
 
         self.assertEqual([
-            'localhost:8787/tripleomaster/'
+            'localhost:8787/tripleotrain/'
             'heat-docker-agents-centos:latest',
-            'localhost:8787/tripleomaster/'
+            'localhost:8787/tripleotrain/'
             'heat-docker-agents-centos:latestmodify-123'],
             self.uploader.upload_image(task)
         )
@@ -1692,9 +1692,9 @@ class TestPythonImageUploader(base.TestCase):
         run_modify_playbook.assert_called_once_with(
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
-            'localhost:8787/tripleomaster/'
+            'localhost:8787/tripleotrain/'
             'heat-docker-agents-centos:latest',
-            'localhost:8787/tripleomaster/'
+            'localhost:8787/tripleotrain/'
             'heat-docker-agents-centos:latest',
             'modify-123',
             container_build_tool='buildah'
@@ -1722,7 +1722,7 @@ class TestPythonImageUploader(base.TestCase):
             target_session
         ]
 
-        image = 'docker.io/tripleomaster/heat-docker-agents-centos'
+        image = 'docker.io/tripleotrain/heat-docker-agents-centos'
         tag = 'latest'
         push_destination = 'localhost:8787'
         source_image = 'containers-storage:%s:%s' % (image, tag)
@@ -1743,7 +1743,7 @@ class TestPythonImageUploader(base.TestCase):
             self.uploader.upload_image(task)
         )
         source_url = urlparse(source_image)
-        target_url = urlparse('docker://localhost:8787/tripleomaster/'
+        target_url = urlparse('docker://localhost:8787/tripleotrain/'
                               'heat-docker-agents-centos:latest')
         authenticate.assert_has_calls([
             mock.call(
