@@ -1593,8 +1593,6 @@ class PythonImageUploader(BaseImageUploader):
 
         for source_manifest in source_manifests:
             manifest = json.loads(source_manifest)
-            LOG.debug('[%s] Current image manifest: [%s]' %
-                      (image, json.dumps(manifest, indent=4)))
             config_str = None
             if manifest.get('mediaType') == MEDIA_MANIFEST_V2:
                 config_digest = manifest['config']['digest']
