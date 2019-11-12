@@ -52,7 +52,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'gathering', 'smart')
     config.set('defaults', 'fact_caching', 'jsonfile')
     config.set('defaults', 'fact_caching_connection',
-               '/var/tmp/ansible_fact_cache')
+               '/var/lib/mistral/ansible_fact_cache')
 
     # Expire facts in the fact cache after 7200s (2h)
     config.set('defaults', 'fact_caching_timeout', '7200')
