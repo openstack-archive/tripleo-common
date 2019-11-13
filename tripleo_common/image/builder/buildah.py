@@ -210,11 +210,21 @@ class BuildahBuilder(base.BaseBuilder):
                     raise SystemError(job._exception)
             else:
                 if not_done:
-                    raise SystemError(
-                        'The following jobs were incomplete: {}'.format(
-                            not_done
-                        )
-                    )
+                    error_msg = ('The following jobs were '
+                                 'incomplete: {}'.format(not_done))
+
+                    exceptions_raised = [job._exception for job in not_done
+                                         if job._exception]
+
+                    if exceptions_raised:
+                        error_msg = error_msg + os.linesep + (
+                            "%(raised_count)d of the incomplete "
+                            "jobs threw exceptions: %(exceptions)s" %
+                            {'raised_count': len(exceptions_raised),
+                             'exceptions': exceptions_raised})
+
+                    raise SystemError(error_msg)
+
         elif isinstance(deps, (dict,)):
             for container in deps:
                 self._generate_container(container)
