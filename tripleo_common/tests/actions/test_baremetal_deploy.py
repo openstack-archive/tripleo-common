@@ -677,6 +677,38 @@ class TestExpandRoles(base.TestCase):
             },
             result['environment']['parameter_defaults'])
 
+    def test_image_in_defaults(self):
+        roles = [{
+            'name': 'Controller',
+            'defaults': {
+                'image': {
+                    'href': 'file:///tmp/foo.qcow2',
+                    'checksum': '12345678'
+                }
+            },
+            'count': 3,
+            'instances': [{
+                'hostname': 'overcloud-controller-0',
+                'image': {'href': 'overcloud-full'}
+            }, {
+                'hostname': 'overcloud-controller-1',
+            }]
+        }]
+        action = baremetal_deploy.ExpandRolesAction(roles)
+        result = action.run(mock.Mock())
+        self.assertEqual(
+            [
+                {'hostname': 'overcloud-controller-0',
+                 'image': {'href': 'overcloud-full'}},
+                {'hostname': 'overcloud-controller-1',
+                 'image': {'href': 'file:///tmp/foo.qcow2',
+                           'checksum': '12345678'}},
+                {'hostname': 'overcloud-controller-2',
+                 'image': {'href': 'file:///tmp/foo.qcow2',
+                           'checksum': '12345678'}},
+            ],
+            result['instances'])
+
     def test_with_parameters(self):
         roles = [{
             'name': 'Compute',
