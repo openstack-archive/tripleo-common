@@ -1,21 +1,5 @@
-Defaults!/usr/bin/run-validation !requiretty
-Defaults:validations !requiretty
 Defaults:mistral !requiretty
-mistral ALL = (validations) NOPASSWD:SETENV: /usr/bin/run-validation
-mistral ALL = NOPASSWD: /usr/bin/chown -h validations\: /tmp/validations_identity_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        /usr/bin/chown -h validations\: /tmp/validations_identity_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        !/usr/bin/chown /tmp/validations_identity_* *, !/usr/bin/chown /tmp/validations_identity_*..*
-mistral ALL = NOPASSWD: /usr/bin/chown -h validations\: /tmp/validations_inputs_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        /usr/bin/chown -h validations\: /tmp/validations_inputs_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        !/usr/bin/chown /tmp/validations_inputs_* *, !/usr/bin/chown /tmp/validations_inputs_*..*
-mistral ALL = NOPASSWD: /usr/bin/rm -f /tmp/validations_identity_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        /usr/bin/rm -f /tmp/validations_identity_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        !/usr/bin/rm /tmp/validations_identity_* *, !/usr/bin/rm /tmp/validations_identity_*..*
-mistral ALL = NOPASSWD: /usr/bin/rm -f /tmp/validations_inputs_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        /usr/bin/rm -f /tmp/validations_inputs_[A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_][A-Za-z0-9_], \
-        !/usr/bin/rm /tmp/validations_inputs_* *, !/usr/bin/rm /tmp/validations_inputs_*..*
 mistral ALL = NOPASSWD: /bin/nova-manage cell_v2 discover_hosts *
 mistral ALL = NOPASSWD: /usr/bin/tar --xattrs --ignore-failed-read -C / -cf /var/tmp/undercloud-backup-*.tar *
 mistral ALL = NOPASSWD: /usr/bin/chown mistral. /var/tmp/undercloud-backup-*/filesystem-*.tar
 mistral ALL = NOPASSWD: /usr/bin/tripleo-container-image-prepare *
-validations ALL = NOPASSWD: ALL
