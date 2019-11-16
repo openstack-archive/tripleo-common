@@ -38,7 +38,7 @@ BUILD_ALL_STR_CONTAINER = 'container1'
 
 
 class ThreadPoolExecutorReturn(object):
-    pass
+    _exception = None
 
 
 class ThreadPoolExecutorReturnFailed(object):
