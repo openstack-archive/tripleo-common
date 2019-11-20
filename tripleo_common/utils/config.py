@@ -203,19 +203,23 @@ class Config(object):
     def render_network_config(self, stack, config_dir, server_roles):
         network_config = self.get_network_config_data(stack)
         for server, config in network_config.items():
-            server_deployment_dir = os.path.join(
-                config_dir, server_roles[server], server)
-            self._mkdir(server_deployment_dir)
-            network_config_path = os.path.join(
-                server_deployment_dir, "NetworkConfig")
-            network_config_role_path = os.path.join(
-                config_dir, server_roles[server], "NetworkConfig")
-            s_config = self.client.software_configs.get(config)
-            if getattr(s_config, 'config', ''):
-                with self._open_file(network_config_path) as f:
-                    f.write(s_config.config)
-                with self._open_file(network_config_role_path) as f:
-                    f.write(s_config.config)
+            if server in server_roles:
+                server_deployment_dir = os.path.join(
+                    config_dir, server_roles[server], server)
+                self._mkdir(server_deployment_dir)
+                network_config_path = os.path.join(
+                    server_deployment_dir, "NetworkConfig")
+                network_config_role_path = os.path.join(
+                    config_dir, server_roles[server], "NetworkConfig")
+                s_config = self.client.software_configs.get(config)
+                if getattr(s_config, 'config', ''):
+                    with self._open_file(network_config_path) as f:
+                        f.write(s_config.config)
+                    with self._open_file(network_config_role_path) as f:
+                        f.write(s_config.config)
+            else:
+                self.log.warning('Server with id %s is ignored from config '
+                                 '(Possibly blacklisted)' % server)
 
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
