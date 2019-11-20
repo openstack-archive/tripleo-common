@@ -280,8 +280,21 @@ workflows:
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
-        on-success: container_images_prepare
+        on-success: add_root_stack_name
         on-error: ensure_passwords_exist_set_status_failed
+
+      add_root_stack_name:
+        action: tripleo.parameters.update
+        input:
+          container: <% $.container %>
+          validate: <% $.validate_stack %>
+          parameters:
+            RootStackName: <% $.container %>
+        on-success: container_images_prepare
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-error: send_message
 
       container_images_prepare:
         description: >
