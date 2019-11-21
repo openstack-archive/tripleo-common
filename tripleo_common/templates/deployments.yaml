@@ -1,11 +1,16 @@
+- name: Quote the JSON queries to escape invalid characters
+  set_fact:
+    item_id: '"{{ item }}".id'
+    item_group: '"{{ item }}".group'
+    item_only: '"{{ item }}"'
+
 - name: Lookup deployment UUID
   set_fact:
-    deployment_uuid: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.id') }}"
+    deployment_uuid: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item_id) }}"
 
 - name: Lookup deployment group
   set_fact:
-    deployment_group: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item ~ '.group') }}"
-
+    deployment_group: "{{ lookup('file', tripleo_role_name ~ '/' ~ ansible_hostname | lower ~ '/' ~ item) | from_yaml | json_query(item_group) }}"
 
 - name: Hiera check and diff mode
   block:
@@ -47,7 +52,7 @@
 
     - name: "Remote copy deployment file for {{ item }}"
       copy:
-        content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item) }} ]"
+        content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item_only) }} ]"
         dest: "/var/lib/heat-config/check-mode/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
 
     - name: Run hiera deployment for check mode
@@ -132,7 +137,7 @@
 
 - name: "Remote copy deployment file for {{ item }}"
   copy:
-    content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item) }} ]"
+    content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item_only) }} ]"
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
 
 - name: "Check if deployed file exists for {{ item }}"
