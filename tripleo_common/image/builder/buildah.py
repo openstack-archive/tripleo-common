@@ -207,21 +207,26 @@ class BuildahBuilder(base.BaseBuilder):
             #                  but not executed a SystemError will be raised.
             for job in done:
                 if job._exception:
-                    raise SystemError(job._exception)
+                    raise SystemError("%(container)s raised %(exception)s" %
+                                      {'container': future_to_build[job],
+                                       'exception': job._exception})
             else:
                 if not_done:
                     error_msg = ('The following jobs were '
-                                 'incomplete: {}'.format(not_done))
+                                 'incomplete: {}'.format(
+                                     [future_to_build[job] for job
+                                         in not_done]))
 
-                    exceptions_raised = [job._exception for job in not_done
-                                         if job._exception]
-
-                    if exceptions_raised:
-                        error_msg = error_msg + os.linesep + (
-                            "%(raised_count)d of the incomplete "
-                            "jobs threw exceptions: %(exceptions)s" %
-                            {'raised_count': len(exceptions_raised),
-                             'exceptions': exceptions_raised})
+                    jobs_with_exceptions = [{
+                        'container': future_to_build[job],
+                        'exception': job._exception}
+                        for job in not_done if job._exception]
+                    if jobs_with_exceptions:
+                        for job_with_exception in jobs_with_exceptions:
+                            error_msg = error_msg + os.linesep + (
+                                "%(container)s raised the following "
+                                "exception: %(exception)s" %
+                                job_with_exception)
 
                     raise SystemError(error_msg)
 

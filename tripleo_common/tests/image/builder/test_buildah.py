@@ -51,32 +51,21 @@ class ThreadPoolExecutorReturnSuccess(object):
     _exception = False
 
 
-# Return values for the ThreadPoolExecutor
-R_FAILED = (
-    (
-        ThreadPoolExecutorReturnSuccess,
-        ThreadPoolExecutorReturnSuccess,
-        ThreadPoolExecutorReturnFailed
-    ),
-    set()
-)
-R_OK = (
-    (
-        ThreadPoolExecutorReturnSuccess,
-        ThreadPoolExecutorReturnSuccess,
-        ThreadPoolExecutorReturnSuccess
-    ),
-    set()
-)
-R_BROKEN = (
-    (
-        ThreadPoolExecutorReturnSuccess,
-    ),
-    (
-        ThreadPoolExecutorReturn,
-        ThreadPoolExecutorReturn
-    )
-)
+# Iterable version of the return values for predictable submit() returns
+R_FAILED_LIST = [ThreadPoolExecutorReturnSuccess(),
+                 ThreadPoolExecutorReturnSuccess(),
+                 ThreadPoolExecutorReturnFailed()]
+R_OK_LIST = [ThreadPoolExecutorReturnSuccess(),
+             ThreadPoolExecutorReturnSuccess(),
+             ThreadPoolExecutorReturnSuccess()]
+R_BROKEN_LISTS = [[ThreadPoolExecutorReturnSuccess()],
+                  [ThreadPoolExecutorReturn(),
+                   ThreadPoolExecutorReturn()]]
+
+# Return values as done and not_done sets for the ThreadPoolExecutor
+R_FAILED = (set(R_FAILED_LIST), set())
+R_OK = (set(R_OK_LIST), set())
+R_BROKEN = (set(R_BROKEN_LISTS[0]), set(R_BROKEN_LISTS[1]))
 
 
 class TestBuildahBuilder(base.TestCase):
@@ -180,7 +169,8 @@ class TestBuildahBuilder(base.TestCase):
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_BROKEN)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_list_broken(self, mock_submit, mock_wait, mock_build):
+    def test_build_all_list_broken(self, mock_build, mock_wait, mock_submit):
+        mock_submit.side_effect = R_BROKEN_LISTS[0] + R_BROKEN_LISTS[1]
         _b = bb(WORK_DIR, DEPS)
         self.assertRaises(
             SystemError,
@@ -191,7 +181,8 @@ class TestBuildahBuilder(base.TestCase):
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_FAILED)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_list_failed(self, mock_submit, mock_wait, mock_build):
+    def test_build_all_list_failed(self, mock_build, mock_wait, mock_submit):
+        mock_submit.side_effect = R_FAILED_LIST
         _b = bb(WORK_DIR, DEPS)
         self.assertRaises(
             SystemError,
@@ -202,23 +193,23 @@ class TestBuildahBuilder(base.TestCase):
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_list_ok(self, mock_submit, mock_wait, mock_build):
+    def test_build_all_list_ok(self, mock_build, mock_wait, mock_submit):
         bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_LIST_CONTAINERS)
 
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_ok_no_deps(self, mock_submit, mock_wait, mock_build):
+    def test_build_all_ok_no_deps(self, mock_build, mock_wait, mock_submit):
         bb(WORK_DIR, DEPS).build_all()
 
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_dict_ok(self, mock_submit, mock_wait, mock_build):
+    def test_build_all_dict_ok(self, mock_build, mock_wait, mock_submit):
         bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_DICT_CONTAINERS)
 
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_str_ok(self, mock_submit, mock_wait, mock_build):
+    def test_build_all_str_ok(self, mock_build, mock_wait, mock_submit):
         bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_STR_CONTAINER)
