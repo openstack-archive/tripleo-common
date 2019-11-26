@@ -54,7 +54,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
             playbook=self.playbook, limit_hosts=self.limit_hosts,
             remote_user=self.remote_user, become=self.become,
             become_user=self.become_user, extra_vars=self.extra_vars,
-            verbosity=self.verbosity)
+            verbosity=self.verbosity, config_download_args=['--check',
+                                                            '--diff'])
         ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
         mock_write_cfg.return_value = ansible_config_path
 
@@ -79,7 +80,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
             ansible_playbook_cmd, '-v', pb, '--become',
             '--become-user',
             self.become_user, '--extra-vars', json.dumps(self.extra_vars),
-            env_variables=env, cwd=action.work_dir,
+            '--check', '--diff', env_variables=env, cwd=action.work_dir,
             log_errors=processutils.LogErrors.ALL)
 
     @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")

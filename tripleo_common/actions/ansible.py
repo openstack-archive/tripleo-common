@@ -186,6 +186,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
             'use_openstack_credentials', False)
         self.tags = self._kwargs_for_run.pop('tags', None)
         self.skip_tags = self._kwargs_for_run.pop('skip_tags', None)
+        self.config_download_args = self._kwargs_for_run.pop(
+            'config_download_args', None)
         self.extra_env_variables = self._kwargs_for_run.pop(
             'extra_env_variables', None)
         self.queue_name = self._kwargs_for_run.pop('queue_name', None)
@@ -378,6 +380,9 @@ class AnsiblePlaybookAction(base.TripleOAction):
 
         if self.skip_tags:
             command.extend(['--skip-tags', self.skip_tags])
+
+        if self.config_download_args:
+            command.extend(self.config_download_args)
 
         if self.extra_env_variables:
             if not isinstance(self.extra_env_variables, dict):
