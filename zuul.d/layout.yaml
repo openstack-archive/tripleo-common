@@ -18,8 +18,6 @@
         - openstack-tox-py35
         - openstack-tox-py36
         - openstack-tox-py37
-        - tripleo-ci-centos-7-scenario010-standalone:
-            voting: false
         - tripleo-ci-centos-7-containers-multinode:
             dependencies: &deps_unit_lint
               - openstack-tox-pep8
@@ -60,6 +58,8 @@
         - tripleo-ci-centos-7-scenario003-standalone:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-7-scenario004-standalone:
+            dependencies: *deps_unit_lint
+        - tripleo-ci-centos-7-scenario010-standalone:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-7-scenario012-standalone:
             dependencies: *deps_unit_lint
