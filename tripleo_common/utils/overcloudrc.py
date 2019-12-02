@@ -18,6 +18,11 @@ from six.moves import urllib
 
 from tripleo_common import constants
 
+try:  # py3
+    from shlex import quote
+except ImportError:  # py2
+    from pipes import quote
+
 
 def get_service_ips(stack):
     service_ips = {}
@@ -109,7 +114,8 @@ def create_overcloudrc(stack, no_proxy, admin_password, region_name):
 
     overcloudrc = CLEAR_ENV
     for key, value in rc_params.items():
-        line = "export %(key)s=%(value)s\n" % {'key': key, 'value': value}
+        line = "export %(key)s=%(value)s\n" % {'key': key,
+                                               'value': quote(value)}
         overcloudrc = overcloudrc + line
     overcloudrc = overcloudrc + CLOUDPROMPT
 
