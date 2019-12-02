@@ -34,9 +34,11 @@ class OvercloudRcTest(base.TestCase):
             ]
         }
 
-        result = overcloudrc.create_overcloudrc(stack, "", "AdminPassword",
+        result = overcloudrc.create_overcloudrc(stack, "foo", "AdminPassword",
                                                 "regionTwo")
 
+        self.assertIn("export no_proxy='foo,foo.com,[fd00::1]'",
+                      result['overcloudrc'])
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc'])
         self.assertIn("OS_IDENTITY_API_VERSION=3", result['overcloudrc'])
         self.assertIn(overcloudrc.CLOUDPROMPT, result['overcloudrc'])
