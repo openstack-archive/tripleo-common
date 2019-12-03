@@ -74,7 +74,10 @@ workflows:
 
     tasks:
       get_config:
-        action: tripleo.config.get_overcloud_config container=<% $.container %>
+        action: tripleo.config.get_overcloud_config
+        input:
+          container: <% $.container %>
+          container_config: <% $.container %>-config
         publish:
           status: SUCCESS
           message: <% task().result %>
@@ -121,6 +124,7 @@ workflows:
     description: Take a container and perform an update nodes by nodes
 
     input:
+      - container: overcloud
       - node_user: tripleo-admin
       - nodes
       - playbook
@@ -144,6 +148,7 @@ workflows:
         action: tripleo.config.download_config
         input:
           work_dir: <% $.work_dir %>/<% execution().id %>
+          container_config: <% $.container %>-config
         on-success: get_private_key
         on-error: node_update_failed
 
