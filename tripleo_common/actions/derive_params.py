@@ -147,7 +147,11 @@ class GetDpdkNicsNumaInfoAction(base.TripleOAction):
                 members = config.get('members', [])
                 dpdk_ifaces, mtu = self.get_dpdk_interfaces(members)
                 for dpdk_iface in dpdk_ifaces:
-                    name = dpdk_iface.get('name', '')
+                    type = dpdk_iface.get('type', '')
+                    if type == 'sriov_vf':
+                        name = dpdk_iface.get('device', '')
+                    else:
+                        name = dpdk_iface.get('name', '')
                     phy_name = self.get_physical_iface_name(
                         ordered_nics, name)
                     node = self.find_numa_node_id(numa_nics, phy_name)
