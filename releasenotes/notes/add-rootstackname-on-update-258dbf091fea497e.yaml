@@ -1,0 +1,5 @@
+---
+fixes:
+  - The RootStackName parameter is now added to the plan in
+    plan-environment.yaml on both stack create and update. Previously it was
+    only added on create.
