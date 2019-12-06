@@ -61,6 +61,7 @@
         - tripleo-ci-centos-7-scenario012-standalone:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-7-containerized-undercloud-upgrades:
+            voting: true
             dependencies: *deps_unit_lint
         - tripleo-buildimage-overcloud-full-centos-7:
             dependencies: *deps_unit_lint
@@ -89,3 +90,5 @@
         - tripleo-buildimage-overcloud-hardened-full-centos-7:
             files:
               - ^image-yaml/.*$
+        - tripleo-ci-centos-7-containerized-undercloud-upgrades:
+            voting: true
