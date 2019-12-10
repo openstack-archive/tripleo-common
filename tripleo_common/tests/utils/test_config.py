@@ -163,7 +163,7 @@ class TestConfig(base.TestCase):
         for role in fake_role:
             filedir = os.path.join(self.tmp_dir, role)
             os.makedirs(filedir)
-            for step in range(constants.UPGRADE_STEPS_MAX):
+            for step in range(constants.DEFAULT_STEPS_MAX):
                 filepath = os.path.join(filedir, "upgrade_tasks_step%s.yaml"
                                         % step)
                 playbook_tasks = self.config._write_tasks_per_step(
