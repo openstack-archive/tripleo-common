@@ -642,6 +642,15 @@ RUN mkdir -p /openstack && \
 {% endblock %}
 
 
+{# horizon #}
+
+{% block horizon_footer %}
+RUN mkdir -p /openstack && \
+    ln -s /usr/share/openstack-tripleo-common/healthcheck/horizon /openstack/healthcheck && \
+    chmod a+rx /openstack/healthcheck
+{% endblock %}
+
+
 {# ironic #}
 
 {% block ironic_api_footer %}
