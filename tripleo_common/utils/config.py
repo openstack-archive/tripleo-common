@@ -504,31 +504,11 @@ class Config(object):
         for server in server_names.values():
             host_var_server_path = os.path.join(host_vars_dir, server)
             host_var_server_template = env.get_template('host_var_server.j2')
-            server_role = server_roles.get(server)
-            server_role_vars = role_host_vars.get(server_role, dict())
-            ansible_host_vars = None
-            if role_host_vars and server_role:
-                servers_ansible_host_vars = [
-                    v for k, v in server_role_vars.items()
-                    if k.startswith(server)
-                ]
-                if len(servers_ansible_host_vars) > 1:
-                    raise SystemError(
-                        "Found multiple `{}`, which is unexpected. This means"
-                        " that the FQDN of the selected device is either"
-                        " wrong or is sharing a name with another host, which"
-                        " is also wrong. Please correct this issue before"
-                        " continuing. Return data can be found here"
-                        " -> {}.".format(
-                            server,
-                            servers_ansible_host_vars
-                        )
-                    )
-                elif len(servers_ansible_host_vars) == 1:
-                    ansible_host_vars = yaml.safe_dump(
-                        servers_ansible_host_vars[0],
-                        default_flow_style=False
-                    )
+            role = server_roles[server]
+            ansible_host_vars = (
+                yaml.safe_dump(
+                    role_host_vars[role][server],
+                    default_flow_style=False) if role_host_vars else None)
 
             pre_deployments = server_deployment_names.get(
                 server, {}).get('pre_deployments', [])
@@ -537,11 +517,10 @@ class Config(object):
 
             with open(host_var_server_path, 'w') as f:
                 template_data = host_var_server_template.render(
-                    role=server_role,
+                    role=role,
                     pre_deployments=pre_deployments,
                     post_deployments=post_deployments,
                     ansible_host_vars=ansible_host_vars)
-                print(server, ansible_host_vars)
                 self.validate_config(template_data, host_var_server_path)
                 f.write(template_data)
 
