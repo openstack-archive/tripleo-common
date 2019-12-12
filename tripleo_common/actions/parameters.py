@@ -637,6 +637,16 @@ class GetNetworkConfigAction(templates.ProcessTemplatesAction):
         if isinstance(processed_data, actions.Result):
             return processed_data
 
+        # Default temporary value is used when no user input for any
+        # interface routes for the role networks to find network config.
+        role_networks = processed_data['template'].get('resources', {}).get(
+            self.role_name + 'GroupVars', {}).get('properties', {}).get(
+                'value', {}).get('role_networks', [])
+        for nw in role_networks:
+            rt = nw + 'InterfaceRoutes'
+            if rt not in processed_data['environment']['parameter_defaults']:
+                processed_data['environment']['parameter_defaults'][rt] = [[]]
+
         # stacks.preview method raises validation message if stack is
         # already deployed. here renaming container to get preview data.
         container_temp = self.container + "-TEMP"
