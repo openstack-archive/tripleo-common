@@ -1514,6 +1514,151 @@ class GetNetworkConfigActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_workflow_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_valid_network_config_with_no_interface_routes_inputs(
+            self, mock_get_object_client, mock_get_workflow_client,
+            mock_get_orchestration_client, mock_get_template_contents,
+            mock_process_multiple_environments_and_files,
+            mock_cache_get,
+            mock_cache_set):
+
+        mock_ctx = mock.MagicMock()
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2'),
+            ({}, mock_env)
+        )
+        mock_get_object_client.return_value = swift
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30',
+            'resources': {'ComputeGroupVars': {'properties': {
+                'value': {'role_networks': ['InternalApi', 'Storage']}
+                }
+            }}
+        })
+        mock_process_multiple_environments_and_files.return_value = (
+            {}, {'parameter_defaults': {}})
+
+        mock_heat = mock.MagicMock()
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": "echo \'{\"network_config\": {}}\'"
+                           " > /etc/os-net-config/config.json"}
+            }])
+
+        mock_get_orchestration_client.return_value = mock_heat
+
+        mock_cache_get.return_value = None
+        expected = {"network_config": {}}
+        # Test
+        action = parameters.GetNetworkConfigAction(container='overcloud',
+                                                   role_name='Compute')
+        result = action.run(mock_ctx)
+        self.assertEqual(expected, result)
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment={'parameter_defaults': {
+                'InternalApiInterfaceRoutes': [[]],
+                'StorageInterfaceRoutes': [[]]}},
+            files={},
+            template={'heat_template_version': '2016-04-30',
+                      'resources': {'ComputeGroupVars': {
+                          'properties': {'value': {
+                              'role_networks': ['InternalApi',
+                                                'Storage']}}}}},
+            stack_name='overcloud-TEMP',
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_get')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_run_valid_network_config_with_interface_routes_inputs(
+            self, mock_get_object_client, mock_get_workflow_client,
+            mock_get_orchestration_client, mock_get_template_contents,
+            mock_process_multiple_environments_and_files,
+            mock_cache_get,
+            mock_cache_set):
+
+        mock_ctx = mock.MagicMock()
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}]
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            swiftexceptions.ClientException('atest2'),
+            ({}, mock_env)
+        )
+        mock_get_object_client.return_value = swift
+
+        mock_get_template_contents.return_value = ({}, {
+            'heat_template_version': '2016-04-30',
+            'resources': {'ComputeGroupVars': {'properties': {
+                'value': {'role_networks': ['InternalApi', 'Storage']}}}}
+        })
+        mock_process_multiple_environments_and_files.return_value = (
+            {}, {'parameter_defaults': {
+                'InternalApiInterfaceRoutes': ['test1'],
+                'StorageInterfaceRoutes': ['test2']}})
+
+        mock_heat = mock.MagicMock()
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": "echo \'{\"network_config\": {}}\'"
+                           " > /etc/os-net-config/config.json"}
+            }])
+
+        mock_get_orchestration_client.return_value = mock_heat
+
+        mock_cache_get.return_value = None
+        expected = {"network_config": {}}
+        # Test
+        action = parameters.GetNetworkConfigAction(container='overcloud',
+                                                   role_name='Compute')
+        result = action.run(mock_ctx)
+        self.assertEqual(expected, result)
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment={'parameter_defaults': {
+                'InternalApiInterfaceRoutes': ['test1'],
+                'StorageInterfaceRoutes': ['test2']}},
+            files={},
+            template={'heat_template_version': '2016-04-30',
+                      'resources': {'ComputeGroupVars': {'properties': {
+                          'value': {'role_networks': ['InternalApi',
+                                                      'Storage']}}}}},
+            stack_name='overcloud-TEMP',
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_set')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_get')
+    @mock.patch('heatclient.common.template_utils.'
+                'process_multiple_environments_and_files')
+    @mock.patch('heatclient.common.template_utils.get_template_contents')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run_invalid_network_config(
             self, mock_get_object_client,
             mock_get_workflow_client, mock_get_orchestration_client,
