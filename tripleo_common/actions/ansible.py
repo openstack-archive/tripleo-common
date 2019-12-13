@@ -185,12 +185,14 @@ class AnsibleAction(actions.Action):
         self.gather_facts = self._kwargs_for_run.pop('gather_facts', False)
 
         self._work_dir = None
+        self._remove_work_dir = False
 
     @property
     def work_dir(self):
         if self._work_dir:
             return self._work_dir
         self._work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action')
+        self._remove_work_dir = True
         return self._work_dir
 
     @property
@@ -322,7 +324,7 @@ class AnsibleAction(actions.Action):
                     "log_path": os.path.join(self.work_dir, 'ansible.log')}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.
-            if not self.verbosity:
+            if not self.verbosity and self._remove_work_dir:
                 shutil.rmtree(self.work_dir)
 
 
@@ -383,11 +385,14 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self.command_timeout = self._kwargs_for_run.pop(
             'command_timeout', None)
 
+        self._remove_work_dir = False
+
     @property
     def work_dir(self):
         if self._work_dir:
             return self._work_dir
         self._work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action')
+        self._remove_work_dir = True
         return self._work_dir
 
     @property
@@ -658,7 +663,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     "log_path": os.path.join(self.work_dir, 'ansible.log')}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.
-            if not self.verbosity:
+            if not self.verbosity and self._remove_work_dir:
                 shutil.rmtree(self.work_dir)
 
 
