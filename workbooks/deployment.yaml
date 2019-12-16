@@ -744,40 +744,6 @@ workflows:
           execution: <% execution() %>
           message: <% $.get('message', '') %>
 
-  createcloudsyaml:
-    description: >
-      Generates the overcloud clouds.yaml
-      It requires container and queue name as a input.
-
-    tags:
-      - tripleo-common-managed
-
-    input:
-      - container: overcloud
-      - queue_name: tripleo
-
-    tasks:
-      generate_cloudyaml:
-        action: tripleo.deployment.createcloudsyaml
-        input:
-          container: <% $.container %>
-        on-complete: send_message
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-        publish:
-          status: SUCCESS
-          message: <% task().result %>
-
-      send_message:
-        workflow: tripleo.messaging.v1.send
-        input:
-          queue_name: <% $.queue_name %>
-          type: <% execution().name %>
-          status: <% $.status %>
-          execution: <% execution() %>
-          message: <% $.get('message', '') %>
-
   get_deployment_status:
     description: >
       Get deployment status and update it if needed based on stack and

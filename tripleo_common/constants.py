@@ -215,7 +215,3 @@ EXCLUSIVE_NEUTRON_DRIVERS = ['ovn', 'openvswitch']
 DEFAULT_STEPS_MAX = 6
 
 PER_STEP_TASKS = ['upgrade_tasks', 'deploy_steps_tasks']
-
-# Global Directories for clouds.yaml
-GLOBAL_OS_DIR = '/etc/openstack'
-CLOUDS_YAML_FILE = 'clouds.yaml'
