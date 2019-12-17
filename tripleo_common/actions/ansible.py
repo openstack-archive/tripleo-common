@@ -110,6 +110,9 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'fact_caching_connection',
                '/var/lib/mistral/ansible_fact_cache')
 
+    # Set the interpreter discovery to auto mode.
+    config.set('defaults', 'interpreter_python', 'auto')
+
     # Expire facts in the fact cache after 7200s (2h)
     config.set('defaults', 'fact_caching_timeout', '7200')
 
