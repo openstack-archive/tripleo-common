@@ -50,7 +50,8 @@ class Config(object):
                 for idx, name in enumerate(shortnames):
                     if 'server_ids' in role_node_id_map:
                         server_id = role_node_id_map['server_ids'][role][idx]
-                        servers[server_id] = name.lower()
+                        if server_id is not None:
+                            servers[server_id] = name.lower()
         return servers
 
     def get_network_config_data(self, stack):
