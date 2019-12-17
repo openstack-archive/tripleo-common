@@ -247,6 +247,7 @@ container_images_template:
   - ContainerGlanceApiImage
   services:
   - OS::TripleO::Services::GlanceApi
+  - OS::TripleO::Services::GlanceApiEdge
 
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-api{{name_suffix}}:{{tag}}"
   image_source: kolla
@@ -284,6 +285,7 @@ container_images_template:
   - ContainerHAProxyImage
   services:
   - OS::TripleO::Services::HAproxy
+  - OS::TripleO::Services::HAproxyEdge
   - OS::TripleO::Services::UndercloudHAProxy
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-all{{name_suffix}}:{{tag}}"
