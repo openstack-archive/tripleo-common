@@ -29,49 +29,6 @@ from tripleo_common.actions import ansible
 from tripleo_common.tests import base
 
 
-class AnsibleActionTest(base.TestCase):
-
-    def setUp(self):
-        super(AnsibleActionTest, self).setUp()
-
-        self.hosts = "127.0.0.2"
-        self.module = "foo"
-        self.remote_user = 'fido'
-        self.become = True
-        self.become_user = 'root'
-        self.ctx = mock.MagicMock()
-
-    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
-    @mock.patch("oslo_concurrency.processutils.execute")
-    def test_run(self, mock_execute, mock_write_cfg):
-
-        mock_execute.return_value = ('', '')
-
-        action = ansible.AnsibleAction(
-            hosts=self.hosts, module=self.module, remote_user=self.remote_user,
-            become=self.become, become_user=self.become_user)
-        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
-        mock_write_cfg.return_value = ansible_config_path
-
-        action.run(self.ctx)
-
-        env = {
-            'HOME': action.work_dir,
-            'ANSIBLE_LOCAL_TEMP': action.work_dir,
-            'ANSIBLE_CONFIG': ansible_config_path
-        }
-
-        mock_write_cfg.assert_called_once_with(action.work_dir,
-                                               self.remote_user,
-                                               ssh_private_key=None)
-
-        mock_execute.assert_called_once_with(
-            'ansible', self.hosts, '-vvvvv', '--module-name', self.module,
-            '--become', '--become-user', self.become_user, env_variables=env,
-            cwd=action.work_dir, log_errors=processutils.LogErrors.ALL
-        )
-
-
 class AnsiblePlaybookActionTest(base.TestCase):
 
     def setUp(self):
