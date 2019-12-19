@@ -95,7 +95,9 @@ workflows:
 
       send_message:
         action: zaqar.queue_post
-        retry: count=5 delay=1
+        retry:
+          delay: 4
+          count: 16
         input:
           queue_name: <% $.queue_name %>
           messages:
@@ -106,6 +108,9 @@ workflows:
         workflow: tripleo.swift.v1.container_exists container=<% $.container %>
         input:
           create_container: true
+        retry:
+          delay: 4
+          count: 16
         on-success:
           - wait_for_swift: <% not bool($.deployment_status) %>
           - persist_to_swift_plan_latest: <% bool($.deployment_status) %>
@@ -113,7 +118,9 @@ workflows:
 
       persist_to_swift:
         action: swift.put_object
-        retry: count=5 delay=1
+        retry:
+          delay: 4
+          count: 16
         input:
           container: <% $.container %>
           obj: <% "{0}/{1}.yaml".format($.type, now().format("%Y-%m-%d_%H:%M:%S")) %>
@@ -122,7 +129,9 @@ workflows:
 
       persist_to_swift_plan_latest:
         action: swift.put_object
-        retry: count=5 delay=1
+        retry:
+          delay: 4
+          count: 16
         input:
           container: <% $.container %>
           obj: <% "deployment_status.yaml" %>
