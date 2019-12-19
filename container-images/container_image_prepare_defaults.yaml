@@ -27,7 +27,7 @@ parameter_defaults:
       # Only used if Ceph is deployed.
       ceph_namespace: docker.io/ceph
       ceph_image: daemon
-      ceph_tag: v4.0.8-stable-4.0-nautilus-centos-7-x86_64
+      ceph_tag: v4.0.10-stable-4.0-nautilus-centos-7-x86_64
 
       # Container image name components for OpenShift images.
       # Only used if OpenShift is deployed.
