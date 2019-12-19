@@ -656,7 +656,7 @@ class BaseImageUploader(object):
         name = '%s%s' % (image_url.netloc, image)
         created = config['created']
         docker_version = config.get('docker_version', '')
-        labels = config['config']['Labels']
+        labels = config['config'].get('Labels', {})
         architecture = config['architecture']
         image_os = config['os']
 
@@ -2116,7 +2116,7 @@ class PythonImageUploader(BaseImageUploader):
         i, _ = cls._image_tag_from_url(image_url)
         digest = image['digest']
         created = image['created']
-        labels = config['config']['Labels']
+        labels = config['config'].get('Labels', {})
         architecture = config['architecture']
         image_os = config['os']
         return {
