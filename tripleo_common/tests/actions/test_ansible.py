@@ -18,6 +18,7 @@ import mock
 import os
 import random
 from six.moves import configparser
+import shutil
 import string
 import sys
 import tempfile
@@ -183,6 +184,50 @@ class AnsiblePlaybookActionTest(base.TestCase):
             queue.post.call_args_list[3],
             mock.call(action.format_message(
                       message[message_size * 3:2048])))
+
+    @mock.patch("shutil.rmtree")
+    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch("oslo_concurrency.processutils.execute")
+    def test_work_dir_cleanup(self, mock_execute, mock_write_cfg, mock_rmtree):
+
+        mock_execute.return_value = ('', '')
+
+        action = ansible.AnsiblePlaybookAction(
+            playbook=self.playbook, limit_hosts=self.limit_hosts,
+            remote_user=self.remote_user, become=self.become,
+            become_user=self.become_user, extra_vars=self.extra_vars,
+            verbosity=0)
+
+        try:
+            action.run(self.ctx)
+            mock_rmtree.assert_called_once_with(action.work_dir)
+        finally:
+            # Since we mocked the delete we need to manually cleanup.
+            shutil.rmtree(action.work_dir)
+
+    @mock.patch("shutil.rmtree")
+    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch("oslo_concurrency.processutils.execute")
+    def test_work_dir_no_cleanup(self, mock_execute, mock_write_cfg,
+                                 mock_rmtree):
+
+        mock_execute.return_value = ('', '')
+
+        # Specity a work_dir, this should not be deleted automatically.
+        work_dir = tempfile.mkdtemp()
+        try:
+            action = ansible.AnsiblePlaybookAction(
+                playbook=self.playbook, limit_hosts=self.limit_hosts,
+                remote_user=self.remote_user, become=self.become,
+                become_user=self.become_user, extra_vars=self.extra_vars,
+                verbosity=self.verbosity, work_dir=work_dir)
+
+            action.run(self.ctx)
+
+            # verify the rmtree is not called
+            mock_rmtree.assert_not_called()
+        finally:
+            shutil.rmtree(work_dir)
 
 
 class CopyConfigFileTest(base.TestCase):
