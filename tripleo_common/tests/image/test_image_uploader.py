@@ -2348,6 +2348,49 @@ class TestPythonImageUploader(base.TestCase):
             self.uploader._inspect(url)
         )
 
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._image_manifest_config')
+    def test_inspect_no_labels(self, _image_manifest_config):
+        url = urlparse('containers-storage:/t/nova-api:latest')
+        config = {
+            'config': {},
+            'architecture': 'x86_64',
+            'os': 'linux'
+        }
+        _image_manifest_config.return_value = (
+            {
+                'id': 'cccc',
+                'digest': 'sha256:ccccc',
+                'names': ['192.168.2.1:5000/t/nova-api:latest'],
+                'created': '2018-10-02T11:13:45.567533229Z'
+            }, {
+                'config': {
+                    'digest': 'sha256:1234',
+                },
+                'layers': [
+                    {'digest': 'sha256:aaa'},
+                    {'digest': 'sha256:bbb'},
+                    {'digest': 'sha256:ccc'}
+                ],
+            },
+            json.dumps(config)
+        )
+
+        self.assertEqual(
+            {
+                'Name': '/t/nova-api',
+                'Architecture': 'x86_64',
+                'Created': '2018-10-02T11:13:45.567533229Z',
+                'Digest': 'sha256:ccccc',
+                'DockerVersion': '',
+                'Labels': {},
+                'Layers': ['sha256:aaa', 'sha256:bbb', 'sha256:ccc'],
+                'Os': 'linux',
+                'RepoTags': []
+            },
+            self.uploader._inspect(url)
+        )
+
     @mock.patch('os.environ')
     @mock.patch('subprocess.Popen')
     def test_delete(self, mock_popen, mock_environ):
