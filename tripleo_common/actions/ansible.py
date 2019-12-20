@@ -324,8 +324,13 @@ class AnsibleAction(actions.Action):
                     "log_path": os.path.join(self.work_dir, 'ansible.log')}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.
-            if not self.verbosity and self._remove_work_dir:
-                shutil.rmtree(self.work_dir)
+            try:
+                if not self.verbosity and self._remove_work_dir:
+                    shutil.rmtree(self.work_dir)
+            except Exception as e:
+                msg = "An error happened while cleaning work directory: " + e
+                LOG.error(msg)
+                return actions.Result(error=msg)
 
 
 class AnsiblePlaybookAction(base.TripleOAction):
@@ -663,8 +668,13 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     "log_path": os.path.join(self.work_dir, 'ansible.log')}
         finally:
             # NOTE(flaper87): clean the mess if debug is disabled.
-            if not self.verbosity and self._remove_work_dir:
-                shutil.rmtree(self.work_dir)
+            try:
+                if not self.verbosity and self._remove_work_dir:
+                    shutil.rmtree(self.work_dir)
+            except Exception as e:
+                msg = "An error happened while cleaning work directory: " + e
+                LOG.error(msg)
+                return actions.Result(error=msg)
 
 
 class AnsibleGenerateInventoryAction(base.TripleOAction):
