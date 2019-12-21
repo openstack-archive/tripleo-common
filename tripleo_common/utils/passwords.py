@@ -55,7 +55,7 @@ def generate_passwords(mistralclient=None, stack_env=None,
         elif name.startswith("Ceph"):
             if name == "CephClusterFSID":
                 # The FSID must be a UUID
-                passwords[name] = six.text_type(uuid.uuid1())
+                passwords[name] = six.text_type(uuid.uuid4())
             else:
                 # CephX keys aren't random strings
                 passwords[name] = create_cephx_key()
