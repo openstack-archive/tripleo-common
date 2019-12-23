@@ -251,15 +251,18 @@ class Config(object):
                         role_group_vars[role_name] = {}
                     role_group_vars[role_name].update(role[config])
                 else:
-                    # NOTE(jfrancoa): Move this upgrade_tasks condition to the
-                    # upper level once THT is adapted. We include it here to
-                    # allow the CI to pass until THT changed is not merged.
-                    if config == 'upgrade_tasks':
-                        for i in range(constants.UPGRADE_STEPS_MAX):
+                    # NOTE(emilien): Move this condition to the
+                    # upper level once THT is adapted for all tasks to be
+                    # run per step.
+                    # We include it here to allow the CI to pass until THT
+                    # changed is not merged.
+                    if config in constants.PER_STEP_TASKS:
+                        for i in range(constants.DEFAULT_STEPS_MAX):
                             filepath = os.path.join(role_path, '%s_step%s.yaml'
                                                     % (config, i))
                             self._write_tasks_per_step(role[config], role_name,
                                                        filepath, i)
+
                     try:
                         data = role[config]
                     except KeyError as e:
