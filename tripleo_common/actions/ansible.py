@@ -100,7 +100,7 @@ def write_default_ansible_cfg(work_dir,
                     datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
         os.rename(log_path, new_path)
 
-    config.set('defaults', 'forks', '25')
+    config.set('defaults', 'forks', '50')
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
 

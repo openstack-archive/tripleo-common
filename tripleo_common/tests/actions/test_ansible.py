@@ -303,4 +303,4 @@ class CopyConfigFileTest(base.TestCase):
             ansible_cfg = configparser.ConfigParser()
             ansible_cfg.read(resulting_ansible_config)
 
-            self.assertEqual('25', ansible_cfg.get('defaults', 'forks'))
+            self.assertEqual('50', ansible_cfg.get('defaults', 'forks'))
