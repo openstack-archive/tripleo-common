@@ -2137,6 +2137,9 @@ class PythonImageUploader(BaseImageUploader):
         digest = image['digest']
         created = image['created']
         labels = config['config'].get('Labels', {})
+        # NOTE: labels can be null
+        if labels is None:
+            labels = {}
         architecture = config['architecture']
         image_os = config['os']
         return {
