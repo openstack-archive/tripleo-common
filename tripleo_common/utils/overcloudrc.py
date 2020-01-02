@@ -89,8 +89,8 @@ def create_overcloudrc(stack, no_proxy, admin_password, region_name):
         'OS_NO_CACHE': 'True',
         'OS_CLOUDNAME': stack.stack_name,
         'no_proxy': ','.join(no_proxy_list),
-        'PYTHONWARNINGS': ('"ignore:Certificate has no, ignore:A true '
-                           'SSLContext object is not available"'),
+        'PYTHONWARNINGS': ('ignore:Certificate has no, ignore:A true '
+                           'SSLContext object is not available'),
         'OS_AUTH_TYPE': 'password',
         'OS_PASSWORD': admin_password,
         'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', ''),
