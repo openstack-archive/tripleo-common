@@ -1206,6 +1206,19 @@ class PythonImageUploader(BaseImageUploader):
 
     @classmethod
     def _global_view_proxy(cls, value=None, forget=False):
+        """Represent the global view for mixed multi-workers concurrent access
+
+        Depending on worker's context target the corresponding shared data
+        structures (global view) for the requested value add/remove
+        operation. Also keep that global view always consolidated for all of
+        the supported MP/MT worker types. Threads will share common data via
+        its common class namespace in the threads-safe standard dictionary.
+        Processes will use multiprocess synchronization primitives stored in
+        the global lock context.
+
+        :param: value: Shared data to track in the global view
+        :param: forget: Defines either to add or remove the shared data
+        """
         if not cls.lock:
             LOG.warning('No lock information provided for value %s' % value)
             return
@@ -1231,6 +1244,19 @@ class PythonImageUploader(BaseImageUploader):
     @classmethod
     def _track_uploaded_layers(cls, layer, known_path=None, image_ref=None,
                                forget=False, scope='remote'):
+        """Track an image layer info in the global view
+
+        Adds or removes layer info to/from the global view shared among
+        all workers of all supported types (MP/MT). An image layer hash and
+        scope pair provide a unique one-way entry tracked in the global view.
+        The layer info being forgotten will be untracked by any existing scope.
+
+        :param: layer: A container image layer hash to track in the global view
+        :param: known_path: Known URL or local path for the tracked layer
+        :param: image_ref: Name of the image cross-referencing tracked layer
+        :param: forget: Defines either to add or remove the tracked layer info
+        :param: scope: Specifies remote or local type of the tracked image
+        """
         if forget:
             LOG.debug('Untracking processed layer %s for any scope' % layer)
             cls._global_view_proxy(value=layer, forget=True)
