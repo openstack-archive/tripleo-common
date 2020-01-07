@@ -57,12 +57,9 @@ class TestUpdate(base.TestCase):
             update.get_exclusive_neutron_driver('sriovnicswitch'))
         self.assertIsNone(
             update.get_exclusive_neutron_driver(['sriovnicswitch']))
-        self.assertIsNone(
-            update.get_exclusive_neutron_driver(['sriovnicswitch',
-                                                 'odl']))
 
     def test_exclusive_neutron_drivers_found(self):
-        for ex in ['ovn', ['ovn'], ['odl', 'ovn'], ['sriovnicswitch', 'ovn']]:
+        for ex in ['ovn', ['ovn'], ['ovn'], ['sriovnicswitch', 'ovn']]:
             self.assertEqual('ovn',
                              update.get_exclusive_neutron_driver(ex))
         for ex in ['openvswitch', ['openvswitch'],

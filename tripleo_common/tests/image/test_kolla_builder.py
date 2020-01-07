@@ -376,9 +376,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         remove_images = [
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-server-ovn:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
                           '-ovn-northd:current-tripleo'},
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
@@ -397,18 +394,12 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
     def test_container_images_yaml_in_sync_for_ovn(self):
         # remove neutron-server image reference from overcloud_containers.yaml
-        remove_images = [
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-server:current-tripleo'}]
+        remove_images = []
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
 
     def test_container_images_yaml_in_sync_for_rhel(self):
         remove_images = [
-            {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleomaster/centos-binary'
-                             '-neutron-server:current-tripleo'},
             {'image_source': 'kolla',
                 'imagename': 'docker.io/tripleomaster/centos-binary'
                              '-skydive-agent:current-tripleo'},
@@ -680,13 +671,13 @@ class TestPrepare(base.TestCase):
         self.assertEqual({
             'container_images.yaml': [
                 {'image_source': 'kolla',
-                 'imagename': 't/p-neutron-server-ovn:l'},
+                 'imagename': 't/p-neutron-server:l'},
                 {'image_source': 'kolla',
                  'imagename': 't/p-ovn-controller:l'}
             ],
             'environments/containers-default-parameters.yaml': {
-                'ContainerNeutronApiImage': 't/p-neutron-server-ovn:l',
-                'ContainerNeutronConfigImage': 't/p-neutron-server-ovn:l',
+                'ContainerNeutronApiImage': 't/p-neutron-server:l',
+                'ContainerNeutronConfigImage': 't/p-neutron-server:l',
                 'ContainerOvnControllerConfigImage': 't/p-ovn-controller:l',
                 'ContainerOvnControllerImage': 't/p-ovn-controller:l'
             }},

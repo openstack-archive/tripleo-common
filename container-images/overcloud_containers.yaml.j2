@@ -495,25 +495,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::NeutronMlnxAgent
 
-{% if neutron_driver == "ovn" %}
-- imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerNeutronApiImage
-  - ContainerNeutronConfigImage
-  services:
-  - OS::TripleO::Services::NeutronApi
-  - OS::TripleO::Services::NeutronServer
-  - OS::TripleO::Services::OVNController
-
-- imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent-ovn{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerOvnMetadataImage
-  services:
-  - OS::TripleO::Services::OVNMetadataAgent
-
-{% else %}
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -529,6 +510,15 @@ container_images_template:
   - OS::TripleO::Services::NeutronOvsAgent
   - OS::TripleO::Services::NeutronServer
   - OS::TripleO::Services::NeutronSriovAgent
+{% if neutron_driver == "ovn" %}
+  - OS::TripleO::Services::OVNController
+
+- imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent-ovn{{name_suffix}}:{{tag}}"
+  image_source: kolla
+  params:
+  - ContainerOvnMetadataImage
+  services:
+  - OS::TripleO::Services::OVNMetadataAgent
 {% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-api{{name_suffix}}:{{tag}}"
