@@ -500,7 +500,7 @@ workflows:
 
       get_host_parameters:
         publish:
-          host_parameters: <% dict(concat($.role_name, 'Parameters') => dict('NovaVcpuPinSet' => $.get('nova_cpus', ''), 'NovaReservedHostMemory' => $.get('host_mem', ''), 'KernelArgs' => $.get('kernel_args', ''), 'IsolCpusList' => $.get('isol_cpus', ''))) %>
+          host_parameters: <% dict(concat($.role_name, 'Parameters') => dict('NovaVcpuPinSet' => $.get('nova_cpus', ''), 'NovaComputeCpuSharedSet' => $.get('host_cpus', ''), 'NovaReservedHostMemory' => $.get('host_mem', ''), 'KernelArgs' => $.get('kernel_args', ''), 'IsolCpusList' => $.get('isol_cpus', ''))) %>
 
       set_status_failed_get_cpus:
         publish:
