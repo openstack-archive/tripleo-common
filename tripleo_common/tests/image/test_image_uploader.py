@@ -521,6 +521,7 @@ class TestBaseImageUploader(base.TestCase):
         build = image_uploader.BaseImageUploader._build_url
         insecure_reg = image_uploader.BaseImageUploader.insecure_registries
         secure_reg = image_uploader.BaseImageUploader.secure_registries
+        no_verify_reg = image_uploader.BaseImageUploader.no_verify_registries
         mirrors = image_uploader.BaseImageUploader.mirrors
         # fix urls
         self.assertEqual(
@@ -535,6 +536,13 @@ class TestBaseImageUploader(base.TestCase):
             'https://registry-1.docker.io/v2/t/nova-api/manifests/latest',
             build(url2, '/t/nova-api/manifests/latest')
         )
+        self.assertEqual(
+            'https://192.0.2.1:8787/v2/t/nova-api/tags/list',
+            build(url3, '/t/nova-api/tags/list')
+        )
+        # "no verify" registries are insecure but still use https
+        secure_reg.remove('192.0.2.1:8787')
+        no_verify_reg.add('192.0.2.1:8787')
         self.assertEqual(
             'https://192.0.2.1:8787/v2/t/nova-api/tags/list',
             build(url3, '/t/nova-api/tags/list')
