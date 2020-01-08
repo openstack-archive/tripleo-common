@@ -357,7 +357,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # workaround for LP #1814233
 # Review https://review.opendev.org/#/c/634365/
 # Remove when https://review.opendev.org/#/c/634402/ is merged
-{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10'] %}
+{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10', 'rabbitmq-server-3.8.*'] %}
 {% set rabbitmq_packages_append = [
     'libqb',
     'pacemaker',
