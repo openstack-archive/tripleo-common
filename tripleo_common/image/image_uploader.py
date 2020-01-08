@@ -657,6 +657,9 @@ class BaseImageUploader(object):
         created = config['created']
         docker_version = config.get('docker_version', '')
         labels = config['config'].get('Labels', {})
+        # NOTE: labels can be null
+        if labels is None:
+            labels = {}
         architecture = config['architecture']
         image_os = config['os']
 
