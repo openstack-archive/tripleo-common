@@ -16,6 +16,7 @@
 # under the License.
 
 from collections import OrderedDict
+import logging
 import os.path
 import sys
 import yaml
@@ -27,6 +28,10 @@ HOST_NETWORK = 'ctlplane'
 UNDERCLOUD_CONNECTION_SSH = 'ssh'
 
 UNDERCLOUD_CONNECTION_LOCAL = 'local'
+
+logging.basicConfig()
+LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.INFO)
 
 
 class TemplateDumper(yaml.SafeDumper):
@@ -47,26 +52,17 @@ class StackOutputs(object):
     on unnecessary Heat calls.
     """
 
-    def __init__(self, plan, hclient):
-        self.plan = plan
+    def __init__(self, stack):
         self.outputs = {}
-        self.hclient = hclient
-        self.stack = None
+        self.stack = stack
 
     def _load_outputs(self):
         """Load outputs from the stack if necessary
 
         Retrieves the stack outputs if that has not already happened.  If it
         has then this is a noop.
-
-        Sets the outputs to an empty dict if the stack is not found.
         """
-        if not self.stack:
-            try:
-                self.stack = self.hclient.stacks.get(self.plan)
-            except HTTPNotFound:
-                self.outputs = {}
-                return
+        if not self.outputs:
             self.outputs = {i['output_key']: i['output_value']
                             for i in self.stack.outputs
                             }
@@ -106,7 +102,6 @@ class TripleoInventory(object):
         self.undercloud_key_file = undercloud_key_file
         self.plan_name = plan_name
         self.ansible_python_interpreter = ansible_python_interpreter
-        self.stack_outputs = StackOutputs(self.plan_name, self.hclient)
         self.hostvars = {}
         self.undercloud_connection = undercloud_connection
         self.serial = serial
@@ -153,6 +148,16 @@ class TripleoInventory(object):
         else:
             return alist
 
+    def _get_stack(self):
+        try:
+            stack = self.hclient.stacks.get(self.plan_name)
+        except HTTPNotFound:
+            LOG.warning("Stack not found: %s. Only the undercloud will "
+                        "be added to the inventory." % self.plan_name)
+            stack = None
+
+        return stack
+
     def list(self):
         ret = OrderedDict({
             'Undercloud': {
@@ -191,19 +196,30 @@ class TripleoInventory(object):
                                                   interface='public')
         ret['Undercloud']['vars']['undercloud_swift_url'] = swift_url
 
-        keystone_url = self.stack_outputs.get('KeystoneURL')
-        if keystone_url:
-            ret['Undercloud']['vars']['overcloud_keystone_url'] = keystone_url
+        ret['Undercloud']['vars']['undercloud_service_list'] = \
+            self.get_undercloud_service_list()
+
         admin_password = self.get_overcloud_environment().get(
             'parameter_defaults', {}).get('AdminPassword')
         if admin_password:
             ret['Undercloud']['vars']['overcloud_admin_password'] =\
                 admin_password
+
+        if not self.hosts_format_dict:
+            # Prevent Ansible from repeatedly calling us to get empty host
+            # details
+            ret['_meta'] = {'hostvars': self.hostvars}
+
+        self.stack = self._get_stack()
+        if not self.stack:
+            return ret
+        self.stack_outputs = StackOutputs(self.stack)
+
+        keystone_url = self.stack_outputs.get('KeystoneURL')
+        if keystone_url:
+            ret['Undercloud']['vars']['overcloud_keystone_url'] = keystone_url
+
         endpoint_map = self.stack_outputs.get('EndpointMap')
-
-        ret['Undercloud']['vars']['undercloud_service_list'] = \
-            self.get_undercloud_service_list()
-
         if endpoint_map:
             horizon_endpoint = endpoint_map.get('HorizonPublic', {}).get('uri')
             if horizon_endpoint:
@@ -332,11 +348,6 @@ class TripleoInventory(object):
                 if self.ansible_python_interpreter:
                     ret[svc_host]['vars']['ansible_python_interpreter'] = \
                         self.ansible_python_interpreter
-
-        if not self.hosts_format_dict:
-            # Prevent Ansible from repeatedly calling us to get empty host
-            # details
-            ret['_meta'] = {'hostvars': self.hostvars}
 
         return ret
 
