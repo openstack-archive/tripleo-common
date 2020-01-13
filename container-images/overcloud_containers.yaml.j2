@@ -212,14 +212,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::DesignateWorker
 
-- imagename: "{{namespace}}/{{name_prefix}}ec2-api{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerEc2ApiConfigImage
-  - ContainerEc2ApiImage
-  services:
-  - OS::TripleO::Services::Ec2Api
-
 - imagename: "{{namespace}}/{{name_prefix}}etcd{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -227,18 +219,6 @@ container_images_template:
   - ContainerEtcdImage
   services:
   - OS::TripleO::Services::Etcd
-
-{% if not rhel_containers %}
-- imagename: "{{namespace}}/{{name_prefix}}fluentd{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerFluentdConfigImage
-  - ContainerFluentdClientImage
-  - ContainerFluentdImage
-  services:
-  - OS::TripleO::Services::FluentdClient
-  - OS::TripleO::Services::Fluentd
-{% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   image_source: kolla
@@ -515,20 +495,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::NeutronMlnxAgent
 
-{% if neutron_driver == "odl" %}
-- imagename: "{{namespace}}/{{name_prefix}}neutron-server-opendaylight{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerNeutronApiImage
-  - ContainerNeutronConfigImage
-  services:
-  - OS::TripleO::Services::NeutronApi
-  - OS::TripleO::Services::NeutronDhcpAgent
-  - OS::TripleO::Services::NeutronMetadataAgent
-  - OS::TripleO::Services::NeutronServer
-  - OS::TripleO::Services::OpenDaylightApi
-
-{% elif neutron_driver == "ovn" %}
+{% if neutron_driver == "ovn" %}
 - imagename: "{{namespace}}/{{name_prefix}}neutron-server-ovn{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -624,14 +591,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::NovaScheduler
 
-- imagename: "{{namespace}}/{{name_prefix}}nova-serialproxy{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerNovaSerialproxyConfigImage
-  - ContainerNovaSerialproxyImage
-  services:
-  - OS::TripleO::Services::NovaSerialproxy
-
 - imagename: "{{namespace}}/{{name_prefix}}novajoin-notifier{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
@@ -681,16 +640,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::OctaviaWorker
 
-{% if neutron_driver == "odl" %}
-- imagename: "{{namespace}}/{{name_prefix}}opendaylight{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerOpendaylightApiImage
-  - ContainerOpendaylightConfigImage
-  services:
-  - OS::TripleO::Services::OpenDaylightApi
-{% endif %}
-
 {% if neutron_driver == "ovn" %}
 - imagename: "{{namespace}}/{{name_prefix}}ovn-controller{{name_suffix}}:{{tag}}"
   image_source: kolla
@@ -723,15 +672,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::OVNDBs
 {% endif %}
-
-- imagename: "{{namespace}}/{{name_prefix}}panko-api{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerPankoApiImage
-  - ContainerPankoConfigImage
-  services:
-  - OS::TripleO::Services::PankoApi
-  - OS::TripleO::Services::UndercloudPankoApi
 
 - imagename: "{{namespace}}/{{name_prefix}}placement-api{{name_suffix}}:{{tag}}"
   image_source: kolla
@@ -789,14 +729,6 @@ container_images_template:
   - OS::TripleO::Services::SaharaEngine
 
 {% if not rhel_containers %}
-- imagename: "{{namespace}}/{{name_prefix}}sensu-client{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerSensuClientImage
-  - ContainerSensuConfigImage
-  services:
-  - OS::TripleO::Services::SensuClient
-
 - imagename: "{{namespace}}/{{name_prefix}}skydive-agent{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:

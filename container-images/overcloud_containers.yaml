@@ -47,11 +47,7 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-designate-worker:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ec2-api:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-etcd:current-tripleo
-  image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-fluentd:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-glance-api:current-tripleo
   image_source: kolla
@@ -123,8 +119,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-neutron-server:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-server-opendaylight:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-neutron-server-ovn:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-neutron-metadata-agent-ovn:current-tripleo
@@ -143,8 +137,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-nova-scheduler:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-serialproxy:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-novajoin-notifier:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-novajoin-server:current-tripleo
@@ -157,8 +149,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-octavia-worker:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-opendaylight:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-ovn-controller:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-ovn-nb-db-server:current-tripleo
@@ -166,8 +156,6 @@ container_images:
 - imagename: docker.io/tripleomaster/centos-binary-ovn-northd:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-ovn-sb-db-server:current-tripleo
-  image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-panko-api:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-placement-api:current-tripleo
   image_source: kolla
@@ -180,8 +168,6 @@ container_images:
 - imagename: docker.io/tripleomaster/centos-binary-sahara-api:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-sahara-engine:current-tripleo
-  image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-sensu-client:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-skydive-agent:current-tripleo
   image_source: kolla

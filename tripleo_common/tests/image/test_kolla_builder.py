@@ -376,13 +376,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         remove_images = [
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-server-opendaylight:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-opendaylight:current-tripleo'},
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
                           '-ovn-northd:current-tripleo'},
@@ -401,45 +395,12 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
 
-    def test_container_images_yaml_in_sync_for_odl(self):
-        # remove neutron-server image reference from overcloud_containers.yaml
-        remove_images = [
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-server:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-server-ovn:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-ovn-northd:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
-                          'controller:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
-                          'nb-db-server:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
-                          'sb-db-server:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-metadata-agent-ovn:current-tripleo'}]
-        self._test_container_images_yaml_in_sync_helper(
-            neutron_driver='odl', remove_images=remove_images)
-
     def test_container_images_yaml_in_sync_for_ovn(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
             {'image_source': 'kolla',
              'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-server:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-server-opendaylight:current-tripleo'},
-            {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-opendaylight:current-tripleo'}]
+                          '-neutron-server:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
 
@@ -448,18 +409,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             {'image_source': 'kolla',
                 'imagename': 'docker.io/tripleomaster/centos-binary'
                              '-neutron-server:current-tripleo'},
-            {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleomaster/centos-binary'
-                             '-neutron-server-opendaylight:current-tripleo'},
-            {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleomaster/centos-binary'
-                             '-opendaylight:current-tripleo'},
-            {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleomaster/centos-binary'
-                             '-fluentd:current-tripleo'},
-            {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleomaster/centos-binary'
-                             '-sensu-client:current-tripleo'},
             {'image_source': 'kolla',
                 'imagename': 'docker.io/tripleomaster/centos-binary'
                              '-skydive-agent:current-tripleo'},
@@ -755,41 +704,6 @@ class TestPrepare(base.TestCase):
                     'name_suffix': '',
                     'tag': 'l',
                     'neutron_driver': 'ovn'
-                }
-            )
-        )
-
-    @mock.patch('tripleo_common.image.kolla_builder.'
-                'detect_insecure_registries', return_value={})
-    def test_prepare_neutron_driver_odl(self, mock_insecure):
-        self.assertEqual({
-            'container_images.yaml': [
-                {'image_source': 'kolla',
-                 'imagename': 't/neutron-server-opendaylight:l'},
-                {'image_source': 'kolla',
-                 'imagename': 't/opendaylight:l'}
-            ],
-            'environments/containers-default-parameters.yaml': {
-                'ContainerNeutronApiImage': 't/neutron-server-opendaylight:l',
-                'ContainerNeutronConfigImage':
-                    't/neutron-server-opendaylight:l',
-                'ContainerOpendaylightApiImage': 't/opendaylight:l',
-                'ContainerOpendaylightConfigImage': 't/opendaylight:l',
-            }},
-            kb.container_images_prepare(
-                template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
-                output_images_file='container_images.yaml',
-                service_filter=[
-                    'OS::TripleO::Services::NeutronServer',
-                    'OS::TripleO::Services::OpenDaylightApi'
-                ],
-                mapping_args={
-                    'namespace': 't',
-                    'name_prefix': '',
-                    'name_suffix': '',
-                    'tag': 'l',
-                    'neutron_driver': 'odl'
                 }
             )
         )
@@ -1179,9 +1093,3 @@ class TestPrepare(base.TestCase):
             mapping_args
         )
         self.assertEqual('ovn', mapping_args['neutron_driver'])
-        mapping_args = {}
-        kb.set_neutron_driver(
-            {'NeutronMechanismDrivers': ['sriovnicswitch', 'opendaylight_v2']},
-            mapping_args
-        )
-        self.assertEqual('odl', mapping_args['neutron_driver'])
