@@ -590,10 +590,11 @@ class BaseImageUploader(object):
             mirror = cls.mirrors[netloc]
             return '%sv2%s' % (mirror, path)
         else:
-            if not cls.is_insecure_registry(registry_host=netloc):
-                scheme = 'https'
-            else:
+            if (cls.is_insecure_registry(registry_host=netloc) and
+                    netloc not in cls.no_verify_registries):
                 scheme = 'http'
+            else:
+                scheme = 'https'
             if netloc == 'docker.io':
                 netloc = 'registry-1.docker.io'
             return '%s://%s/v2%s' % (scheme, netloc, path)
