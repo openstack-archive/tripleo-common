@@ -16,6 +16,7 @@ import logging
 import multiprocessing
 import subprocess
 import sys
+import tenacity
 import yaml
 import yum
 
@@ -50,18 +51,32 @@ def parse_opts(argv):
     return opts
 
 
+@tenacity.retry(
+    reraise=True,
+    retry=tenacity.retry_if_exception_type(RuntimeError),
+    stop=tenacity.stop_after_attempt(3),
+    wait=tenacity.wait_fixed(1)
+)
 def rm_container(name):
     log.info('Removing container: %s' % name)
     subproc = subprocess.Popen(['/usr/bin/docker', 'rm', name],
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     cmd_stdout, cmd_stderr = subproc.communicate()
+    rc = subproc.returncode
+
     if cmd_stdout:
         log.debug(cmd_stdout)
-    if cmd_stderr and \
-            cmd_stderr != 'Error response from daemon: ' \
-            'No such container: {}\n'.format(name):
-        log.debug(cmd_stderr)
+
+    if rc != 0:
+
+        if 'No such container' in cmd_stderr:
+            log.warn('Container that does not exist cannot be deleted: '
+                     '%s' % name)
+        else:
+            log.error('Error removing container: %s' % name)
+            log.error(cmd_stderr)
+            raise RuntimeError(cmd_stdout, cmd_stderr, rc)
 
 
 def populate_container_rpms_list(container):
