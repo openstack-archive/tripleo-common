@@ -494,14 +494,14 @@ workflows:
 
       wait_for_introspection_to_finish_success:
         publish:
-          message: <% "Introspection of node {0} completed. Status:{1}. Errors:{2}".format($.introspected_node.uuid, $.status, $.introspected_node.error) %>
+          message: <% "Introspection of node completed:{0}. Status:{1}. Errors:{2}".format($.introspected_node.uuid, $.status, $.introspected_node.error) %>
         on-success: send_message
 
       wait_for_introspection_to_finish_error:
         on-success: send_message
         publish:
           status: FAILED
-          message: <% "Introspection of node {0} failed.".format($.node_uuid) %>
+          message: <% "Introspection of node attempt failed:{0}.".format($.node_uuid) %>
 
       send_message:
         workflow: tripleo.messaging.v1.send
