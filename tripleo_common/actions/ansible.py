@@ -15,6 +15,7 @@
 from datetime import datetime
 import json
 import logging
+import multiprocessing
 import os
 import shutil
 import six
@@ -100,7 +101,7 @@ def write_default_ansible_cfg(work_dir,
                     datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
         os.rename(log_path, new_path)
 
-    config.set('defaults', 'forks', '50')
+    config.set('defaults', 'forks', str(multiprocessing.cpu_count() * 10))
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
 
