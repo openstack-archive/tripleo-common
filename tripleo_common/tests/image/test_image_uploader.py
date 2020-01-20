@@ -394,6 +394,25 @@ class TestBaseImageUploader(base.TestCase):
             'docker.io/t/foo:b',
             'rdo_version')
 
+        # handle auth issues
+        mock_401 = mock.Mock()
+        mock_401.status_code = 401
+        mock_401_except = requests.exceptions.HTTPError(response=mock_401)
+        mock_404 = mock.Mock()
+        mock_404.status_code = 404
+        mock_404_except = requests.exceptions.HTTPError(response=mock_404)
+        mock_auth.side_effect = [mock_401_except, mock_404_except]
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+        )
+        self.assertRaises(
+            requests.exceptions.HTTPError,
+            image_uploader.discover_tag_from_inspect,
+            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+        )
+
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -476,6 +495,25 @@ class TestBaseImageUploader(base.TestCase):
         mock_inspect.side_effect = ImageUploaderException()
         self.assertRaises(
             ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+        )
+
+        # handle auth issues
+        mock_401 = mock.Mock()
+        mock_401.status_code = 401
+        mock_401_except = requests.exceptions.HTTPError(response=mock_401)
+        mock_404 = mock.Mock()
+        mock_404.status_code = 404
+        mock_404_except = requests.exceptions.HTTPError(response=mock_404)
+        mock_auth.side_effect = [mock_401_except, mock_404_except]
+        self.assertRaises(
+            ImageUploaderException,
+            image_uploader.discover_tag_from_inspect,
+            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+        )
+        self.assertRaises(
+            requests.exceptions.HTTPError,
             image_uploader.discover_tag_from_inspect,
             (self.uploader, 'docker.io/t/foo', 'rdo_version')
         )

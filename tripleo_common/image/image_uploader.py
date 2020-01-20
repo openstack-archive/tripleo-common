@@ -846,8 +846,16 @@ class BaseImageUploader(object):
                            fallback_tag=None, username=None, password=None):
         image_url = self._image_to_url(image)
         self.is_insecure_registry(registry_host=image_url.netloc)
-        session = self.authenticate(
-            image_url, username=username, password=password)
+        try:
+            session = self.authenticate(
+                image_url, username=username, password=password)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                raise ImageUploaderException(
+                    'Unable to authenticate. This may indicate '
+                    'missing registry credentials or the provided '
+                    'container or namespace does not exist. %s' % e)
+            raise
 
         i = self._inspect(image_url, session)
         return self._discover_tag_from_inspect(i, image, tag_from_label,
@@ -859,8 +867,16 @@ class BaseImageUploader(object):
         for image in images:
             url = self._image_to_url(image)
             self.is_insecure_registry(registry_host=url.netloc)
-            session = self.authenticate(
-                url, username=username, password=password)
+            try:
+                session = self.authenticate(
+                    url, username=username, password=password)
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 401:
+                    raise ImageUploaderException(
+                        'Unable to authenticate. This may indicate '
+                        'missing registry credentials or the provided '
+                        'container or namespace does not exist. %s' % e)
+                raise
             image_labels = self._image_labels(
                 url, session=session)
             if set(labels).issubset(set(image_labels)):
@@ -1296,11 +1312,19 @@ class PythonImageUploader(BaseImageUploader):
 
         target_username, target_password = self.credentials_for_registry(
             t.target_image_url.netloc)
-        target_session = self.authenticate(
-            t.target_image_url,
-            username=target_username,
-            password=target_password
-        )
+        try:
+            target_session = self.authenticate(
+                t.target_image_url,
+                username=target_username,
+                password=target_password
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                raise ImageUploaderException(
+                    'Unable to authenticate. This may indicate '
+                    'missing registry credentials or the provided '
+                    'container or namespace does not exist. %s' % e)
+            raise
 
         try:
             self._detect_target_export(t.target_image_url, target_session)
@@ -1356,11 +1380,19 @@ class PythonImageUploader(BaseImageUploader):
 
         source_username, source_password = self.credentials_for_registry(
             t.source_image_url.netloc)
-        source_session = self.authenticate(
-            t.source_image_url,
-            username=source_username,
-            password=source_password
-        )
+        try:
+            source_session = self.authenticate(
+                t.source_image_url,
+                username=source_username,
+                password=source_password
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                raise ImageUploaderException(
+                    'Unable to authenticate. This may indicate '
+                    'missing registry credentials or the provided '
+                    'container or namespace does not exist. %s' % e)
+            raise
 
         source_layers = []
         manifests_str = []
@@ -2313,8 +2345,16 @@ def discover_tag_from_inspect(args):
     self, image, tag_from_label = args
     image_url = self._image_to_url(image)
     username, password = self.credentials_for_registry(image_url.netloc)
-    session = self.authenticate(
-        image_url, username=username, password=password)
+    try:
+        session = self.authenticate(
+            image_url, username=username, password=password)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            raise ImageUploaderException(
+                'Unable to authenticate. This may indicate '
+                'missing registry credentials or the provided '
+                'container or namespace does not exist. %s' % e)
+        raise
     i = self._inspect(image_url, session=session)
     session.close()
     if ':' in image_url.path:
