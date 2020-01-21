@@ -127,9 +127,7 @@ def set_neutron_driver(pd, mapping_args):
         mapping_args['neutron_driver'] = 'ovn'
         return
     nmd = pd['NeutronMechanismDrivers']
-    if 'opendaylight_v2' in nmd:
-        mapping_args['neutron_driver'] = 'odl'
-    elif 'ovn' in nmd:
+    if 'ovn' in nmd:
         mapping_args['neutron_driver'] = 'ovn'
     else:
         mapping_args['neutron_driver'] = 'other'

@@ -123,7 +123,6 @@ PASSWORD_PARAMETER_NAMES = (
     'OctaviaCaKeyPassphrase',
     'OctaviaHeartbeatKey',
     'OctaviaPassword',
-    'OpenDaylightPassword',
     'PacemakerRemoteAuthkey',
     'PankoPassword',
     'PcsdPassword',
