@@ -122,7 +122,10 @@ class BuildahBuilder(base.BaseBuilder):
         # TODO(emilien): Stop ignoring TLS. The deployer should either secure
         # the registry or add it to insecure_registries.
         logfile = container_build_path + '/' + container_name + '-build.log'
-        args = self.buildah_cmd + ['bud', '--tls-verify=False', '--logfile',
+        # TODO(aschultz): drop --format docker when oci format is properly
+        # supported by the undercloud registry
+        args = self.buildah_cmd + ['bud', '--format', 'docker',
+                                   '--tls-verify=False', '--logfile',
                                    logfile, '-t', destination,
                                    container_build_path]
         print("Building %s image with: %s" % (container_name, ' '.join(args)))
