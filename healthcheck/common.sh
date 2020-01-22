@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euxo pipefail
 : ${HEALTHCHECK_CURL_MAX_TIME:=10}
 : ${HEALTHCHECK_CURL_USER_AGENT:=curl-healthcheck}
 : ${HEALTHCHECK_CURL_WRITE_OUT:='\n%{http_code} %{remote_ip}:%{remote_port} %{time_total} seconds\n'}
@@ -25,6 +26,10 @@ get_user_from_process() {
 }
 
 healthcheck_curl () {
+    if [ $# == 0 ]; then
+        echo 'healthcheck_curl: no parameter provided'
+        return 1
+    fi
     export NSS_SDB_USE_CACHE=no
     curl -g -k -q -s -S --fail -o "${HEALTHCHECK_CURL_OUTPUT}" \
         --max-time "${HEALTHCHECK_CURL_MAX_TIME}" \
@@ -47,7 +52,11 @@ healthcheck_port () {
     # port by using "sudo -u" to get the right output.
     # Note: the privileged containers have the correct ss output with root
     # user; which is why we need to run with both users, as a best effort.
-    (ss -ntuap; sudo -u $puser ss -ntuap) | sort -u | grep -qE ":($ports).*,pid=($pids),"
+    # https://bugs.launchpad.net/tripleo/+bug/1860556
+    # do ot use "-q" option for grep, since it returns 141 for some reason with
+    # set -o pipefail.
+    # See https://stackoverflow.com/questions/19120263/why-exit-code-141-with-grep-q
+    (ss -ntuap; sudo -u $puser ss -ntuap) | sort -u | grep -E ":($ports).*,pid=($pids),">/dev/null
 }
 
 healthcheck_listen () {
@@ -96,18 +105,22 @@ get_config_val () {
 # apachectl -S is slightly harder to parse and doesn't say if the vhost is serving SSL
 get_url_from_vhost () {
     vhost_file=$1
-    server_name=$(awk '/ServerName/ {print $2}' $vhost_file)
-    ssl_enabled=$(awk '/SSLEngine/ {print $2}' $vhost_file)
-    bind_port=$(grep -h "<VirtualHost .*>" $vhost_file | sed 's/<VirtualHost .*:\(.*\)>/\1/')
-    wsgi_alias=$(awk '/WSGIScriptAlias/ {print $2}' $vhost_file)
-    proto=http
-    if [[ $ssl_enabled == "on" ]]; then
-        proto=https
+    if test -n "${vhost_file}" && test -r "${vhost_file}" ; then
+        server_name=$(awk '/ServerName/ {print $2}' $vhost_file)
+        ssl_enabled=$(awk '/SSLEngine/ {print $2}' $vhost_file)
+        bind_port=$(grep -h "<VirtualHost .*>" $vhost_file | sed 's/<VirtualHost .*:\(.*\)>/\1/')
+        wsgi_alias=$(awk '/WSGIScriptAlias/ {print $2}' $vhost_file)
+        proto=http
+        if [[ $ssl_enabled == "on" ]]; then
+            proto=https
+        fi
+        if [[ $wsgi_alias != "/" ]]; then
+            wsgi_alias="${wsgi_alias}/"
+        fi
+        echo ${proto}://${server_name}:${bind_port}${wsgi_alias}
+    else
+        exit 1
     fi
-    if [[ $wsgi_alias != "/" ]]; then
-        wsgi_alias="${wsgi_alias}/"
-    fi
-    echo ${proto}://${server_name}:${bind_port}${wsgi_alias}
 }
 
 check_swift_interval () {
