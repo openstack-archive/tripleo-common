@@ -115,7 +115,7 @@ class TestInventory(base.TestCase):
         self.session.get_token.return_value = 'atoken'
         self.session.get_endpoint.return_value = 'anendpoint'
 
-        self.outputs = StackOutputs('overcloud', self.hclient)
+        self.outputs = StackOutputs(self.mock_stack)
         self.inventory = TripleoInventory(
             session=self.session,
             hclient=self.hclient,
@@ -143,10 +143,10 @@ class TestInventory(base.TestCase):
         }
         self.assertDictEqual(services, expected)
 
-    def test_outputs_are_empty_if_stack_doesnt_exist(self):
+    def test_stack_not_found(self):
         self.hclient.stacks.get.side_effect = HTTPNotFound('not found')
-        stack_outputs = StackOutputs('no-plan', self.hclient)
-        self.assertEqual(list(stack_outputs), [])
+        self.assertEqual(None,
+                         self.inventory._get_stack())
 
     def test_outputs_valid_key_calls_api(self):
         expected = 'xyz://keystone'
