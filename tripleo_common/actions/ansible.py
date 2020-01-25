@@ -232,6 +232,7 @@ class AnsibleAction(actions.Action):
         # NOTE(flaper87): if it's a path, use it
         if (isinstance(self._ssh_private_key, six.string_types) and
                 os.path.exists(self._ssh_private_key)):
+            os.chmod(self._ssh_private_key, 0o600)
             return self._ssh_private_key
 
         path = os.path.join(self.work_dir, 'ssh_private_key')
@@ -462,6 +463,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
         # NOTE(flaper87): if it's a path, use it
         if (isinstance(self._ssh_private_key, six.string_types) and
                 os.path.exists(self._ssh_private_key)):
+            os.chmod(self._ssh_private_key, 0o600)
             return self._ssh_private_key
 
         path = os.path.join(self.work_dir, 'ssh_private_key')
