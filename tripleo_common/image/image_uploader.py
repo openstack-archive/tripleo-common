@@ -366,21 +366,24 @@ class DockerImageUploader(ImageUploader):
 
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+        try:
+            process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
 
-        out, err = process.communicate()
-        if process.returncode != 0:
-            not_found_msgs = (
-                'manifest unknown',
-                # returned by docker.io
-                'requested access to the resource is denied'
-            )
-            if any(n in err for n in not_found_msgs):
-                raise ImageNotFoundException('Not found image: %s\n%s' %
+            out, err = process.communicate()
+            if process.returncode != 0:
+                not_found_msgs = (
+                    'manifest unknown',
+                    # returned by docker.io
+                    'requested access to the resource is denied'
+                )
+                if any(n in err for n in not_found_msgs):
+                    raise ImageNotFoundException('Not found image: %s\n%s' %
+                                                 (image, err))
+                raise ImageUploaderException('Error inspecting image: %s\n%s' %
                                              (image, err))
-            raise ImageUploaderException('Error inspecting image: %s\n%s' %
-                                         (image, err))
+        except KeyboardInterrupt:
+            raise Exception('Action interrupted with ctrl+c')
         return json.loads(out)
 
     @staticmethod
