@@ -82,6 +82,8 @@ MEDIA_TYPES = (
     MEDIA_MANIFEST_V1_SIGNED,
     MEDIA_MANIFEST_V2,
     MEDIA_MANIFEST_V2_LIST,
+    MEDIA_OCI_MANIFEST_V1,
+    MEDIA_OCI_INDEX_V1,
     MEDIA_CONFIG,
     MEDIA_BLOB,
     MEDIA_BLOB_COMPRESSED
@@ -90,6 +92,8 @@ MEDIA_TYPES = (
     'application/vnd.docker.distribution.manifest.v1+prettyjws',
     'application/vnd.docker.distribution.manifest.v2+json',
     'application/vnd.docker.distribution.manifest.list.v2+json',
+    'application/vnd.oci.image.manifest.v1+json',
+    'application/vnd.oci.image.index.v1+json',
     'application/vnd.docker.container.image.v1+json',
     'application/vnd.docker.image.rootfs.diff.tar',
     'application/vnd.docker.image.rootfs.diff.tar.gzip'
@@ -1712,8 +1716,16 @@ class PythonImageUploader(BaseImageUploader):
             else:
                 manifest_type = MEDIA_MANIFEST_V1
         else:
-            manifest_type = manifest.get(
-                'mediaType', MEDIA_MANIFEST_V2)
+            # NOTE(mwhahaha): always force docker media format if not set or
+            # is explicitly OCI because buildah uses OCI by default but we
+            # convert the metadata to Docker format in the uploader.
+            # See LP#1860585
+            manifest_type = manifest.get('mediaType', False)
+            if not manifest_type or manifest_type == MEDIA_OCI_MANIFEST_V1:
+                manifest_type = MEDIA_MANIFEST_V2
+            elif manifest_type == MEDIA_OCI_INDEX_V1:
+                manifest_type = MEDIA_MANIFEST_V2_LIST
+            manifest['mediaType'] = manifest_type
             manifest_str = json.dumps(manifest, indent=3)
 
         export = target_url.netloc in cls.export_registries

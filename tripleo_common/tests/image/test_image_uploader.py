@@ -1931,6 +1931,172 @@ class TestPythonImageUploader(base.TestCase):
         )
         self.assertEqual(target_manifest, put_manifest)
 
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._build_url')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._image_tag_from_url')
+    def test_copy_manifest_config_to_registry(self, image_tag_mock,
+                                              build_url_mock, status_mock):
+
+        target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
+
+        image_tag_mock.return_value = ('t/nova-api', 'latest')
+
+        build_url = 'https://192.168.2.1:5000/v2/t/nova-api'
+        build_url_mock.return_value = build_url
+        target_session = mock.Mock()
+        target_put = mock.Mock()
+        target_put.return_value.text = '{}'
+        target_session.put = target_put
+
+        config_str = None
+
+        manifest_str = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': image_uploader.MEDIA_CONFIG
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ],
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2
+        })
+        expected_manifest_str = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': image_uploader.MEDIA_CONFIG
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ],
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2
+        }, indent=3)
+
+        expected_headers = {
+            'Content-Type': image_uploader.MEDIA_MANIFEST_V2
+        }
+        self.uploader._copy_manifest_config_to_registry(
+            target_url, manifest_str, config_str,
+            target_session=target_session
+        )
+
+        calls = [mock.call(build_url,
+                           data=expected_manifest_str.encode('utf-8'),
+                           headers=expected_headers,
+                           timeout=30)]
+        target_put.assert_has_calls(calls)
+
+    @mock.patch('tripleo_common.image.image_export.export_manifest_config')
+    def test_copy_manifest_config_to_registry_export(self, export_mock):
+
+        target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
+        self.uploader.export_registries.add('192.168.2.1:5000')
+        target_session = mock.Mock()
+        config_str = None
+
+        manifest_str = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': image_uploader.MEDIA_CONFIG
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ],
+        })
+        expected_manifest_str = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': image_uploader.MEDIA_CONFIG
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ],
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2
+        }, indent=3)
+
+        self.uploader._copy_manifest_config_to_registry(
+            target_url, manifest_str, config_str,
+            target_session=target_session
+        )
+
+        calls = [mock.call(target_url,
+                           expected_manifest_str,
+                           image_uploader.MEDIA_MANIFEST_V2,
+                           config_str,
+                           multi_arch=False)]
+        export_mock.assert_has_calls(calls)
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader.check_status')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._build_url')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'BaseImageUploader._image_tag_from_url')
+    def test_copy_manifest_config_to_registry_oci(self, image_tag_mock,
+                                                  build_url_mock, status_mock):
+
+        target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
+
+        image_tag_mock.return_value = ('t/nova-api', 'latest')
+
+        build_url = 'https://192.168.2.1:5000/v2/t/nova-api'
+        build_url_mock.return_value = build_url
+        target_session = mock.Mock()
+        target_put = mock.Mock()
+        target_put.return_value.text = '{}'
+        target_session.put = target_put
+
+        config_str = None
+
+        manifest_str = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': image_uploader.MEDIA_CONFIG
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ],
+            'mediaType': image_uploader.MEDIA_OCI_MANIFEST_V1
+        })
+        expected_manifest_str = json.dumps({
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': image_uploader.MEDIA_CONFIG
+            },
+            'layers': [
+                {'digest': 'sha256:aaaa'},
+                {'digest': 'sha256:bbbb'},
+            ],
+            'mediaType': image_uploader.MEDIA_MANIFEST_V2
+        }, indent=3)
+
+        expected_headers = {
+            'Content-Type': image_uploader.MEDIA_MANIFEST_V2
+        }
+        self.uploader._copy_manifest_config_to_registry(
+            target_url, manifest_str, config_str,
+            target_session=target_session
+        )
+
+        calls = [mock.call(build_url,
+                           data=expected_manifest_str.encode('utf-8'),
+                           headers=expected_headers,
+                           timeout=30)]
+        target_put.assert_has_calls(calls)
+
     @mock.patch('os.environ')
     @mock.patch('subprocess.Popen')
     def test_copy_registry_to_local(self, mock_popen, mock_environ):
