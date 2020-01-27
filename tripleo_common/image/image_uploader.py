@@ -1113,14 +1113,17 @@ class SkopeoImageUploader(BaseImageUploader):
         cmd.append(target)
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                                   universal_newlines=True)
+        try:
+            process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                       universal_newlines=True)
 
-        out, err = process.communicate()
-        LOG.info(out)
-        if process.returncode != 0:
-            raise ImageUploaderException('Error copying image:\n%s\n%s' %
-                                         (' '.join(cmd), err))
+            out, err = process.communicate()
+            LOG.info(out)
+            if process.returncode != 0:
+                raise ImageUploaderException('Error copying image:\n%s\n%s' %
+                                             (' '.join(cmd), err))
+        except KeyboardInterrupt:
+            raise Exception('Action interrupted with ctrl+c')
         return out
 
     def _delete(self, image_url, session=None):
@@ -1134,14 +1137,17 @@ class SkopeoImageUploader(BaseImageUploader):
         cmd.append(image)
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                                   universal_newlines=True)
+        try:
+            process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                       universal_newlines=True)
 
-        out, err = process.communicate()
-        LOG.info(out.decode('utf-8'))
-        if process.returncode != 0:
-            raise ImageUploaderException('Error deleting image:\n%s\n%s' %
-                                         (' '.join(cmd), err))
+            out, err = process.communicate()
+            LOG.info(out.decode('utf-8'))
+            if process.returncode != 0:
+                raise ImageUploaderException('Error deleting image:\n%s\n%s' %
+                                             (' '.join(cmd), err))
+        except KeyboardInterrupt:
+            raise Exception('Action interrupted with ctrl+c')
         return out
 
     def cleanup(self, local_images):
@@ -1871,25 +1877,28 @@ class PythonImageUploader(BaseImageUploader):
         cmd.append(pull_source)
         LOG.info('Pulling %s' % pull_source)
         LOG.info('Running %s' % ' '.join(cmd))
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            close_fds=True
-        )
-        out, err = process.communicate()
-        if process.returncode != 0:
-            error_msg = (
-                'Pulling image failed: cmd "{}", stdout "{}",'
-                ' stderr "{}"'.format(
-                    ' '.join(cmd),
-                    out,
-                    err
-                )
+        try:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                close_fds=True
             )
-            LOG.error(error_msg)
-            raise ImageUploaderException(error_msg)
+            out, err = process.communicate()
+            if process.returncode != 0:
+                error_msg = (
+                    'Pulling image failed: cmd "{}", stdout "{}",'
+                    ' stderr "{}"'.format(
+                        ' '.join(cmd),
+                        out,
+                        err
+                    )
+                )
+                LOG.error(error_msg)
+                raise ImageUploaderException(error_msg)
+        except KeyboardInterrupt:
+            raise Exception('Action interrupted with ctrl+c')
         return out
 
     @classmethod
@@ -1950,19 +1959,22 @@ class PythonImageUploader(BaseImageUploader):
             '--compress'
         ]
         LOG.debug(' '.join(cmd))
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        try:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
-        chunk_size = 2 ** 20
+            chunk_size = 2 ** 20
 
-        while True:
-            data = p.stdout.read(chunk_size)
-            if not data:
-                break
-            calc_digest.update(data)
-            yield data
-        p.wait()
-        if p.returncode != 0:
-            raise ImageUploaderException('Extracting layer failed')
+            while True:
+                data = p.stdout.read(chunk_size)
+                if not data:
+                    break
+                calc_digest.update(data)
+                yield data
+            p.wait()
+            if p.returncode != 0:
+                raise ImageUploaderException('Extracting layer failed')
+        except KeyboardInterrupt:
+            raise Exception('Action interrupted with ctrl+c')
 
     @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -2235,13 +2247,17 @@ class PythonImageUploader(BaseImageUploader):
         cmd = ['buildah', 'rmi', image_url.path]
         LOG.info('Running %s' % ' '.join(cmd))
         env = os.environ.copy()
-        process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                                   universal_newlines=True)
+        try:
+            process = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                       universal_newlines=True)
 
-        out, err = process.communicate()
-        LOG.info(out)
-        if process.returncode != 0:
-            LOG.warning('Error deleting image:\n%s\n%s' % (' '.join(cmd), err))
+            out, err = process.communicate()
+            LOG.info(out)
+            if process.returncode != 0:
+                LOG.warning('Error deleting image:\n%s\n%s' %
+                            (' '.join(cmd), err))
+        except KeyboardInterrupt:
+            raise Exception('Action interrupted with ctrl+c')
         return out
 
     def cleanup(self, local_images):
