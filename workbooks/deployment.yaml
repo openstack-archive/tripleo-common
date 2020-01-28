@@ -389,6 +389,7 @@ workflows:
       - playbook_name: deploy_steps_playbook.yaml
       - deployment_options: {}
       - skip_tags: ""
+      - config_download_args: []
 
     tags:
       - tripleo-common-managed
@@ -535,6 +536,7 @@ workflows:
           execution_id: <% execution().id %>
           limit_hosts: <% $.nodes and list(task(uuids_to_names).result.instance_info.display_name).join(',') or false %>
           skip_tags: <% $.skip_tags %>
+          config_download_args: <% $.config_download_args %>
         publish:
           log_path: <% task().result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS

@@ -139,6 +139,7 @@ workflows:
       - tags: ''
       - skip_tags: ''
       - extra_vars: ''
+      - config_download_args: []
 
     tags:
       - tripleo-common-managed
