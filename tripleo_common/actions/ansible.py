@@ -111,6 +111,9 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'fact_caching_connection',
                '/var/lib/mistral/ansible_fact_cache')
 
+    # Set the pull interval to lower CPU overhead
+    config.set('defaults', 'internal_poll_interval', '0.05')
+
     # Set the interpreter discovery to auto mode.
     config.set('defaults', 'interpreter_python', 'auto')
 
@@ -124,7 +127,8 @@ def write_default_ansible_cfg(work_dir,
                '-o ControlMaster=auto '
                '-o ControlPersist=30m '
                '-o ServerAliveInterval=5 '
-               '-o ServerAliveCountMax=5')
+               '-o ServerAliveCountMax=5 '
+               '-o PreferredAuthentications=publickey')
     config.set('ssh_connection', 'control_path_dir',
                os.path.join(work_dir, 'ansible-ssh'))
     config.set('ssh_connection', 'retries', '8')
