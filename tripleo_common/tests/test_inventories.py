@@ -85,6 +85,15 @@ class TestInventories(base.TestCase):
                 ],
                 "vars": {
                     "tripleo_role_name": "Controller",
+                    "tripleo_role_networks": [
+                        "management",
+                        "storage",
+                        "ctlplane",
+                        "external",
+                        "internal_api",
+                        "storage_mgmt",
+                        "tenant"
+                    ],
                     "serial": "1",
                     "ansible_ssh_user": "heat-admin",
                 }
@@ -129,15 +138,6 @@ class TestInventories(base.TestCase):
                         "tenant_ip": "192.168.24.12",
                         "internal_api_ip": "192.168.24.12",
                         "management_ip": "192.168.24.12",
-                        "enabled_networks": [
-                            "management",
-                            "storage",
-                            "ctlplane",
-                            "external",
-                            "internal_api",
-                            "storage_mgmt",
-                            "tenant"
-                        ],
                         "ansible_host": "192.168.24.12"
                     }
                 }
@@ -179,6 +179,15 @@ class TestInventories(base.TestCase):
                 ],
                 "vars": {
                     "tripleo_role_name": "DistributedComputeHCI",
+                    "tripleo_role_networks": [
+                        "management",
+                        "storage",
+                        "ctlplane",
+                        "external",
+                        "internal_api",
+                        "storage_mgmt",
+                        "tenant"
+                    ],
                     "serial": "1",
                     "ansible_ssh_user": "heat-admin",
                 }
@@ -223,15 +232,6 @@ class TestInventories(base.TestCase):
                         "tenant_ip": "192.168.24.13",
                         "internal_api_ip": "192.168.24.13",
                         "management_ip": "192.168.24.13",
-                        "enabled_networks": [
-                            "management",
-                            "storage",
-                            "ctlplane",
-                            "external",
-                            "internal_api",
-                            "storage_mgmt",
-                            "tenant"
-                        ],
                         "ansible_host": "192.168.24.13"
                     }
                 }
@@ -281,20 +281,20 @@ class TestInventories(base.TestCase):
                         "tenant_ip": "192.168.24.12",
                         "internal_api_ip": "192.168.24.12",
                         "management_ip": "192.168.24.12",
-                        "enabled_networks": [
-                            "management",
-                            "storage",
-                            "ctlplane",
-                            "external",
-                            "internal_api",
-                            "storage_mgmt",
-                            "tenant"
-                        ],
                         "ansible_host": "192.168.24.12"
                     }
                 },
                 "vars": {
                     "tripleo_role_name": "Controller",
+                    "tripleo_role_networks": [
+                        "management",
+                        "storage",
+                        "ctlplane",
+                        "external",
+                        "internal_api",
+                        "storage_mgmt",
+                        "tenant"
+                    ],
                     "serial": "1",
                     "ansible_ssh_user": "heat-admin",
                 }
@@ -353,20 +353,20 @@ class TestInventories(base.TestCase):
                         "tenant_ip": "192.168.24.13",
                         "internal_api_ip": "192.168.24.13",
                         "management_ip": "192.168.24.13",
-                        "enabled_networks": [
-                            "management",
-                            "storage",
-                            "ctlplane",
-                            "external",
-                            "internal_api",
-                            "storage_mgmt",
-                            "tenant"
-                        ],
                         "ansible_host": "192.168.24.13"
                     }
                 },
                 "vars": {
                     "tripleo_role_name": "DistributedComputeHCI",
+                    "tripleo_role_networks": [
+                        "management",
+                        "storage",
+                        "ctlplane",
+                        "external",
+                        "internal_api",
+                        "storage_mgmt",
+                        "tenant"
+                    ],
                     "serial": "1",
                     "ansible_ssh_user": "heat-admin",
                 }

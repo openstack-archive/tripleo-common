@@ -77,7 +77,10 @@ class TestInventory(base.TestCase):
                  'Controller': {
                      'ctlplane': ['c-0.ctlplane.localdomain',
                                   'c-1.ctlplane.localdomain',
-                                  'c-2.ctlplane.localdomain']},
+                                  'c-2.ctlplane.localdomain'],
+                     'internal_api': ['c-0.internal_api.localdomain',
+                                      'c-1.internal_api.localdomain',
+                                      'c-2.internal_api.localdomain']},
                  'Compute': {
                      'ctlplane': ['cp-0.ctlplane.localdomain']},
                  'CustomRole': {
@@ -87,7 +90,10 @@ class TestInventory(base.TestCase):
                  'Controller': {
                      'ctlplane': ['x.x.x.1',
                                   'x.x.x.2',
-                                  'x.x.x.3']},
+                                  'x.x.x.3'],
+                     'internal_api': ['x.x.x.4',
+                                      'x.x.x.5',
+                                      'x.x.x.6']},
                  'Compute': {
                      'ctlplane': ['y.y.y.1']},
                  'CustomRole': {
@@ -190,20 +196,23 @@ class TestInventory(base.TestCase):
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'Compute'}},
+                         'tripleo_role_name': 'Compute',
+                         'tripleo_role_networks': ['ctlplane']}},
             'Controller': {
                 'hosts': ['c-0', 'c-1', 'c-2'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'Controller'}},
+                         'tripleo_role_name': 'Controller',
+                         'tripleo_role_networks': ['ctlplane',
+                                                   'internal_api']}},
             'CustomRole': {
                 'hosts': ['cs-0'],
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'CustomRole'}},
-
+                         'tripleo_role_name': 'CustomRole',
+                         'tripleo_role_networks': ['ctlplane']}},
             'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
@@ -273,21 +282,25 @@ class TestInventory(base.TestCase):
                          'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'Compute'}},
+                         'tripleo_role_name': 'Compute',
+                         'tripleo_role_networks': ['ctlplane']}},
             'Controller': {
                 'hosts': ['c-0', 'c-1', 'c-2'],
                 'vars': {'ansible_python_interpreter': 'foo',
                          'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'Controller'}},
+                         'tripleo_role_name': 'Controller',
+                         'tripleo_role_networks': ['ctlplane',
+                                                   'internal_api']}},
             'CustomRole': {
                 'hosts': ['cs-0'],
                 'vars': {'ansible_python_interpreter': 'foo',
                          'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'CustomRole'}},
+                         'tripleo_role_name': 'CustomRole',
+                         'tripleo_role_networks': ['ctlplane']}},
             'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
@@ -370,48 +383,56 @@ class TestInventory(base.TestCase):
                         'ansible_host': 'y.y.y.1',
                         'ctlplane_ip': 'y.y.y.1',
                         'deploy_server_id': 'd',
-                        'enabled_networks': ['ctlplane'],
                         'ctlplane_hostname': 'cp-0.ctlplane.localdomain'}},
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'Compute'}},
+                         'tripleo_role_name': 'Compute',
+                         'tripleo_role_networks': ['ctlplane']}},
             'Controller': {
                 'hosts': {
                     'c-0': {
                         'ansible_host': 'x.x.x.1',
                         'ctlplane_ip': 'x.x.x.1',
                         'deploy_server_id': 'a',
-                        'enabled_networks': ['ctlplane'],
-                        'ctlplane_hostname': 'c-0.ctlplane.localdomain'},
+                        'ctlplane_hostname': 'c-0.ctlplane.localdomain',
+                        'internal_api_hostname':
+                            'c-0.internal_api.localdomain',
+                        'internal_api_ip': 'x.x.x.4'},
                     'c-1': {
                         'ansible_host': 'x.x.x.2',
                         'ctlplane_ip': 'x.x.x.2',
                         'deploy_server_id': 'b',
-                        'enabled_networks': ['ctlplane'],
-                        'ctlplane_hostname': 'c-1.ctlplane.localdomain'},
+                        'ctlplane_hostname': 'c-1.ctlplane.localdomain',
+                        'internal_api_hostname':
+                            'c-1.internal_api.localdomain',
+                        'internal_api_ip': 'x.x.x.5'},
                     'c-2': {
                         'ansible_host': 'x.x.x.3',
                         'ctlplane_ip': 'x.x.x.3',
                         'deploy_server_id': 'c',
-                        'enabled_networks': ['ctlplane'],
-                        'ctlplane_hostname': 'c-2.ctlplane.localdomain'}},
+                        'ctlplane_hostname': 'c-2.ctlplane.localdomain',
+                        'internal_api_hostname':
+                            'c-2.internal_api.localdomain',
+                        'internal_api_ip': 'x.x.x.6'}},
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'Controller'}},
+                         'tripleo_role_name': 'Controller',
+                         'tripleo_role_networks': ['ctlplane',
+                                                   'internal_api']}},
             'CustomRole': {
                 'hosts': {
                     'cs-0': {
                         'ansible_host': 'z.z.z.1',
                         'ctlplane_ip': 'z.z.z.1',
                         'deploy_server_id': 'e',
-                        'enabled_networks': ['ctlplane'],
                         'ctlplane_hostname': 'cs-0.ctlplane.localdomain'}},
                 'vars': {'ansible_ssh_user': ansible_ssh_user,
                          'bootstrap_server_id': 'a',
                          'serial': 1,
-                         'tripleo_role_name': 'CustomRole'}},
+                         'tripleo_role_name': 'CustomRole',
+                         'tripleo_role_networks': ['ctlplane']}},
             'overcloud': {'children': {'Compute': {},
                                        'Controller': {},
                                        'CustomRole': {}},
