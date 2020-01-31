@@ -1,5 +1,4 @@
 #!/bin/bash
-set -eo pipefail
 : ${HEALTHCHECK_CURL_MAX_TIME:=10}
 : ${HEALTHCHECK_CURL_USER_AGENT:=curl-healthcheck}
 : ${HEALTHCHECK_CURL_WRITE_OUT:='\n%{http_code} %{remote_ip}:%{remote_port} %{time_total} seconds\n'}
@@ -48,11 +47,7 @@ healthcheck_port () {
     # port by using "sudo -u" to get the right output.
     # Note: the privileged containers have the correct ss output with root
     # user; which is why we need to run with both users, as a best effort.
-    # https://bugs.launchpad.net/tripleo/+bug/1860556
-    # do ot use "-q" option for grep, since it returns 141 for some reason with
-    # set -o pipefail.
-    # See https://stackoverflow.com/questions/19120263/why-exit-code-141-with-grep-q
-    (ss -ntuap; sudo -u $puser ss -ntuap) | sort -u | grep -E ":($ports).*,pid=($pids),">/dev/null
+    (ss -ntuap; sudo -u $puser ss -ntuap) | sort -u | grep -qE ":($ports).*,pid=($pids),"
 }
 
 healthcheck_listen () {
