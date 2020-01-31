@@ -159,9 +159,9 @@ _EXISTING_PASSWORDS = {
 
 class GetParametersActionTest(base.TestCase):
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -210,12 +210,12 @@ class GetParametersActionTest(base.TestCase):
             template={'heat_template_version': '2016-04-30'},
         )
         mock_cache_get.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get"
         )
         mock_cache_set.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get",
             {'heat_resource_tree': {}, 'environment_parameters': None}
@@ -224,7 +224,7 @@ class GetParametersActionTest(base.TestCase):
 
 class ResetParametersActionTest(base.TestCase):
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run(self, mock_get_object_client, mock_cache):
@@ -258,7 +258,7 @@ class ResetParametersActionTest(base.TestCase):
             mock_env_reset
         )
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get"
         )
@@ -271,7 +271,7 @@ class UpdateParametersActionTest(base.TestCase):
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.'
                 'get_template_contents')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_object_client')
@@ -383,7 +383,7 @@ class UpdateParametersActionTest(base.TestCase):
         )
 
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get",
             expected_value
@@ -394,7 +394,7 @@ class UpdateParametersActionTest(base.TestCase):
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.'
                 'get_template_contents')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_object_client')
@@ -481,7 +481,7 @@ class UpdateParametersActionTest(base.TestCase):
         )
 
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get",
             {'environment_parameters': None, 'heat_resource_tree': {}}
@@ -494,7 +494,7 @@ class UpdateRoleParametersActionTest(base.TestCase):
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.'
                 'get_template_contents')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
     @mock.patch('tripleo_common.utils.parameters.set_count_and_flavor_params')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
@@ -583,7 +583,7 @@ class UpdateRoleParametersActionTest(base.TestCase):
         )
 
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcast",
             "tripleo.parameters.get",
             {'environment_parameters': None, 'heat_resource_tree': {}}
@@ -592,7 +592,7 @@ class UpdateRoleParametersActionTest(base.TestCase):
 
 class GeneratePasswordsActionTest(base.TestCase):
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
@@ -645,12 +645,12 @@ class GeneratePasswordsActionTest(base.TestCase):
                                     'existing_value')
 
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get"
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
@@ -702,12 +702,12 @@ class GeneratePasswordsActionTest(base.TestCase):
         # ensure old passwords used and no new generation
         self.assertEqual(_EXISTING_PASSWORDS, result)
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get"
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
@@ -773,12 +773,12 @@ class GeneratePasswordsActionTest(base.TestCase):
         # ensure new passwords have been generated
         self.assertNotEqual(_EXISTING_PASSWORDS, result)
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get"
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
@@ -854,12 +854,12 @@ class GeneratePasswordsActionTest(base.TestCase):
                 self.assertEqual(_EXISTING_PASSWORDS[name], result[name])
 
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get"
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
@@ -917,7 +917,7 @@ class GeneratePasswordsActionTest(base.TestCase):
         # ensure old passwords used and no new generation
         self.assertEqual(existing_passwords, result)
         mock_cache.assert_called_once_with(
-            mock_ctx,
+            swift,
             "overcloud",
             "tripleo.parameters.get"
         )
@@ -1170,9 +1170,9 @@ class GenerateFencingParametersActionTestCase(base.TestCase):
 
 class GetFlattenedParametersActionTest(base.TestCase):
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -1228,9 +1228,9 @@ class GetFlattenedParametersActionTest(base.TestCase):
         )
         self.assertEqual(result, expected_value)
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_get')
     @mock.patch('uuid.uuid4', side_effect=['1', '2'])
     @mock.patch('heatclient.common.template_utils.'
@@ -1439,9 +1439,9 @@ class RotateFernetKeysActionTest(base.TestCase):
 
 class GetNetworkConfigActionTest(base.TestCase):
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -1501,9 +1501,9 @@ class GetNetworkConfigActionTest(base.TestCase):
             stack_name='overcloud-TEMP',
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -1574,9 +1574,9 @@ class GetNetworkConfigActionTest(base.TestCase):
             stack_name='overcloud-TEMP',
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -1646,9 +1646,9 @@ class GetNetworkConfigActionTest(base.TestCase):
             stack_name='overcloud-TEMP',
         )
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_set')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')

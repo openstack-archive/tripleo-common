@@ -42,10 +42,11 @@ class GetParametersAction(base.TripleOAction):
         self.container = container
 
     def run(self, context):
+        swift = self.get_object_client(context)
+        heat = self.get_orchestration_client(context)
 
-        cached = self.cache_get(context,
-                                self.container,
-                                "tripleo.parameters.get")
+        cached = plan_utils.cache_get(swift, self.container,
+                                      "tripleo.parameters.get")
 
         if cached is not None:
             return cached
@@ -63,9 +64,6 @@ class GetParametersAction(base.TripleOAction):
         processed_data['show_nested'] = True
 
         # respect previously user set param values
-        swift = self.get_object_client(context)
-        heat = self.get_orchestration_client(context)
-
         try:
             env = plan_utils.get_env(swift, self.container)
         except swiftexceptions.ClientException as err:
@@ -87,10 +85,9 @@ class GetParametersAction(base.TripleOAction):
             'heat_resource_tree': heat.stacks.validate(**fields),
             'environment_parameters': params,
         }
-        self.cache_set(context,
-                       self.container,
-                       "tripleo.parameters.get",
-                       result)
+        plan_utils.cache_set(swift, self.container,
+                             "tripleo.parameters.get",
+                             result)
         return result
 
 
@@ -123,9 +120,9 @@ class ResetParametersAction(base.TripleOAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        self.cache_delete(context,
-                          self.container,
-                          "tripleo.parameters.get")
+        plan_utils.cache_delete(swift,
+                                self.container,
+                                "tripleo.parameters.get")
         return env
 
 
@@ -195,10 +192,9 @@ class UpdateParametersAction(base.TripleOAction):
             }
 
             # Validation passes so the old cache gets replaced.
-            self.cache_set(context,
-                           self.container,
-                           "tripleo.parameters.get",
-                           result)
+            plan_utils.cache_set(swift, self.container,
+                                 "tripleo.parameters.get",
+                                 result)
 
             if result['heat_resource_tree']:
                 flattened = {'resources': {}, 'parameters': {}}
@@ -333,9 +329,9 @@ class GeneratePasswordsAction(base.TripleOAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        self.cache_delete(context,
-                          self.container,
-                          "tripleo.parameters.get")
+        plan_utils.cache_delete(swift,
+                                self.container,
+                                "tripleo.parameters.get")
         return env['passwords']
 
 
@@ -617,9 +613,9 @@ class RotateFernetKeysAction(GetPasswordsAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        self.cache_delete(context,
-                          self.container,
-                          "tripleo.parameters.get")
+        plan_utils.cache_delete(swift,
+                                self.container,
+                                "tripleo.parameters.get")
 
         return keys_map
 

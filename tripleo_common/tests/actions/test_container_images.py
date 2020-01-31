@@ -20,7 +20,6 @@ import mock
 from swiftclient import exceptions as swiftexceptions
 import yaml
 
-from mistral_lib import actions
 from tripleo_common.actions import container_images
 from tripleo_common.image import kolla_builder
 from tripleo_common.tests import base
@@ -43,10 +42,10 @@ class PrepareContainerImageEnvTest(base.TestCase):
 
     @mock.patch("tripleo_common.actions.container_images."
                 "PrepareContainerImageEnv.get_object_client")
-    @mock.patch("tripleo_common.actions.heat_capabilities."
-                "UpdateCapabilitiesAction")
+    @mock.patch("tripleo_common.utils.plan."
+                "update_plan_environment")
     @mock.patch("tripleo_common.image.kolla_builder.KollaImageBuilder")
-    def test_run(self, kib, update_action, goc):
+    def test_run(self, kib, mock_update_plan, goc):
         swift = goc.return_value
         builder = kib.return_value
         builder.container_images_from_template.return_value = image_entries
@@ -55,7 +54,7 @@ class PrepareContainerImageEnvTest(base.TestCase):
             {'path': 'environments/containers-default-parameters.yaml'},
             {'path': 'user-environment.yaml'}
         ]}
-        update_action.return_value.run.return_value = final_env
+        mock_update_plan.return_value = final_env
 
         action = container_images.PrepareContainerImageEnv(
             container='overcloud')
@@ -79,17 +78,18 @@ class PrepareContainerImageEnvTest(base.TestCase):
             'environments/containers-default-parameters.yaml',
             expected_env
         )
-        update_action.assert_called_once_with(
+        mock_update_plan.assert_called_once_with(
+            swift,
             {'environments/containers-default-parameters.yaml': True},
             container='overcloud'
         )
 
     @mock.patch("tripleo_common.actions.container_images."
                 "PrepareContainerImageEnv.get_object_client")
-    @mock.patch("tripleo_common.actions.heat_capabilities."
-                "UpdateCapabilitiesAction")
+    @mock.patch("tripleo_common.utils.plan."
+                "update_plan_environment")
     @mock.patch("tripleo_common.image.kolla_builder.KollaImageBuilder")
-    def test_run_failed(self, kib, update_action, goc):
+    def test_run_failed(self, kib, mock_update_plan, goc):
         swift = goc.return_value
         builder = kib.return_value
         builder.container_images_from_template.return_value = image_entries
@@ -98,14 +98,13 @@ class PrepareContainerImageEnvTest(base.TestCase):
             {'path': 'environments/containers-default-parameters.yaml'},
             {'path': 'user-environment.yaml'}
         ]}
-        update_action.return_value.run.return_value = final_env
+        mock_update_plan.return_value = final_env
 
         action = container_images.PrepareContainerImageEnv(
             container='overcloud')
         self.assertEqual(final_env, action.run(self.ctx))
 
-        update_action.return_value.run.return_value = actions.Result(
-            error='Error updating environment for plan overcloud: ouch')
+        mock_update_plan.side_effect = swiftexceptions.ClientException('ouch')
         self.assertEqual(
             'Error updating environment for plan overcloud: ouch',
             action.run(self.ctx).error
@@ -129,13 +128,13 @@ class PrepareContainerImageParametersTest(base.TestCase):
                 "PrepareContainerImageParameters._get_role_data")
     @mock.patch("tripleo_common.actions.container_images."
                 "PrepareContainerImageParameters.get_object_client")
-    @mock.patch("tripleo_common.actions.heat_capabilities."
-                "UpdateCapabilitiesAction")
+    @mock.patch("tripleo_common.utils.plan."
+                "update_plan_environment")
     @mock.patch("tripleo_common.utils.plan.get_env", autospec=True)
     @mock.patch("tripleo_common.image.kolla_builder."
                 "container_images_prepare_multi")
     @mock.patch("tripleo_common.image.kolla_builder.KollaImageBuilder")
-    def test_run(self, kib, prepare, get_env, update_action, goc, grd):
+    def test_run(self, kib, prepare, get_env, mock_update_plan, goc, grd):
         builder = kib.return_value
         builder.container_images_from_template.return_value = image_entries
         plan = {
@@ -166,7 +165,7 @@ class PrepareContainerImageParametersTest(base.TestCase):
         grd.return_value = role_data
 
         get_env.return_value = plan
-        update_action.return_value.run.return_value = final_env
+        mock_update_plan.return_value = final_env
         action = container_images.PrepareContainerImageParameters(
             container='overcloud')
         self.assertEqual(final_env, action.run(self.ctx))

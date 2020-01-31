@@ -246,9 +246,8 @@ class ProcessTemplatesAction(base.TripleOAction):
                 LOG.info("skipping %s network: network is disabled." %
                          n.get('name'))
 
-        self.cache_delete(context,
-                          self.container,
-                          "tripleo.parameters.get")
+        plan_utils.cache_delete(swift, self.container,
+                                "tripleo.parameters.get")
 
         for f in [f.get('name') for f in container_files[1]]:
             # We do three templating passes here:
