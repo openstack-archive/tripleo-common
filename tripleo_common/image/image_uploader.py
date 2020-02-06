@@ -772,7 +772,7 @@ class BaseImageUploader(object):
                 tag_label = tag_from_label.format(**labels)
             except ValueError as e:
                 raise ImageUploaderException(e)
-            except KeyError as e:
+            except (KeyError, TypeError) as e:
                 if fallback_tag:
                     tag_label = fallback_tag
                 else:
