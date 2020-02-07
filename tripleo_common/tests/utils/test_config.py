@@ -51,17 +51,18 @@ class TestConfig(base.TestCase):
                             'service_names',
                             'upgrade_batch_tasks', 'upgrade_tasks',
                             'external_deploy_tasks']
-        fake_role = [role for role in
-                     fakes.FAKE_STACK['outputs'][1]['output_value']]
 
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
         self.config = ooo_config.Config(heat)
+        self.config.fetch_config('overcloud')
+        fake_role = list(self.config.stack_outputs.get('RoleData'))
         self.config.download_config('overcloud', '/tmp/tht', config_type_list)
 
         mock_git_init.assert_called_once_with('/tmp/tht')
         expected_mkdir_calls = [call('/tmp/tht/%s' % r) for r in fake_role]
         mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
+        mock_mkdir.assert_called()
         expected_calls = []
         for config in config_type_list:
             for role in fake_role:
@@ -91,12 +92,12 @@ class TestConfig(base.TestCase):
                                               mock_git_init):
 
         expected_config_type = 'config_settings'
-        fake_role = [role for role in
-                     fakes.FAKE_STACK['outputs'][1]['output_value']]
 
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
         self.config = ooo_config.Config(heat)
+        self.config.fetch_config('overcloud')
+        fake_role = list(self.config.stack_outputs.get('RoleData'))
         self.config.download_config('overcloud', '/tmp/tht',
                                     ['config_settings'])
         expected_mkdir_calls = [call('/tmp/tht/%s' % r) for r in fake_role]
@@ -104,6 +105,7 @@ class TestConfig(base.TestCase):
                           % (r, expected_config_type))
                           for r in fake_role]
         mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
+        mock_mkdir.assert_called()
         mock_open.assert_has_calls(expected_calls, any_order=True)
         mock_git_init.assert_called_once_with('/tmp/tht')
 
@@ -128,9 +130,9 @@ class TestConfig(base.TestCase):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
         self.config = ooo_config.Config(heat)
+        self.config.fetch_config('overcloud')
         self.tmp_dir = self.useFixture(fixtures.TempDir()).path
-        fake_role = [role for role in
-                     fakes.FAKE_STACK['outputs'][1]['output_value']]
+        fake_role = list(self.config.stack_outputs.get('RoleData'))
         expected_tasks = {'FakeController': {0: [],
                                              1: [{'name': 'Stop fake service',
                                                   'service': 'name=fake '
@@ -164,11 +166,11 @@ class TestConfig(base.TestCase):
         for role in fake_role:
             filedir = os.path.join(self.tmp_dir, role)
             os.makedirs(filedir)
-            for step in range(constants.UPGRADE_STEPS_MAX):
+            for step in range(constants.DEFAULT_STEPS_MAX):
                 filepath = os.path.join(filedir, "upgrade_tasks_step%s.yaml"
                                         % step)
                 playbook_tasks = self.config._write_tasks_per_step(
-                    fakes.FAKE_STACK['outputs'][1]['output_value'][role]
+                    self.config.stack_outputs.get('RoleData')[role]
                     ['upgrade_tasks'], role, filepath, step)
                 self.assertTrue(os.path.isfile(filepath))
                 self.assertEqual(expected_tasks[role][step], playbook_tasks)
@@ -640,13 +642,13 @@ class TestConfig(base.TestCase):
                             'service_names',
                             'upgrade_batch_tasks', 'upgrade_tasks',
                             'external_deploy_tasks']
-        fake_role = [role for role in
-                     fakes.FAKE_STACK['outputs'][1]['output_value']]
 
         mock_os_path_exists.get.return_value = True
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
         self.config = ooo_config.Config(heat)
+        self.config.fetch_config('overcloud')
+        fake_role = list(self.config.stack_outputs.get('RoleData'))
         self.config.download_config('overcloud', '/tmp/tht', config_type_list,
                                     False)
 
@@ -656,6 +658,7 @@ class TestConfig(base.TestCase):
 
         expected_mkdir_calls = [call('/tmp/tht/%s' % r) for r in fake_role]
         mock_mkdir.assert_has_calls(expected_mkdir_calls, any_order=True)
+        mock_mkdir.assert_called()
         expected_calls = []
         for config in config_type_list:
             for role in fake_role:
