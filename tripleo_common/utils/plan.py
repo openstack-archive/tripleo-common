@@ -15,18 +15,24 @@
 # limitations under the License.
 
 import json
+import logging
 import os
 import requests
+import sys
 import tempfile
 import yaml
 import zlib
 
 from heatclient.common import template_utils
+import six
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
+from tripleo_common.image import kolla_builder
 from tripleo_common.utils import swift as swiftutils
 from tripleo_common.utils.validations import pattern_validator
+
+LOG = logging.getLogger(__name__)
 
 
 def update_in_env(swift, env, key, value='', delete_key=False):
@@ -268,4 +274,101 @@ def update_plan_environment(swift, environments,
 
     cache_delete(swift, container, "tripleo.parameters.get")
     put_env(swift, env)
+    return env
+
+
+def get_role_data(swift, container=constants.DEFAULT_CONTAINER_NAME):
+    try:
+        j2_role_file = swiftutils.get_object_string(
+            swift,
+            container,
+            constants.OVERCLOUD_J2_ROLES_NAME)
+        role_data = yaml.safe_load(j2_role_file)
+    except swiftexceptions.ClientException:
+        LOG.info("No %s file found, not filtering container images by role"
+                 % constants.OVERCLOUD_J2_ROLES_NAME)
+        role_data = None
+    return role_data
+
+
+def default_image_params():
+
+    def ffunc(entry):
+        return entry
+
+    template_file = os.path.join(sys.prefix, 'share', 'tripleo-common',
+                                 'container-images',
+                                 'overcloud_containers.yaml.j2')
+    builder = kolla_builder.KollaImageBuilder([template_file])
+    result = builder.container_images_from_template(filter=ffunc)
+
+    params = {}
+    for entry in result:
+        imagename = entry.get('imagename', '')
+        if 'params' in entry:
+            for p in entry.pop('params'):
+                params[p] = imagename
+    return params
+
+
+def update_plan_environment_with_image_parameters(
+    swift, container=constants.DEFAULT_CONTAINER_NAME):
+    try:
+        plan_env = get_env(swift, container)
+    except swiftexceptions.ClientException as err:
+        err_msg = ("Error retrieving environment for plan %s: %s" % (
+            container, err))
+        LOG.exception(err_msg)
+        raise RuntimeError(err_msg)
+
+    try:
+        env_paths, temp_env_paths = build_env_paths(
+            swift, container, plan_env)
+        env_files, env = process_environments_and_files(
+            swift, env_paths)
+
+        # ensure every image parameter has a default value, even if prepare
+        # didn't return it
+        params = default_image_params()
+
+        role_data = get_role_data(swift)
+        image_params = kolla_builder.container_images_prepare_multi(
+            env, role_data, dry_run=True)
+        if image_params:
+            params.update(image_params)
+
+    except Exception as err:
+        LOG.exception("Error occurred while processing plan files.")
+        raise RuntimeError(six.text_type(err))
+    finally:
+        # cleanup any local temp files
+        for f in temp_env_paths:
+            os.remove(f)
+
+    try:
+        swiftutils.put_object_string(
+            swift,
+            container,
+            constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+            yaml.safe_dump(
+                {'parameter_defaults': params},
+                default_flow_style=False
+            )
+        )
+    except swiftexceptions.ClientException as err:
+        err_msg = ("Error updating %s for plan %s: %s" % (
+            constants.CONTAINER_DEFAULTS_ENVIRONMENT, container, err))
+        LOG.exception(err_msg)
+        raise RuntimeError(err_msg)
+
+    environments = {constants.CONTAINER_DEFAULTS_ENVIRONMENT: True}
+
+    try:
+        env = update_plan_environment(swift, environments,
+                                      container=container)
+    except swiftexceptions.ClientException as err:
+        err_msg = ("Error updating environment for plan %s: %s" % (
+            container, err))
+        LOG.exception(err_msg)
+        raise RuntimeError(err_msg)
     return env
