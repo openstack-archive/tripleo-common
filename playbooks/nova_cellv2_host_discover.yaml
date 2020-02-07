@@ -17,5 +17,6 @@
       become: true
       changed_when: false
       delegate_to: '{{ groups[''nova_discovery_nodes''][0] }}'
+      run_once: true
       when:
         - discover_hosts|bool
