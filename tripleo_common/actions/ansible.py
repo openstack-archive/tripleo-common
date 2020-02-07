@@ -207,7 +207,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
         self.trash_output = self._kwargs_for_run.pop('trash_output', False)
         self.profile_tasks = self._kwargs_for_run.pop('profile_tasks', True)
         self.profile_tasks_limit = self._kwargs_for_run.pop(
-            'profile_tasks_limit', 0)
+            'profile_tasks_limit', 20)
         self.blacklisted_hostnames = self._kwargs_for_run.pop(
             'blacklisted_hostnames', [])
         self.override_ansible_cfg = self._kwargs_for_run.pop(
