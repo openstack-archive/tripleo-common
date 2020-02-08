@@ -80,8 +80,6 @@ def create_overcloudrc(stack, no_proxy, admin_password, region_name):
                         [no_proxy, overcloud_host, overcloud_admin_vip])
 
     rc_params = {
-        'NOVA_VERSION': '1.1',
-        'COMPUTE_API_VERSION': '1.1',
         'OS_USERNAME': 'admin',
         'OS_PROJECT_NAME': 'admin',
         'OS_USER_DOMAIN_NAME': 'Default',
