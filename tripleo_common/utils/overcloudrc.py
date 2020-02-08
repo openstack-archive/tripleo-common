@@ -92,8 +92,8 @@ def create_overcloudrc(stack, no_proxy, admin_password, region_name):
         'OS_AUTH_TYPE': 'password',
         'OS_PASSWORD': admin_password,
         'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', ''),
-        'OS_IDENTITY_API_VERSION': '3',
-        'OS_COMPUTE_API_VERSION': '2.latest',
+        'OS_IDENTITY_API_VERSION': constants.DEFAULT_IDENTITY_API_VERSION,
+        'OS_COMPUTE_API_VERSION': constants.DEFAULT_COMPUTE_API_VERSION,
         'OS_IMAGE_API_VERSION': constants.DEFAULT_IMAGE_API_VERSION,
         'OS_VOLUME_API_VERSION': constants.DEFAULT_VOLUME_API_VERSION,
         'OS_REGION_NAME': region_name or 'regionOne'

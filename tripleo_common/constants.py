@@ -160,6 +160,12 @@ DO_NOT_ROTATE_LIST = (
 
 PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
 
+# The default version of the Identity API to set in overcloudrc.
+DEFAULT_IDENTITY_API_VERSION = '3'
+
+# The default version of the Compute API to set in overcloudrc.
+DEFAULT_COMPUTE_API_VERSION = '2.latest'
+
 # The default version of the Image API to set in overcloudrc.
 DEFAULT_IMAGE_API_VERSION = '2'
 
