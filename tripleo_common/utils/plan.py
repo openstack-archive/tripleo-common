@@ -14,12 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from heatclient.common import template_utils
 import json
 import os
 import requests
 import tempfile
 import yaml
+import zlib
+
+from heatclient.common import template_utils
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
 from tripleo_common.utils import swift as swiftutils
@@ -172,43 +175,80 @@ def build_env_paths(swift, container, plan_env):
     return env_paths, temp_env_paths
 
 
-def apply_environments_order(capabilities, environments):
-    """traverses the capabilities and orders the environment files
+def format_cache_key(plan_name, key_name):
+    return "__cache_{}_{}".format(plan_name, key_name)
 
-    by dependency rules defined in capabilities-map, so that parent
-    environments are first and children environments override these
-    parents
 
-    :param capabilities: dict representing capabilities-map.yaml file
-    :param environments: list representing the environments section of the
-                         plan-environments.yaml file
-    :return: list containing ordered environments
+def cache_get(swift, plan_name, key):
+    """Retrieves the stored objects
+
+    Returns None if there are any issues or no objects found
 
     """
-    # get ordering rules from capabilities-map file
-    order_rules = {}
-    for topic in capabilities.get('topics', []):
-        for group in topic.get('environment_groups', []):
-            for environment in group.get('environments', []):
-                order_rules[environment['file']] = []
-                if 'requires' in environment:
-                    order_rules[environment['file']] \
-                        = environment.get('requires', [])
 
-    # apply ordering rules
-    rest = []
-    for e in environments:
-        path = e.get('path', '')
-        if path not in order_rules:
-            environments.remove(e)
-            rest.append(e)
-            continue
-        path_pos = environments.index(e)
-        for requirement in order_rules[path]:
-            if {'path': requirement} in environments:
-                requirement_pos = environments.index({'path': requirement})
-                if requirement_pos > path_pos:
-                    item = environments.pop(requirement_pos)
-                    environments.insert(path_pos, item)
+    try:
+        headers, body = swift.get_object(
+            constants.TRIPLEO_CACHE_CONTAINER,
+            format_cache_key(plan_name, key)
+        )
+        result = json.loads(zlib.decompress(body).decode())
+        return result
+    except swiftexceptions.ClientException:
+        # cache does not exist, ignore
+        pass
+    except ValueError:
+        # the stored json is invalid. Deleting
+        cache_delete(swift, plan_name, key)
+    return None
 
-    return environments + rest
+
+def cache_set(swift, plan_name, key, contents):
+    """Stores an object
+
+    Allows the storage of jsonable objects except for None
+    Storing None equals to a cache delete.
+
+    """
+
+    if contents is None:
+        cache_delete(swift, plan_name, key)
+        return
+
+    try:
+        swift.head_container(constants.TRIPLEO_CACHE_CONTAINER)
+    except swiftexceptions.ClientException:
+        swift.put_container(constants.TRIPLEO_CACHE_CONTAINER)
+
+    swift.put_object(
+        constants.TRIPLEO_CACHE_CONTAINER,
+        format_cache_key(plan_name, key),
+        zlib.compress(json.dumps(contents).encode()))
+
+
+def cache_delete(swift, plan_name, key):
+    try:
+        swift.delete_object(
+            constants.TRIPLEO_CACHE_CONTAINER,
+            format_cache_key(plan_name, key))
+    except swiftexceptions.ClientException:
+        # cache or container does not exist. Ignore
+        pass
+
+
+def update_plan_environment(swift, environments,
+                            container=constants.DEFAULT_CONTAINER_NAME):
+    env = get_env(swift, container)
+    for k, v in environments.items():
+        found = False
+        if {'path': k} in env['environments']:
+            found = True
+        if v:
+            if not found:
+                env['environments'].append({'path': k})
+        else:
+            if found:
+                env['environments'].remove({'path': k})
+
+    cache_delete(swift, container, "tripleo.parameters.get")
+    put_env(swift, env)
+    return env

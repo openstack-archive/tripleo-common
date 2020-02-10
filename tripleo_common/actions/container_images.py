@@ -24,7 +24,6 @@ from swiftclient import exceptions as swiftexceptions
 import yaml
 
 from tripleo_common.actions import base
-from tripleo_common.actions import heat_capabilities
 from tripleo_common import constants
 from tripleo_common.image import kolla_builder
 from tripleo_common.utils import plan as plan_utils
@@ -87,9 +86,15 @@ class PrepareContainerImageEnv(base.TripleOAction):
 
         environments = {constants.CONTAINER_DEFAULTS_ENVIRONMENT: True}
 
-        update_action = heat_capabilities.UpdateCapabilitiesAction(
-            environments, container=self.container)
-        return update_action.run(context)
+        try:
+            env = plan_utils.update_plan_environment(swift, environments,
+                                                     container=self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error updating environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return actions.Result(error=err_msg)
+        return env
 
 
 class PrepareContainerImageParameters(base.TripleOAction):
@@ -168,9 +173,15 @@ class PrepareContainerImageParameters(base.TripleOAction):
 
         environments = {constants.CONTAINER_DEFAULTS_ENVIRONMENT: True}
 
-        update_action = heat_capabilities.UpdateCapabilitiesAction(
-            environments, container=self.container)
-        return update_action.run(context)
+        try:
+            env = plan_utils.update_plan_environment(swift, environments,
+                                                     container=self.container)
+        except swiftexceptions.ClientException as err:
+            err_msg = ("Error updating environment for plan %s: %s" % (
+                self.container, err))
+            LOG.exception(err_msg)
+            return actions.Result(error=err_msg)
+        return env
 
 
 class ContainerImagePrepareDefault(base.TripleOAction):

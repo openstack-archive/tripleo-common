@@ -42,7 +42,7 @@ class ScaleDownActionTest(base.TestCase):
         super(ScaleDownActionTest, self).setUp()
         self.image = collections.namedtuple('image', ['id'])
 
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+    @mock.patch('tripleo_common.utils.plan.'
                 'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
@@ -149,7 +149,7 @@ class ScaleDownActionTest(base.TestCase):
         self.assertEqual(kwargs['files'], {})
 
         mock_cache.assert_called_with(
-            mock_ctx,
+            swift,
             "stack",
             "tripleo.parameters.get"
         )
