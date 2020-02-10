@@ -19,9 +19,9 @@ from mistral_lib import actions
 
 from tripleo_common.actions import base
 from tripleo_common.actions import parameters as parameters_actions
-from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common import update
+from tripleo_common.utils import template as template_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -66,6 +66,8 @@ class ScaleDownAction(base.TripleOAction):
     def _update_stack(self, parameters={},
                       timeout_mins=constants.STACK_TIMEOUT_DEFAULT,
                       context=None):
+        heat = self.get_orchestration_client(context)
+        swift = self.get_object_client(context)
         # TODO(rbrady): migrate _update_stack to it's own action and update
         # the workflow for scale down
 
@@ -76,13 +78,9 @@ class ScaleDownAction(base.TripleOAction):
         if isinstance(updated_plan, actions.Result):
             return updated_plan
 
-        process_templates_action = templates.ProcessTemplatesAction(
-            container=self.container
+        processed_data = template_utils.process_templates(
+            swift, heat, container=self.container
         )
-        processed_data = process_templates_action.run(context)
-        if isinstance(processed_data, actions.Result):
-            return processed_data
-
         update.add_breakpoints_cleanup_into_env(processed_data['environment'])
 
         fields = processed_data.copy()
@@ -95,8 +93,7 @@ class ScaleDownAction(base.TripleOAction):
         fields['clear_parameters'] = list(parameters.keys())
 
         LOG.debug('stack update params: %s', fields)
-        self.get_orchestration_client(context).stacks.update(self.container,
-                                                             **fields)
+        heat.stacks.update(self.container, **fields)
 
     def _get_removal_params_from_heat(self, resources_by_role, resources):
         stack_params = {}

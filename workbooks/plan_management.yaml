@@ -126,8 +126,15 @@ workflows:
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
-        on-success: add_root_stack_name
+        on-success: container_images_prepare
         on-error: ensure_passwords_exist_set_status_failed
+
+      container_images_prepare:
+        description: >
+          Populate all container image parameters with default values.
+        action: tripleo.container_images.prepare container=<% $.container %>
+        on-success: add_root_stack_name
+        on-error: container_images_prepare_set_status_failed
 
       add_root_stack_name:
         action: tripleo.parameters.update
@@ -136,23 +143,11 @@ workflows:
           validate: <% $.validate_stack %>
           parameters:
             RootStackName: <% $.container %>
-        on-success: container_images_prepare
+        on-success: set_status_success
         publish-on-error:
           status: FAILED
           message: <% task().result %>
         on-error: send_message
-
-      container_images_prepare:
-        description: >
-          Populate all container image parameters with default values.
-        action: tripleo.container_images.prepare container=<% $.container %>
-        on-success: process_templates
-        on-error: container_images_prepare_set_status_failed
-
-      process_templates:
-        action: tripleo.templates.process container=<% $.container %>
-        on-success: set_status_success
-        on-error: process_templates_set_status_failed
 
       set_status_success:
         on-success: send_message
@@ -183,12 +178,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(ensure_passwords_exist).result %>
-
-      process_templates_set_status_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(process_templates).result %>
 
       container_images_prepare_set_status_failed:
         on-success: send_message
@@ -280,8 +269,15 @@ workflows:
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
-        on-success: add_root_stack_name
+        on-success: container_images_prepare
         on-error: ensure_passwords_exist_set_status_failed
+
+      container_images_prepare:
+        description: >
+          Populate all container image parameters with default values.
+        action: tripleo.container_images.prepare container=<% $.container %>
+        on-success: add_root_stack_name
+        on-error: container_images_prepare_set_status_failed
 
       add_root_stack_name:
         action: tripleo.parameters.update
@@ -290,18 +286,11 @@ workflows:
           validate: <% $.validate_stack %>
           parameters:
             RootStackName: <% $.container %>
-        on-success: container_images_prepare
+        on-success: create_swift_rings_backup_plan
         publish-on-error:
           status: FAILED
           message: <% task().result %>
         on-error: send_message
-
-      container_images_prepare:
-        description: >
-          Populate all container image parameters with default values.
-        action: tripleo.container_images.prepare container=<% $.container %>
-        on-success: create_swift_rings_backup_plan
-        on-error: container_images_prepare_set_status_failed
 
       create_swift_rings_backup_plan:
         workflow: tripleo.swift_backup.v1.create_swift_backup_container_plan
@@ -333,7 +322,9 @@ workflows:
 
       does_ceph_ansible_fetch_directory_backup_need_rename:
         workflow: tripleo.rename_ceph_ansible_fetch_directory.v1.check_and_rename
-        on-success: process_templates
+        on-success:
+          - set_status_success: <% $.plan_environment = null %>
+          - upload_plan_environment: <% $.plan_environment != null %>
         on-error: does_ceph_ansible_fetch_directory_backup_need_rename_set_status_failed
         input:
           container: <% $.container %>
@@ -341,17 +332,10 @@ workflows:
           container_suffix: "_ceph_ansible_fetch_dir"
           swift_tar: "temporary_dir.tar.gz"
 
-      process_templates:
-        action: tripleo.templates.process container=<% $.container %>
-        on-success:
-          - set_status_success: <% $.plan_environment = null %>
-          - upload_plan_environment: <% $.plan_environment != null %>
-        on-error: process_templates_set_status_failed
-
       upload_plan_environment:
         action: tripleo.templates.upload_plan_environment container=<% $.container %> plan_environment=<% $.plan_environment %>
         on-success: set_status_success
-        on-error: process_templates_set_status_failed
+        on-error: upload_plan_set_status_failed
 
       set_status_success:
         on-success: send_message
@@ -389,11 +373,11 @@ workflows:
           status: FAILED
           message: <% task(upload_templates_directory).result %>
 
-      process_templates_set_status_failed:
+      upload_plan_set_status_failed:
         on-success: send_message
         publish:
           status: FAILED
-          message: <% task(process_templates).result %>
+          message: <% task(upload_plan_environment).result %>
 
       ensure_passwords_exist_set_status_failed:
         on-success: send_message

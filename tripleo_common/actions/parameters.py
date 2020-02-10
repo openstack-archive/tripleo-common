@@ -23,13 +23,13 @@ from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
-from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import nodes
 from tripleo_common.utils import parameters as parameter_utils
 from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import template as template_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -51,16 +51,9 @@ class GetParametersAction(base.TripleOAction):
         if cached is not None:
             return cached
 
-        process_templates_action = templates.ProcessTemplatesAction(
-            container=self.container
+        processed_data = template_utils.process_templates(
+            swift, heat, container=self.container
         )
-        processed_data = process_templates_action.run(context)
-
-        # If we receive a 'Result' instance it is because the parent action
-        # had an error.
-        if isinstance(processed_data, actions.Result):
-            return processed_data
-
         processed_data['show_nested'] = True
 
         # respect previously user set param values
@@ -163,15 +156,9 @@ class UpdateParametersAction(base.TripleOAction):
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
 
-        process_templates_action = templates.ProcessTemplatesAction(
-            container=self.container
+        processed_data = template_utils.process_templates(
+            swift, heat, container=self.container
         )
-        processed_data = process_templates_action.run(context)
-
-        # If we receive a 'Result' instance it is because the parent action
-        # had an error.
-        if isinstance(processed_data, actions.Result):
-            return processed_data
 
         env = plan_utils.get_env(swift, self.container)
         if not self.validate:
@@ -208,7 +195,7 @@ class UpdateParametersAction(base.TripleOAction):
             # There has been an error validating we must reprocess the
             # templates with the saved working env
             plan_utils.put_env(swift, saved_env)
-            process_templates_action._process_custom_roles(context)
+            template_utils.process_custom_roles(swift, heat, self.container)
 
             err_msg = ("Error validating environment for plan %s: %s" % (
                 self.container, err))
@@ -668,15 +655,12 @@ class GetNetworkConfigAction(base.TripleOAction):
         self.role_name = role_name
 
     def run(self, context):
-        process_templates_action = templates.ProcessTemplatesAction(
-            container=self.container
-        )
-        processed_data = process_templates_action.run(context)
+        swift = self.get_object_client(context)
+        heat = self.get_orchestration_client(context)
 
-        # If we receive a 'Result' instance it is because the parent action
-        # had an error.
-        if isinstance(processed_data, actions.Result):
-            return processed_data
+        processed_data = template_utils.process_templates(
+            swift, heat, container=self.container
+        )
 
         # Default temporary value is used when no user input for any
         # interface routes for the role networks to find network config.

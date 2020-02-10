@@ -25,7 +25,7 @@ class UpdateStackActionTest(base.TestCase):
         self.timeout = 1
         self.container = 'container'
 
-    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction.run')
+    @mock.patch('tripleo_common.utils.template.process_templates')
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
@@ -40,7 +40,7 @@ class UpdateStackActionTest(base.TestCase):
                  mock_template_contents,
                  mock_get_orchestration_client,
                  mock_get_object_client,
-                 mock_templates_run):
+                 mock_process_templates):
         mock_ctx = mock.MagicMock()
 
         heat = mock.MagicMock()
