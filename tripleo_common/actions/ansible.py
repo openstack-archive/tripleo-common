@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import json
+import multiprocessing
 import os
 import shutil
 import six
@@ -44,7 +45,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'callback_whitelist', callbacks_whitelist)
     # suppress tasks if all hosts skip, was previously full_skip callback
     config.set('defaults', 'display_skipped_hosts', 'no')
-    config.set('defaults', 'forks', '25')
+    config.set('defaults', 'forks', str(multiprocessing.cpu_count() * 10))
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
 
