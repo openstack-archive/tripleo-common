@@ -11,11 +11,7 @@ if pgrep -f swift-proxy-server; then
     fi
 
     # swift-proxy is still eventlet
-    bind_host=$(get_config_val $conf DEFAULT bind_ip 127.0.0.1)
+    bind_host=$(wrap_ipv6 $(get_config_val $conf DEFAULT bind_ip 127.0.0.1))
     bind_port=$(get_config_val $conf DEFAULT bind_port 8080)
-    # Add brackets if IPv6
-    if [[ $bind_host =~ ":" ]]; then
-        bind_host="[${bind_host}]"
-    fi
     healthcheck_curl http://${bind_host}:${bind_port}/healthcheck
 fi
