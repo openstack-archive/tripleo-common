@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixed an issue were amphora load balancers would fail to create. The
+    problem was because Octavia certificate files were being created in a wrong
+    path and with invalid content.
