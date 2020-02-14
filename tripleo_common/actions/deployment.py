@@ -434,29 +434,3 @@ class DeploymentStatusAction(base.TripleOAction):
                     deployment_status=deployment_status,
                     ansible_status=ansible_status,
                     status_update=status_update)
-
-
-class ConvertStatusAction(base.TripleOAction):
-    """Translate a Heat stack status into a config-download deployment status
-
-    """
-
-    def __init__(self, status):
-        super(ConvertStatusAction, self).__init__()
-        self.status = status
-
-    def run(self, context):
-        matrix = {
-            'NO_STACK': 'UNDEPLOYED',
-            'CREATE_IN_PROGRESS': 'DEPLOYING',
-            'CREATE_COMPLETE': 'DEPLOY_SUCCESS',
-            'CREATE_FAILED': 'DEPLOY_FAILED',
-            'DELETE_COMPLETE': 'UNDEPLOYED',
-            'DELETE_IN_PROGRESS': 'UNDEPLOYING',
-            'DELETE_FAILED': 'UNDEPLOY_FAILED',
-            'UPDATE_IN_PROGRESS': 'DEPLOYING',
-            'UPDATE_FAILED': 'DEPLOY_FAILED',
-            'UPDATE_COMPLETE': 'DEPLOY_SUCCESS'
-        }
-
-        return matrix.get(self.status, 'UNKNOWN')

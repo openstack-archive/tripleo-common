@@ -820,24 +820,3 @@ class DeploymentFailuresActionTest(base.TestCase):
         self.assertTrue(result['message'].startswith(
                         "Ansible errors file not found at"))
         self.assertEqual({}, result['failures'])
-
-
-class ConvertStatusActionTest(base.TestCase):
-
-    def _test(self, input_value, expected_value):
-        mock_ctx = mock.MagicMock()
-        action = deployment.ConvertStatusAction(input_value)
-        result = action.run(mock_ctx)
-        self.assertEqual(result, expected_value)
-
-    def test_no_stack(self):
-        self._test('NO_STACK', 'UNDEPLOYED')
-
-    def test_in_progress(self):
-        self._test('CREATE_IN_PROGRESS', 'DEPLOYING')
-
-    def test_empty(self):
-        self._test('', 'UNKNOWN')
-
-    def test_garbage_value(self):
-        self._test('!@#$%^&*', 'UNKNOWN')
