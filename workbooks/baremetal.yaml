@@ -375,11 +375,11 @@ workflows:
     tasks:
 
       get_manageable_nodes:
-        action: ironic.node_list maintenance=False associated=False
+        action: ironic.node_list maintenance=False associated=False provision_state="manageable" limit=0
         on-success: provide_manageable
         on-error: set_status_failed_get_manageable_nodes
         publish:
-          managed_nodes: <% task().result.where($.provision_state = 'manageable').uuid %>
+          managed_nodes: <% task().result.uuid %>
 
       set_status_failed_get_manageable_nodes:
         on-success: send_message
@@ -655,11 +655,11 @@ workflows:
     tasks:
 
       get_manageable_nodes:
-        action: ironic.node_list maintenance=False associated=False
+        action: ironic.node_list maintenance=False associated=False provision_state="manageable" limit=0
         on-success: validate_nodes
         on-error: set_status_failed_get_manageable_nodes
         publish:
-          managed_nodes: <% task().result.where($.provision_state = 'manageable').uuid %>
+          managed_nodes: <% task().result.uuid %>
 
       set_status_failed_get_manageable_nodes:
         on-success: send_message
@@ -779,11 +779,11 @@ workflows:
     tasks:
 
       get_manageable_nodes:
-        action: ironic.node_list maintenance=False associated=False
+        action: ironic.node_list maintenance=False associated=False provision_state="manageable" limit=0
         on-success: configure_manageable
         on-error: set_status_failed_get_manageable_nodes
         publish:
-          managed_nodes: <% task().result.where($.provision_state = 'manageable').uuid %>
+          managed_nodes: <% task().result.uuid %>
 
       configure_manageable:
         on-success: send_message
