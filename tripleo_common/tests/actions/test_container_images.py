@@ -21,7 +21,6 @@ from swiftclient import exceptions as swiftexceptions
 import yaml
 
 from tripleo_common.actions import container_images
-from tripleo_common.image import kolla_builder
 from tripleo_common.tests import base
 
 
@@ -177,60 +176,3 @@ class PrepareContainerImageParametersTest(base.TestCase):
             'environments/containers-default-parameters.yaml',
             image_env_contents
         )
-
-
-class ContainerImagePrepareDefaultTest(base.TestCase):
-
-    def setUp(self):
-        super(ContainerImagePrepareDefaultTest, self).setUp()
-        self.ctx = mock.MagicMock()
-
-    def test_empty(self):
-        action = container_images.ContainerImagePrepareDefault({})
-        result = action.run(self.ctx)
-
-        self.assertEqual(
-            result['ContainerImagePrepare'],
-            kolla_builder.CONTAINER_IMAGE_PREPARE_PARAM
-        )
-
-    def test_some_values(self):
-        values = {
-            'tag_from_label': 'tag label',
-            'push_destination': True,
-            'namespace': 'namespace',
-            'name_prefix': 'prefix-',
-            'name_suffix': '-suffix',
-            'tag': 'tag'
-        }
-        action = container_images.ContainerImagePrepareDefault(values)
-        result = action.run(self.ctx)
-
-        self.assertTrue('ContainerImagePrepare' in result)
-        self.assertEqual(1, len(result['ContainerImagePrepare']))
-
-        self.assertTrue('tag_from_label' in result['ContainerImagePrepare'][0])
-        self.assertEqual(
-            'tag label',
-            result['ContainerImagePrepare'][0]['tag_from_label']
-        )
-
-        self.assertTrue(
-            'push_destination' in result['ContainerImagePrepare'][0]
-        )
-        self.assertEqual(
-            True,
-            result['ContainerImagePrepare'][0]['push_destination']
-        )
-
-        self.assertTrue('set' in result['ContainerImagePrepare'][0])
-        self.assertTrue(
-            isinstance(result['ContainerImagePrepare'][0]['set'], dict)
-        )
-
-        s = result['ContainerImagePrepare'][0]['set']
-
-        self.assertEqual(s['namespace'], 'namespace')
-        self.assertEqual(s['name_prefix'], 'prefix-')
-        self.assertEqual(s['name_suffix'], '-suffix')
-        self.assertEqual(s['tag'], 'tag')
