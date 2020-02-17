@@ -78,7 +78,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
         super(AnsiblePlaybookActionTest, self).setUp()
 
         self.playbook = "myplaybook"
-        self.limit_hosts = None
+        self.limit_hosts = "compute0,compute1"
         self.remote_user = 'fido'
         self.become = True
         self.become_user = 'root'
@@ -119,8 +119,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
         python_version = sys.version_info.major
         ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
         mock_execute.assert_called_once_with(
-            ansible_playbook_cmd, '-v', pb, '--become',
-            '--become-user',
+            ansible_playbook_cmd, '-v', pb, '--limit', self.limit_hosts,
+            '--become', '--become-user',
             self.become_user, '--extra-vars', json.dumps(self.extra_vars),
             env_variables=env, cwd=action.work_dir,
             log_errors=processutils.LogErrors.ALL)
