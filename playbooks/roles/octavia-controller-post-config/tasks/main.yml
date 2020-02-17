@@ -39,14 +39,6 @@
       setype: svirt_sandbox_file_t
     when: octavia_config_updated
 
-  - name: create a symbolic link conf.d/post-deploy -> post-deploy.conf (LP#1836074)
-    file:
-      src: "../../post-deploy.conf"
-      dest: "{{ octavia_confd_prefix }}/etc/octavia/conf.d/common/post-deploy.conf"
-      state: link
-      selevel: s0
-      setype: svirt_sandbox_file_t
-
   - name: restart octavia containers
     become: true
     become_user: root
