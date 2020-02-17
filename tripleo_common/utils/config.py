@@ -126,9 +126,11 @@ class Config(object):
             if not isinstance(whenexpr, list):
                 whenexpr = [whenexpr]
             for w in whenexpr:
+                # remove all spaces to make the regex match easier
+                w = re.sub(r'\s+', '', w)
                 # make \|int optional incase forgotten; use only step digit:
                 # ()'s around step|int are also optional
-                match = re.search(r'\(?step(\|int)?\)? == ([0-9]+)$', "%s" % w)
+                match = re.search(r'\(?step(\|int)?\)?==([0-9]+)$', "%s" % w)
                 if match:
                     if match.group(2) == str(step):
                         return True
