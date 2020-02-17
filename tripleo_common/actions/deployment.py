@@ -12,7 +12,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-
 import json
 import logging
 import os
@@ -321,45 +320,6 @@ class OvercloudRcAction(base.TripleOAction):
         region_name = parameter_defaults.get('KeystoneRegion')
         return overcloudrc.create_overcloudrc(stack, self.no_proxy, admin_pass,
                                               region_name)
-
-
-class CreateCloudsYamlAction(base.TripleOAction):
-    """Generate the overcloud clouds.yaml contents for a plan
-
-    Given the name of a container, generate the overcloud clouds.yaml
-    contents needed to access the overcloud via the CLI.
-    """
-
-    def __init__(self, container):
-        super(CreateCloudsYamlAction, self).__init__()
-        self.container = container
-
-    def run(self, context):
-        orchestration_client = self.get_orchestration_client(context)
-        swift = self.get_object_client(context)
-        stack = orchestration_client.stacks.get(self.container)
-        env = plan_utils.get_env(swift, self.container)
-        parameter_defaults = env['parameter_defaults']
-        passwords = env['passwords']
-        # Retrive values for cloud from a stack
-        admin_pass = parameter_defaults.get('AdminPassword',
-                                            passwords['AdminPassword'])
-        region_name = parameter_defaults.get('KeystoneRegion', 'regionOne')
-        cloud_name = stack.stack_name
-        auth_url = overcloudrc.get_overcloud_endpoint(stack).replace('/v2.0',
-                                                                     '')
-
-        # Create a dict needed for creating clouds.yaml
-        cloud = {cloud_name: {'auth': {'auth_url': auth_url,
-                                       'project_name': 'admin',
-                                       'project_domain_name': 'Default',
-                                       'username': 'admin',
-                                       'user_domain_name': 'Default',
-                                       'password': admin_pass},
-                              'region_name': region_name,
-                              'identity_api_version': 3}}
-
-        return cloud
 
 
 class DeploymentFailuresAction(base.TripleOAction):
