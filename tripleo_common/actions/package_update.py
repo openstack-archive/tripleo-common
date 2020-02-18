@@ -21,9 +21,9 @@ from mistral_lib import actions
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
-from tripleo_common.actions import templates
 from tripleo_common import constants
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import template as templates
 
 LOG = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ class UpdateStackAction(base.TripleOAction):
     def run(self, context):
         # get the stack. Error if doesn't exist
         heat = self.get_orchestration_client(context)
+        swift = self.get_object_client(context)
         try:
             stack = heat.stacks.get(self.container)
         except heat_exc.HTTPNotFound:
@@ -88,16 +89,9 @@ class UpdateStackAction(base.TripleOAction):
             return actions.Result(error=err_msg)
 
         # process all plan files and create or update a stack
-        process_templates_action = templates.ProcessTemplatesAction(
-            container=self.container
+        processed_data = templates.process_templates(
+            swift, heat, container=self.container
         )
-        processed_data = process_templates_action.run(context)
-
-        # If we receive a 'Result' instance it is because the parent action
-        # had an error.
-        if isinstance(processed_data, actions.Result):
-            return processed_data
-
         stack_args = processed_data.copy()
 
         LOG.info("Performing Heat stack update")
