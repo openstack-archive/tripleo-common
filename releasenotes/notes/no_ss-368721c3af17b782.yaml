@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    This patch moves away from "ss" execs, using lsof instead. This allows
+    to drop most of the piping and subshells, making things stronger.
+  - |
+    Introduce new HEALTHCHECK_DEBUG variable in order to toggle verbosity,
+    defaults to 0 (no verbosity). Setting it to 1 will activate -x flag,
+    among other things.
+  - |
+    Push some verbose output to a third descriptor, visible only if we set
+    the healthcheck to debug.
