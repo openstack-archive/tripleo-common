@@ -127,14 +127,13 @@ if [ -z "$SWIFT_INTERNAL_URL" ]; then
 fi
 
 # Does the Temp-URL-Key exist on this container?
+# jq will output "null" if it doesn't
 # If not set it...
-KEY_SET=$(openstack container show $CONTAINER_NAME -c properties -f value 2>/dev/null | tr ',' '\n' | grep Temp-Url-Key || true)
-if [ -z $KEY_SET ]; then
+SWIFT_TEMP_URL_KEY=$(openstack container show $CONTAINER_NAME -f json 2>/dev/null | jq -r '.properties."Temp-URL-Key"' || true)
+if [ "$SWIFT_TEMP_URL_KEY" != "null" ]; then
     echo "Creating new Swift Temp-URL-Key for container: $CONTAINER_NAME"
     SWIFT_TEMP_URL_KEY=$(uuidgen | sha1sum | awk '{print $1}')
     openstack container set --property "Temp-URL-Key=$SWIFT_TEMP_URL_KEY" "${CONTAINER_NAME}"
-else
-    SWIFT_TEMP_URL_KEY=$(echo -n $KEY_SET | sed -rn "s/[[:space:]]*Temp-Url-Key='([[:alnum:]]+)'.*/\1/p")
 fi
 
 if [ -n "${ENVIRONMENT_FILE:-}" ]; then
