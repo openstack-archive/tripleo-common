@@ -26,6 +26,7 @@ from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
 from tripleo_common.utils import swift as swiftutils
+from tripleo_common.utils.validations import pattern_validator
 
 
 def update_in_env(swift, env, key, value='', delete_key=False):
@@ -233,6 +234,22 @@ def cache_delete(swift, plan_name, key):
     except swiftexceptions.ClientException:
         # cache or container does not exist. Ignore
         pass
+
+
+def create_plan_container(swift, plan_name):
+    if not pattern_validator(constants.PLAN_NAME_PATTERN, plan_name):
+        message = ("The plan name must "
+                   "only contain letters, numbers or dashes")
+        raise RuntimeError(message)
+
+    # checks to see if a container with that name exists
+    if plan_name in [container["name"] for container in
+                     swift.get_account()[1]]:
+        message = ("A container with the name %s already "
+                   "exists.") % plan_name
+        raise RuntimeError(message)
+    default_container_headers = {constants.TRIPLEO_META_USAGE_KEY: 'plan'}
+    swift.put_container(plan_name, headers=default_container_headers)
 
 
 def update_plan_environment(swift, environments,

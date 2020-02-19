@@ -167,7 +167,7 @@ class CreateContainerActionTest(base.TestCase):
         # Verify
         swift.put_container.assert_called_once_with(
             self.container_name,
-            headers=plan.default_container_headers
+            headers={'x-container-meta-usage-tripleo': 'plan'}
         )
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
@@ -183,7 +183,8 @@ class CreateContainerActionTest(base.TestCase):
         action = plan.CreateContainerAction(self.container_name)
         result = action.run(self.ctx)
 
-        error_str = ('A container with the name %s already'
+        error_str = ('Container creation failed for plan:'
+                     'A container with the name %s already'
                      ' exists.') % self.container_name
         self.assertEqual(result, actions.Result(
             None, error_str))
@@ -198,8 +199,9 @@ class CreateContainerActionTest(base.TestCase):
         action = plan.CreateContainerAction("invalid_underscore")
         result = action.run(self.ctx)
 
-        error_str = ("Unable to create plan. The plan name must only contain "
-                     "letters, numbers or dashes")
+        error_str = ('Container creation failed for plan:'
+                     'The plan name must only contain '
+                     'letters, numbers or dashes')
         self.assertEqual(result, actions.Result(
             None, error_str))
 
