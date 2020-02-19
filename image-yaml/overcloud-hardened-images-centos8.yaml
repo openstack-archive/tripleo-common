@@ -1,0 +1,9 @@
+disk_images:
+  -
+    imagename: overcloud-hardened-full
+    type: qcow2
+    distro: centos
+    environment:
+      DIB_RELEASE: '8'
+    elements:
+      - selinux-permissive
