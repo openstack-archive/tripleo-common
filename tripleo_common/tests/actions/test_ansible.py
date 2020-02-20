@@ -72,7 +72,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_LOCAL_TEMP': action.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST': 'profile_tasks',
-            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '0',
+            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
         python_version = sys.version_info.major
         ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
