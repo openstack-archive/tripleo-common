@@ -112,9 +112,7 @@ workflows:
           - ensure_plan_environment_exists
 
       # This selects the default "openstack" sample plan if no user
-      # provided plan-environment.yaml or capabilities-map.yaml exists
-      # Note in the case where a user provided plan-environment.yaml
-      # exists we'll still copy the missing capabilities-map.yaml
+      # provided plan-environment.yaml.
       ensure_plan_environment_exists:
         workflow: tripleo.plan_management.v1._check_plan_environment
         input:
@@ -122,7 +120,7 @@ workflows:
           queue_name: <% queue_name %>
         on-success:
           - ensure_passwords_exist: <% $.generate_passwords = true %>
-          - add_root_stack_name: <% $.generate_passwords != true %>
+          - container_images_prepare: <% $.generate_passwords != true %>
 
       ensure_passwords_exist:
         action: tripleo.parameters.generate_passwords container=<% $.container %>
@@ -209,23 +207,9 @@ workflows:
           container: <% $.container %>
           object: plan-environment.yaml
         on-error: select_default_sample_plan
-        on-success: check_for_capabilities_map
-
-      check_for_capabilities_map:
-        workflow: tripleo.swift.v1.object_exists
-        input:
-          container: <% $.container %>
-          object: capabilities-map.yaml
-        on-error: select_default_sample_plan
-
       # If there's no existing or user-defined plan-environment.yaml
       # We run select_default_sample_plan with the default sample_plan_name
-      # to select the openstack default openstack plan
-      # Note in the case where plan-environment.yaml exists we'll skip
-      # copying that and only copy the capabilities-map.yaml, which is
-      # needed when a user provides a plan-environment.yaml - to select
-      # a new sample plan it will be necessary to delete both files
-      # from the root of the plan.
+      # to select the openstack default openstack plan.
       select_default_sample_plan:
         workflow: tripleo.plan_management.v1.select_sample_plan
         input:
