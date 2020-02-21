@@ -186,21 +186,6 @@ workflows:
           use_default_templates: true
         publish-on-error:
           message: <% task().result %>
-        on-success: create_ceph_ansible_fetch_directory_backup_plan
-        on-error: set_deployment_failed
-
-      create_ceph_ansible_fetch_directory_backup_plan:
-        workflow: tripleo.swift_backup.v1.create_swift_backup_container_plan
-        input:
-          container: <% $.container %>
-          queue_name: <% $.queue_name %>
-          container_suffix: "_ceph_ansible_fetch_dir"
-          swift_tar: "temporary_dir.tar.gz"
-          get_url_parm: SwiftFetchDirGetTempurl
-          put_url_parm: SwiftFetchDirPutTempurl
-          use_default_templates: true
-        publish-on-error:
-          message: <% task().result %>
         on-success: cell_v2_discover_hosts
         on-error: set_deployment_failed
 
