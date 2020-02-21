@@ -13,16 +13,30 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import tempfile
+
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import tarball
 
 
-class UploadTemplatesAction(base.UploadDirectoryAction):
-    """Upload default heat templates for TripleO."""
+class UploadTemplatesAction(base.TripleOAction):
+    """Upload templates directory to Swift."""
+
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
                  dir_to_upload=constants.DEFAULT_TEMPLATES_PATH):
-        super(UploadTemplatesAction, self).__init__(container, dir_to_upload)
+        super(UploadTemplatesAction, self).__init__()
+        self.container = container
+        self.dir_to_upload = dir_to_upload
+
+    def run(self, context):
+        with tempfile.NamedTemporaryFile() as tmp_tarball:
+            tarball.create_tarball(self.dir_to_upload, tmp_tarball.name)
+            tarball.tarball_extract_to_swift_container(
+                self.get_object_client(context),
+                tmp_tarball.name,
+                self.container)
 
 
 class UploadPlanEnvironmentAction(base.TripleOAction):

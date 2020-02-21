@@ -300,30 +300,3 @@ workflows:
           config_name: copy_ssh_key
           group: script
           queue_name: <% $.queue_name %>
-
-  upload_validations:
-    tags:
-      - tripleo-common-managed
-
-    input:
-      - queue_name: tripleo
-
-    tasks:
-      upload_validations:
-        action: tripleo.validations.upload
-        on-complete: send_message
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-        publish:
-          status: SUCCESS
-          message: <% task().result %>
-
-      send_message:
-        workflow: tripleo.messaging.v1.send
-        input:
-          queue_name: <% $.queue_name %>
-          type: <% execution().name %>
-          status: <% $.status %>
-          execution: <% execution() %>
-          message: <% $.get('message', '') %>
