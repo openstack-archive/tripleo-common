@@ -305,7 +305,7 @@ workflows:
 
       create_swift_rings_backup_plan:
         workflow: tripleo.swift_backup.v1.create_swift_backup_container_plan
-        on-success: create_ceph_ansible_fetch_directory_backup_plan
+        on-success: process_templates
         on-error: create_swift_rings_backup_plan_set_status_failed
         input:
           container: <% $.container %>
@@ -316,30 +316,6 @@ workflows:
           put_url_parm: SwiftRingPutTempurl
           use_default_templates: true
           validate_stack: <% $.validate_stack %>
-
-      create_ceph_ansible_fetch_directory_backup_plan:
-        workflow: tripleo.swift_backup.v1.create_swift_backup_container_plan
-        on-success: does_ceph_ansible_fetch_directory_backup_need_rename
-        on-error: create_ceph_ansible_fetch_directory_backup_plan_set_status_failed
-        input:
-          container: <% $.container %>
-          queue_name: <% $.queue_name %>
-          container_suffix: "_ceph_ansible_fetch_dir"
-          swift_tar: "temporary_dir.tar.gz"
-          get_url_parm: SwiftFetchDirGetTempurl
-          put_url_parm: SwiftFetchDirPutTempurl
-          use_default_templates: true
-          validate_stack: <% $.validate_stack %>
-
-      does_ceph_ansible_fetch_directory_backup_need_rename:
-        workflow: tripleo.rename_ceph_ansible_fetch_directory.v1.check_and_rename
-        on-success: process_templates
-        on-error: does_ceph_ansible_fetch_directory_backup_need_rename_set_status_failed
-        input:
-          container: <% $.container %>
-          queue_name: <% $.queue_name %>
-          container_suffix: "_ceph_ansible_fetch_dir"
-          swift_tar: "temporary_dir.tar.gz"
 
       process_templates:
         action: tripleo.templates.process container=<% $.container %>
@@ -364,18 +340,6 @@ workflows:
         publish:
           status: FAILED
           message: <% task(create_swift_rings_backup_plan).result %>
-
-      create_ceph_ansible_fetch_directory_backup_plan_set_status_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(create_ceph_ansible_fetch_directory_backup_plan).result %>
-
-      does_ceph_ansible_fetch_directory_backup_need_rename_set_status_failed:
-        on-success: send_message
-        publish:
-          status: FAILED
-          message: <% task(create_ceph_ansible_fetch_directory_backup_plan).result %>
 
       clone_git_repo_set_status_failed:
         on-success: send_message
