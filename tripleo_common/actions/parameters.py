@@ -13,13 +13,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import copy
 import json
 import logging
-import uuid
 
 from heatclient import exc as heat_exc
 from mistral_lib import actions
+import six
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
@@ -29,59 +28,10 @@ from tripleo_common.utils import nodes
 from tripleo_common.utils import parameters as parameter_utils
 from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import stack_parameters as stack_param_utils
 from tripleo_common.utils import template as template_utils
 
 LOG = logging.getLogger(__name__)
-
-
-class GetParametersAction(base.TripleOAction):
-    """Gets list of available heat parameters."""
-
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
-        super(GetParametersAction, self).__init__()
-        self.container = container
-
-    def run(self, context):
-        swift = self.get_object_client(context)
-        heat = self.get_orchestration_client(context)
-
-        cached = plan_utils.cache_get(swift, self.container,
-                                      "tripleo.parameters.get")
-
-        if cached is not None:
-            return cached
-
-        processed_data = template_utils.process_templates(
-            swift, heat, container=self.container
-        )
-        processed_data['show_nested'] = True
-
-        # respect previously user set param values
-        try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        params = env.get('parameter_defaults')
-
-        fields = {
-            'template': processed_data['template'],
-            'files': processed_data['files'],
-            'environment': processed_data['environment'],
-            'show_nested': True
-        }
-
-        result = {
-            'heat_resource_tree': heat.stacks.validate(**fields),
-            'environment_parameters': params,
-        }
-        plan_utils.cache_set(swift, self.container,
-                             "tripleo.parameters.get",
-                             result)
-        return result
 
 
 class ResetParametersAction(base.TripleOAction):
@@ -97,26 +47,11 @@ class ResetParametersAction(base.TripleOAction):
         swift = self.get_object_client(context)
 
         try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        try:
-            plan_utils.update_in_env(swift, env, self.key,
-                                     delete_key=True)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error updating environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        plan_utils.cache_delete(swift,
-                                self.container,
-                                "tripleo.parameters.get")
-        return env
+            return stack_param_utils.reset_parameters(
+                swift, self.container, self.key)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
 class UpdateParametersAction(base.TripleOAction):
@@ -137,90 +72,34 @@ class UpdateParametersAction(base.TripleOAction):
         heat = self.get_orchestration_client(context)
 
         try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        saved_env = copy.deepcopy(env)
-        try:
-
-            plan_utils.update_in_env(swift, env, self.key,
-                                     self.parameters)
-
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error updating environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        processed_data = template_utils.process_templates(
-            swift, heat, container=self.container
-        )
-
-        env = plan_utils.get_env(swift, self.container)
-        if not self.validate:
-            return env
-
-        params = env.get('parameter_defaults')
-        fields = {
-            'template': processed_data['template'],
-            'files': processed_data['files'],
-            'environment': processed_data['environment'],
-            'show_nested': True
-        }
-
-        try:
-            result = {
-                'heat_resource_tree': heat.stacks.validate(**fields),
-                'environment_parameters': params,
-            }
-
-            # Validation passes so the old cache gets replaced.
-            plan_utils.cache_set(swift, self.container,
-                                 "tripleo.parameters.get",
-                                 result)
-
-            if result['heat_resource_tree']:
-                flattened = {'resources': {}, 'parameters': {}}
-                _flat_it(flattened, 'Root',
-                         result['heat_resource_tree'])
-                result['heat_resource_tree'] = flattened
-
-        except heat_exc.HTTPException as err:
-            LOG.debug("Validation failed rebuilding saved env")
-
-            # There has been an error validating we must reprocess the
-            # templates with the saved working env
-            plan_utils.put_env(swift, saved_env)
-            template_utils.process_custom_roles(swift, heat, self.container)
-
-            err_msg = ("Error validating environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        LOG.debug("Validation worked new env is saved")
-
-        return result
+            return stack_param_utils.update_parameters(
+                swift, heat, self.parameters,
+                self.container, self.key,
+                self.validate)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
-class UpdateRoleParametersAction(UpdateParametersAction):
+class UpdateRoleParametersAction(base.TripleOAction):
     """Updates role related parameters in plan environment ."""
 
     def __init__(self, role, container=constants.DEFAULT_CONTAINER_NAME):
-        super(UpdateRoleParametersAction, self).__init__(parameters=None,
-                                                         container=container)
+        super(UpdateRoleParametersAction, self).__init__()
         self.role = role
+        self.container = container
 
     def run(self, context):
-        baremetal_client = self.get_baremetal_client(context)
-        compute_client = self.get_compute_client(context)
-        self.parameters = parameter_utils.set_count_and_flavor_params(
-            self.role, baremetal_client, compute_client)
-        return super(UpdateRoleParametersAction, self).run(context)
+        swift = self.get_object_client(context)
+        heat = self.get_orchestration_client(context)
+        ironic = self.get_baremetal_client(context)
+        nova = self.get_compute_client(context)
+        try:
+            return stack_param_utils.update_role_parameters(
+                swift, heat, ironic, nova, self.role, self.container)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
 class GeneratePasswordsAction(base.TripleOAction):
@@ -461,7 +340,7 @@ class GenerateFencingParametersAction(base.TripleOAction):
         return {"parameter_defaults": fence_params}
 
 
-class GetFlattenedParametersAction(GetParametersAction):
+class GetFlattenedParametersAction(base.TripleOAction):
     """Get the heat stack tree and parameters in flattened structure.
 
     This method validates the stack of the container and returns the
@@ -470,67 +349,18 @@ class GetFlattenedParametersAction(GetParametersAction):
     """
 
     def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
-        super(GetFlattenedParametersAction, self).__init__(container)
+        super(GetFlattenedParametersAction, self).__init__()
+        self.container = container
 
     def run(self, context):
-        # process all plan files and create or update a stack
-        processed_data = super(GetFlattenedParametersAction, self).run(context)
-
-        # If we receive a 'Result' instance it is because the parent action
-        # had an error.
-        if isinstance(processed_data, actions.Result):
-            return processed_data
-
-        if processed_data['heat_resource_tree']:
-            flattened = {'resources': {}, 'parameters': {}}
-            _flat_it(flattened, 'Root',
-                     processed_data['heat_resource_tree'])
-            processed_data['heat_resource_tree'] = flattened
-
-        return processed_data
-
-
-def _process_params(flattened, params):
-    for item in params:
-        if item not in flattened['parameters']:
-            param_obj = {}
-            for key, value in params.get(item).items():
-                camel_case_key = key[0].lower() + key[1:]
-                param_obj[camel_case_key] = value
-            param_obj['name'] = item
-            flattened['parameters'][item] = param_obj
-    return list(params)
-
-
-def _flat_it(flattened, name, data):
-    key = str(uuid.uuid4())
-    value = {}
-    value.update({
-        'name': name,
-        'id': key
-    })
-    if 'Type' in data:
-        value['type'] = data['Type']
-    if 'Description' in data:
-        value['description'] = data['Description']
-    if 'Parameters' in data:
-        value['parameters'] = _process_params(flattened,
-                                              data['Parameters'])
-    if 'ParameterGroups' in data:
-        value['parameter_groups'] = data['ParameterGroups']
-    if 'NestedParameters' in data:
-        nested = data['NestedParameters']
-        nested_ids = []
-        for nested_key in nested.keys():
-            nested_data = _flat_it(flattened, nested_key,
-                                   nested.get(nested_key))
-            # nested_data will always have one key (and only one)
-            nested_ids.append(list(nested_data)[0])
-
-        value['resources'] = nested_ids
-
-    flattened['resources'][key] = value
-    return {key: value}
+        heat = self.get_orchestration_client(context)
+        swift = self.get_object_client(context)
+        try:
+            return stack_param_utils.get_flattened_parameters(
+                swift, heat, self.container)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
 class GetProfileOfFlavorAction(base.TripleOAction):

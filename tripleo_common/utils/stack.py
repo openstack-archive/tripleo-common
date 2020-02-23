@@ -16,6 +16,7 @@
 
 import logging
 import time
+import uuid
 
 from heatclient.common import template_utils
 from heatclient import exc as heat_exc
@@ -88,3 +89,68 @@ def stack_update(swift, heat, timeout,
     LOG.info("Performing Heat stack update")
     LOG.info('updating stack: %s', stack.stack_name)
     return heat.stacks.update(stack.id, **stack_args)
+
+
+def _process_params(flattened, params):
+    for item in params:
+        if item not in flattened['parameters']:
+            param_obj = {}
+            for key, value in params.get(item).items():
+                camel_case_key = key[0].lower() + key[1:]
+                param_obj[camel_case_key] = value
+            param_obj['name'] = item
+            flattened['parameters'][item] = param_obj
+    return list(params)
+
+
+def _flat_it(flattened, name, data):
+    key = str(uuid.uuid4())
+    value = {}
+    value.update({
+        'name': name,
+        'id': key
+    })
+    if 'Type' in data:
+        value['type'] = data['Type']
+    if 'Description' in data:
+        value['description'] = data['Description']
+    if 'Parameters' in data:
+        value['parameters'] = _process_params(flattened,
+                                              data['Parameters'])
+    if 'ParameterGroups' in data:
+        value['parameter_groups'] = data['ParameterGroups']
+    if 'NestedParameters' in data:
+        nested = data['NestedParameters']
+        nested_ids = []
+        for nested_key in nested.keys():
+            nested_data = _flat_it(flattened, nested_key,
+                                   nested.get(nested_key))
+            # nested_data will always have one key (and only one)
+            nested_ids.append(list(nested_data)[0])
+
+        value['resources'] = nested_ids
+
+    flattened['resources'][key] = value
+    return {key: value}
+
+
+def validate_stack_and_flatten_parameters(heat, processed_data, env):
+    params = env.get('parameter_defaults')
+    fields = {
+        'template': processed_data['template'],
+        'files': processed_data['files'],
+        'environment': processed_data['environment'],
+        'show_nested': True
+    }
+
+    processed_data = {
+        'heat_resource_tree': heat.stacks.validate(**fields),
+        'environment_parameters': params,
+    }
+
+    if processed_data['heat_resource_tree']:
+        flattened = {'resources': {}, 'parameters': {}}
+        _flat_it(flattened, 'Root',
+                 processed_data['heat_resource_tree'])
+        processed_data['heat_resource_tree'] = flattened
+    return processed_data
