@@ -582,6 +582,9 @@ def _validate_roles(roles, stackname='overcloud'):
         if 'name' in defaults:
             raise ValueError("%s: cannot specify name in defaults"
                              % name)
+        if 'provisioned' in defaults:
+            raise ValueError("%s: cannot specify provisioned in defaults"
+                             % name)
         if 'instances' in item:
             _validate_instances(item['instances'])
 
