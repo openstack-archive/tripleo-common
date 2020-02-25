@@ -113,7 +113,7 @@ class J2SwiftLoaderTest(base.TestCase):
         return swift
 
     def test_include_absolute_path(self):
-        j2_loader = template_utils.J2SwiftLoader(self._setup_swift(), None)
+        j2_loader = template_utils.J2SwiftLoader(self._setup_swift(), None, '')
         template = jinja2.Environment(loader=j2_loader).from_string(
             r'''
             Included this:
@@ -142,7 +142,7 @@ class J2SwiftLoaderTest(base.TestCase):
             ''')
 
     def test_include_not_found(self):
-        j2_loader = template_utils.J2SwiftLoader(self._setup_swift(), None)
+        j2_loader = template_utils.J2SwiftLoader(self._setup_swift(), None, '')
         template = jinja2.Environment(loader=j2_loader).from_string(
             r'''
             Included this:
@@ -153,7 +153,8 @@ class J2SwiftLoaderTest(base.TestCase):
             template.render)
 
     def test_include_invalid_path(self):
-        j2_loader = template_utils.J2SwiftLoader(self._setup_swift(), 'bar')
+        j2_loader = template_utils.J2SwiftLoader(self._setup_swift(),
+                                                 'bar', '')
         template = jinja2.Environment(loader=j2_loader).from_string(
             r'''
             Included this:
@@ -354,7 +355,7 @@ class ProcessTemplatesTest(base.TestCase):
             swift,
             r"{% include 'bar/foo.yaml' %}",
             {'role': 'CustomRole'},
-            'bar/customrole-config.yaml',
+            'customrole-config.yaml',
             constants.DEFAULT_CONTAINER_NAME)
 
         result = swift.put_object._mock_mock_calls[0]
@@ -458,3 +459,49 @@ class ProcessTemplatesTest(base.TestCase):
                             }
         assert j2_mock.called_with(expected_j2_template, expected_j2_data,
                                    'foo.yaml')
+
+    def test_prune_unused_services(self):
+        resource_registry = {
+            'OS::TripleO::Services::Foo': 'bar.yaml',
+            'OS::TripleO::Services::Baz': 'OS::Heat::None',
+        }
+        swift = mock.MagicMock()
+        mock_put = mock.MagicMock()
+        swift.put_object = mock_put
+        test_role_data = [{
+            'name': 'Controller',
+            'ServicesDefault': [
+                'OS::TripleO::Services::Foo',
+                'OS::TripleO::Services::Baz']
+            }]
+
+        test_role_data_result = [{
+            'name': 'Controller',
+            'ServicesDefault': [
+                'OS::TripleO::Services::Foo']
+            }]
+
+        template_utils.prune_unused_services(swift, test_role_data,
+                                             resource_registry, 'overcloud')
+
+        data = yaml.safe_dump(test_role_data_result, default_flow_style=False)
+        mock_put.assert_called_once_with('overcloud', 'roles_data.yaml', data)
+
+    def test_prune_unused_services_no_removal(self):
+        resource_registry = {
+            'OS::TripleO::Services::Foo': 'bar.yaml',
+            'OS::TripleO::Services::Baz': 'biz.yaml',
+        }
+        swift = mock.MagicMock()
+        mock_put = mock.MagicMock()
+        swift.put_object = mock_put
+        test_role_data = [{
+            'name': 'Controller',
+            'ServicesDefault': [
+                'OS::TripleO::Services::Foo',
+                'OS::TripleO::Services::Baz']
+            }]
+
+        template_utils.prune_unused_services(swift, test_role_data,
+                                             resource_registry, 'overcloud')
+        mock_put.assert_not_called()

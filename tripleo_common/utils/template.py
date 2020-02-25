@@ -37,16 +37,10 @@ class J2SwiftLoader(jinja2.BaseLoader):
     only the absolute path relative to the container root is searched.
     """
 
-    def __init__(self, swift, container, searchpath=None):
+    def __init__(self, swift, container, searchpath):
         self.swift = swift
         self.container = container
-        if searchpath is not None:
-            if isinstance(searchpath, six.string_types):
-                self.searchpath = [searchpath]
-            else:
-                self.searchpath = list(searchpath)
-        else:
-            self.searchpath = []
+        self.searchpath = [searchpath]
         # Always search the absolute path from the root of the swift container
         if '' not in self.searchpath:
             self.searchpath.append('')
@@ -65,11 +59,8 @@ class J2SwiftLoader(jinja2.BaseLoader):
         raise jinja2.exceptions.TemplateNotFound(template)
 
 
-def j2_render_and_put(swift, j2_template, j2_data,
-                      container=constants.DEFAULT_CONTAINER_NAME,
-                      outfile_name=None):
-
-    yaml_f = outfile_name or j2_template.replace('.j2.yaml', '.yaml')
+def j2_render_and_put(swift, j2_template, j2_data, yaml_f,
+                      container=constants.DEFAULT_CONTAINER_NAME):
 
     # Search for templates relative to the current template path first
     template_base = os.path.dirname(yaml_f)
@@ -242,16 +233,16 @@ def process_custom_roles(swift, heat,
                         j2_data = {'role': r_map[role],
                                    'networks': network_data}
                         j2_render_and_put(swift, j2_template,
-                                          j2_data, container,
-                                          out_f_path)
+                                          j2_data, out_f_path,
+                                          container)
                     else:
                         # Backwards compatibility with templates
                         # that specify {{role}} vs {{role.name}}
                         j2_data = {'role': role, 'networks': network_data}
                         LOG.debug("role legacy path for role %s" % role)
                         j2_render_and_put(swift, j2_template,
-                                          j2_data, container,
-                                          out_f_path)
+                                          j2_data, out_f_path,
+                                          container)
                 else:
                     LOG.info("Skipping rendering of %s, defined in %s" %
                              (out_f_path, j2_excl_data))
@@ -276,8 +267,8 @@ def process_custom_roles(swift, heat,
                 out_f_path = os.path.join(os.path.dirname(f), out_f)
                 if not (out_f_path in excl_templates):
                     j2_render_and_put(swift, j2_template,
-                                      j2_data, container,
-                                      out_f_path)
+                                      j2_data, out_f_path,
+                                      container)
                 else:
                     LOG.info("Skipping rendering of %s, defined in %s" %
                              (out_f_path, j2_excl_data))
@@ -290,11 +281,54 @@ def process_custom_roles(swift, heat,
             j2_data = {'roles': role_data, 'networks': network_data}
             out_f = f.replace('.j2.yaml', '.yaml')
             j2_render_and_put(swift, j2_template,
-                              j2_data, container,
-                              out_f)
+                              j2_data, out_f,
+                              container)
+    return role_data
 
 
-def process_templates(swift, heat, container=constants.DEFAULT_CONTAINER_NAME):
+def prune_unused_services(swift, role_data,
+                          resource_registry,
+                          container=constants.DEFAULT_CONTAINER_NAME):
+    """Remove unused services from role data
+
+    Finds the unused services in the resource registry and removes them
+    from the role data in the plan so we do not create OS::Heat::None
+    resources.
+
+    :param resource_registry: tripleo resource registry dict
+    :param swift: swift client
+    :param resource_registry: tripleo resource registry dict
+    :returns: true if we updated the roles file. else false
+    """
+    to_remove = set()
+    for key, value in resource_registry.items():
+        if (key.startswith('OS::TripleO::Services::') and
+                value.startswith('OS::Heat::None')):
+            to_remove.add(key)
+
+    if not to_remove or not role_data:
+        LOG.info('No unused services to prune or no role data')
+        return False
+
+    LOG.info('Removing unused services from role data')
+    for role in role_data:
+        role_name = role.get('name')
+        for service in to_remove:
+            try:
+                role.get('ServicesDefault', []).remove(service)
+                LOG.debug('Removing {} from {} role'.format(
+                    service, role_name))
+            except ValueError:
+                pass
+    LOG.debug('Saving updated role data to swift')
+    swift.put_object(container,
+                     constants.OVERCLOUD_J2_ROLES_NAME,
+                     yaml.safe_dump(role_data,
+                                    default_flow_style=False))
+    return True
+
+
+def build_heat_args(swift, heat, container=constants.DEFAULT_CONTAINER_NAME):
     error_text = None
     try:
         plan_env = plan_utils.get_env(swift, container)
@@ -310,7 +344,7 @@ def process_templates(swift, heat, container=constants.DEFAULT_CONTAINER_NAME):
         # method called below should handle the case where the files are
         # not found in swift, but if they are found and an exception
         # occurs during processing, then it will be raised.
-        process_custom_roles(swift, heat, container)
+        role_data = process_custom_roles(swift, heat, container)
     except Exception as err:
         LOG.exception("Error occurred while processing custom roles.")
         raise RuntimeError(six.text_type(err))
@@ -334,6 +368,7 @@ def process_templates(swift, heat, container=constants.DEFAULT_CONTAINER_NAME):
         env_files, env = plan_utils.process_environments_and_files(
             swift, env_paths)
         parameters.convert_docker_params(env)
+
     except Exception as err:
         error_text = six.text_type(err)
         LOG.exception("Error occurred while processing plan files.")
@@ -341,15 +376,40 @@ def process_templates(swift, heat, container=constants.DEFAULT_CONTAINER_NAME):
         # cleanup any local temp files
         for f in temp_env_paths:
             os.remove(f)
-
     if error_text:
         raise RuntimeError(six.text_type(error_text))
 
-    files = dict(list(template_files.items()) + list(env_files.items()))
+    heat_args = {
+        'template': template,
+        'template_files': template_files,
+        'env': env,
+        'env_files': env_files
+    }
+    return heat_args, role_data
+
+
+def process_templates(swift, heat, container=constants.DEFAULT_CONTAINER_NAME,
+                      prune_services=False):
+    heat_args, role_data = build_heat_args(swift, heat, container)
+    if prune_services:
+        try:
+            # Prune OS::Heat::None resources
+            resource_reg = heat_args['env'].get('resource_registry', {})
+            roles_updated = prune_unused_services(
+                swift, role_data, resource_reg)
+            if roles_updated:
+                heat_args, _ = build_heat_args(swift, heat, container)
+
+        except Exception as err:
+            LOG.exception("Error occurred while prunning prune_services.")
+            raise RuntimeError(six.text_type(err))
+
+    files = dict(list(heat_args['template_files'].items()) + list(
+        heat_args['env_files'].items()))
 
     return {
         'stack_name': container,
-        'template': template,
-        'environment': env,
+        'template': heat_args['template'],
+        'environment': heat_args['env'],
         'files': files
     }
