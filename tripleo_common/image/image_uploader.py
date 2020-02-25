@@ -2114,13 +2114,7 @@ class PythonImageUploader(BaseImageUploader):
 
         name = '%s%s' % (source_url.netloc, source_url.path)
         image, manifest, config_str = cls._image_manifest_config(name)
-        all_layers = cls._containers_json('overlay-layers', 'layers.json')
-        layers_by_digest = {}
-        for l in all_layers:
-            if 'diff-digest' in l:
-                layers_by_digest[l['diff-digest']] = l
-            if 'compressed-diff-digest' in l:
-                layers_by_digest[l['compressed-diff-digest']] = l
+        layers_by_digest = cls._get_all_local_layers_by_digest()
 
         # Upload all layers
         copy_jobs = []
@@ -2181,6 +2175,50 @@ class PythonImageUploader(BaseImageUploader):
         return json.loads(cls._containers_file(*path))
 
     @classmethod
+    def _get_all_local_layers_by_digest(cls):
+        all_layers = cls._containers_json('overlay-layers', 'layers.json')
+        layers_by_digest = {}
+        for l in all_layers:
+            if 'diff-digest' in l:
+                layers_by_digest[l['diff-digest']] = l
+            if 'compressed-diff-digest' in l:
+                layers_by_digest[l['compressed-diff-digest']] = l
+        return layers_by_digest
+
+    @classmethod
+    def _get_local_layers_manifest(cls, manifest, config_str):
+        """Return a valid local manifest
+
+        The manifest that is kept in the container storage is the
+        original manifest but the layers may be different once processed
+        by libpod & company. We want a valid manifest for the local
+        file system so we need to use the root fs layers from the container
+        config rather than just assuming the original manifest is still
+        valid.
+        """
+        layers = cls._get_all_local_layers_by_digest()
+        config = json.loads(config_str)
+        rootfs = config.get('rootfs', {})
+        layer_ids = rootfs.get('diff_ids', None)
+        if not layer_ids:
+            # TODO(aschultz): add container name/path
+            LOG.warning('Container missing rootfs layers')
+            return manifest
+        # clear out the manifest layers
+        manifest['layers'] = []
+        for layer in layer_ids:
+            layer_digest = {'mediaType': MEDIA_BLOB}
+            if layer not in layers:
+                raise ImageNotFoundException('Unable to find layer %s in the '
+                                             'local layers' % layer)
+            layer_digest['digest'] = layer
+            # podman currently doesn't do compressed layers so just use
+            # the diff-size
+            layer_digest['size'] = layers[layer]['diff-size']
+            manifest['layers'].append(layer_digest)
+        return manifest
+
+    @classmethod
     def _image_manifest_config(cls, name):
         image = None
         images = cls._containers_json('overlay-images', 'images.json')
@@ -2201,6 +2239,7 @@ class PythonImageUploader(BaseImageUploader):
             six.b(config_digest)).decode("utf-8")
         config_str = cls._containers_file('overlay-images', image_id,
                                           config_id)
+        manifest = cls._get_local_layers_manifest(manifest, config_str)
         manifest['config']['size'] = len(config_str)
         manifest['config']['mediaType'] = MEDIA_CONFIG
         return image, manifest, config_str
