@@ -127,3 +127,14 @@ check_swift_interval () {
         fi
     fi
 }
+
+# Wrap an IPv6 address in square brackets if not already wrapped
+wrap_ipv6 () {
+    ip=$1
+
+    if [[ $ip =~ ":" ]] && [[ $ip != *\] ]]; then
+        echo [$ip]
+    else
+        echo $ip
+    fi
+}
