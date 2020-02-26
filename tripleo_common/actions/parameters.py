@@ -24,7 +24,6 @@ from swiftclient import exceptions as swiftexceptions
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
-from tripleo_common.utils import nodes
 from tripleo_common.utils import parameters as parameter_utils
 from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import plan as plan_utils
@@ -249,7 +248,7 @@ class GenerateFencingParametersAction(base.TripleOAction):
     def __init__(self, nodes_json, delay,
                  ipmi_level, ipmi_cipher, ipmi_lanplus):
         super(GenerateFencingParametersAction, self).__init__()
-        self.nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
+        self.nodes_json = nodes_json
         self.delay = delay
         self.ipmi_level = ipmi_level
         self.ipmi_cipher = ipmi_cipher
@@ -257,87 +256,16 @@ class GenerateFencingParametersAction(base.TripleOAction):
 
     def run(self, context):
         """Returns the parameters for fencing controller nodes"""
-        hostmap = nodes.generate_hostmap(self.get_baremetal_client(context),
-                                         self.get_compute_client(context))
-        fence_params = {"EnableFencing": True, "FencingConfig": {}}
-        devices = []
-
-        for node in self.nodes_json:
-            node_data = {}
-            params = {}
-            if "ports" in node:
-                # Not all Ironic drivers present a MAC address, so we only
-                # capture it if it's present
-                mac_addr = node['ports'][0]['address'].lower()
-                node_data["host_mac"] = mac_addr
-
-                # If the MAC isn't in the hostmap, this node hasn't been
-                # provisioned, so no fencing parameters are necessary
-                if hostmap and mac_addr not in hostmap:
-                    continue
-
-            # Build up fencing parameters based on which Ironic driver this
-            # node is using
-            try:
-                # Deprecated classic drivers (pxe_ipmitool, etc)
-                driver_proto = node['pm_type'].split('_')[1]
-            except IndexError:
-                # New-style hardware types (ipmi, etc)
-                driver_proto = node['pm_type']
-
-            if driver_proto in {'ipmi', 'ipmitool', 'drac', 'idrac', 'ilo',
-                                'redfish'}:
-                # IPMI fencing driver
-                if driver_proto == "redfish":
-                    node_data["agent"] = "fence_redfish"
-                    params["systems_uri"] = node["pm_system_id"]
-                else:
-                    node_data["agent"] = "fence_ipmilan"
-                params["ipaddr"] = node["pm_addr"]
-                params["passwd"] = node["pm_password"]
-                params["login"] = node["pm_user"]
-                if hostmap:
-                    params["pcmk_host_list"] = \
-                        hostmap[mac_addr]["compute_name"]
-                if "pm_port" in node:
-                    params["ipport"] = node["pm_port"]
-                if "redfish_verify_ca" in node:
-                    if node["redfish_verify_ca"] == "false":
-                        params["ssl_insecure"] = "true"
-                    else:
-                        params["ssl_insecure"] = "false"
-                if self.ipmi_lanplus:
-                    params["lanplus"] = self.ipmi_lanplus
-                if self.delay:
-                    params["delay"] = self.delay
-                if self.ipmi_cipher:
-                    params["cipher"] = self.ipmi_cipher
-                if self.ipmi_level:
-                    params["privlvl"] = self.ipmi_level
-            elif driver_proto in {'staging-ovirt'}:
-                # fence_rhevm
-                node_data["agent"] = "fence_rhevm"
-                params["ipaddr"] = node["pm_addr"]
-                params["passwd"] = node["pm_password"]
-                params["login"] = node["pm_user"]
-                params["port"] = node["pm_vm_name"]
-                params["ssl"] = 1
-                params["ssl_insecure"] = 1
-                if hostmap:
-                    params["pcmk_host_list"] = \
-                        hostmap[mac_addr]["compute_name"]
-                if self.delay:
-                    params["delay"] = self.delay
-            else:
-                error = ("Unable to generate fencing parameters for %s" %
-                         node["pm_type"])
-                raise ValueError(error)
-
-            node_data["params"] = params
-            devices.append(node_data)
-
-        fence_params["FencingConfig"]["devices"] = devices
-        return {"parameter_defaults": fence_params}
+        try:
+            return stack_param_utils.generate_fencing_parameters(
+                self.get_baremetal_client(context),
+                self.get_compute_client(context),
+                self.nodes_json,
+                self.delay, self.ipmi_level,
+                self.ipmi_cipher, self.ipmi_lanplus)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
 class GetFlattenedParametersAction(base.TripleOAction):
