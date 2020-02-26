@@ -30,14 +30,9 @@ from tripleo_common import exception
 from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import roles as roles_utils
 from tripleo_common.utils import swift as swiftutils
-from tripleo_common.utils.validations import pattern_validator
 
 
 LOG = logging.getLogger(__name__)
-
-default_container_headers = {
-    constants.TRIPLEO_META_USAGE_KEY: 'plan'
-}
 
 
 class CreateContainerAction(base.TripleOAction):
@@ -53,20 +48,13 @@ class CreateContainerAction(base.TripleOAction):
 
     def run(self, context):
         oc = self.get_object_client(context)
+        try:
+            plan_utils.create_plan_container(oc, self.container)
 
-        # checks to see if a container has a valid name
-        if not pattern_validator(constants.PLAN_NAME_PATTERN, self.container):
-            message = ("Unable to create plan. The plan name must "
-                       "only contain letters, numbers or dashes")
-            return actions.Result(error=message)
-
-        # checks to see if a container with that name exists
-        if self.container in [container["name"] for container in
-                              oc.get_account()[1]]:
-            result_string = ("A container with the name %s already"
-                             " exists.") % self.container
-            return actions.Result(error=result_string)
-        oc.put_container(self.container, headers=default_container_headers)
+        except Exception as err:
+            err_msg = ("Container creation failed for plan:%s" % (err))
+            LOG.exception(err_msg)
+            return actions.Result(error=err_msg)
 
 
 class ListPlansAction(base.TripleOAction):
