@@ -2470,10 +2470,13 @@ class TestPythonImageUploader(base.TestCase):
             )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._get_local_layers_manifest')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._containers_json')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._containers_file')
-    def test_image_manifest_config(self, _containers_file, _containers_json):
+    def test_image_manifest_config(self, _containers_file, _containers_json,
+                                   _get_local_layers_manifest):
         _containers_file.return_value = '{"config": {}}'
         images_not_found = [{
             'id': 'aaaa',
@@ -2495,6 +2498,7 @@ class TestPythonImageUploader(base.TestCase):
             'layers': [],
         }
         _containers_json.side_effect = [images_not_found, images, man]
+        _get_local_layers_manifest.return_value = man
 
         self.assertRaises(
             ImageNotFoundException,
@@ -2516,6 +2520,89 @@ class TestPythonImageUploader(base.TestCase):
         _containers_file.assert_called_once_with(
             'overlay-images', 'cccc', '=c2hhMjU2OjEyMzQ='
         )
+        _get_local_layers_manifest.assert_called_once_with(
+            man, config_str)
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._get_all_local_layers_by_digest')
+    def test_get_local_layers_manifest(self, mock_layers_by_digest):
+        mock_layers_by_digest.return_value = {
+            'sha256:1': {'diff-size': 8},
+            'sha256:2': {'diff-size': 9}
+        }
+        man = {
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [
+                {"digest": "sha256:12345"}
+            ]
+        }
+        config_str = json.dumps({'rootfs':
+                                {'diff_ids': ['sha256:1', 'sha256:2']}})
+
+        manifest = self.uploader._get_local_layers_manifest(man, config_str)
+
+        manifest_expected = {
+            'config': man['config'],
+            'layers': [
+                {'digest': 'sha256:1',
+                 'mediaType': 'application/vnd.docker.image.rootfs.diff.tar',
+                 'size': 8},
+                {'digest': 'sha256:2',
+                 'mediaType': 'application/vnd.docker.image.rootfs.diff.tar',
+                 'size': 9}
+            ]
+        }
+
+        self.assertEqual(manifest_expected, manifest)
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._get_all_local_layers_by_digest')
+    def test_get_local_layers_manifest_missing_rootfs(self,
+                                                      mock_layers_by_digest):
+        mock_layers_by_digest.return_value = {
+            'sha256:1': {'diff-size': 8}
+        }
+        man = {
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [
+                {"digest": "sha256:12345"}
+            ]
+        }
+        manifest = self.uploader._get_local_layers_manifest(man, '{}')
+
+        self.assertEqual(man, manifest)
+
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'PythonImageUploader._get_all_local_layers_by_digest')
+    def test_get_local_layers_manifest_missing_layer(self,
+                                                     mock_layers_by_digest):
+        mock_layers_by_digest.return_value = {
+            'sha256:1': {'diff-size': 8}
+        }
+        man = {
+            'config': {
+                'digest': 'sha256:1234',
+                'size': 2,
+                'mediaType': 'application/vnd.docker.container.image.v1+json'
+            },
+            'layers': [
+                {"digest": "sha256:12345"}
+            ]
+        }
+        config_str = json.dumps({'rootfs':
+                                {'diff_ids': ['sha256:3']}})
+        self.assertRaises(ImageNotFoundException,
+                          self.uploader._get_local_layers_manifest,
+                          man,
+                          config_str)
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._image_manifest_config')
