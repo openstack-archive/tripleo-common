@@ -12,41 +12,28 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
 import mock
 
-from tripleo_common.actions import package_update
 from tripleo_common.tests import base
+from tripleo_common.utils import stack
 
 
-class UpdateStackActionTest(base.TestCase):
-
-    def setUp(self,):
-        super(UpdateStackActionTest, self).setUp()
-        self.timeout = 1
-        self.container = 'container'
+class UpdateStackTest(base.TestCase):
 
     @mock.patch('tripleo_common.utils.template.process_templates')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    @mock.patch('tripleo_common.actions.base.TripleOAction.'
-                'get_orchestration_client')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     @mock.patch('tripleo_common.utils.plan.put_env')
     @mock.patch('tripleo_common.utils.plan.get_env')
     @mock.patch('tripleo_common.utils.plan.update_in_env')
-    def test_run(self,
-                 mock_updateinenv,
-                 mock_getenv,
-                 mock_putenv,
-                 mock_template_contents,
-                 mock_get_orchestration_client,
-                 mock_get_object_client,
-                 mock_process_templates):
-        mock_ctx = mock.MagicMock()
-
+    def test_stack_update(self, mock_updateinenv,
+                          mock_getenv,
+                          mock_putenv,
+                          mock_template_contents,
+                          mock_process_templates):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = mock.MagicMock(
             stack_name='mycloud', id='stack_id')
-        mock_get_orchestration_client.return_value = heat
 
         mock_template_contents.return_value = ({}, {
             'heat_template_version': '2016-04-30'
@@ -96,11 +83,8 @@ class UpdateStackActionTest(base.TestCase):
 
         mock_getenv.return_value = env
         mock_swift.get_object.return_value = ({}, env)
-        mock_get_object_client.return_value = mock_swift
 
-        action = package_update.UpdateStackAction(self.timeout,
-                                                  container=self.container)
-        action.run(mock_ctx)
+        stack.stack_update(mock_swift, heat, 120)
         mock_putenv.assert_called_once_with(mock_swift, {
             'name': env['name'],
             'resource_registry': {

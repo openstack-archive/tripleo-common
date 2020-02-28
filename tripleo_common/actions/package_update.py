@@ -13,17 +13,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import logging
-import time
 
-from heatclient.common import template_utils
-from heatclient import exc as heat_exc
 from mistral_lib import actions
-from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
-from tripleo_common.utils import plan as plan_utils
-from tripleo_common.utils import template as templates
+from tripleo_common.utils import stack as stack_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -40,60 +35,11 @@ class UpdateStackAction(base.TripleOAction):
         heat = self.get_orchestration_client(context)
         swift = self.get_object_client(context)
         try:
-            stack = heat.stacks.get(self.container)
-        except heat_exc.HTTPNotFound:
-            msg = "Error retrieving stack: %s" % self.container
-            LOG.exception(msg)
-            return actions.Result(error=msg)
-
-        swift = self.get_object_client(context)
-
-        try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
+            return stack_utils.stack_update(swift, heat,
+                                            self.timeout_mins,
+                                            self.container)
+        except Exception as err:
+            err_msg = ("Stack update failed for plan %s: %s" % (
                 self.container, err))
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
-
-        update_env = {
-            'parameter_defaults': {
-                'DeployIdentifier': int(time.time()),
-            },
-        }
-
-        noop_env = {
-            'resource_registry': {
-                'OS::TripleO::DeploymentSteps': 'OS::Heat::None',
-            },
-        }
-
-        for output in stack.to_dict().get('outputs', {}):
-            if output['output_key'] == 'RoleData':
-                for role in output['output_value']:
-                    role_env = {
-                        "OS::TripleO::Tasks::%sPreConfig" % role:
-                        'OS::Heat::None',
-                        "OS::TripleO::Tasks::%sPostConfig" % role:
-                        'OS::Heat::None',
-                    }
-                    noop_env['resource_registry'].update(role_env)
-        update_env.update(noop_env)
-        template_utils.deep_update(env, update_env)
-        try:
-            plan_utils.put_env(swift, env)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error updating environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        # process all plan files and create or update a stack
-        processed_data = templates.process_templates(
-            swift, heat, container=self.container
-        )
-        stack_args = processed_data.copy()
-
-        LOG.info("Performing Heat stack update")
-        LOG.info('updating stack: %s', stack.stack_name)
-        return heat.stacks.update(stack.id, **stack_args)
