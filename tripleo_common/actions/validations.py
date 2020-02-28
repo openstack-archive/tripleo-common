@@ -172,10 +172,3 @@ class RunValidationAction(base.TripleOAction):
             if inputs_file:
                 utils.cleanup_inputs_file(inputs_file)
         return actions.Result(**mistral_result)
-
-
-class UploadValidationsAction(base.UploadDirectoryAction):
-    """Upload default validations for TripleO."""
-    def __init__(self, container=constants.VALIDATIONS_CONTAINER_NAME,
-                 dir_to_upload=constants.DEFAULT_VALIDATIONS_PATH):
-        super(UploadValidationsAction, self).__init__(container, dir_to_upload)
