@@ -193,7 +193,8 @@ class DeployStackAction(base.TripleOAction):
 
         # process all plan files and create or update a stack
         processed_data = template_utils.process_templates(
-            swift, heat, container=self.container
+            swift, heat, container=self.container,
+            prune_services=True
         )
         stack_args = processed_data.copy()
         stack_args['timeout_mins'] = self.timeout_mins
