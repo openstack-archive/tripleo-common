@@ -473,3 +473,150 @@ class StackParametersTest(base.TestCase):
         # Test
         result = stack_parameters.get_flattened_parameters(swift, mock_heat)
         self.assertEqual(result, expected_value)
+
+    @mock.patch('tripleo_common.utils.nodes.generate_hostmap')
+    def test_generate_fencing_parameters(self, mock_generate_hostmap):
+        test_hostmap = {
+            "00:11:22:33:44:55": {
+                "compute_name": "compute_name_0",
+                "baremetal_name": "baremetal_name_0"
+                },
+            "11:22:33:44:55:66": {
+                "compute_name": "compute_name_1",
+                "baremetal_name": "baremetal_name_1"
+                },
+            "aa:bb:cc:dd:ee:ff": {
+                "compute_name": "compute_name_4",
+                "baremetal_name": "baremetal_name_4"
+                },
+            "bb:cc:dd:ee:ff:gg": {
+                "compute_name": "compute_name_5",
+                "baremetal_name": "baremetal_name_5"
+                }
+            }
+        mock_generate_hostmap.return_value = test_hostmap
+
+        test_envjson = [{
+            "name": "control-0",
+            "pm_password": "control-0-password",
+            "pm_type": "ipmi",
+            "pm_user": "control-0-admin",
+            "pm_addr": "0.1.2.3",
+            "pm_port": "0123",
+            "mac": [
+                "00:11:22:33:44:55"
+            ]
+        }, {
+            "name": "control-1",
+            "pm_password": "control-1-password",
+            # Still support deprecated drivers
+            "pm_type": "pxe_ipmitool",
+            "pm_user": "control-1-admin",
+            "pm_addr": "1.2.3.4",
+            "mac": [
+                "11:22:33:44:55:66"
+            ]
+        }, {
+            # test node using redfish pm
+            "name": "compute-4",
+            "pm_password": "calvin",
+            "pm_type": "redfish",
+            "pm_user": "root",
+            "pm_addr": "172.16.0.1:8000",
+            "pm_port": "8000",
+            "redfish_verify_ca": "false",
+            "pm_system_id": "/redfish/v1/Systems/5678",
+            "mac": [
+                "aa:bb:cc:dd:ee:ff"
+            ]
+        }, {
+            # This is an extra node on oVirt/RHV
+            "name": "control-3",
+            "pm_password": "ovirt-password",
+            "pm_type": "staging-ovirt",
+            "pm_user": "admin@internal",
+            "pm_addr": "3.4.5.6",
+            "pm_vm_name": "control-3",
+            "mac": [
+                "bb:cc:dd:ee:ff:gg"
+            ]
+        }, {
+            # This is an extra node that is not in the hostmap, to ensure we
+            # cope with unprovisioned nodes
+            "name": "control-2",
+            "pm_password": "control-2-password",
+            "pm_type": "ipmi",
+            "pm_user": "control-2-admin",
+            "pm_addr": "2.3.4.5",
+            "mac": [
+                "22:33:44:55:66:77"
+            ]
+        }
+        ]
+
+        ironic = mock.MagicMock()
+        compute = mock.MagicMock()
+
+        result = stack_parameters.generate_fencing_parameters(
+            ironic, compute, test_envjson,
+            28, 5, 0, True)['parameter_defaults']
+
+        self.assertTrue(result["EnableFencing"])
+        self.assertEqual(len(result["FencingConfig"]["devices"]), 4)
+        self.assertEqual(result["FencingConfig"]["devices"][0], {
+                         "agent": "fence_ipmilan",
+                         "host_mac": "00:11:22:33:44:55",
+                         "params": {
+                             "delay": 28,
+                             "ipaddr": "0.1.2.3",
+                             "ipport": "0123",
+                             "lanplus": True,
+                             "privlvl": 5,
+                             "login": "control-0-admin",
+                             "passwd": "control-0-password",
+                             "pcmk_host_list": "compute_name_0"
+                             }
+                         })
+        self.assertEqual(result["FencingConfig"]["devices"][1], {
+                         "agent": "fence_ipmilan",
+                         "host_mac": "11:22:33:44:55:66",
+                         "params": {
+                             "delay": 28,
+                             "ipaddr": "1.2.3.4",
+                             "lanplus": True,
+                             "privlvl": 5,
+                             "login": "control-1-admin",
+                             "passwd": "control-1-password",
+                             "pcmk_host_list": "compute_name_1"
+                             }
+                         })
+        self.assertEqual(result["FencingConfig"]["devices"][2], {
+                         "agent": "fence_redfish",
+                         "host_mac": "aa:bb:cc:dd:ee:ff",
+                         "params": {
+                             "delay": 28,
+                             "ipaddr": "172.16.0.1:8000",
+                             "ipport": "8000",
+                             "lanplus": True,
+                             "privlvl": 5,
+                             "login": "root",
+                             "passwd": "calvin",
+                             "systems_uri": "/redfish/v1/Systems/5678",
+                             "ssl_insecure": "true",
+                             "pcmk_host_list": "compute_name_4"
+                             }
+                         })
+        self.assertEqual(result["FencingConfig"]["devices"][3], {
+                         "agent": "fence_rhevm",
+                         "host_mac": "bb:cc:dd:ee:ff:gg",
+                         "params": {
+                             "delay": 28,
+                             "ipaddr": "3.4.5.6",
+                             "login": "admin@internal",
+                             "passwd": "ovirt-password",
+                             "port": "control-3",
+                             "ssl": 1,
+                             "ssl_insecure": 1,
+                             "pcmk_host_list": "compute_name_5"
+                             }
+                         })
