@@ -1,0 +1,6 @@
+disk_images:
+  -
+    imagename: overcloud-ceph
+    type: qcow2
+    distro: rhel8
+    release: 8
