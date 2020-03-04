@@ -330,78 +330,12 @@ class RotateFernetKeysAction(GetPasswordsAction):
 
     def run(self, context):
         swift = self.get_object_client(context)
-
         try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        parameter_defaults = env.get('parameter_defaults', {})
-        passwords = self._get_overriden_passwords(env.get('passwords', {}),
-                                                  parameter_defaults)
-
-        next_index = self.get_next_index(passwords['KeystoneFernetKeys'])
-        keys_map = self.rotate_keys(passwords['KeystoneFernetKeys'],
-                                    next_index)
-        max_keys = self.get_max_keys_value(parameter_defaults)
-        keys_map = self.purge_excess_keys(max_keys, keys_map)
-
-        env['passwords']['KeystoneFernetKeys'] = keys_map
-
-        try:
-            plan_utils.put_env(swift, env)
-        except swiftexceptions.ClientException as err:
-            err_msg = "Error uploading to container: %s" % err
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        plan_utils.cache_delete(swift,
-                                self.container,
-                                "tripleo.parameters.get")
-
-        return keys_map
-
-    @staticmethod
-    def get_key_index_from_path(path):
-        return int(path[path.rfind('/') + 1:])
-
-    def get_next_index(self, keys_map):
-        return self.get_key_index_from_path(
-            max(keys_map, key=self.get_key_index_from_path)) + 1
-
-    def get_key_path(self, index):
-        return password_utils.KEYSTONE_FERNET_REPO + str(index)
-
-    def rotate_keys(self, keys_map, next_index):
-        next_index_path = self.get_key_path(next_index)
-        zero_index_path = self.get_key_path(0)
-
-        # promote staged key to be new primary
-        keys_map[next_index_path] = keys_map[zero_index_path]
-        # Set new staged key
-        keys_map[zero_index_path] = {
-            'content': password_utils.create_keystone_credential()}
-        return keys_map
-
-    def get_max_keys_value(self, parameter_defaults):
-        # The number of max keys should always be positive. The minimum amount
-        # of keys is 3.
-        return max(parameter_defaults.get('KeystoneFernetMaxActiveKeys', 5), 3)
-
-    def purge_excess_keys(self, max_keys, keys_map):
-        current_repo_size = len(keys_map)
-        if current_repo_size <= max_keys:
-            return keys_map
-        key_paths = sorted(keys_map.keys(), key=self.get_key_index_from_path)
-
-        keys_to_be_purged = current_repo_size - max_keys
-
-        for key_path in key_paths[1:keys_to_be_purged + 1]:
-            del keys_map[key_path]
-        return keys_map
+            return plan_utils.update_plan_rotate_fernet_keys(
+                swift, self.container)
+        except Exception as err:
+            LOG.exception(six.text_typ(err))
+            return actions.Result(error=six.text_type(err))
 
 
 class GetNetworkConfigAction(base.TripleOAction):

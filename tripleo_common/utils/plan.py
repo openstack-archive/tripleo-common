@@ -29,6 +29,7 @@ from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
 from tripleo_common.image import kolla_builder
+from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import swift as swiftutils
 from tripleo_common.utils.validations import pattern_validator
 
@@ -372,3 +373,87 @@ def update_plan_environment_with_image_parameters(
         LOG.exception(err_msg)
         raise RuntimeError(err_msg)
     return env
+
+
+def update_plan_rotate_fernet_keys(swift,
+                                   container=constants.DEFAULT_CONTAINER_NAME):
+    try:
+        env = get_env(swift, container)
+    except swiftexceptions.ClientException as err:
+        err_msg = ("Error retrieving environment for plan %s: %s" % (
+            container, err))
+        LOG.exception(err_msg)
+        raise RuntimeError(err_msg)
+
+    parameter_defaults = env.get('parameter_defaults', {})
+    passwords = get_overriden_passwords(env.get(
+        'passwords', {}), parameter_defaults)
+
+    next_index = get_next_index(passwords['KeystoneFernetKeys'])
+    keys_map = rotate_keys(passwords['KeystoneFernetKeys'],
+                           next_index)
+    max_keys = get_max_keys_value(parameter_defaults)
+    keys_map = purge_excess_keys(max_keys, keys_map)
+
+    env['passwords']['KeystoneFernetKeys'] = keys_map
+
+    try:
+        put_env(swift, env)
+    except swiftexceptions.ClientException as err:
+        err_msg = "Error uploading to container: %s" % err
+        LOG.exception(err_msg)
+        raise RuntimeError(err_msg)
+
+    cache_delete(swift, container, "tripleo.parameters.get")
+    return keys_map
+
+
+def get_overriden_passwords(env_passwords, parameter_defaults):
+    for name in constants.PASSWORD_PARAMETER_NAMES:
+        if name in parameter_defaults:
+            env_passwords[name] = parameter_defaults[name]
+    return env_passwords
+
+
+def get_key_index_from_path(path):
+    return int(path[path.rfind('/') + 1:])
+
+
+def get_next_index(keys_map):
+    return get_key_index_from_path(
+        max(keys_map, key=get_key_index_from_path)) + 1
+
+
+def get_key_path(index):
+    return password_utils.KEYSTONE_FERNET_REPO + str(index)
+
+
+def rotate_keys(keys_map, next_index):
+    next_index_path = get_key_path(next_index)
+    zero_index_path = get_key_path(0)
+
+    # promote staged key to be new primary
+    keys_map[next_index_path] = keys_map[zero_index_path]
+    # Set new staged key
+    keys_map[zero_index_path] = {
+        'content': password_utils.create_keystone_credential()}
+    return keys_map
+
+
+def get_max_keys_value(parameter_defaults):
+    # The number of max keys should always be positive. The minimum amount
+    # of keys is 3.
+    return max(parameter_defaults.get('KeystoneFernetMaxActiveKeys', 5), 3)
+
+
+def purge_excess_keys(max_keys, keys_map):
+    current_repo_size = len(keys_map)
+    if current_repo_size <= max_keys:
+        return keys_map
+    key_paths = sorted(keys_map.keys(), key=get_key_index_from_path)
+
+    keys_to_be_purged = current_repo_size - max_keys
+
+    for key_path in key_paths[1:keys_to_be_purged + 1]:
+        del keys_map[key_path]
+    return keys_map

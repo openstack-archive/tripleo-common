@@ -21,6 +21,7 @@ import zlib
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.tests import base
+from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import plan as plan_utils
 
 
@@ -384,3 +385,83 @@ class PlanTest(base.TestCase):
             cache_container,
             cache_key
         )
+
+    def test_get_next_index(self):
+        keys_map = {
+            password_utils.KEYSTONE_FERNET_REPO + '0': {
+                'content': 'Some key'},
+            password_utils.KEYSTONE_FERNET_REPO + '1': {
+                'content': 'Some other key'},
+        }
+        next_index = plan_utils.get_next_index(keys_map)
+        self.assertEqual(next_index, 2)
+
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_keystone_credential')
+    def test_rotate_keys(self, mock_keystone_creds):
+        mock_keystone_creds.return_value = 'Some new key'
+
+        staged_key_index = password_utils.KEYSTONE_FERNET_REPO + '0'
+        new_primary_key_index = password_utils.KEYSTONE_FERNET_REPO + '2'
+        keys_map = {
+            password_utils.KEYSTONE_FERNET_REPO + '0': {
+                'content': 'Some key'},
+            password_utils.KEYSTONE_FERNET_REPO + '1': {
+                'content': 'Some other key'},
+        }
+        new_keys_map = plan_utils.rotate_keys(keys_map, 2)
+
+        # Staged key should be the new key
+        self.assertEqual('Some new key',
+                         new_keys_map[staged_key_index]['content'])
+        # primary key should be the previous staged key
+        self.assertEqual('Some key',
+                         new_keys_map[new_primary_key_index]['content'])
+
+    def test_purge_excess_keys_should_purge(self):
+        keys_map = {
+            password_utils.KEYSTONE_FERNET_REPO + '0': {
+                'content': 'key0'},
+            password_utils.KEYSTONE_FERNET_REPO + '1': {
+                'content': 'key1'},
+            password_utils.KEYSTONE_FERNET_REPO + '2': {
+                'content': 'key2'},
+            password_utils.KEYSTONE_FERNET_REPO + '3': {
+                'content': 'key3'},
+            password_utils.KEYSTONE_FERNET_REPO + '4': {
+                'content': 'key4'},
+        }
+        max_keys = 3
+        keys_map = plan_utils.purge_excess_keys(max_keys, keys_map)
+        self.assertEqual(max_keys, len(keys_map))
+        # It should keep index 0, 3 and 4
+        self.assertIn(password_utils.KEYSTONE_FERNET_REPO + '0', keys_map)
+        self.assertIn(password_utils.KEYSTONE_FERNET_REPO + '3', keys_map)
+        self.assertIn(password_utils.KEYSTONE_FERNET_REPO + '4', keys_map)
+        # It sould have removed index 1 and 2
+        self.assertNotIn(password_utils.KEYSTONE_FERNET_REPO + '1', keys_map)
+        self.assertNotIn(password_utils.KEYSTONE_FERNET_REPO + '2', keys_map)
+
+    def test_purge_excess_keys_should_not_purge_if_equal_to_max(self):
+        keys_map = {
+            password_utils.KEYSTONE_FERNET_REPO + '0': {
+                'content': 'key0'},
+            password_utils.KEYSTONE_FERNET_REPO + '1': {
+                'content': 'key1'},
+            password_utils.KEYSTONE_FERNET_REPO + '2': {
+                'content': 'key2'},
+        }
+        max_keys = 3
+        keys_map = plan_utils.purge_excess_keys(max_keys, keys_map)
+        self.assertEqual(max_keys, len(keys_map))
+
+    def test_purge_excess_keys_should_not_purge_if_less_than_max(self):
+        keys_map = {
+            password_utils.KEYSTONE_FERNET_REPO + '0': {
+                'content': 'key0'},
+            password_utils.KEYSTONE_FERNET_REPO + '1': {
+                'content': 'key1'},
+        }
+        max_keys = 3
+        keys_map = plan_utils.purge_excess_keys(max_keys, keys_map)
+        self.assertEqual(2, len(keys_map))
