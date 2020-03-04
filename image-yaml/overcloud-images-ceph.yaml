@@ -1,0 +1,38 @@
+disk_images:
+  -
+    imagename: overcloud-ceph
+    type: qcow2
+    elements:
+      - baremetal
+      - dhcp-all-interfaces
+      - overcloud-agent
+      - overcloud-base
+      - overcloud-ceph-storage
+      - puppet-modules
+      - stable-interface-names
+      - grub2
+      - element-manifest
+      - dynamic-login
+      - iptables
+      - enable-packages-install
+      - override-pip-and-virtualenv
+      - dracut-regenerate
+      - remove-machine-id
+      - remove-resolvconf
+      - openssh
+      - disable-nouveau
+    packages:
+      - python3-psutil
+      - python3-debtcollector
+      - sos
+      - device-mapper-multipath
+      - openstack-heat-agents
+      - os-net-config
+      - jq
+      - python3-dbus
+    environment:
+      FS_TYPE: xfs
+      DIB_PYTHON_VERSION: '3'
+    options:
+      - "--mkfs-options '-s size=4096'"
+      - "--min-tmpfs=7"
