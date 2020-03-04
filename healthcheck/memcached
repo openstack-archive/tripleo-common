@@ -1,4 +1,5 @@
 #!/bin/bash
+. ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
 listen_addr=$(wrap_ipv6 $(awk 'match($0, /-l +([0-9a-fA-F\.\:]+) /, a) {print a[1]}' /etc/sysconfig/memcached))
 
