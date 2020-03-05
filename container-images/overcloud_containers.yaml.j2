@@ -843,3 +843,93 @@ container_images_template:
   - OS::TripleO::Services::Rsyslog
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftStorage
+
+{% if ceph3_namespace is defined %}
+- imagename: "{{ceph3_namespace}}/{{ceph3_image}}:{{ceph3_tag}}"
+  image_source: ceph
+  params:
+  - ContainerCeph3DaemonImage
+  services:
+  - OS::TripleO::Services::CephClient
+  - OS::TripleO::Services::CephExternal
+  - OS::TripleO::Services::CephMds
+  - OS::TripleO::Services::CephMgr
+  - OS::TripleO::Services::CephMon
+  - OS::TripleO::Services::CephOSD
+  - OS::TripleO::Services::CephRgw
+  - OS::TripleO::Services::CephRbdMirror
+{% endif %}
+
+{% if namespace_stein is defined %}
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}cinder-api{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerCinderApiImageStein
+  services:
+  - OS::TripleO::Services::CinderApi
+  - OS::TripleO::Services::UndercloudCinderApi
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}glance-api{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerGlanceApiImageStein
+  services:
+  - OS::TripleO::Services::GlanceApi
+  - OS::TripleO::Services::GlanceApiEdge
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}heat-engine{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerHeatEngineImageStein
+  services:
+  - OS::TripleO::Services::HeatEngine
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}ironic-api{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerIronicApiImageStein
+  services:
+  - OS::TripleO::Services::IronicApi
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}ironic-inspector{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerIronicInspectorImageStein
+  services:
+  - OS::TripleO::Services::IronicInspector
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}keystone{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerKeystoneImageStein
+  services:
+  - OS::TripleO::Services::Keystone
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}mistral-api{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerMistralApiImageStein
+  services:
+  - OS::TripleO::Services::MistralApi
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}neutron-server{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerNeutronApiImageStein
+  services:
+  - OS::TripleO::Services::NeutronApi
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}nova-api{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerNovaApiImageStein
+  services:
+  - OS::TripleO::Services::NovaApi
+
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}nova-conductor{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerNovaConductorImageStein
+  services:
+  - OS::TripleO::Services::NovaConductor
+{% endif %}
