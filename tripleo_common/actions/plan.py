@@ -103,7 +103,7 @@ class DeletePlanAction(base.TripleOAction):
 class ListRolesAction(base.TripleOAction):
     """Returns a deployment plan's roles
 
-    DEPRECATED, please use tripleo.plan_management.v1.list_roles workflow
+    DEPRECATED
 
     Parses roles_data.yaml and returns the names of all available roles.
 

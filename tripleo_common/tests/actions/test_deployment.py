@@ -321,7 +321,6 @@ class DeploymentStatusActionTest(base.TestCase):
         result = action.run(self.ctx)
 
         self.assertEqual(result['stack_status'], 'COMPLETE')
-        self.assertEqual(result['cd_status'], 'SUCCESS')
         self.assertEqual(result['deployment_status'], 'DEPLOY_SUCCESS')
         self.assertEqual(result['status_update'], None)
 
@@ -352,7 +351,6 @@ class DeploymentStatusActionTest(base.TestCase):
         result = action.run(self.ctx)
 
         self.assertEqual(result['stack_status'], 'FAILED')
-        self.assertEqual(result['cd_status'], 'SUCCESS')
         self.assertEqual(result['deployment_status'], 'DEPLOY_SUCCESS')
         self.assertEqual(result['status_update'], 'DEPLOY_FAILED')
 
@@ -383,7 +381,6 @@ class DeploymentStatusActionTest(base.TestCase):
         result = action.run(self.ctx)
 
         self.assertEqual(result['stack_status'], 'IN_PROGRESS')
-        self.assertEqual(result['cd_status'], 'SUCCESS')
         self.assertEqual(result['deployment_status'], 'DEPLOY_SUCCESS')
         self.assertEqual(result['status_update'], 'DEPLOYING')
 
@@ -414,9 +411,7 @@ class DeploymentStatusActionTest(base.TestCase):
         result = action.run(self.ctx)
 
         self.assertEqual(result['stack_status'], 'COMPLETE')
-        self.assertEqual(result['cd_status'], 'SUCCESS')
         self.assertEqual(result['deployment_status'], 'DEPLOYING')
-        self.assertEqual(result['status_update'], 'DEPLOY_SUCCESS')
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_object_client')
@@ -445,9 +440,7 @@ class DeploymentStatusActionTest(base.TestCase):
         result = action.run(self.ctx)
 
         self.assertEqual(result['stack_status'], 'COMPLETE')
-        self.assertEqual(result['cd_status'], 'SUCCESS')
         self.assertEqual(result['deployment_status'], 'DEPLOYING')
-        self.assertEqual(result['status_update'], 'DEPLOY_FAILED')
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_object_client')
