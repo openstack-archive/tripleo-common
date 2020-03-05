@@ -156,6 +156,8 @@ class DeployStackAction(base.TripleOAction):
         parameters = dict()
         if not self.skip_deploy_identifier:
             parameters['DeployIdentifier'] = int(time.time())
+        else:
+            parameters['DeployIdentifier'] = ''
         parameters['UpdateIdentifier'] = ''
         parameters['StackAction'] = 'CREATE' if stack_is_new else 'UPDATE'
 

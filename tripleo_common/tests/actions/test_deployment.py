@@ -335,6 +335,7 @@ class DeployStackActionTest(base.TestCase):
             'name': constants.DEFAULT_CONTAINER_NAME,
             'temp_environment': 'temp_environment',
             'parameter_defaults': {'StackAction': 'CREATE',
+                                   'DeployIdentifier': '',
                                    'UpdateIdentifier': '',
                                    'random_existing_data': 'a_value'},
             'template': 'template',
