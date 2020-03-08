@@ -428,50 +428,6 @@ workflows:
           plan_name: <% $.container %>
           message: <% $.get('message', '') %>
 
-  rotate_passwords:
-    description: Rotate passwords for a given plan
-    input:
-      - container
-      - queue_name: tripleo
-      - password_list: []
-
-    tags:
-      - tripleo-common-managed
-
-    tasks:
-
-      verify_container_exists:
-        action: swift.head_container container=<% $.container %>
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-        on-success: rotate_environment_passwords
-        on-error: send_message
-
-      rotate_environment_passwords:
-        action: tripleo.parameters.generate_passwords
-        input:
-          container: <% $.container %>
-          rotate_passwords: true
-          rotate_pw_list: <% $.password_list %>
-        publish:
-          status: SUCCESS
-          message: <% task().result %>
-        publish-on-error:
-          status: FAILED
-          message: <% task().result %>
-        on-complete: send_message
-
-      send_message:
-        workflow: tripleo.messaging.v1.send
-        input:
-          queue_name: <% $.queue_name %>
-          type: <% execution().name %>
-          status: <% $.status %>
-          execution: <% execution() %>
-          plan_name: <% $.container %>
-          message: <% $.get('message', '') %>
-
   export_deployment_plan:
     description: Creates an export tarball for a given plan
     input:

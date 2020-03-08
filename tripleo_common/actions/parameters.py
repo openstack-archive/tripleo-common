@@ -254,27 +254,6 @@ class GetProfileOfFlavorAction(base.TripleOAction):
             return actions.Result(error=str(err))
 
 
-class RotateFernetKeysAction(GetPasswordsAction):
-    """Rotate fernet keys from the environment
-
-    This method rotates the fernet keys that are saved in the environment, in
-    the passwords parameter.
-    """
-
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
-        super(RotateFernetKeysAction, self).__init__()
-        self.container = container
-
-    def run(self, context):
-        swift = self.get_object_client(context)
-        try:
-            return plan_utils.update_plan_rotate_fernet_keys(
-                swift, self.container)
-        except Exception as err:
-            LOG.exception(six.text_typ(err))
-            return actions.Result(error=six.text_type(err))
-
-
 class GetNetworkConfigAction(base.TripleOAction):
     """Gets network configuration details from available heat parameters."""
 
