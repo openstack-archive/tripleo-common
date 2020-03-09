@@ -36,6 +36,9 @@ DEFAULTS_PATH = os.path.join(os.path.dirname(__file__),
                              '..', '..', '..', 'container-images',
                              'container_image_prepare_defaults.yaml')
 kb.init_prepare_defaults(DEFAULTS_PATH)
+KB_DEFAULT_TAG = kb.CONTAINER_IMAGES_DEFAULTS['tag']
+KB_DEFAULT_PREFIX = kb.CONTAINER_IMAGES_DEFAULTS['name_prefix']
+KB_DEFAULT_NAMESPACE = kb.CONTAINER_IMAGES_DEFAULTS['namespace']
 
 
 filedata = six.u("""container_images:
@@ -214,9 +217,12 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 f.write(template_filedata)
 
     def test_container_images_from_template(self):
+        """Test that we can generate same as testdata"""
         builder = kb.KollaImageBuilder(self.filelist)
         result = builder.container_images_from_template(
             push_destination='localhost:8787',
+            name_prefix='centos-binary-',
+            namespace='docker.io/tripleomaster',
             tag='liberty'
         )
         # template substitution on the container_images_template section should
@@ -231,57 +237,69 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             builder.container_images_template_inputs()
         )
 
+        expected = {
+            'name_suffix': '',
+            'rhel_containers': False,
+            'neutron_driver': 'ovn',
+        }
+        for key in (
+                'namespace',
+                'name_prefix',
+                'tag',
+                'ceph_namespace',
+                'ceph_image',
+                'ceph_tag',
+                'ceph_grafana_namespace',
+                'ceph_grafana_image',
+                'ceph_grafana_tag',
+                'ceph_prometheus_namespace',
+                'ceph_prometheus_image',
+                'ceph_prometheus_tag',
+                'ceph_alertmanager_namespace',
+                'ceph_alertmanager_image',
+                'ceph_alertmanager_tag',
+                'ceph_node_exporter_namespace',
+                'ceph_node_exporter_image',
+                'ceph_node_exporter_tag',
+                ):
+            if key in kb.CONTAINER_IMAGES_DEFAULTS:
+                expected[key] = kb.CONTAINER_IMAGES_DEFAULTS[key]
+
         self.assertEqual(
-            {
-                'namespace': 'docker.io/tripleomaster',
-                'ceph_namespace': 'docker.io/ceph',
-                'ceph_image': 'daemon',
-                'ceph_tag': 'v4.0.8-stable-4.0-nautilus-centos-7-x86_64',
-                'ceph_grafana_namespace': 'docker.io/grafana',
-                'ceph_grafana_image': 'grafana',
-                'ceph_grafana_tag': '5.2.4',
-                'ceph_prometheus_namespace': 'docker.io/prom',
-                'ceph_prometheus_image': 'prometheus',
-                'ceph_prometheus_tag': 'v2.7.2',
-                'ceph_alertmanager_namespace': 'docker.io/prom',
-                'ceph_alertmanager_image': 'alertmanager',
-                'ceph_alertmanager_tag': 'v0.16.2',
-                'ceph_node_exporter_namespace': 'docker.io/prom',
-                'ceph_node_exporter_image': 'node-exporter',
-                'ceph_node_exporter_tag': 'v0.17.0',
-                'name_prefix': 'centos-binary-',
-                'name_suffix': '',
-                'tag': 'current-tripleo',
-                'rhel_containers': False,
-                'neutron_driver': 'ovn',
-            },
+            expected,
             builder.container_images_template_inputs()
         )
 
+        expected = {
+            'namespace': '192.0.2.0:5000/tripleomaster',
+            'ceph_namespace': 'docker.io/cephh',
+            'ceph_image': 'ceph-daemon',
+            'ceph_tag': 'latest',
+            'name_prefix': 'prefix-',
+            'name_suffix': '-suffix',
+            'tag': 'master',
+            'rhel_containers': False,
+            'neutron_driver': 'ovn',
+        }
+        for key in (
+                'ceph_grafana_namespace',
+                'ceph_grafana_image',
+                'ceph_grafana_tag',
+                'ceph_prometheus_namespace',
+                'ceph_prometheus_image',
+                'ceph_prometheus_tag',
+                'ceph_alertmanager_namespace',
+                'ceph_alertmanager_image',
+                'ceph_alertmanager_tag',
+                'ceph_node_exporter_namespace',
+                'ceph_node_exporter_image',
+                'ceph_node_exporter_tag',
+                ):
+            if key in kb.CONTAINER_IMAGES_DEFAULTS:
+                expected[key] = kb.CONTAINER_IMAGES_DEFAULTS[key]
+
         self.assertEqual(
-            {
-                'namespace': '192.0.2.0:5000/tripleomaster',
-                'ceph_namespace': 'docker.io/cephh',
-                'ceph_image': 'ceph-daemon',
-                'ceph_tag': 'latest',
-                'ceph_grafana_namespace': 'docker.io/grafana',
-                'ceph_grafana_image': 'grafana',
-                'ceph_grafana_tag': '5.2.4',
-                'ceph_prometheus_namespace': 'docker.io/prom',
-                'ceph_prometheus_image': 'prometheus',
-                'ceph_prometheus_tag': 'v2.7.2',
-                'ceph_alertmanager_namespace': 'docker.io/prom',
-                'ceph_alertmanager_image': 'alertmanager',
-                'ceph_alertmanager_tag': 'v0.16.2',
-                'ceph_node_exporter_namespace': 'docker.io/prom',
-                'ceph_node_exporter_image': 'node-exporter',
-                'ceph_node_exporter_tag': 'v0.17.0',
-                'name_prefix': 'prefix-',
-                'name_suffix': '-suffix',
-                'tag': 'master',
-                'rhel_containers': False,
-                'neutron_driver': 'ovn',
-            },
+            expected,
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleomaster',
                 ceph_namespace='docker.io/cephh',
@@ -314,23 +332,23 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         )
         container_images = [{
             'image_source': 'kolla',
-            'imagename': 'docker.io/tripleomaster/'
-                         'centos-binary-nova-compute:liberty',
+            'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+            'nova-compute:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
             'image_source': 'kolla',
-            'imagename': 'docker.io/tripleomaster/'
-                         'centos-binary-nova-libvirt:liberty',
+            'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+            'nova-libvirt:liberty',
             'push_destination': 'localhost:8787',
             'uploader': 'docker'
         }, {
             'image_source': 'kolla',
-            'imagename': 'docker.io/tripleomaster/image-with-missing-tag',
+            'imagename': KB_DEFAULT_NAMESPACE + '/image-with-missing-tag',
             'push_destination': 'localhost:8787'
         }, {
             'image_source': 'foo',
-            'imagename': 'docker.io/tripleomaster/skip-build',
+            'imagename': KB_DEFAULT_NAMESPACE + '/skip-build',
             'push_destination': 'localhost:8787'
         }]
         self.assertEqual(container_images, result)
@@ -375,20 +393,20 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync(self):
         remove_images = [
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-ovn-northd:current-tripleo'},
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'ovn-northd:' + KB_DEFAULT_TAG},
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
-                          'controller:current-tripleo'},
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'ovn-controller:' + KB_DEFAULT_TAG},
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
-                          'nb-db-server:current-tripleo'},
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'ovn-nb-db-server:' + KB_DEFAULT_TAG},
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary-ovn-'
-                          'sb-db-server:current-tripleo'},
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'ovn-sb-db-server:' + KB_DEFAULT_TAG},
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleomaster/centos-binary'
-                          '-neutron-metadata-agent-ovn:current-tripleo'}]
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'neutron-metadata-agent-ovn:' + KB_DEFAULT_TAG}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
 
@@ -401,11 +419,11 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync_for_rhel(self):
         remove_images = [
             {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleomaster/centos-binary'
-                             '-skydive-agent:current-tripleo'},
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'skydive-agent:' + KB_DEFAULT_TAG},
             {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleomaster/centos-binary'
-                             '-skydive-analyzer:current-tripleo'}]
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'skydive-analyzer:' + KB_DEFAULT_TAG}]
         self._test_container_images_yaml_in_sync_helper(
             rhel_containers=True, neutron_driver='ovn',
             remove_images=remove_images)
