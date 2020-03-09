@@ -18,7 +18,6 @@ import logging
 
 from mistral_lib import actions
 import six
-from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
@@ -135,41 +134,6 @@ class GeneratePasswordsAction(base.TripleOAction):
         except Exception as err:
             LOG.exception(six.text_type(err))
             return actions.Result(six.text_type(err))
-
-
-class GetPasswordsAction(base.TripleOAction):
-    """Get passwords from the environment
-
-    This method returns the list passwords which are used for the deployment.
-    It will return a merged list of user provided passwords and generated
-    passwords, giving priority to the user provided passwords.
-    """
-
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME):
-        super(GetPasswordsAction, self).__init__()
-        self.container = container
-
-    def run(self, context):
-        swift = self.get_object_client(context)
-
-        try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        parameter_defaults = env.get('parameter_defaults', {})
-        passwords = env.get('passwords', {})
-
-        return self._get_overriden_passwords(passwords, parameter_defaults)
-
-    def _get_overriden_passwords(self, env_passwords, parameter_defaults):
-        for name in constants.PASSWORD_PARAMETER_NAMES:
-            if name in parameter_defaults:
-                env_passwords[name] = parameter_defaults[name]
-        return env_passwords
 
 
 class GenerateFencingParametersAction(base.TripleOAction):
