@@ -2,7 +2,6 @@
     templates:
       - check-requirements
       - openstack-cover-jobs
-      - openstack-python-jobs
       - openstack-python36-jobs
       - openstack-python37-jobs
       - publish-openstack-docs-pti
@@ -14,13 +13,13 @@
     check:
       jobs:
         - openstack-tox-pep8
-        - openstack-tox-py27
+        - openstack-tox-py27:
+            voting: false
         - openstack-tox-py36
         - openstack-tox-py37
         - tripleo-ci-centos-7-containers-multinode:
             dependencies: &deps_unit_lint
               - openstack-tox-pep8
-              - openstack-tox-py27
               - openstack-tox-py36
               - openstack-tox-py37
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-upgrades:
@@ -67,4 +66,5 @@
     gate:
       queue: tripleo
       jobs:
+        - openstack-tox-pep8
         - openstack-tox-lower-constraints
