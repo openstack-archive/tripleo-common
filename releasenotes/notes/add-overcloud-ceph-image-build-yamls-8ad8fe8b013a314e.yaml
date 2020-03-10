@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Added `overcloud-images-ceph.yaml`, `overcloud-images-ceph-centos8.yaml`,
+    and `overcloud-images-ceph-rhel8.yaml` to allow an operator to build an
+    image that can be used for dedicated ceph nodes. This `overcloud-ceph`
+    image would not have the openstack client, ha or openvswitch related
+    packages.
