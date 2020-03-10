@@ -16,7 +16,6 @@
 import json
 import logging
 
-from heatclient import exc as heat_exc
 from mistral_lib import actions
 import six
 from swiftclient import exceptions as swiftexceptions
@@ -25,7 +24,6 @@ from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import parameters as parameter_utils
-from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import stack_parameters as stack_param_utils
 from tripleo_common.utils import template as template_utils
@@ -130,74 +128,13 @@ class GeneratePasswordsAction(base.TripleOAction):
         mistral = self.get_workflow_client(context)
 
         try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        try:
-            stack_env = heat.stacks.environment(
-                stack_id=self.container)
-
-            # legacy heat resource names from overcloud.yaml
-            # We don't modify these to avoid changing defaults
-            for pw_res in constants.LEGACY_HEAT_PASSWORD_RESOURCE_NAMES:
-                try:
-                    res = heat.resources.get(self.container, pw_res)
-                    param_defaults = stack_env.get('parameter_defaults', {})
-                    param_defaults[pw_res] = res.attributes['value']
-                except heat_exc.HTTPNotFound:
-                    LOG.debug('Heat resouce not found: %s' % pw_res)
-                    pass
-
-        except heat_exc.HTTPNotFound:
-            stack_env = None
-
-        passwords = password_utils.generate_passwords(
-            mistralclient=mistral,
-            stack_env=stack_env,
-            rotate_passwords=self.rotate_passwords
-        )
-
-        # if passwords don't yet exist in plan environment
-        if 'passwords' not in env:
-            env['passwords'] = {}
-
-        # NOTE(ansmith): if rabbit password previously generated and
-        # stored, facilitate upgrade and use for oslo messaging in plan env
-        if 'RabbitPassword' in env['passwords']:
-            for i in ('RpcPassword', 'NotifyPassword'):
-                if i not in env['passwords']:
-                    env['passwords'][i] = env['passwords']['RabbitPassword']
-
-        # ensure all generated passwords are present in plan env,
-        # but respect any values previously generated and stored
-        for name, password in passwords.items():
-            if name not in env['passwords']:
-                env['passwords'][name] = password
-
-        if self.rotate_passwords:
-            if len(self.rotate_pw_list) > 0:
-                for name in self.rotate_pw_list:
-                    env['passwords'][name] = passwords[name]
-            else:
-                for name, password in passwords.items():
-                    if name not in constants.DO_NOT_ROTATE_LIST:
-                        env['passwords'][name] = password
-
-        try:
-            plan_utils.put_env(swift, env)
-        except swiftexceptions.ClientException as err:
-            err_msg = "Error uploading to container: %s" % err
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        plan_utils.cache_delete(swift,
-                                self.container,
-                                "tripleo.parameters.get")
-        return env['passwords']
+            return plan_utils.generate_passwords(
+                swift, heat, mistral, container=self.container,
+                rotate_passwords=self.rotate_passwords,
+                rotate_pw_list=self.rotate_pw_list)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
 class GetPasswordsAction(base.TripleOAction):

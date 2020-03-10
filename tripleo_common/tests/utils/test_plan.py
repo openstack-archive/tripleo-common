@@ -16,10 +16,12 @@
 import json
 import mock
 import os
+import yaml
 import zlib
 
 from swiftclient import exceptions as swiftexceptions
 
+from tripleo_common import constants
 from tripleo_common.tests import base
 from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import plan as plan_utils
@@ -75,6 +77,139 @@ CAPABILITIES_DICT = {
             }]}
         ]
     }]
+}
+
+_EXISTING_PASSWORDS = {
+    'PlacementPassword': 'VFJeqBKbatYhQm9jja67hufft',
+    'MistralPassword': 'VFJeqBKbatYhQm9jja67hufft',
+    'BarbicanPassword': 'MGGQBtgKT7FnywvkcdMwE9nhx',
+    'BarbicanSimpleCryptoKek': 'dGhpcnR5X3R3b19ieXRlX2tleWJsYWhibGFoYmxhaGg=',
+    'AdminPassword': 'jFmY8FTpvtF2e4d4ReXvmUP8k',
+    'CeilometerMeteringSecret': 'CbHTGK4md4Cc8P8ZyzTns6wry',
+    'ZaqarPassword': 'bbFgCTFbAH8vf9n3xvZCP8aMR',
+    'NovaPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
+    'MysqlRootPassword': 'VqJYpEdKks',
+    'RabbitCookie': 'BqJYpEdKksAqJYpEdKks',
+    'HeatAuthEncryptionKey': '9xZXehsKc2HbmFFMKjuqxTJHn',
+    'PcsdPassword': 'KjEzeitus8eu751a',
+    'HorizonSecret': 'mjEzeitus8eu751B',
+    'NovajoinPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
+    'IronicPassword': '4hFDgn9ANeVfuqk84pHpD4ksa',
+    'RedisPassword': 'xjj3QZDcUQmU6Q7NzWBHRUhGd',
+    'SaharaPassword': 'spFvYGezdFwnTk7NPxgYTbUPh',
+    'AdminToken': 'jq6G6HyZtj7dcZEvuyhAfjutM',
+    'CinderPassword': 'dcxC3xyUcrmvzfrrxpAd3REcm',
+    'CongressPassword': 'DwcKvMqXMuNYYFU4zTCuG4234',
+    'GlancePassword': 'VqJYNEdKKsGZtgnHct77XBtrV',
+    'RabbitPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
+    'RpcPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
+    'NotifyPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
+    'CephAdminKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
+    'HAProxyStatsPassword': 'P8tbdK6n4YUkTaUyy8XgEVTe6',
+    'CeilometerPassword': 'RRdpwK6qf2pbKz2UtzxqauAdk',
+    'GnocchiPassword': 'cRYHcUkMuJeK3vyU9pCaznUZc',
+    'HeatStackDomainAdminPassword': 'GgTRyWzKYsxK4mReTJ4CM6sMc',
+    'CephRgwKey': b'AQCQXtlXAAAAABAAUKcqUMu6oMjAXMjoUV4/3A==',
+    'AodhPassword': '8VZXehsKc2HbmFFMKYuqxTJHn',
+    'PankoPassword': 'cVZXehsSc2KdmFFMKDudxTLKn',
+    'OctaviaHeartbeatKey': 'oct-heartbeat-key',
+    'OctaviaPassword': 'NMl7j3nKk1VVwMxUZC8Cgw==',
+    'OctaviaServerCertsKeyPassphrase': 'aW5zZWN1cmUta2V5LWRvLW5vdC11c2U=',
+    'OctaviaCaKeyPassphrase': 'SLj4c3uCk4DDxPwQOG1Heb==',
+    'ManilaPassword': 'NYJN86Fua3X8AVFWmMhQa2zTH',
+    'NeutronMetadataProxySharedSecret': 'Q2YgUCwmBkYdqsdhhCF4hbghu',
+    'CephMdsKey': b'AQCQXtlXAAAAABAAT4Gk+U8EqqStL+JFa9bp1Q==',
+    'CephManilaClientKey': b'AQANOFFY1NW6AxAAu6jWI3YSOsp2QWusb5Y3DQ==',
+    'CephMonKey': b'AQCQXtlXAAAAABAA9l+59N3yH+C49Y0JiKeGFg==',
+    'CephGrafanaAdminPassword': 'NYJN86Fua3X8AVFWmMhQa2zTH',
+    'CephDashboardAdminPassword': 'NYJN86Fua3X8AVFWmMhQa2zTH',
+    'SwiftHashSuffix': 'td8mV6k7TYEGKCDvjVBwckpn9',
+    'SnmpdReadonlyUserPassword': 'TestPassword',
+    'SwiftPassword': 'z6EWAVfW7CuxvKdzjWTdrXCeg',
+    'HeatPassword': 'bREnsXtMHKTHxt8XW6NXAYr48',
+    'MysqlClustercheckPassword': 'jN4RMMWWJ4sycaRwh7UvrAtfX',
+    'CephClientKey': b'AQCQXtlXAAAAABAAKyc+8St8i9onHyu2mPk+vg==',
+    'NeutronPassword': 'ZxAjdU2UXCV4GM3WyPKrzAZXD',
+    'DesignatePassword': 'wHYj7rftFzHMpJKnGxbjjR9CW',
+    'DesignateRndcKey': 'hB8XaZRd2Tf00jKsyoXpyw==',
+    'KeystoneCredential0': 'ftJNQ_XlDUK7Lgvv1kdWf3SyqVsrvNDgoNV4kJg3yzw=',
+    'KeystoneCredential1': 'c4MFq82TQLFLKpiiUjrKkp15dafE2ALcD3jbaIu3rfE=',
+    'KeystoneFernetKey0': 'O8NSPxr4zXBBAoGIj-5aUmtE7-Jk5a4ptVsEhzJ8Vd8=',
+    'KeystoneFernetKey1': 'AueoL37kd6eLjV29AG-Ruxu5szW47osgXx6aPOqtI6I=',
+    'KeystoneFernetKeys': {
+        '/etc/keystone/fernet-keys/0': {'content': 'IAMAVERYSAFEKEY'},
+        '/etc/keystone/fernet-keys/1': {'content': 'IALSOAMAVERYSAFEKEY'}
+    },
+    'CephClusterFSID': u'97c16f44-b62c-11e6-aed3-185e0f73fdc5',
+    'Ec2ApiPassword': 'FPvz2WiWxrHVWrmSSvv44bqmr',
+    'EtcdInitialClusterToken': 'fcVZXehsSc2KdmFFMKDudxTLKa',
+    'PacemakerRemoteAuthkey':
+        'bCfHQx4fX7FqENVBbDfBnKvf6FTH6mPfVdNjfzakEjuF4UbmZJHAxWdheEr6feEyZmtM'
+        'XEd4w3qM8nMVrzjnDCmqAFDmMDQfKcuNgTnqGnkbVUDGpym67Ry4vNCPHyp9tGGyfjNX'
+        't66csYZTYUHPv6jdJk4HWBjE66v8B3nRpc3FePQ8DRMWX4hcGFNNxapJu7v2frKwq4tD'
+        '78cc7aPPMGPn8kR3mj7kMP8Ah8VVGXJEtybEvRg4sQ67zEkAzfKggrpXYPK2Qvv9sHKp'
+        't2VjwZBHTvWKarJjyeMTqbzJyW6JTbm62gqZCr9afZRFQug62pPRduvkUNfUYNPNpqjy'
+        'yznmeAZPxVseU3jJVxKrxdrgzavKEMtW6BbTmw86j8wuUdaWgRccRGVUQvtQ4p9kXHAy'
+        'eXVduZvpvxFtbKvfNTvf6qCuJ8qeQp2TwJQPHUYHkxZYrpAA7fZUzNCZR2tFFdZzWGt2'
+        'PEnYvYts4m7Fp9XEmNm7Jyme38CBfnaVERmTMRvHkq3EE2Amsc72aDdzeVRjR3xRgMNJ'
+        '2cEEWqatZXveHxJr6VmBNWJUyvPrfmVegwtKCGJND8d3Ysruy7GCn6zcrNY7d84aDk3P'
+        'q7NyZfRYrGcNDKJuzNWH8UNwGP68uQsUUrV9NVTVpB2sRPG2tJm3unYqekUg3KYXu46J'
+        'mANxqgrqDv6vPx6NCPdUXZTXFaesQatKRkkf3nZFqZQJXZVbkudTmrPYyRQAjvWuAmrY'
+        '6RcFFmygeFnhAxhwXNdge9tEfsfPeQ4GMxa8Amj2fMjmNvQXFfQ8uxMUnusDmhbwCRKM'
+        'CvN2dNE92MaQge34vtxsueyDEmbuVE9sNRD3EQBRwx8nktgRwKHfRZJ3BX8f9XMaQe2e'
+        'ZfGjtUNkbgKdCyYgEwEybXKPfevDnxFvbZMpJx4fqqCAbAZud9RnAuvqHgFbKHXcVEE4'
+        'nRmgJmdqJsRsTkYPpYkKN9rssEDCXr9HFjbenkxXcUe8afrTvKAzwBvbDWcjYBEQKbuY'
+        '6Ptm9VJrjutUHCPmW2sh66qvq4C9vPhVEey7FpCZDEyYUPrjRfhKjxEFNBKWpcZzvmT2'
+        'nRmgJmdqJsRsTkYPpYkKN9rssEDCXr9HFjbenkxXcUe8afrTvKAzwBvbDWcjYBEQKbuY'
+        '2cEEWqatZXveHxJr6VmBNWJUyvPrfmVegwtKCGJND8d3Ysruy7GCn6zcrNY7d84aDk3P'
+        'VRE4aqMfuY72xFacxXHjvWagEGQEYtkMtQnsh7XAMGuazT3pkppeUTyDbKTY2Dz7Quc3'
+        '8UKaw8ece6fTXWpjX2EYrsd4qzvhC6eEPdgnpmzjqmuG8YqEAUZ7dYADgAhTkBQsNct8'
+        'btQsQDYD4PBjxG2KWAZ9vgTsvBpjjEVcrPfWgwZKJTAZWfWq2u7nT4N2t39EYmQEzbEf'
+        '8UKaw8ece6fTXWpjX2EYrsd4qzvhC6eEPdgnpmzjqmuG8YqEAUZ7dYADgAhTkBQsNct8'
+        'DkCF3DJ49jjZm9N4EKnKGGXD7XkFE79AFRGPUw4gXpeQCtUXyEugUErqMjqgJjC7ykdg'
+        'zz7txnzYfRaKHNVs4r4GwNEHRHt7VcTuT3WBcbE4skQgjMnttgP7hts7dMU7PA8kRrfq'
+        'BKdkPkUwqQ9Xn4zrysY4GvJQHWXxD6Tyqf9PZaz4xbUmsvtuY7NAz27U2aT3EA9XCgfn'
+        '2cEEWqatZXveHxJr6VmBNWJUyvPrfmVegwtKCGJND8d3Ysruy7GCn6zcrNY7d84aDk3P'
+        'CEfTJQz342nwRMY4DCuhawz4cnrWwxgsnVPCbeXYH4RcgswVsk9edxKkYMkpTwpcKf6n'
+        'nRmgJmdqJsRsTkYPpYkKN9rssEDCXr9HFjbenkxXcUe8afrTvKAzwBvbDWcjYBEQKbuY'
+        '6Ptm9VJrjutUHCPmW2sh66qvq4C9vPhVEey7FpCZDEyYUPrjRfhKjxEFNBKWpcZzvmT2'
+        'VRE4aqMfuY72xFacxXHjvWagEGQEYtkMtQnsh7XAMGuazT3pkppeUTyDbKTY2Dz7Quc3'
+        '8UKaw8ece6fTXWpjX2EYrsd4qzvhC6eEPdgnpmzjqmuG8YqEAUZ7dYADgAhTkBQsNct8'
+        'btQsQDYD4PBjxG2KWAZ9vgTsvBpjjEVcrPfWgwZKJTAZWfWq2u7nT4N2t39EYmQEzbEf'
+        'DkCF3DJ49jjZm9N4EKnKGGXD7XkFE79AFRGPUw4gXpeQCtUXyEugUErqMjqgJjC7ykdg'
+        'zz7txnzYfRaKHNVs4r4GwNEHRHt7VcTuT3WBcbE4skQgjMnttgP7hts7dMU7PA8kRrfq'
+        'BKdkPkUwqQ9Xn4zrysY4GvJQHWXxD6Tyqf9PZaz4xbUmsvtuY7NAz27U2aT3EA9XCgfn'
+        '2cEEWqatZXveHxJr6VmBNWJUyvPrfmVegwtKCGJND8d3Ysruy7GCn6zcrNY7d84aDk3P'
+        'CEfTJQz342nwRMY4DCuhawz4cnrWwxgsnVPCbeXYH4RcgswVsk9edxKkYMkpTwpcKf6n'
+        'E2dhquqdKVTAYf7YKbTfFVsRwqykkPduKXuPwVDjbCqdEJPcmnRJAJkwkQCWgukpvzzm'
+        'DKFVYxncxmzKgEN27VtgfpsXWBJ2jaxMeQCXb2rbjkVcaypyaETQ3Wkw98EptNAKRcjM'
+        'E2dhquqdKVTAYf7YKbTfFVsRwqykkPduKXuPwVDjbCqdEJPcmnRJAJkwkQCWgukpvzzm'
+        'zZJ2xFdfNYh7RZ7EgAAbY8Tqy3j2c9c6HNmXwAVV6dzPTrE4FHcKZGg76anGchczF9ev'
+        'AG8RHQ7ea2sJhXqBmGsmEj6Q84TN9E7pgmtAtmVAA38AYsQBNZUMYdMcmBdpV9w7G3NZ'
+        'mEU8R8uWqx6w3NzzqsMg78bnhCR7sdWDkhuEp2M8fYWmqujYFNYvzz6BcHNKQyrWETRD'
+        'E2dhquqdKVTAYf7YKbTfFVsRwqykkPduKXuPwVDjbCqdEJPcmnRJAJkwkQCWgukpvzzm'
+        'zaTdNWgM7wsXGkvgYVNdTWnReCPXJUN3yQwrvApZzdaF86QaeYwXW7qqEJrqmwpUUbw2'
+        'JHkmvJB4AWtVhDc9etzUqfuTaqMyXwxFEWvht3RDTDx8dfQ3Ek8BD4QP4BtUQeQJpfsG'
+        'FEJeQQYVcBxqVuK26xJrERUDmeNw8KWKBCrYPPy48cjCFdgZHz3cNet6bwJMdsgKMpZT'
+        'erdYy9nqBw6FRZ37rRMtxmrcB4VsWHbf4HjdPRpu4xyJTqMThnXWa8nPDde3C9wCuKkQ'
+        '23k2zDYsMeHc6KD93vm7Ky48v3veYEuJvNNxQPyyCZ9XNnpGsWrqsVduCswR4MQpp6yJ'
+        'RBmwbMYbuEjwJy9UuZxa9bQV4GqYFnVuETC6bXaT9uauWdaa2TrbuuXx3WWdmRGd4Rqh'
+        'Z3NA9Kqx9pTQHe3KGZ2tFejsJqNvjJvFX94eVeMGDgHjtJzDdxp9NWYtG6v9zABGRzVF'
+        'MqJX6nhhBPbsvjpswcgJq3ZXxzmWFJmvjECghGrbG6bKawtv4aYhMeaHagfMP8W6KrTy'
+        'uGxWUhcEhfygjE4truAkjfKCtzzVtTcBArbWMny6HWMp6TAen3f6hEB6kBb7pgvKxkND'
+        '3JxueYBZvDeq4WWtRzUjcFF2qhEjwrtuCJhy3WMXX3MN6nFDtYRTHZGdPqyatW9Jcc8t'
+        '7gCMWMVzYyNuXZ2A6rwX6Umv8g3mBuwnrwKXEFTZkPCAZMxk3A6MTmMcJCVy3hw6MmRM'
+        'eXKyhFxRcKWraysTQG7hd9kP8DeJZNDurYDJwqrh6cwDwaMhBfTgnxTBeyjwpbCJK2FD'
+        'Jg2vFWPmTJ37gDMdwxWCMRQ9kyqz9PJZ4Xn2MPxMhNqT3Hb39YshryqnbvBagHbqYx9M'
+        'r4ZKJpKya34JMaPambzg2pKRDd2WdFCZcdHTFyqxxzJbjXM2gjfBZ2strUNqWvQYNTw8'
+        'QttkuxyeQTgHupKNaZF6y7rDyf7mbNR9DaPXpBQuZ7un6KDj2Dfh7yvfhPk8cHG7n9pb'
+        'KEKD3sgbbKnQ8d9MsGhUtCQVed7dtjpYKsmGJmbYMvZjpGpqsfsHQfFRdCgJHnW3FdQ6'
+        'sGhUtCQVed7dtj12',
+    'MigrationSshKey': {
+        'private_key': 'private_key',
+        'public_key': 'public_key'
+        },
+    'LibvirtTLSPassword': 'xCdt9yeamKz8Fb6EGba9u82XU',
 }
 
 
@@ -465,3 +600,282 @@ class PlanTest(base.TestCase):
         max_keys = 3
         keys_map = plan_utils.purge_excess_keys(max_keys, keys_map)
         self.assertEqual(2, len(keys_map))
+
+    @mock.patch('tripleo_common.utils.plan.'
+                'cache_delete')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    def test_generate_password(self, mock_get_snmpd_readonly_user_password,
+                               mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': 'overcast',
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'value': 'existing_value'
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+
+        mock_workflow = mock.MagicMock()
+        result = plan_utils.generate_passwords(swift, mock_orchestration,
+                                               mock_workflow)
+
+        for password_param_name in constants.PASSWORD_PARAMETER_NAMES:
+            self.assertTrue(password_param_name in result,
+                            "%s is not in %s" % (password_param_name, result))
+
+            if password_param_name in \
+                    constants.LEGACY_HEAT_PASSWORD_RESOURCE_NAMES:
+                self.assertEqual(result[password_param_name], 'existing_value')
+            else:
+                self.assertNotEqual(result[password_param_name],
+                                    'existing_value')
+
+        mock_cache.assert_called_once_with(
+            swift,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.utils.plan.'
+                'cache_delete')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    def test_run_passwords_exist(self, mock_get_snmpd_readonly_user_password,
+                                 mock_fernet_keys_setup,
+                                 mock_create_ssh_keypair,
+                                 mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': _EXISTING_PASSWORDS.copy()
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+
+        mock_workflow = mock.MagicMock()
+
+        result = plan_utils.generate_passwords(swift, mock_orchestration,
+                                               mock_workflow)
+
+        # ensure old passwords used and no new generation
+        self.assertEqual(_EXISTING_PASSWORDS, result)
+        mock_cache.assert_called_once_with(
+            swift,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.utils.plan.'
+                'cache_delete')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    def test_run_rotate_no_rotate_list(
+        self, mock_get_snmpd_readonly_user_password,
+        mock_fernet_keys_setup, mock_create_ssh_keypair,
+        mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': _EXISTING_PASSWORDS.copy()
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'value': 'existing_value'
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+
+        mock_workflow = mock.MagicMock()
+        result = plan_utils.generate_passwords(swift, mock_orchestration,
+                                               mock_workflow,
+                                               rotate_passwords=True)
+
+        # ensure passwords in the DO_NOT_ROTATE_LIST are not modified
+        for name in constants.DO_NOT_ROTATE_LIST:
+            self.assertEqual(_EXISTING_PASSWORDS[name], result[name])
+
+        # ensure all passwords are generated
+        for name in constants.PASSWORD_PARAMETER_NAMES:
+            self.assertTrue(name in result, "%s is not in %s" % (name, result))
+
+        # ensure new passwords have been generated
+        self.assertNotEqual(_EXISTING_PASSWORDS, result)
+        mock_cache.assert_called_once_with(
+            swift,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.utils.plan.'
+                'cache_delete')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    def test_run_rotate_with_rotate_list(
+        self, mock_get_snmpd_readonly_user_password,
+        mock_fernet_keys_setup, mock_create_ssh_keypair,
+        mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': _EXISTING_PASSWORDS.copy()
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'value': 'existing_value'
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+
+        rotate_list = [
+            'MistralPassword',
+            'BarbicanPassword',
+            'AdminPassword',
+            'CeilometerMeteringSecret',
+            'ZaqarPassword',
+            'NovaPassword',
+            'MysqlRootPassword'
+        ]
+
+        mock_workflow = mock.MagicMock()
+        result = plan_utils.generate_passwords(swift, mock_orchestration,
+                                               mock_workflow,
+                                               rotate_passwords=True,
+                                               rotate_pw_list=rotate_list)
+
+        # ensure only specified passwords are regenerated
+        for name in constants.PASSWORD_PARAMETER_NAMES:
+            self.assertTrue(name in result, "%s is not in %s" % (name, result))
+            if name in rotate_list:
+                self.assertNotEqual(_EXISTING_PASSWORDS[name], result[name])
+            else:
+                self.assertEqual(_EXISTING_PASSWORDS[name], result[name])
+
+        mock_cache.assert_called_once_with(
+            swift,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.utils.plan.'
+                'cache_delete')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    def test_passwords_exist_in_heat(
+        self, mock_get_snmpd_readonly_user_password,
+        mock_fernet_keys_setup, mock_create_ssh_keypair,
+        mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        existing_passwords = _EXISTING_PASSWORDS.copy()
+        existing_passwords.pop("AdminPassword")
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': existing_passwords.copy()
+        }, default_flow_style=False)
+
+        swift.get_object.return_value = ({}, mock_env)
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {
+                'AdminPassword': 'ExistingPasswordInHeat',
+            }
+        }
+
+        mock_workflow = mock.MagicMock()
+        result = plan_utils.generate_passwords(swift, mock_orchestration,
+                                               mock_workflow)
+
+        existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
+        # ensure old passwords used and no new generation
+        self.assertEqual(existing_passwords, result)
+        mock_cache.assert_called_once_with(
+            swift,
+            "overcloud",
+            "tripleo.parameters.get"
+        )
