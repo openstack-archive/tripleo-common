@@ -16,6 +16,7 @@ import jinja2
 import logging
 import os
 import six
+import tempfile
 import yaml
 
 from heatclient import exc as heat_exc
@@ -25,6 +26,7 @@ from tripleo_common import constants
 from tripleo_common.utils import parameters
 from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import swift as swiftutils
+from tripleo_common.utils import tarball as tarball
 
 LOG = logging.getLogger(__name__)
 
@@ -413,3 +415,14 @@ def process_templates(swift, heat, container=constants.DEFAULT_CONTAINER_NAME,
         'environment': heat_args['env'],
         'files': files
     }
+
+
+def upload_templates_as_tarball(
+    swift, dir_to_upload=constants.DEFAULT_TEMPLATES_PATH,
+    container=constants.DEFAULT_CONTAINER_NAME):
+    with tempfile.NamedTemporaryFile() as tmp_tarball:
+        tarball.create_tarball(dir_to_upload, tmp_tarball.name)
+        tarball.tarball_extract_to_swift_container(
+            swift,
+            tmp_tarball.name,
+            container)
