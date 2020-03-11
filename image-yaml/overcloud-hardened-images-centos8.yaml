@@ -7,3 +7,4 @@ disk_images:
       DIB_RELEASE: '8'
     elements:
       - selinux-permissive
+      - interface-names
