@@ -538,13 +538,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                              '-fluentd:current-tripleo'},
             {'image_source': 'kolla',
                 'imagename': 'docker.io/tripleotrain/centos-binary'
-                             '-sensu-client:current-tripleo'},
-            {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleotrain/centos-binary'
-                             '-skydive-agent:current-tripleo'},
-            {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleotrain/centos-binary'
-                             '-skydive-analyzer:current-tripleo'}]
+                             '-sensu-client:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             rhel_containers=True, neutron_driver='ovn',
             remove_images=remove_images)
@@ -959,7 +953,6 @@ class TestPrepare(base.TestCase):
                 'OS::TripleO::Services::NovaCompute',
                 'OS::TripleO::Services::NeutronApi',
                 'OS::TripleO::Services::Kubernetes::Worker',
-                'OS::TripleO::Services::SkydiveAgent',
             ]),
             kb.build_service_filter({
                 'resource_registry': {
@@ -970,8 +963,6 @@ class TestPrepare(base.TestCase):
                     'OS::TripleO::Services::Kubernetes::Worker':
                     'deployment' +
                     'kubernetes/kubernetes-worker-baremetal-ansible.yaml',
-                    'OS::TripleO::Services::SkydiveAgent':
-                    'deployment/skydive/skydive-agent-baremetal-ansible.yaml',
                     'OS::TripleO::Services::Noop':
                     'OS::Heat::None'
                 }
@@ -983,7 +974,6 @@ class TestPrepare(base.TestCase):
                         'OS::TripleO::Services::HeatApi',
                         'OS::TripleO::Services::NeutronApi',
                         'OS::TripleO::Services::NovaApi',
-                        'OS::TripleO::Services::SkydiveAgent',
                         'OS::TripleO::Services::Noop'
                     ]
                 }, {

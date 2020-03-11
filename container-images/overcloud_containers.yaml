@@ -183,10 +183,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleotrain/centos-binary-sensu-client:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleotrain/centos-binary-skydive-agent:current-tripleo
-  image_source: kolla
-- imagename: docker.io/tripleotrain/centos-binary-skydive-analyzer:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleotrain/centos-binary-swift-account:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleotrain/centos-binary-swift-container:current-tripleo
