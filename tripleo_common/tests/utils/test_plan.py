@@ -16,6 +16,7 @@
 import json
 import mock
 import os
+import sys
 import yaml
 import zlib
 
@@ -878,4 +879,111 @@ class PlanTest(base.TestCase):
             swift,
             "overcloud",
             "tripleo.parameters.get"
+        )
+
+    @mock.patch("tripleo_common.utils.plan.get_role_data")
+    @mock.patch("tripleo_common.utils.plan."
+                "update_plan_environment")
+    @mock.patch("tripleo_common.utils.plan.get_env", autospec=True)
+    @mock.patch("tripleo_common.image.kolla_builder."
+                "container_images_prepare_multi")
+    @mock.patch("tripleo_common.image.kolla_builder.KollaImageBuilder")
+    def test_update_plan_with_image_parameter(
+        self, kib, prepare, get_env, mock_update_plan, grd):
+        builder = kib.return_value
+        builder.container_images_from_template.return_value = [{
+            'imagename': 't/cb-nova-compute:liberty',
+            'params': ['ContainerNovaComputeImage',
+                       'ContainerNovaLibvirtConfigImage']
+        }, {'imagename': 't/cb-nova-libvirt:liberty',
+            'params': ['ContainerNovaLibvirtImage']}]
+
+        plan = {
+            'version': '1.0',
+            'environments': [],
+            'parameter_defaults': {}
+        }
+        role_data = [{'name': 'Controller'}]
+        final_env = {'environments': [
+            {'path': 'overcloud-resource-registry-puppet.yaml'},
+            {'path': 'environments/containers-default-parameters.yaml'},
+            {'path': 'user-environment.yaml'}
+        ]}
+        image_params = {
+            'FooContainerImage': '192.0.2.1/foo/image',
+            'ContainerNovaComputeImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtImage': 't/cb-nova-libvirt:liberty',
+        }
+        image_env_contents = yaml.safe_dump(
+            {'parameter_defaults': image_params},
+            default_flow_style=False
+        )
+
+        swift = mock.MagicMock()
+        swift.get_object.return_value = role_data
+        prepare.return_value = image_params
+        grd.return_value = role_data
+
+        get_env.return_value = plan
+        mock_update_plan.return_value = final_env
+        result = plan_utils.update_plan_environment_with_image_parameters(
+            swift, container='overcloud')
+        self.assertEqual(final_env, result)
+
+        get_env.assert_called_once_with(swift, 'overcloud')
+        prepare.assert_called_once_with({}, role_data, dry_run=True)
+        swift.put_object.assert_called_once_with(
+            'overcloud',
+            'environments/containers-default-parameters.yaml',
+            image_env_contents
+        )
+
+    @mock.patch("tripleo_common.utils.plan."
+                "update_plan_environment")
+    @mock.patch("tripleo_common.image.kolla_builder.KollaImageBuilder")
+    def test_update_plan_image_parameters_default(
+        self, kib, mock_update_plan):
+        swift = mock.MagicMock()
+        builder = kib.return_value
+        builder.container_images_from_template.return_value = [{
+            'imagename': 't/cb-nova-compute:liberty',
+            'params': ['ContainerNovaComputeImage',
+                       'ContainerNovaLibvirtConfigImage']
+        }, {'imagename': 't/cb-nova-libvirt:liberty',
+            'params': ['ContainerNovaLibvirtImage']}]
+
+        final_env = {'environments': [
+            {'path': 'overcloud-resource-registry-puppet.yaml'},
+            {'path': 'environments/containers-default-parameters.yaml'},
+            {'path': 'user-environment.yaml'}
+        ]}
+        mock_update_plan.return_value = final_env
+
+        result = plan_utils.update_plan_environment_with_image_parameters(
+            swift, container='overcloud', with_roledata=False)
+        self.assertEqual(final_env, result)
+
+        kib.assert_called_once_with(
+            [os.path.join(sys.prefix, 'share', 'tripleo-common',
+                          'container-images', 'overcloud_containers.yaml.j2')]
+        )
+        params = {
+            'ContainerNovaComputeImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
+            'ContainerNovaLibvirtImage': 't/cb-nova-libvirt:liberty',
+        }
+        expected_env = yaml.safe_dump(
+            {'parameter_defaults': params},
+            default_flow_style=False
+        )
+        swift.put_object.assert_called_once_with(
+            'overcloud',
+            'environments/containers-default-parameters.yaml',
+            expected_env
+        )
+        mock_update_plan.assert_called_once_with(
+            swift,
+            {'environments/containers-default-parameters.yaml': True},
+            container='overcloud'
         )

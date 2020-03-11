@@ -314,38 +314,34 @@ def default_image_params():
 
 
 def update_plan_environment_with_image_parameters(
-    swift, container=constants.DEFAULT_CONTAINER_NAME):
+    swift, container=constants.DEFAULT_CONTAINER_NAME,
+    with_roledata=True):
     try:
-        plan_env = get_env(swift, container)
-    except swiftexceptions.ClientException as err:
-        err_msg = ("Error retrieving environment for plan %s: %s" % (
-            container, err))
-        LOG.exception(err_msg)
-        raise RuntimeError(err_msg)
-
-    try:
-        env_paths, temp_env_paths = build_env_paths(
-            swift, container, plan_env)
-        env_files, env = process_environments_and_files(
-            swift, env_paths)
-
         # ensure every image parameter has a default value, even if prepare
         # didn't return it
         params = default_image_params()
 
-        role_data = get_role_data(swift)
-        image_params = kolla_builder.container_images_prepare_multi(
-            env, role_data, dry_run=True)
-        if image_params:
-            params.update(image_params)
+        if with_roledata:
+            plan_env = get_env(swift, container)
+            env_paths, temp_env_paths = build_env_paths(
+                swift, container, plan_env)
+            env_files, env = process_environments_and_files(
+                swift, env_paths)
+
+            role_data = get_role_data(swift)
+            image_params = kolla_builder.container_images_prepare_multi(
+                env, role_data, dry_run=True)
+            if image_params:
+                params.update(image_params)
 
     except Exception as err:
-        LOG.exception("Error occurred while processing plan files.")
+        LOG.exception("Error occurred while updating plan files.")
         raise RuntimeError(six.text_type(err))
     finally:
         # cleanup any local temp files
-        for f in temp_env_paths:
-            os.remove(f)
+        if with_roledata:
+            for f in temp_env_paths:
+                os.remove(f)
 
     try:
         swiftutils.put_object_string(
