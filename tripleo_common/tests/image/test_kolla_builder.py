@@ -416,18 +416,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
 
-    def test_container_images_yaml_in_sync_for_rhel(self):
-        remove_images = [
-            {'image_source': 'kolla',
-                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
-                             'skydive-agent:' + KB_DEFAULT_TAG},
-            {'image_source': 'kolla',
-                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
-                             'skydive-analyzer:' + KB_DEFAULT_TAG}]
-        self._test_container_images_yaml_in_sync_helper(
-            rhel_containers=True, neutron_driver='ovn',
-            remove_images=remove_images)
-
 
 class TestPrepare(base.TestCase):
 
@@ -802,7 +790,6 @@ class TestPrepare(base.TestCase):
                 'OS::TripleO::Services::NovaApi',
                 'OS::TripleO::Services::NovaCompute',
                 'OS::TripleO::Services::Kubernetes::Worker',
-                'OS::TripleO::Services::SkydiveAgent',
             ]),
             kb.build_service_filter({
                 'resource_registry': {
@@ -815,8 +802,6 @@ class TestPrepare(base.TestCase):
                     'OS::TripleO::Services::Kubernetes::Worker':
                     'deployment' +
                     'kubernetes/kubernetes-worker-baremetal-ansible.yaml',
-                    'OS::TripleO::Services::SkydiveAgent':
-                    'deployment/skydive/skydive-agent-baremetal-ansible.yaml',
                     'OS::TripleO::Services::Noop':
                     'OS::Heat::None'
                 }
@@ -828,7 +813,6 @@ class TestPrepare(base.TestCase):
                         'OS::TripleO::Services::HeatApi',
                         'OS::TripleO::Services::NeutronApi',
                         'OS::TripleO::Services::NovaApi',
-                        'OS::TripleO::Services::SkydiveAgent',
                         'OS::TripleO::Services::Noop'
                     ]
                 }, {

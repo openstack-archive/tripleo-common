@@ -167,10 +167,6 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-sahara-engine:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-skydive-agent:current-tripleo
-  image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-skydive-analyzer:current-tripleo
-  image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-swift-account:current-tripleo
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-swift-container:current-tripleo

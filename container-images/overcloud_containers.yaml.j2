@@ -718,22 +718,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::SaharaEngine
 
-{% if not rhel_containers %}
-- imagename: "{{namespace}}/{{name_prefix}}skydive-agent{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerSkydiveAgentImage
-  services:
-  - OS::TripleO::Services::SkydiveAgent
-
-- imagename: "{{namespace}}/{{name_prefix}}skydive-analyzer{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerSkydiveAnalyzerImage
-  services:
-  - OS::TripleO::Services::SkydiveAnalyzer
-{% endif %}
-
 - imagename: "{{namespace}}/{{name_prefix}}swift-account{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
