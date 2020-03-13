@@ -240,7 +240,8 @@ class CopyConfigFileTest(base.TestCase):
                              ansible_cfg.get('ssh_connection',
                                              'custom_option'))
 
-    def test_override_ansible_cfg_empty(self):
+    @mock.patch("multiprocessing.cpu_count")
+    def test_override_ansible_cfg_empty(self, cpu_count):
         with tempfile.NamedTemporaryFile() as ansible_cfg_file:
             ansible_cfg_path = ansible_cfg_file.name
             work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action-test')
@@ -248,7 +249,7 @@ class CopyConfigFileTest(base.TestCase):
             ansible_cfg_file.write(b'[defaults]\n')
             ansible_cfg_file.write(b'[ssh_connection]\n')
             ansible_cfg_file.flush()
-
+            cpu_count.return_value = 4
             override_ansible_cfg = ""
 
             resulting_ansible_config = ansible.write_default_ansible_cfg(
@@ -258,4 +259,4 @@ class CopyConfigFileTest(base.TestCase):
             ansible_cfg = configparser.ConfigParser()
             ansible_cfg.read(resulting_ansible_config)
 
-            self.assertEqual('25', ansible_cfg.get('defaults', 'forks'))
+            self.assertEqual('40', ansible_cfg.get('defaults', 'forks'))
