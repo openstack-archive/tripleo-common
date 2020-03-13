@@ -13,13 +13,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import uuid
-
 from mistral_lib import actions
-from six.moves import urllib
-from swiftclient import exceptions as swiftexceptions
-from swiftclient.utils import generate_temp_url
+
 from tripleo_common.actions import base
+from tripleo_common.utils import swift as swiftutils
 
 
 class SwiftInformationAction(base.TripleOAction):
@@ -58,18 +55,6 @@ class SwiftTempUrlAction(base.TripleOAction):
 
     def run(self, context):
         swift_client = self.get_object_client(context)
-
-        try:
-            cont_stat = swift_client.head_container(self.container)
-        except swiftexceptions.ClientException:
-            cont_stat = {}
-
-        key = cont_stat.get('x-container-meta-temp-url-key')
-        if not key:
-            key = str(uuid.uuid4())
-            cont_stat = swift_client.put_container(
-                self.container, {'X-Container-Meta-Temp-Url-Key': key})
-        parsed = urllib.parse.urlparse(swift_client.url)
-        path = "%s/%s/%s" % (parsed.path, self.container, self.obj)
-        temp_path = generate_temp_url(path, self.valid, key, self.method)
-        return "%s://%s%s" % (parsed.scheme, parsed.netloc, temp_path)
+        return swiftutils.get_temp_url(
+            swift_client, self.container, self.obj,
+            self.method, self.valid)
