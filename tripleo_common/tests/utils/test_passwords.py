@@ -12,6 +12,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import sys
 import mock
 
 from oslo_utils import uuidutils
@@ -22,6 +23,16 @@ from tripleo_common.utils import passwords as password_utils
 
 class TestPasswords(base.TestCase):
 
+    def setUp(self):
+        super(TestPasswords, self).setUp()
+
+        if (sys.version_info > (3, 0)):
+            self.open_builtins = 'builtins.open'
+        else:
+            self.open_builtins = '__builtin__.open'
+
+        self.snmp_test_pw = '78cbc32b858718267c355d4'
+
     def test_create_cephx_key(self):
         key = password_utils.create_cephx_key()
         self.assertEqual(len(key), 40)
@@ -30,12 +41,23 @@ class TestPasswords(base.TestCase):
 
         mock_mistral = mock.Mock()
         mock_mistral.environments.get.return_value = mock.Mock(variables={
-            "undercloud_ceilometer_snmpd_password": "78cbc32b858718267c355d4"
+            "undercloud_ceilometer_snmpd_password": self.snmp_test_pw
         })
 
-        value = password_utils.get_snmpd_readonly_user_password(mock_mistral)
+        with mock.patch(self.open_builtins, mock.mock_open(read_data="data")):
+            with mock.patch('yaml.load') as mock_yaml:
+                with mock.patch('os.path.exists') as mock_exists:
+                    mock_exists.return_value = True
+                    mock_yaml.return_value = {
+                        'parameter_defaults': {
+                            'SnmpdReadonlyUserPassword': self.snmp_test_pw
+                        }
+                    }
+                    value = password_utils.get_snmpd_readonly_user_password(
+                        mock_mistral
+                    )
 
-        self.assertEqual(value, "78cbc32b858718267c355d4")
+        self.assertEqual(value, self.snmp_test_pw)
 
     @mock.patch('tripleo_common.utils.passwords.create_keystone_credential')
     def test_fernet_keys_and_credentials(self, mock_create_creds):
@@ -61,7 +83,14 @@ class TestPasswords(base.TestCase):
         # generated values
 
         mock_create_creds.side_effect = keys
-        value = password_utils.generate_passwords(mock_mistral)
+        with mock.patch(self.open_builtins, mock.mock_open(read_data="data")):
+            with mock.patch('yaml.load') as mock_yaml:
+                mock_yaml.return_value = {
+                    'parameter_defaults': {
+                        'SnmpdReadonlyUserPassword': self.snmp_test_pw
+                    }
+                }
+                value = password_utils.generate_passwords(mock_mistral)
         self.assertIn(value['KeystoneCredential0'], keys)
         self.assertIn(value['KeystoneCredential1'], keys)
         self.assertIn(value['KeystoneFernetKey0'], keys)

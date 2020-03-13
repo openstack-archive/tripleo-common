@@ -24,6 +24,7 @@ import uuid
 
 import passlib.pwd
 import six
+import yaml
 
 from tripleo_common import constants
 
@@ -68,8 +69,8 @@ def generate_passwords(mistralclient=None, stack_env=None,
                 length=4096)
         # The underclouds SnmpdReadonlyUserPassword is stored in a mistral env
         # for the overcloud.
-        elif mistralclient and name == 'SnmpdReadonlyUserPassword':
-            passwords[name] = get_snmpd_readonly_user_password(mistralclient)
+        elif name == 'SnmpdReadonlyUserPassword':
+            passwords[name] = get_snmpd_readonly_user_password()
         elif name in ('KeystoneCredential0', 'KeystoneCredential1',
                       'KeystoneFernetKey0', 'KeystoneFernetKey1'):
             passwords[name] = create_keystone_credential()
@@ -115,13 +116,32 @@ def create_cephx_key():
     return base64.b64encode(header + key).decode('utf-8')
 
 
-def get_snmpd_readonly_user_password(mistralclient):
-    mistral_env = mistralclient.environments.get("tripleo.undercloud-config")
-    try:
-        return mistral_env.variables['undercloud_ceilometer_snmpd_password']
-    except KeyError:
-        LOG.error("Undercloud ceilometer SNMPd password missing!")
-        raise
+def get_snmpd_readonly_user_password(pw_file=None):
+    """Return mistral password from a given yaml file.
+
+    :param pw_file: Full path to a given password file. If no file is defined
+                    the file used will be ~/tripleo-undercloud-passwords.yaml.
+    :type pw_file: String
+
+    :returns: String
+    """
+
+    if not pw_file:
+        home = os.path.expanduser('~' + os.environ.get('SUDO_USER', ''))
+        pw_file = os.path.expanduser(
+            os.path.join(
+                home,
+                'tripleo-undercloud-passwords.yaml'
+            )
+        )
+
+    if not os.path.exists(pw_file):
+        return passlib.pwd.genword(length=24)
+    else:
+        with open(pw_file) as f:
+            passwords = yaml.load(f.read())
+
+        return passwords['parameter_defaults']['SnmpdReadonlyUserPassword']
 
 
 def create_keystone_credential():
