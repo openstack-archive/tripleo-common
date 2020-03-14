@@ -396,7 +396,7 @@ def process_templates(swift, heat, container=constants.DEFAULT_CONTAINER_NAME,
             # Prune OS::Heat::None resources
             resource_reg = heat_args['env'].get('resource_registry', {})
             roles_updated = prune_unused_services(
-                swift, role_data, resource_reg)
+                swift, role_data, resource_reg, container)
             if roles_updated:
                 heat_args, _ = build_heat_args(swift, heat, container)
 
