@@ -1965,7 +1965,7 @@ class TestPythonImageUploader(base.TestCase):
             ],
             'mediaType': image_uploader.MEDIA_MANIFEST_V2
         })
-        expected_manifest_str = json.dumps({
+        expected_manifest = {
             'config': {
                 'digest': 'sha256:1234',
                 'size': 2,
@@ -1976,7 +1976,7 @@ class TestPythonImageUploader(base.TestCase):
                 {'digest': 'sha256:bbbb'},
             ],
             'mediaType': image_uploader.MEDIA_MANIFEST_V2
-        }, indent=3)
+        }
 
         expected_headers = {
             'Content-Type': image_uploader.MEDIA_MANIFEST_V2
@@ -1987,10 +1987,16 @@ class TestPythonImageUploader(base.TestCase):
         )
 
         calls = [mock.call(build_url,
-                           data=expected_manifest_str.encode('utf-8'),
+                           data=mock.ANY,
                            headers=expected_headers,
                            timeout=30)]
         target_put.assert_has_calls(calls)
+        # We're seeing ordering issues with the py27 checking this field
+        # so switch to checking it this way
+        call_manifest = json.loads(
+            target_put.call_args[1]['data'].decode('utf-8')
+        )
+        self.assertEqual(expected_manifest, call_manifest)
 
     @mock.patch('tripleo_common.image.image_export.export_manifest_config')
     def test_copy_manifest_config_to_registry_export(self, export_mock):
@@ -2011,7 +2017,7 @@ class TestPythonImageUploader(base.TestCase):
                 {'digest': 'sha256:bbbb'},
             ],
         })
-        expected_manifest_str = json.dumps({
+        expected_manifest = {
             'config': {
                 'digest': 'sha256:1234',
                 'size': 2,
@@ -2022,7 +2028,7 @@ class TestPythonImageUploader(base.TestCase):
                 {'digest': 'sha256:bbbb'},
             ],
             'mediaType': image_uploader.MEDIA_MANIFEST_V2
-        }, indent=3)
+        }
 
         self.uploader._copy_manifest_config_to_registry(
             target_url, manifest_str, config_str,
@@ -2030,11 +2036,17 @@ class TestPythonImageUploader(base.TestCase):
         )
 
         calls = [mock.call(target_url,
-                           expected_manifest_str,
+                           mock.ANY,
                            image_uploader.MEDIA_MANIFEST_V2,
                            config_str,
                            multi_arch=False)]
         export_mock.assert_has_calls(calls)
+        # We're seeing ordering issues with the py27 checking this field
+        # so switch to checking it this way
+        call_manifest = json.loads(
+            export_mock.call_args[0][1]
+        )
+        self.assertEqual(expected_manifest, call_manifest)
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader.check_status')
@@ -2070,7 +2082,7 @@ class TestPythonImageUploader(base.TestCase):
             ],
             'mediaType': image_uploader.MEDIA_OCI_MANIFEST_V1
         })
-        expected_manifest_str = json.dumps({
+        expected_manifest = {
             'config': {
                 'digest': 'sha256:1234',
                 'size': 2,
@@ -2081,7 +2093,7 @@ class TestPythonImageUploader(base.TestCase):
                 {'digest': 'sha256:bbbb'},
             ],
             'mediaType': image_uploader.MEDIA_MANIFEST_V2
-        }, indent=3)
+        }
 
         expected_headers = {
             'Content-Type': image_uploader.MEDIA_MANIFEST_V2
@@ -2092,10 +2104,16 @@ class TestPythonImageUploader(base.TestCase):
         )
 
         calls = [mock.call(build_url,
-                           data=expected_manifest_str.encode('utf-8'),
+                           data=mock.ANY,
                            headers=expected_headers,
                            timeout=30)]
         target_put.assert_has_calls(calls)
+        # We're seeing ordering issues with the py27 checking this field
+        # so switch to checking it this way
+        call_manifest = json.loads(
+            target_put.call_args[1]['data'].decode('utf-8')
+        )
+        self.assertEqual(expected_manifest, call_manifest)
 
     @mock.patch('os.environ')
     @mock.patch('subprocess.Popen')
