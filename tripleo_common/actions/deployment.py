@@ -21,15 +21,15 @@ import yaml
 from heatclient.common import deployment_utils
 from heatclient import exc as heat_exc
 from mistral_lib import actions
+import six
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common.actions import base
 from tripleo_common import constants
-from tripleo_common import update
 from tripleo_common.utils import overcloudrc
 from tripleo_common.utils import plan as plan_utils
+from tripleo_common.utils import stack as stack_utils
 from tripleo_common.utils import swift as swiftutils
-from tripleo_common.utils import template as template_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -143,123 +143,15 @@ class DeployStackAction(base.TripleOAction):
     def run(self, context):
         # check to see if the stack exists
         heat = self.get_orchestration_client(context)
-        try:
-            stack = heat.stacks.get(self.container, resolve_outputs=False)
-        except heat_exc.HTTPNotFound:
-            stack = None
-
-        stack_is_new = stack is None
-
-        # update StackAction, DeployIdentifier and UpdateIdentifier
         swift = self.get_object_client(context)
 
-        parameters = dict()
-        if not self.skip_deploy_identifier:
-            parameters['DeployIdentifier'] = int(time.time())
-        else:
-            parameters['DeployIdentifier'] = ''
-        parameters['UpdateIdentifier'] = ''
-        parameters['StackAction'] = 'CREATE' if stack_is_new else 'UPDATE'
-
         try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        self.set_tls_parameters(parameters, env)
-        try:
-            plan_utils.update_in_env(swift, env, 'parameter_defaults',
-                                     parameters)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error updating environment for plan %s: %s" % (
-                self.container, err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        if not stack_is_new:
-            try:
-                LOG.debug('Checking for compatible neutron mechanism drivers')
-                msg = update.check_neutron_mechanism_drivers(env, stack,
-                                                             swift,
-                                                             self.container)
-                if msg:
-                    return actions.Result(error=msg)
-            except swiftexceptions.ClientException as err:
-                err_msg = ("Error getting template %s: %s" % (
-                    self.container, err))
-                LOG.exception(err_msg)
-                return actions.Result(error=err_msg)
-
-        # process all plan files and create or update a stack
-        processed_data = template_utils.process_templates(
-            swift, heat, container=self.container,
-            prune_services=True
-        )
-        stack_args = processed_data.copy()
-        stack_args['timeout_mins'] = self.timeout_mins
-
-        if stack_is_new:
-            try:
-                swift.copy_object(
-                    "%s-swift-rings" % self.container, "swift-rings.tar.gz",
-                    "%s-swift-rings/%s-%d" % (
-                        self.container, "swift-rings.tar.gz", time.time()))
-                swift.delete_object(
-                    "%s-swift-rings" % self.container, "swift-rings.tar.gz")
-            except swiftexceptions.ClientException:
-                pass
-            LOG.info("Perfoming Heat stack create")
-            try:
-                return heat.stacks.create(**stack_args)
-            except heat_exc.HTTPException as err:
-                err_msg = "Error during stack creation: %s" % (err,)
-                LOG.exception(err_msg)
-                return actions.Result(error=err_msg)
-
-        LOG.info("Performing Heat stack update")
-        stack_args['existing'] = 'true'
-        try:
-            return heat.stacks.update(stack.id, **stack_args)
-        except heat_exc.HTTPException as err:
-            err_msg = "Error during stack update: %s" % (err,)
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-    def set_tls_parameters(self, parameters, env,
-                           local_ca_path=constants.LOCAL_CACERT_PATH):
-        cacert_string = self._get_local_cacert(local_ca_path)
-        if cacert_string:
-            parameters['CAMap'] = self._get_updated_camap_entry(
-                'undercloud-ca', cacert_string, self._get_camap(env))
-
-    def _get_local_cacert(self, local_ca_path):
-        # Since the undercloud has TLS by default, we'll add the undercloud's
-        # CA to be trusted by the overcloud.
-        try:
-            with open(local_ca_path, 'rb') as ca_file:
-                return ca_file.read().decode('utf-8')
-        except IOError:
-            # If the file wasn't found it means that the undercloud's TLS
-            # was explicitly disabled or another CA is being used. So we'll
-            # let the user handle this.
-            return None
-        except Exception:
-            raise
-
-    def _get_camap(self, env):
-        return env['parameter_defaults'].get('CAMap', {})
-
-    def _get_updated_camap_entry(self, entry_name, cacert, orig_camap):
-        ca_map_entry = {
-            entry_name: {
-                'content': cacert
-            }
-        }
-        orig_camap.update(ca_map_entry)
-        return orig_camap
+            stack_utils.deploy_stack(swift, heat, self.container,
+                                     self.skip_deploy_identifier,
+                                     self.timeout_mins)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
 class OvercloudRcAction(base.TripleOAction):
