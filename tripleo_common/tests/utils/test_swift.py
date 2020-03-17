@@ -86,3 +86,35 @@ class SwiftTest(base.TestCase):
         self.swiftclient.put_object = put_mock
         swift_utils.put_object_string(self.swiftclient, 'foo', 'bar', b'foo')
         put_mock.assert_called_once_with('foo', 'bar', str('foo'))
+
+    @mock.patch('time.time')
+    @mock.patch('uuid.uuid4')
+    def _test_get_tempurl(self, secret, mock_uuid, mock_time):
+        url = "http://swift:8080/v1/AUTH_test"
+        swiftclient = mock.MagicMock(url=url)
+        headers = {}
+        if secret:
+            headers['x-container-meta-temp-url-key'] = secret
+        swiftclient.head_container.return_value = headers
+
+        mock_uuid.return_value = '1-2-3-4'
+        mock_time.return_value = 1500000000
+
+        tempurl = swift_utils.get_temp_url(swiftclient,
+                                           "container", "obj")
+
+        expected = "%s/container/obj?temp_url_sig=%s&temp_url_expires=%d" % (
+            url, "ea8fdc57e2b2b1fbb7210bddd40029a7c8d5e2ed", 1500086400)
+        self.assertEqual(expected, tempurl)
+
+        if not secret:
+            swiftclient.put_container.assert_called_with(
+                'container', {'X-Container-Meta-Temp-Url-Key': '1-2-3-4'})
+
+    def test_get_tempurl(self):
+        # temp-url-key already set on the container
+        self._test_get_tempurl('1-2-3-4')
+
+    def test_get_tempurl_no_key(self):
+        # temp-url-key not yet set
+        self._test_get_tempurl(None)

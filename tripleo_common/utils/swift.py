@@ -18,10 +18,14 @@ import dateutil.parser
 import logging
 import os
 import tempfile
+import uuid
 
 import six
+from six.moves import urllib
+from swiftclient import exceptions as swiftexceptions
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
+from swiftclient.utils import generate_temp_url
 
 from tripleo_common.utils import tarball
 
@@ -190,3 +194,20 @@ def put_object_string(swift, container, object_name, contents):
     except AttributeError:
         pass
     return swift.put_object(container, object_name, contents)
+
+
+def get_temp_url(swift, container, object_name, method='GET', valid='86400'):
+    try:
+        cont_stat = swift.head_container(container)
+    except swiftexceptions.ClientException:
+        cont_stat = {}
+
+    key = cont_stat.get('x-container-meta-temp-url-key')
+    if not key:
+        key = str(uuid.uuid4())
+        cont_stat = swift.put_container(
+            container, {'X-Container-Meta-Temp-Url-Key': key})
+    parsed = urllib.parse.urlparse(swift.url)
+    path = "%s/%s/%s" % (parsed.path, container, object_name)
+    temp_path = generate_temp_url(path, valid, key, method)
+    return "%s://%s%s" % (parsed.scheme, parsed.netloc, temp_path)
