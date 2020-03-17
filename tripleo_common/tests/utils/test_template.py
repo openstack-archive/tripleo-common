@@ -505,3 +505,22 @@ class ProcessTemplatesTest(base.TestCase):
         template_utils.prune_unused_services(swift, test_role_data,
                                              resource_registry, 'overcloud')
         mock_put.assert_not_called()
+
+
+class UploadTemplatesTest(base.TestCase):
+
+    @mock.patch('tempfile.NamedTemporaryFile')
+    @mock.patch('tripleo_common.utils.tarball.'
+                'tarball_extract_to_swift_container')
+    @mock.patch('tripleo_common.utils.tarball.create_tarball')
+    def test_upload_templates(self, mock_create_tar,
+                              mock_extract_tar, tempfile):
+        tempfile.return_value.__enter__.return_value.name = "test"
+
+        swift = mock.MagicMock()
+        template_utils.upload_templates_as_tarball(
+            swift, container='tar-container')
+        mock_create_tar.assert_called_once_with(
+            constants.DEFAULT_TEMPLATES_PATH, 'test')
+        mock_extract_tar.assert_called_once_with(
+            swift, 'test', 'tar-container')

@@ -13,12 +13,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import tempfile
-
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import plan as plan_utils
-from tripleo_common.utils import tarball
+from tripleo_common.utils import template as template_utils
 
 
 class UploadTemplatesAction(base.TripleOAction):
@@ -31,12 +29,9 @@ class UploadTemplatesAction(base.TripleOAction):
         self.dir_to_upload = dir_to_upload
 
     def run(self, context):
-        with tempfile.NamedTemporaryFile() as tmp_tarball:
-            tarball.create_tarball(self.dir_to_upload, tmp_tarball.name)
-            tarball.tarball_extract_to_swift_container(
-                self.get_object_client(context),
-                tmp_tarball.name,
-                self.container)
+        swift = self.get_object_client(context)
+        template_utils.upload_templates_as_tarball(
+            swift, self.dir_to_upload, self.container)
 
 
 class UploadPlanEnvironmentAction(base.TripleOAction):
