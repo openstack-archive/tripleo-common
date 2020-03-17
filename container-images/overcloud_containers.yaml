@@ -187,7 +187,7 @@ container_images:
   image_source: prom
 - imagename: docker.io/prom/node-exporter:v0.17.0
   image_source: prom
-- imagename: docker.io/grafana/grafana:5.2.4
+- imagename: docker.io/grafana/grafana:5.4.3
   image_source: grafana
 - imagename: docker.io/tripleomaster/centos-binary-tempest:current-tripleo
   image_source: kolla
