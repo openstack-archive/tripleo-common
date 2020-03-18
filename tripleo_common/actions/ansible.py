@@ -543,7 +543,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     'OS_PROJECT_NAME': security_ctx.project_name})
 
             if self.command_timeout:
-                command = ['timeout', self.command_timeout] + command
+                command = ['timeout', '-s', 'KILL',
+                           str(self.command_timeout)] + command
 
             command = [str(c) for c in command]
 
