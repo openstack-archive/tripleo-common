@@ -450,7 +450,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 os.chmod(command_path, 0o750)
 
             if self.command_timeout:
-                command = ['timeout', str(self.command_timeout)] + command
+                command = ['timeout', '-s', 'KILL',
+                           str(self.command_timeout)] + command
 
             if self.queue_name:
                 zaqar = self.get_messaging_client(context)
