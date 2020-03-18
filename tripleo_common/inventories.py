@@ -37,50 +37,79 @@ class TripleoInventories(object):
           stack_to_inv_obj_map['edge0'] = TripleoInventory('edge0')
         """
         self.stack_to_inv_obj_map = stack_to_inv_obj_map
-        self.inventory = OrderedDict()
 
-    def merge(self):
-        """Merge TripleoInventory objects into self.inventory"""
+    def _merge(self, dynamic=True):
+        """Merge TripleoInventory objects"""
+        inventory = OrderedDict()
+        if dynamic:
+            inventory['_meta'] = {'hostvars': {}}
         for stack, inv_obj in self.stack_to_inv_obj_map.items():
             # convert each inventory object into an ordered dict
-            inv = inv_obj.list()
+            inv = inv_obj.list(dynamic)
             # only want one undercloud, shouldn't matter which
-            if 'Undercloud' not in self.inventory.keys():
-                self.inventory['Undercloud'] = inv['Undercloud']
-                self.inventory['Undercloud']['hosts'] = {'undercloud': {}}
+            if 'Undercloud' not in inventory.keys():
+                inventory['Undercloud'] = inv['Undercloud']
+                if dynamic:
+                    inventory['Undercloud']['hosts'] = ['undercloud']
+                else:
+                    inventory['Undercloud']['hosts'] = {'undercloud': {}}
                 # add 'plans' to create a list to append to
-                self.inventory['Undercloud']['vars']['plans'] = []
+                inventory['Undercloud']['vars']['plans'] = []
 
             # save the plan for this stack in the plans list
             plan = inv['Undercloud']['vars']['plan']
-            self.inventory['Undercloud']['vars']['plans'].append(plan)
+            inventory['Undercloud']['vars']['plans'].append(plan)
 
             for key in inv.keys():
                 if key != 'Undercloud':
                     new_key = stack + '_' + key
+
+                    if key not in ('_meta', 'overcloud', stack):
+                        # Merge into a top level group
+                        if dynamic:
+                            inventory.setdefault(key, {'children': []})
+                            inventory[key]['children'].append(new_key)
+                            inventory[key]['children'].sort()
+                        else:
+                            inventory.setdefault(key, {'children': {}})
+                            inventory[key]['children'][new_key] = {}
                     if 'children' in inv[key].keys():
                         roles = []
                         for child in inv[key]['children']:
                             roles.append(stack + '_' + child)
-                        self.inventory[new_key] = {}
-                        self.inventory[new_key]['vars'] = inv[key]['vars']
-                        for role in roles:
-                            self.inventory[new_key]['children'] = {}
-                            self.inventory[new_key]['children'][role] = {}
-                        if key == 'overcloud':
+                        roles.sort()
+                        if dynamic:
+                            inventory[new_key] = {
+                                'children': roles
+                            }
+                        else:
+                            inventory[new_key] = {
+                                'children': {x: {} for x in roles}
+                            }
+                        if vars in inv[key]:
+                            inventory[new_key]['vars'] = inv[key]['vars']
+                        if key == 'allovercloud':
                             # useful to have just stack name refer to children
-                            self.inventory[stack] = self.inventory[new_key]
+                            if dynamic:
+                                inventory[stack] = {'children': [new_key]}
+                            else:
+                                inventory[stack] = {'children': {new_key: {}}}
                     else:
                         if key != '_meta':
-                            self.inventory[new_key] = inv[key]
-                            self.inventory[new_key]['hosts'] = {}
-                            self.inventory[new_key]['hosts'] = \
-                                inv['_meta']['hostvars']
+                            inventory[new_key] = inv[key]
+                        elif dynamic:
+                            inventory['_meta']['hostvars'].update(
+                                inv['_meta'].get('hostvars', {})
+                            )
 
         # 'plan' doesn't make sense when using multiple plans
-        self.inventory['Undercloud']['vars']['plan'] = ''
+        inventory['Undercloud']['vars']['plan'] = ''
         # sort plans list for consistency
-        self.inventory['Undercloud']['vars']['plans'].sort()
+        inventory['Undercloud']['vars']['plans'].sort()
+        return inventory
+
+    def list(self, dynamic=True):
+        return self._merge(dynamic)
 
     def write_static_inventory(self, inventory_file_path, extra_vars=None):
         """Convert OrderedDict inventory to static yaml format in a file."""
@@ -90,13 +119,15 @@ class TripleoInventories(object):
                              % (inventory_file_path,
                                 ",".join(allowed_extensions)))
 
+        inventory = self._merge(dynamic=False)
+
         if extra_vars:
             for var, value in extra_vars.items():
-                if var in self.inventory:
-                    self.inventory[var]['vars'].update(value)
+                if var in inventory:
+                    inventory[var]['vars'].update(value)
 
         with open(inventory_file_path, 'w') as inventory_file:
-            yaml.dump(self.inventory, inventory_file, TemplateDumper)
+            yaml.dump(inventory, inventory_file, TemplateDumper)
 
     def host(self):
         # Dynamic inventory scripts must return empty json if they don't

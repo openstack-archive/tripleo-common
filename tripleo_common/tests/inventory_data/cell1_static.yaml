@@ -1,0 +1,197 @@
+Undercloud:
+  hosts:
+    undercloud: {}
+  vars:
+    ansible_connection: local
+    ansible_host: localhost
+    ansible_python_interpreter: /usr/bin/python2
+    ansible_remote_tmp: /tmp/ansible-${USER}
+    auth_url: https://192.168.24.2:13000
+    cacert: /etc/pki/ca-trust/source/anchors/cm-local-ca.pem
+    os_auth_token: gAAAAABedRLI4L-0UK1i3r0lkHVPFeGE2FB40mk7tjWw_US3nwQvzZlwKPM_uCq1wYeBqkCLwiXW61BrZswCi9M3mI-6HeniTi9qV7nXUyLHrWw1Kh5woAEGPyjmdiMiTh_P0WFKobYqXdP0oFwcN_LWr-mnYE1YWluvX4qKeUEeIOXHVj8OtMg
+    overcloud_admin_password: 9RDyelRD5PT5Jk6q4efjYG6Es
+    overcloud_horizon_url: https://10.0.0.5:443/dashboard
+    overcloud_keystone_url: https://10.0.0.5:13000
+    plan: cell1
+    project_name: admin
+    undercloud_service_list: [tripleo_nova_compute, tripleo_heat_engine, tripleo_ironic_conductor,
+      tripleo_swift_container_server, tripleo_swift_object_server, tripleo_mistral_engine]
+    undercloud_swift_url: https://192.168.24.2:13808/v1/AUTH_b0d47705b94c486889fd2b26ce343763
+    username: admin
+CellController:
+  hosts:
+    cell1-cellcontrol-0: {ansible_host: 192.168.24.29, canonical_hostname: cell1-cellcontrol-0.localdomain,
+      ctlplane_hostname: cell1-cellcontrol-0.ctlplane.localdomain, ctlplane_ip: 192.168.24.29,
+      deploy_server_id: 2a668e02-96b3-48a5-9cf2-7bde46830e23, external_hostname: cell1-cellcontrol-0.external.localdomain,
+      external_ip: 10.0.0.38, internal_api_hostname: cell1-cellcontrol-0.internalapi.localdomain,
+      internal_api_ip: 172.16.2.119, management_ip: 192.168.24.29, storage_hostname: cell1-cellcontrol-0.storage.localdomain,
+      storage_ip: 172.16.1.167, storage_mgmt_hostname: cell1-cellcontrol-0.storagemgmt.localdomain,
+      storage_mgmt_ip: 172.16.3.183, tenant_hostname: cell1-cellcontrol-0.tenant.localdomain,
+      tenant_ip: 172.16.0.125}
+  vars:
+    ansible_ssh_user: heat-admin
+    bootstrap_server_id: 2a668e02-96b3-48a5-9cf2-7bde46830e23
+    serial: '1'
+    tripleo_role_name: CellController
+    tripleo_role_networks: [ctlplane, external, internal_api, management, storage,
+      storage_mgmt, tenant]
+Compute:
+  hosts:
+    cell1-compute-0: {ansible_host: 192.168.24.10, canonical_hostname: cell1-compute-0.localdomain,
+      ctlplane_hostname: cell1-compute-0.ctlplane.localdomain, ctlplane_ip: 192.168.24.10,
+      deploy_server_id: 5b31842e-1118-4961-95cf-47d7a326e839, external_ip: 192.168.24.10,
+      internal_api_hostname: cell1-compute-0.internalapi.localdomain, internal_api_ip: 172.16.2.18,
+      management_ip: 192.168.24.10, storage_hostname: cell1-compute-0.storage.localdomain,
+      storage_ip: 172.16.1.218, storage_mgmt_ip: 192.168.24.10, tenant_hostname: cell1-compute-0.tenant.localdomain,
+      tenant_ip: 172.16.0.27}
+  vars:
+    ansible_ssh_user: heat-admin
+    bootstrap_server_id: 2a668e02-96b3-48a5-9cf2-7bde46830e23
+    serial: '1'
+    tripleo_role_name: Compute
+    tripleo_role_networks: [ctlplane, external, internal_api, management, storage,
+      storage_mgmt, tenant]
+allovercloud:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {container_cli: podman, ctlplane_vip: 192.168.24.21, external_vip: 10.0.0.6,
+    internal_api_vip: 172.16.2.11, redis_vip: 192.168.24.21, storage_mgmt_vip: 172.16.3.26,
+    storage_vip: 172.16.1.131}
+cell1:
+  children:
+    allovercloud: {}
+overcloud:
+  children:
+    allovercloud: {}
+  deprecated: Deprecated by allovercloud group in Ussuri
+kernel:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+keepalived:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+mysql:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+nova_libvirt:
+  children:
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+container_image_prepare:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+timezone:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+iscsid:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+nova_libvirt_guests:
+  children:
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+tripleo_firewall:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+snmp:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+certmonger_user:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+boot_params_service:
+  children:
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+oslo_messaging_rpc:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+nova_vnc_proxy:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+nova_metadata:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+mysql_client:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+nova_migration_target:
+  children:
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+podman:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+tripleo_packages:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+nova_conductor:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+nova_compute:
+  children:
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+logrotate_crond:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+haproxy:
+  children:
+    CellController: {}
+  vars: {ansible_ssh_user: heat-admin}
+sshd:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+ovn_metadata:
+  children:
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+tuned:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+chrony:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+ca_certs:
+  children:
+    CellController: {}
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}
+ovn_controller:
+  children:
+    Compute: {}
+  vars: {ansible_ssh_user: heat-admin}

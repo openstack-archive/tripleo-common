@@ -214,6 +214,9 @@ class TestInventory(base.TestCase):
                          'tripleo_role_name': 'CustomRole',
                          'tripleo_role_networks': ['ctlplane']}},
             'overcloud': {
+                'children': ['allovercloud']
+            },
+            'allovercloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
                     'container_cli': 'podman',
@@ -302,6 +305,9 @@ class TestInventory(base.TestCase):
                          'tripleo_role_name': 'CustomRole',
                          'tripleo_role_networks': ['ctlplane']}},
             'overcloud': {
+                'children': ['allovercloud']
+            },
+            'allovercloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
                     'container_cli': 'podman',
@@ -433,12 +439,17 @@ class TestInventory(base.TestCase):
                          'serial': 1,
                          'tripleo_role_name': 'CustomRole',
                          'tripleo_role_networks': ['ctlplane']}},
-            'overcloud': {'children': {'Compute': {},
-                                       'Controller': {},
-                                       'CustomRole': {}},
-                          'vars': {'container_cli': 'podman',
-                                   'ctlplane_vip': 'x.x.x.4',
-                                   'redis_vip': 'x.x.x.6'}},
+            'overcloud': {
+                'children': {
+                    'allovercloud': {}
+                }
+            },
+            'allovercloud': {'children': {'Compute': {},
+                                          'Controller': {},
+                                          'CustomRole': {}},
+                             'vars': {'container_cli': 'podman',
+                                      'ctlplane_vip': 'x.x.x.4',
+                                      'redis_vip': 'x.x.x.6'}},
             'sa': {'children': {'Controller': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
             'sb': {'children': {'Controller': {}},
