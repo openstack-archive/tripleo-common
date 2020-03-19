@@ -319,6 +319,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # On RHEL7 /etc/pki/CA was part of base openssl package.
 # On RHEL8 it is now in openssl-perl.
 {% set nova_libvirt_packages_append = [
+    'libcgroup-tools',
     'libseccomp',
     'openssl-perl',
     'openstack-nova-migration',
