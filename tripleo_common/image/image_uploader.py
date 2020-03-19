@@ -153,6 +153,173 @@ class MakeSession(object):
         self.session.close()
 
 
+class RegistrySessionHelper(object):
+    """ Class with various registry session helpers
+
+    This class contains a bunch of static methods to be used when making
+    session requests against a container registry. The methods are primarily
+    used to handle authentication/reauthentication for the requests against
+    registries that require auth.
+    """
+    @staticmethod
+    def check_status(session, request, allow_reauth=True):
+        """ Check request status and trigger reauth
+
+        This function can be used to check if we need to perform authentication
+        for a container registry request because we've gotten a 401.
+        """
+        hash_request_id = hashlib.sha1(str(request.url).encode())
+        request_id = hash_request_id.hexdigest()
+        text = getattr(request, 'text', 'unknown')
+        reason = getattr(request, 'reason', 'unknown')
+        status_code = getattr(request, 'status_code', None)
+        headers = getattr(request, 'headers', {})
+        session_headers = getattr(session, 'headers', {})
+
+        if status_code >= 300:
+            LOG.info(
+                'Non-2xx: id {}, status {}, reason {}, text {}'.format(
+                    request_id,
+                    status_code,
+                    reason,
+                    text
+                )
+            )
+
+        if status_code == 401:
+            LOG.warning(
+                'Failure: id {}, status {}, reason {} text {}'.format(
+                    request_id,
+                    status_code,
+                    reason,
+                    text
+                )
+            )
+            LOG.debug(
+                'Request headers after 401: id {}, headers {}'.format(
+                    request_id,
+                    headers
+                )
+            )
+            LOG.debug(
+                'Session headers after 401: id {}, headers {}'.format(
+                    request_id,
+                    session_headers
+                )
+            )
+
+            www_auth = headers.get(
+                'www-authenticate',
+                headers.get(
+                    'Www-Authenticate'
+                )
+            )
+            if www_auth:
+                error = None
+                # Handle docker.io shenanigans. docker.io will return 401
+                # for 403 and 404 but provide an error string. Other registries
+                # like registry.redhat.io and quay.io do not do this. So if
+                # we find an error string, check to see if we should reauth.
+                do_reauth = allow_reauth
+                if 'error=' in www_auth:
+                    error = re.search('error="(.*?)"', www_auth).group(1)
+                    LOG.warning(
+                        'Error detected in auth headers: error {}'.format(
+                            error
+                        )
+                    )
+                    do_reauth = (error == 'invalid_token' and allow_reauth)
+                if do_reauth:
+                    if hasattr(session, 'reauthenticate'):
+                        reauth = int(session.headers.get('_TripleOReAuth', 0))
+                        reauth += 1
+                        session.headers['_TripleOReAuth'] = str(reauth)
+                        LOG.warning(
+                            'Re-authenticating: id {}, count {}'.format(
+                                request_id,
+                                reauth
+                            )
+                        )
+                        session.reauthenticate(**session.auth_args)
+
+        request.raise_for_status()
+
+    @staticmethod
+    def _action(action, request_session, *args, **kwargs):
+        """ Perform a session action and retry if auth fails
+
+        This function dynamically performs a specific type of call
+        using the provided session (get, patch, post, etc). It will
+        attempt a single re-authentication if the initial request
+        fails with a 401.
+        """
+        _action = getattr(request_session, action)
+        try:
+            req = _action(*args, **kwargs)
+            RegistrySessionHelper.check_status(session=request_session,
+                                               request=req)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                req = _action(*args, **kwargs)
+                RegistrySessionHelper.check_status(session=request_session,
+                                                   request=req)
+            else:
+                raise
+        return req
+
+    @staticmethod
+    def get(request_session, *args, **kwargs):
+        """ Perform a get and retry if auth fails
+
+        This function is designed to be used when we perform a get to
+        an authenticated source. This function will attempt a single
+        re-authentication request if the first one fails.
+        """
+        return RegistrySessionHelper._action('get',
+                                             request_session,
+                                             *args,
+                                             **kwargs)
+
+    @staticmethod
+    def patch(request_session, *args, **kwargs):
+        """ Perform a patch and retry if auth fails
+
+        This function is designed to be used when we perform a path to
+        an authenticated source. This function will attempt a single
+        re-authentication request if the first one fails.
+        """
+        return RegistrySessionHelper._action('patch',
+                                             request_session,
+                                             *args,
+                                             **kwargs)
+
+    @staticmethod
+    def post(request_session, *args, **kwargs):
+        """ Perform a post and retry if auth fails
+
+        This function is designed to be used when we perform a post to
+        an authenticated source. This function will attempt a single
+        re-authentication request if the first one fails.
+        """
+        return RegistrySessionHelper._action('post',
+                                             request_session,
+                                             *args,
+                                             **kwargs)
+
+    @staticmethod
+    def put(request_session, *args, **kwargs):
+        """ Perform a put and retry if auth fails
+
+        This function is designed to be used when we perform a put to
+        an authenticated source. This function will attempt a single
+        re-authentication request if the first one fails.
+        """
+        return RegistrySessionHelper._action('put',
+                                             request_session,
+                                             *args,
+                                             **kwargs)
+
+
 class ImageUploadManager(BaseImageManager):
     """Manage the uploading of image files
 
@@ -493,84 +660,6 @@ class BaseImageUploader(object):
             response.encoding = encoding
         return response.text
 
-    @staticmethod
-    def check_status(session, request, allow_reauth=True):
-        hash_request_id = hashlib.sha1(str(request.url).encode())
-        request_id = hash_request_id.hexdigest()
-        text = getattr(request, 'text', 'unknown')
-        reason = getattr(request, 'reason', 'unknown')
-        status_code = getattr(request, 'status_code', None)
-        headers = getattr(request, 'headers', {})
-        session_headers = getattr(session, 'headers', {})
-
-        if status_code >= 300:
-            LOG.info(
-                'Non-2xx: id {}, status {}, reason {}, text {}'.format(
-                    request_id,
-                    status_code,
-                    reason,
-                    text
-                )
-            )
-
-        if status_code == 401:
-            LOG.warning(
-                'Failure: id {}, status {}, reason {} text {}'.format(
-                    request_id,
-                    status_code,
-                    reason,
-                    text
-                )
-            )
-            LOG.debug(
-                'Request headers after 401: id {}, headers {}'.format(
-                    request_id,
-                    headers
-                )
-            )
-            LOG.debug(
-                'Session headers after 401: id {}, headers {}'.format(
-                    request_id,
-                    session_headers
-                )
-            )
-
-            www_auth = headers.get(
-                'www-authenticate',
-                headers.get(
-                    'Www-Authenticate'
-                )
-            )
-            if www_auth:
-                error = None
-                # Handle docker.io shenanigans. docker.io will return 401
-                # for 403 and 404 but provide an error string. Other registries
-                # like registry.redhat.io and quay.io do not do this. So if
-                # we find an error string, check to see if we should reauth.
-                do_reauth = allow_reauth
-                if 'error=' in www_auth:
-                    error = re.search('error="(.*?)"', www_auth).group(1)
-                    LOG.warning(
-                        'Error detected in auth headers: error {}'.format(
-                            error
-                        )
-                    )
-                    do_reauth = (error == 'invalid_token' and allow_reauth)
-                if do_reauth:
-                    if hasattr(session, 'reauthenticate'):
-                        reauth = int(session.headers.get('_TripleOReAuth', 0))
-                        reauth += 1
-                        session.headers['_TripleOReAuth'] = str(reauth)
-                        LOG.warning(
-                            'Re-authenticating: id {}, count {}'.format(
-                                request_id,
-                                reauth
-                            )
-                        )
-                        session.reauthenticate(**session.auth_args)
-
-        request.raise_for_status()
-
     @classmethod
     def _build_url(cls, url, path):
         netloc = url.netloc
@@ -621,15 +710,21 @@ class BaseImageUploader(object):
         )
         manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
 
-        manifest_r = session.get(manifest_url, headers=manifest_headers,
-                                 timeout=30)
-        if manifest_r.status_code in (403, 404):
-            raise ImageNotFoundException('Not found image: %s' %
-                                         image_url.geturl())
-        cls.check_status(session=session, request=manifest_r)
+        try:
+            manifest_r = RegistrySessionHelper.get(
+                session,
+                manifest_url,
+                headers=manifest_headers,
+                timeout=30
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in (403, 404):
+                raise ImageNotFoundException('Not found image: %s' %
+                                             image_url.geturl())
+            else:
+                raise
 
-        tags_r = session.get(tags_url, timeout=30)
-        cls.check_status(session=session, request=tags_r)
+        tags_r = RegistrySessionHelper.get(session, tags_url, timeout=30)
 
         manifest_str = cls._get_response_text(manifest_r)
 
@@ -656,9 +751,12 @@ class BaseImageUploader(object):
             }
             config_url = cls._build_url(
                 image_url, CALL_BLOB % parts)
-            config_r = session.get(config_url, headers=config_headers,
-                                   timeout=30)
-            cls.check_status(session=session, request=config_r)
+            config_r = RegistrySessionHelper.get(
+                session,
+                config_url,
+                headers=config_headers,
+                timeout=30
+            )
             config = config_r.json()
 
         tags = tags_r.json()['tags']
@@ -974,8 +1072,7 @@ class BaseImageUploader(object):
                 'mount': layer,
                 'from': existing_name
             }
-            r = session.post(url, data=data, timeout=30)
-            cls.check_status(session=session, request=r)
+            r = RegistrySessionHelper.post(session, url, data=data, timeout=30)
             LOG.debug('%s %s' % (r.status_code, r.reason))
 
 
@@ -1471,11 +1568,18 @@ class PythonImageUploader(BaseImageUploader):
         upload_req_url = cls._build_url(
             image_url,
             path=CALL_UPLOAD % {'image': image})
-        r = session.post(upload_req_url, timeout=30)
-        if r.status_code in (501, 403, 404, 405):
-            cls.export_registries.add(image_url.netloc)
-            return True
-        cls.check_status(session=session, request=r)
+        try:
+            RegistrySessionHelper.post(
+                session,
+                upload_req_url,
+                timeout=30
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in (501, 403, 404, 405):
+                cls.export_registries.add(image_url.netloc)
+                return True
+            else:
+                raise
         cls.push_registries.add(image_url.netloc)
         return False
 
@@ -1501,10 +1605,18 @@ class PythonImageUploader(BaseImageUploader):
             manifest_headers = {'Accept': MEDIA_MANIFEST_V2_LIST}
         else:
             manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
-        r = session.get(url, headers=manifest_headers, timeout=30)
-        if r.status_code in (403, 404):
-            raise ImageNotFoundException('Not found image: %s' % url)
-        cls.check_status(session=session, request=r)
+        try:
+            r = RegistrySessionHelper.get(
+                session,
+                url,
+                headers=manifest_headers,
+                timeout=30
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in (403, 404):
+                raise ImageNotFoundException('Not found image: %s' % url)
+            else:
+                raise
         return cls._get_response_text(r)
 
     def _collect_manifests_layers(self, image_url, session,
@@ -1549,8 +1661,11 @@ class PythonImageUploader(BaseImageUploader):
         upload_req_url = cls._build_url(
             image_url,
             path=CALL_UPLOAD % {'image': image})
-        r = session.post(upload_req_url, timeout=30)
-        cls.check_status(session=session, request=r)
+        r = RegistrySessionHelper.post(
+            session,
+            upload_req_url,
+            timeout=30
+        )
         return r.headers['Location']
 
     @classmethod
@@ -1580,7 +1695,8 @@ class PythonImageUploader(BaseImageUploader):
                 source_blob_url, stream=True, timeout=30) as blob_req:
             # TODO(aschultz): unsure if necessary or if only when using .text
             blob_req.encoding = 'utf-8'
-            cls.check_status(session=session, request=blob_req)
+            RegistrySessionHelper.check_status(session=session,
+                                               request=blob_req)
             for data in blob_req.iter_content(chunk_size):
                 LOG.debug("[%s] Read %i bytes for %s" %
                           (image, len(data), digest))
@@ -1731,30 +1847,11 @@ class PythonImageUploader(BaseImageUploader):
                     CALL_BLOB % parts
                 )
 
-                # Because the image layer fetching can exceed the auth
-                # token lifetime, we may have a bad token here and don't want
-                # to retry all of the layer fetching to just fetch the config
-                # data. Let's try a single retry here (as check_status with
-                # reauth by default).
-                try:
-                    r = source_session.get(source_config_url, timeout=30)
-                    cls.check_status(
-                        session=source_session,
-                        request=r
-                    )
-                except requests.exceptions.HTTPError as e:
-                    LOG.debug('[%s] Config fetch failed, retrying: %s' %
-                              (image, source_config_url))
-                    if e.response.status_code == 401:
-                        # check_status should have reauthed so try on more
-                        # time and raise again if we still have problems.
-                        r = source_session.get(source_config_url, timeout=30)
-                        cls.check_status(
-                            session=source_session,
-                            request=r
-                        )
-                    else:
-                        raise
+                r = RegistrySessionHelper.get(
+                    source_session,
+                    source_config_url,
+                    timeout=30
+                )
 
                 config_str = cls._get_response_text(r)
                 manifest['config']['size'] = len(config_str)
@@ -1812,7 +1909,8 @@ class PythonImageUploader(BaseImageUploader):
             upload_url = cls._upload_url(
                 target_url,
                 session=target_session)
-            r = target_session.put(
+            r = RegistrySessionHelper.put(
+                target_session,
                 upload_url,
                 timeout=30,
                 params={
@@ -1824,7 +1922,6 @@ class PythonImageUploader(BaseImageUploader):
                     'Content-Type': 'application/octet-stream'
                 }
             )
-            cls.check_status(session=target_session, request=r)
 
         # Upload the manifest
         image, tag = cls._image_tag_from_url(target_url)
@@ -1838,18 +1935,22 @@ class PythonImageUploader(BaseImageUploader):
         LOG.debug('[%s] Uploading manifest of type %s to: %s' %
                   (image, manifest_type, manifest_url))
 
-        r = target_session.put(
-            manifest_url,
-            timeout=30,
-            data=manifest_str.encode('utf-8'),
-            headers={
-                'Content-Type': manifest_type
-            }
-        )
-        if r.status_code == 400:
-            LOG.error(cls._get_response_text(r))
-            raise ImageUploaderException('Pushing manifest failed')
-        cls.check_status(session=target_session, request=r)
+        try:
+            r = RegistrySessionHelper.put(
+                target_session,
+                manifest_url,
+                timeout=30,
+                data=manifest_str.encode('utf-8'),
+                headers={
+                    'Content-Type': manifest_type
+                }
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 400:
+                LOG.error(cls._get_response_text(r))
+                raise ImageUploaderException('Pushing manifest failed')
+            else:
+                raise
 
     @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -2049,7 +2150,8 @@ class PythonImageUploader(BaseImageUploader):
             chunk_length = len(chunk)
             upload_url = cls._upload_url(
                 target_url, session, upload_resp)
-            upload_resp = session.patch(
+            upload_resp = RegistrySessionHelper.patch(
+                session,
                 upload_url,
                 timeout=30,
                 data=chunk,
@@ -2060,21 +2162,20 @@ class PythonImageUploader(BaseImageUploader):
                     'Content-Type': 'application/octet-stream'
                 }
             )
-            cls.check_status(session=session, request=upload_resp)
             length += chunk_length
 
         layer_digest = 'sha256:%s' % calc_digest.hexdigest()
         LOG.debug('[%s] Calculated layer digest' % layer_digest)
         upload_url = cls._upload_url(
             target_url, session, upload_resp)
-        upload_resp = session.put(
+        upload_resp = RegistrySessionHelper.put(
+            session,
             upload_url,
             timeout=30,
             params={
                 'digest': layer_digest
             },
         )
-        cls.check_status(session=session, request=upload_resp)
         layer['digest'] = layer_digest
         layer['size'] = length
         return (layer_digest, cls._build_url(target_url, target_url.path))

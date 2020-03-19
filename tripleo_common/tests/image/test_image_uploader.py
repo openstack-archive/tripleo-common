@@ -46,6 +46,128 @@ filedata = six.u(
 """)
 
 
+class TestRegistrySessionHelper(base.TestCase):
+    def setUp(self):
+        super(TestRegistrySessionHelper, self).setUp()
+
+    def test_check_status(self):
+        session = mock.Mock()
+        raise_for_status_mock = mock.Mock()
+        request = mock.Mock()
+        request.raise_for_status = raise_for_status_mock
+        request.status_code = 200
+
+        image_uploader.RegistrySessionHelper.check_status(session, request)
+        raise_for_status_mock.assert_called_once()
+
+    def test_check_status_reauth(self):
+        session = mock.Mock()
+        session_reauth_mock = mock.Mock()
+        session.headers = {}
+        session.auth_args = {}
+        session.reauthenticate = session_reauth_mock
+        raise_for_status_mock = mock.Mock()
+        request = mock.Mock()
+        request.headers = {'www-authenticate': 'foo'}
+        request.raise_for_status = raise_for_status_mock
+        request.status_code = 401
+
+        image_uploader.RegistrySessionHelper.check_status(session, request)
+        session_reauth_mock.assert_called_once_with()
+        raise_for_status_mock.assert_called_once()
+
+    @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
+                '.check_status')
+    def test_action(self, mock_status):
+        request_session = mock.Mock()
+        mock_get = mock.Mock()
+        mock_get.return_value = {}
+        request_session.get = mock_get
+
+        image_uploader.RegistrySessionHelper._action('get', request_session)
+        mock_get.assert_called_once_with()
+        mock_status.assert_called_once_with(session=request_session,
+                                            request={})
+
+    @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
+                '.check_status')
+    def test_action_reauth(self, mock_status):
+        exc_response = mock.Mock()
+        exc_response.status_code = 401
+        auth_exc = requests.exceptions.HTTPError(response=exc_response)
+        mock_status.side_effect = [auth_exc, True]
+        request_session = mock.Mock()
+        mock_get = mock.Mock()
+        mock_get.return_value = {}
+        request_session.get = mock_get
+
+        image_uploader.RegistrySessionHelper._action('get', request_session)
+
+        get_call = mock.call()
+        get_calls = [get_call, get_call]
+        mock_get.assert_has_calls(get_calls)
+        status_call = mock.call(session=request_session, request={})
+        status_calls = [status_call, status_call]
+        mock_status.assert_has_calls(status_calls)
+
+    @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
+                '.check_status')
+    def test_action_reauth_fail(self, mock_status):
+        exc_response = mock.Mock()
+        exc_response.status_code = 404
+        auth_exc = requests.exceptions.HTTPError(response=exc_response)
+        mock_status.side_effect = auth_exc
+        request_session = mock.Mock()
+        mock_get = mock.Mock()
+        mock_get.return_value = {}
+        request_session.get = mock_get
+
+        self.assertRaises(requests.exceptions.HTTPError,
+                          image_uploader.RegistrySessionHelper._action,
+                          'get',
+                          request_session)
+
+        mock_get.assert_called_once_with()
+        mock_status.assert_called_once_with(session=request_session,
+                                            request={})
+
+    @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
+                '._action')
+    def test_get(self, mock_action):
+        request_session = mock.Mock()
+        image_uploader.RegistrySessionHelper.get(request_session)
+
+        mock_action.assert_called_once_with('get',
+                                            request_session)
+
+    @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
+                '._action')
+    def test_patch(self, mock_action):
+        request_session = mock.Mock()
+        image_uploader.RegistrySessionHelper.patch(request_session)
+
+        mock_action.assert_called_once_with('patch',
+                                            request_session)
+
+    @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
+                '._action')
+    def test_post(self, mock_action):
+        request_session = mock.Mock()
+        image_uploader.RegistrySessionHelper.post(request_session)
+
+        mock_action.assert_called_once_with('post',
+                                            request_session)
+
+    @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
+                '._action')
+    def test_put(self, mock_action):
+        request_session = mock.Mock()
+        image_uploader.RegistrySessionHelper.put(request_session)
+
+        mock_action.assert_called_once_with('put',
+                                            request_session)
+
+
 class TestImageUploadManager(base.TestCase):
     def setUp(self):
         super(TestImageUploadManager, self).setUp()
@@ -54,7 +176,7 @@ class TestImageUploadManager(base.TestCase):
         self.filelist = files
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._fetch_manifest')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -988,7 +1110,7 @@ class TestSkopeoImageUploader(base.TestCase):
         self.uploader._inspect.retry.sleep = mock.Mock()
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('os.environ')
     @mock.patch('subprocess.Popen')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1273,7 +1395,7 @@ class TestPythonImageUploader(base.TestCase):
         self.requests = self.useFixture(rm_fixture.Fixture())
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1368,7 +1490,7 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1442,7 +1564,7 @@ class TestPythonImageUploader(base.TestCase):
         ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1511,7 +1633,7 @@ class TestPythonImageUploader(base.TestCase):
         ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1602,7 +1724,7 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1800,7 +1922,7 @@ class TestPythonImageUploader(base.TestCase):
                                           session=target_session)
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     def test_fetch_manifest(self, check_status):
         url = urlparse('docker://docker.io/t/nova-api:tripleo-current')
         manifest = '{"layers": []}'
@@ -1821,7 +1943,7 @@ class TestPythonImageUploader(base.TestCase):
             }
         )
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     def test_upload_url(self, check_status):
         # test with previous request
         previous_request = mock.Mock()
@@ -1948,14 +2070,16 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'PythonImageUploader._copy_manifest_config_to_registry')
+    @mock.patch('tripleo_common.image.image_uploader.'
+                'RegistrySessionHelper.get')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._upload_url')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader.'
                 '_copy_layer_registry_to_registry')
     def test_copy_registry_to_registry(self, _copy_layer, _upload_url,
-                                       check_status):
+                                       mock_get, mock_copy_manifest):
         source_url = urlparse('docker://docker.io/t/nova-api:latest')
         target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
         _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
@@ -1963,7 +2087,7 @@ class TestPythonImageUploader(base.TestCase):
         source_session = mock.Mock()
         target_session = mock.Mock()
 
-        source_session.get.return_value.text = '{}'
+        mock_get.return_value.text = '{}'
 
         manifest = json.dumps({
             'mediaType': image_uploader.MEDIA_MANIFEST_V2,
@@ -1988,7 +2112,8 @@ class TestPythonImageUploader(base.TestCase):
             target_session=target_session
         )
 
-        source_session.get.assert_called_once_with(
+        mock_get.assert_called_once_with(
+            source_session,
             'https://registry-1.docker.io/v2/t/nova-api/blobs/sha256:1234',
             timeout=30
         )
@@ -2006,36 +2131,22 @@ class TestPythonImageUploader(base.TestCase):
                          'distribution.manifest.v2+json',
         }
 
-        target_session.put.assert_has_calls([
+        mock_copy_manifest.assert_has_calls([
             mock.call(
-                'https://192.168.2.1:5000/v2/upload',
-                data='{}'.encode('utf-8'),
-                headers={
-                    'Content-Length':
-                    '2',
-                    'Content-Type':
-                    'application/octet-stream'
-                },
-                params={'digest': 'sha256:1234'},
-                timeout=30
-            ),
-            mock.call(
-                'https://192.168.2.1:5000/v2/t/nova-api/manifests/latest',
-                data=mock.ANY,
-                headers={
-                    'Content-Type': 'application/vnd.docker.'
-                                    'distribution.manifest.v2+json'
-                },
-                timeout=30
-            ),
+                target_url=target_url,
+                manifest_str=mock.ANY,
+                config_str='{}',
+                target_session=target_session,
+                multi_arch=False
+            )
         ])
         put_manifest = json.loads(
-            target_session.put.call_args[1]['data'].decode('utf-8')
+            mock_copy_manifest.call_args[1]['manifest_str']
         )
         self.assertEqual(target_manifest, put_manifest)
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.check_status')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._build_url')
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -2152,13 +2263,13 @@ class TestPythonImageUploader(base.TestCase):
         self.assertEqual(expected_manifest, call_manifest)
 
     @mock.patch('tripleo_common.image.image_uploader.'
-                'BaseImageUploader.check_status')
+                'RegistrySessionHelper.put')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._build_url')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._image_tag_from_url')
     def test_copy_manifest_config_to_registry_oci(self, image_tag_mock,
-                                                  build_url_mock, status_mock):
+                                                  build_url_mock, put_mock):
 
         target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
 
@@ -2167,9 +2278,7 @@ class TestPythonImageUploader(base.TestCase):
         build_url = 'https://192.168.2.1:5000/v2/t/nova-api'
         build_url_mock.return_value = build_url
         target_session = mock.Mock()
-        target_put = mock.Mock()
-        target_put.return_value.text = '{}'
-        target_session.put = target_put
+        put_mock.return_value.text = '{}'
 
         config_str = None
 
@@ -2206,15 +2315,16 @@ class TestPythonImageUploader(base.TestCase):
             target_session=target_session
         )
 
-        calls = [mock.call(build_url,
+        calls = [mock.call(target_session,
+                           build_url,
                            data=mock.ANY,
                            headers=expected_headers,
                            timeout=30)]
-        target_put.assert_has_calls(calls)
+        put_mock.assert_has_calls(calls)
         # We're seeing ordering issues with the py27 checking this field
         # so switch to checking it this way
         call_manifest = json.loads(
-            target_put.call_args[1]['data'].decode('utf-8')
+            put_mock.call_args[1]['data'].decode('utf-8')
         )
         self.assertEqual(expected_manifest, call_manifest)
 
