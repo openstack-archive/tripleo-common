@@ -6,3 +6,4 @@ disk_images:
     release: 8
     elements:
       - selinux-permissive
+      - interface-names
