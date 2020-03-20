@@ -14,10 +14,12 @@
 #
 
 import collections
+import errno
 import hashlib
 import json
 import os
 import requests
+import six
 import shutil
 
 from oslo_log import log as logging
@@ -51,14 +53,25 @@ TYPE_KEYS = (
 TYPE_MAP_EXTENSION = '.type-map'
 
 
+def skip_if_exists(f):
+    @six.wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except OSError as e:
+            # Handle race for the already existing entity
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                raise e
+    return wrapper
+
+
+@skip_if_exists
 def make_dir(path):
     if os.path.exists(path):
         return
-    try:
-        os.makedirs(path, 0o775)
-    except os.error:
-        # Handle race for directory already existing
-        pass
+    os.makedirs(path, 0o775)
 
 
 def image_tag_from_url(image_url):
@@ -77,6 +90,7 @@ def image_tag_from_url(image_url):
     return image, tag
 
 
+@skip_if_exists
 def export_stream(target_url, layer, layer_stream, verify_digest=True):
     image, _ = image_tag_from_url(target_url)
     digest = layer['digest']
@@ -167,6 +181,7 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
     return (layer_digest, blob_path)
 
 
+@skip_if_exists
 def layer_cross_link(layer, image, blob_path, target_image_url):
     target_image, _ = image_tag_from_url(target_image_url)
     target_dir_path = os.path.join(
