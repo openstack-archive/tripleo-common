@@ -128,6 +128,13 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
         LOG.error(memory_error)
         remove_layer(image, blob_path)
         raise MemoryError(memory_error)
+    except requests.exceptions.HTTPError as e:
+        # catch http errors seperately as those can be retried in
+        # the image uploader
+        http_error = '[{}] HTTP error: {}'.format(image, str(e))
+        LOG.error(http_error)
+        remove_layer(image, blob_path)
+        raise
     except Exception as e:
         write_error = '[{}] Write Failure: {}'.format(image, str(e))
         LOG.error(write_error)
