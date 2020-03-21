@@ -533,6 +533,11 @@ class BaseImageUploader(object):
             )
             if www_auth:
                 error = None
+                # Handle docker.io shenanigans. docker.io will return 401
+                # for 403 and 404 but provide an error string. Other registries
+                # like registry.redhat.io and quay.io do not do this. So if
+                # we find an error string, check to see if we should reauth.
+                do_reauth = allow_reauth
                 if 'error=' in www_auth:
                     error = re.search('error="(.*?)"', www_auth).group(1)
                     LOG.warning(
@@ -540,7 +545,8 @@ class BaseImageUploader(object):
                             error
                         )
                     )
-                if error == 'invalid_token' and allow_reauth:
+                    do_reauth = (error == 'invalid_token' and allow_reauth)
+                if do_reauth:
                     if hasattr(session, 'reauthenticate'):
                         reauth = int(session.headers.get('_TripleOReAuth', 0))
                         reauth += 1
@@ -1684,11 +1690,31 @@ class PythonImageUploader(BaseImageUploader):
                     CALL_BLOB % parts
                 )
 
-                r = source_session.get(source_config_url, timeout=30)
-                cls.check_status(
-                    session=source_session,
-                    request=r
-                )
+                # Because the image layer fetching can exceed the auth
+                # token lifetime, we may have a bad token here and don't want
+                # to retry all of the layer fetching to just fetch the config
+                # data. Let's try a single retry here (as check_status with
+                # reauth by default).
+                try:
+                    r = source_session.get(source_config_url, timeout=30)
+                    cls.check_status(
+                        session=source_session,
+                        request=r
+                    )
+                except requests.exceptions.HTTPError as e:
+                    LOG.debug('[%s] Config fetch failed, retrying: %s' %
+                              (image, source_config_url))
+                    if e.response.status_code == 401:
+                        # check_status should have reauthed so try on more
+                        # time and raise again if we still have problems.
+                        r = source_session.get(source_config_url, timeout=30)
+                        cls.check_status(
+                            session=source_session,
+                            request=r
+                        )
+                    else:
+                        raise
+
                 config_str = cls._get_response_text(r)
                 manifest['config']['size'] = len(config_str)
                 manifest['config']['mediaType'] = MEDIA_CONFIG
