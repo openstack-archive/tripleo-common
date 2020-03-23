@@ -49,6 +49,7 @@ def write_default_ansible_cfg(work_dir,
     modules_path = ('/root/.ansible/plugins/modules:'
                     '/usr/share/ansible/tripleo-plugins/modules:'
                     '/usr/share/ansible/plugins/modules:'
+                    '/usr/share/ansible-modules:'
                     '%s/library' % constants.DEFAULT_VALIDATIONS_BASEDIR)
     lookups_path = (
         '/root/.ansible/plugins/lookup:'
