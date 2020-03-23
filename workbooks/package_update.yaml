@@ -180,7 +180,7 @@ workflows:
         on-error: node_update_failed
         publish-on-error:
           status: FAILED
-          message: Ansible failed, check log at <% $.work_dir %>/<% execution().id %>/package_update.log.
+          message: Ansible failed, check log at /var/log/mistral/package_update.log.
         publish:
           log_path: <% task().result.get('log_path') %>
 
@@ -194,7 +194,7 @@ workflows:
         on-success: send_message
         publish:
           status: FAILED
-          message: Ansible failed, check log at <% $.get('work_dir') %>/<% execution().id %>/package_update.log.
+          message: Ansible failed, check log at /var/log/mistral/package_update.log.
 
       send_message:
         workflow: tripleo.messaging.v1.send
