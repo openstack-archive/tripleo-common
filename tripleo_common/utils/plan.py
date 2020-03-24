@@ -372,7 +372,7 @@ def update_plan_environment_with_image_parameters(
     return env
 
 
-def generate_passwords(swift, heat, mistral,
+def generate_passwords(swift, heat, mistral=None,
                        container=constants.DEFAULT_CONTAINER_NAME,
                        rotate_passwords=False, rotate_pw_list=None):
     """Generates passwords needed for Overcloud deployment
@@ -417,7 +417,6 @@ def generate_passwords(swift, heat, mistral,
         stack_env = None
 
     passwords = password_utils.generate_passwords(
-        mistralclient=mistral,
         stack_env=stack_env,
         rotate_passwords=rotate_passwords
     )

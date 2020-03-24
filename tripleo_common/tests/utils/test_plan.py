@@ -630,9 +630,7 @@ class PlanTest(base.TestCase):
         }
         mock_orchestration.resources.get.return_value = mock_resource
 
-        mock_workflow = mock.MagicMock()
-        result = plan_utils.generate_passwords(swift, mock_orchestration,
-                                               mock_workflow)
+        result = plan_utils.generate_passwords(swift, mock_orchestration)
 
         for password_param_name in constants.PASSWORD_PARAMETER_NAMES:
             self.assertTrue(password_param_name in result,
@@ -685,10 +683,7 @@ class PlanTest(base.TestCase):
             'parameter_defaults': {}
         }
 
-        mock_workflow = mock.MagicMock()
-
-        result = plan_utils.generate_passwords(swift, mock_orchestration,
-                                               mock_workflow)
+        result = plan_utils.generate_passwords(swift, mock_orchestration)
 
         # ensure old passwords used and no new generation
         self.assertEqual(_EXISTING_PASSWORDS, result)
@@ -738,9 +733,7 @@ class PlanTest(base.TestCase):
         }
         mock_orchestration.resources.get.return_value = mock_resource
 
-        mock_workflow = mock.MagicMock()
         result = plan_utils.generate_passwords(swift, mock_orchestration,
-                                               mock_workflow,
                                                rotate_passwords=True)
 
         # ensure passwords in the DO_NOT_ROTATE_LIST are not modified
@@ -808,9 +801,7 @@ class PlanTest(base.TestCase):
             'MysqlRootPassword'
         ]
 
-        mock_workflow = mock.MagicMock()
         result = plan_utils.generate_passwords(swift, mock_orchestration,
-                                               mock_workflow,
                                                rotate_passwords=True,
                                                rotate_pw_list=rotate_list)
 
@@ -868,9 +859,7 @@ class PlanTest(base.TestCase):
             }
         }
 
-        mock_workflow = mock.MagicMock()
-        result = plan_utils.generate_passwords(swift, mock_orchestration,
-                                               mock_workflow)
+        result = plan_utils.generate_passwords(swift, mock_orchestration)
 
         existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
         # ensure old passwords used and no new generation

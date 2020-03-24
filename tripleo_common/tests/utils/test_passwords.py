@@ -38,12 +38,6 @@ class TestPasswords(base.TestCase):
         self.assertEqual(len(key), 40)
 
     def test_get_snmpd_readonly_user_password(self):
-
-        mock_mistral = mock.Mock()
-        mock_mistral.environments.get.return_value = mock.Mock(variables={
-            "undercloud_ceilometer_snmpd_password": self.snmp_test_pw
-        })
-
         with mock.patch(self.open_builtins, mock.mock_open(read_data="data")):
             with mock.patch('yaml.load') as mock_yaml:
                 with mock.patch('os.path.exists') as mock_exists:
@@ -53,9 +47,7 @@ class TestPasswords(base.TestCase):
                             'SnmpdReadonlyUserPassword': self.snmp_test_pw
                         }
                     }
-                    value = password_utils.get_snmpd_readonly_user_password(
-                        mock_mistral
-                    )
+                    value = password_utils.get_snmpd_readonly_user_password()
 
         self.assertEqual(value, self.snmp_test_pw)
 
@@ -70,13 +62,6 @@ class TestPasswords(base.TestCase):
                 uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False)]
 
-        snmpd_password = uuidutils.generate_uuid(dashed=False)
-
-        mock_mistral = mock.Mock()
-        mock_mistral.environments.get.return_value = mock.Mock(variables={
-            "undercloud_ceilometer_snmpd_password": snmpd_password
-        })
-
         # generate_passwords will be called multiple times
         # but the order is based on how the strings are hashed, and thus
         # not really predictable. So, make sure it is a unique one of the
@@ -90,7 +75,7 @@ class TestPasswords(base.TestCase):
                         'SnmpdReadonlyUserPassword': self.snmp_test_pw
                     }
                 }
-                value = password_utils.generate_passwords(mock_mistral)
+                value = password_utils.generate_passwords()
         self.assertIn(value['KeystoneCredential0'], keys)
         self.assertIn(value['KeystoneCredential1'], keys)
         self.assertIn(value['KeystoneFernetKey0'], keys)
