@@ -121,6 +121,7 @@ workflows:
           config: |
             - hosts: localhost
               connection: local
+              gather_facts: false
               tasks: <% json_pp($.tasks) %>
 
       get_privkey:
