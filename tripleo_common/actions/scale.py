@@ -122,20 +122,37 @@ class ScaleDownAction(base.TripleOAction):
 
         return stack_params
 
+    def _match_hostname(self, heatclient, instance_list, res, stack_name):
+        type_patterns = ['DeployedServer', 'Server']
+        if any(res.resource_type.endswith(x) for x in type_patterns):
+            res_details = heatclient.resources.get(
+                stack_name, res.resource_name)
+            if 'name' in res_details.attributes:
+                try:
+                    instance_list.remove(res_details.attributes['name'])
+                    return True
+                except ValueError:
+                    return False
+        return False
+
     def run(self, context):
         heatclient = self.get_orchestration_client(context)
         resources = heatclient.resources.list(self.container, nested_depth=5)
         resources_by_role = collections.defaultdict(list)
         instance_list = list(self.nodes)
-        for res in resources:
-            try:
-                instance_list.remove(res.physical_resource_id)
-            except ValueError:
-                continue
 
+        for res in resources:
             stack_name, stack_id = next(
                 x['href'] for x in res.links if
                 x['rel'] == 'stack').rsplit('/', 2)[1:]
+
+            try:
+                instance_list.remove(res.physical_resource_id)
+            except ValueError:
+                if not self._match_hostname(
+                    heatclient, instance_list, res, stack_name):
+                    continue
+
             # get resource to remove from resource group (it's parent resource
             # of nova server)
             role_resource = next(x for x in resources if
