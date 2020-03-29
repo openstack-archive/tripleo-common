@@ -59,7 +59,7 @@ class GlanceTest(base.TestCase):
         client = mock.MagicMock()
         expected = {'kernel': 'file:///kernel', 'ramdisk': 'file:///ramdisk'}
         ids = glance.create_or_find_kernel_and_ramdisk(
-            client, 'file:///kernel', 'file:///ramdisk')
+            None, 'file:///kernel', 'file:///ramdisk')
         client.images.assert_not_called()
         self.assertEqual(expected, ids)
 
@@ -69,4 +69,10 @@ class GlanceTest(base.TestCase):
         ids = glance.create_or_find_kernel_and_ramdisk(
             client, 'http://kernel', 'http://ramdisk')
         client.images.assert_not_called()
+        self.assertEqual(expected, ids)
+
+    def test_return_https_urls_no_client(self):
+        expected = {'kernel': 'https://kernel', 'ramdisk': 'https://ramdisk'}
+        ids = glance.create_or_find_kernel_and_ramdisk(
+            None, 'https://kernel', 'https://ramdisk')
         self.assertEqual(expected, ids)
