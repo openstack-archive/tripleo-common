@@ -23,7 +23,6 @@ from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import parameters as parameter_utils
-from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import stack_parameters as stack_param_utils
 from tripleo_common.utils import template as template_utils
 
@@ -93,44 +92,6 @@ class UpdateRoleParametersAction(base.TripleOAction):
         try:
             return stack_param_utils.update_role_parameters(
                 swift, heat, ironic, nova, self.role, self.container)
-        except Exception as err:
-            LOG.exception(six.text_type(err))
-            return actions.Result(six.text_type(err))
-
-
-class GeneratePasswordsAction(base.TripleOAction):
-    """Generates passwords needed for Overcloud deployment
-
-    This method generates passwords and ensures they are stored in the
-    plan environment. By default, this method respects previously
-    generated passwords and adds new passwords as necessary.
-
-    If rotate_passwords is set to True, then passwords will be replaced as
-    follows:
-    - if password names are specified in the rotate_pw_list, then only those
-      passwords will be replaced.
-    - otherwise, all passwords not in the DO_NOT_ROTATE list (as they require
-      special handling, like KEKs and Fernet keys) will be replaced.
-    """
-
-    def __init__(self, container=constants.DEFAULT_CONTAINER_NAME,
-                 rotate_passwords=False,
-                 rotate_pw_list=[]):
-        super(GeneratePasswordsAction, self).__init__()
-        self.container = container
-        self.rotate_passwords = rotate_passwords
-        self.rotate_pw_list = rotate_pw_list
-
-    def run(self, context):
-        heat = self.get_orchestration_client(context)
-        swift = self.get_object_client(context)
-        mistral = self.get_workflow_client(context)
-
-        try:
-            return plan_utils.generate_passwords(
-                swift, heat, mistral, container=self.container,
-                rotate_passwords=self.rotate_passwords,
-                rotate_pw_list=self.rotate_pw_list)
         except Exception as err:
             LOG.exception(six.text_type(err))
             return actions.Result(six.text_type(err))
