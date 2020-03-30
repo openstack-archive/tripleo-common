@@ -16,7 +16,6 @@
 from mistral_lib import actions
 
 from tripleo_common.actions import base
-from tripleo_common.utils import swift as swiftutils
 
 
 class SwiftInformationAction(base.TripleOAction):
@@ -42,19 +41,3 @@ class SwiftInformationAction(base.TripleOAction):
             error = str(err)
 
         return actions.Result(data=data, error=error)
-
-
-class SwiftTempUrlAction(base.TripleOAction):
-
-    def __init__(self, container, obj, method='GET', valid='86400'):
-        super(SwiftTempUrlAction, self).__init__()
-        self.container = container
-        self.obj = obj
-        self.method = method
-        self.valid = valid
-
-    def run(self, context):
-        swift_client = self.get_object_client(context)
-        return swiftutils.get_temp_url(
-            swift_client, self.container, self.obj,
-            self.method, self.valid)
