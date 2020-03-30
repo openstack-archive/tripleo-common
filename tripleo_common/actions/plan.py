@@ -146,18 +146,12 @@ class ListRolesAction(base.TripleOAction):
     def run(self, context):
         try:
             swift = self.get_object_client(context)
-            roles_data = yaml.safe_load(swiftutils.get_object_string(
-                swift, self.container, self.role_file_name))
+            return roles_utils.get_roles_from_plan(
+                swift, container=self.container,
+                role_file_name=self.role_file_name,
+                detail=self.detail)
         except Exception as err:
-            err_msg = ("Error retrieving roles data from deployment plan: %s"
-                       % err)
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-        if self.detail:
-            return roles_data
-        else:
-            return [role['name'] for role in roles_data]
+            return actions.Result(error=six.text_type(err))
 
 
 class ExportPlanAction(base.TripleOAction):
