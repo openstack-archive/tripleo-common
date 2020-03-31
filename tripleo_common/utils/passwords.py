@@ -137,7 +137,7 @@ def get_snmpd_readonly_user_password(pw_file=None):
         return passlib.pwd.genword(length=24)
     else:
         with open(pw_file) as f:
-            passwords = yaml.load(f.read())
+            passwords = yaml.safe_load(f.read())
 
         return passwords['parameter_defaults']['SnmpdReadonlyUserPassword']
 

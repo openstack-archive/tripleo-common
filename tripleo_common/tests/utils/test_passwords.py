@@ -39,7 +39,7 @@ class TestPasswords(base.TestCase):
 
     def test_get_snmpd_readonly_user_password(self):
         with mock.patch(self.open_builtins, mock.mock_open(read_data="data")):
-            with mock.patch('yaml.load') as mock_yaml:
+            with mock.patch('yaml.safe_load') as mock_yaml:
                 with mock.patch('os.path.exists') as mock_exists:
                     mock_exists.return_value = True
                     mock_yaml.return_value = {
