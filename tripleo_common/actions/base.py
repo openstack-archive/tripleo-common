@@ -113,8 +113,12 @@ class TripleOAction(actions.Action):
 
     def get_image_client(self, context):
         security_ctx = context.security
-        glance_endpoint = keystone_utils.get_endpoint_for_project(
-            security_ctx, 'glance')
+        try:
+            glance_endpoint = keystone_utils.get_endpoint_for_project(
+                security_ctx, 'glance')
+        except Exception:
+            return None
+
         return glanceclient.Client(
             glance_endpoint.url,
             token=security_ctx.auth_token,
