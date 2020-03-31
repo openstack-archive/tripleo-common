@@ -37,7 +37,37 @@ class OvercloudRcTest(base.TestCase):
         result = overcloudrc.create_overcloudrc(stack, "foo", "AdminPassword",
                                                 "regionTwo")
 
-        self.assertIn("export no_proxy='foo,foo.com,[fd00::1]'",
+        self.assertIn("export no_proxy='[fd00::1],foo,foo.com'",
+                      result['overcloudrc'])
+        self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc'])
+
+        self.assertIn("export PYTHONWARNINGS='ignore:Certificate",
+                      result['overcloudrc'])
+        self.assertIn("OS_IDENTITY_API_VERSION=3", result['overcloudrc'])
+        self.assertIn(overcloudrc.CLOUDPROMPT, result['overcloudrc'])
+        self.assertIn("OS_AUTH_TYPE=password", result['overcloudrc'])
+        self.assertIn("OS_AUTH_URL=http://foo.com:8000/",
+                      result['overcloudrc'])
+        self.assertIn("OS_REGION_NAME=regionTwo",
+                      result['overcloudrc'])
+
+    def test_generate_overcloudrc_with_duplicated_no_proxy(self):
+
+        stack = mock.MagicMock()
+        stack.stack_name = 'overcast'
+        stack.to_dict.return_value = {
+            "outputs": [
+                {'output_key': 'KeystoneURL',
+                 'output_value': 'http://foo.com:8000/'},
+                {'output_key': 'EndpointMap',
+                 'output_value': {'KeystoneAdmin': {'host': 'fd00::1'}}},
+            ]
+        }
+
+        result = overcloudrc.create_overcloudrc(
+            stack, "foo,foo.com", "AdminPassword", "regionTwo")
+
+        self.assertIn("export no_proxy='[fd00::1],foo,foo.com'",
                       result['overcloudrc'])
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc'])
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc.v3'])
