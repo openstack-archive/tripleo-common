@@ -134,6 +134,8 @@ def write_default_ansible_cfg(work_dir,
                os.path.join(work_dir, 'ansible-ssh'))
     config.set('ssh_connection', 'retries', '8')
     config.set('ssh_connection', 'pipelining', 'True')
+    # Related to https://github.com/ansible/ansible/issues/22127
+    config.set('ssh_connection', 'scp_if_ssh', 'True')
 
     # Set connection info in config file so that subsequent/nested ansible
     # calls can re-use it
