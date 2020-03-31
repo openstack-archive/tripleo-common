@@ -34,15 +34,13 @@ KEYSTONE_FERNET_REPO = '/etc/keystone/fernet-keys/'
 LOG = logging.getLogger(__name__)
 
 
-def generate_passwords(mistralclient=None, stack_env=None,
+def generate_passwords(stack_env=None,
                        rotate_passwords=False):
     """Create the passwords needed for deploying OpenStack via t-h-t.
 
     This will create the set of passwords required by the undercloud and
     overcloud installers that use tripleo-heat-templates and return them
-    as a dict. The mistralclient is optional and only used to obtain
-    the previously stored SnmpdReadonlyUserPassword supplied by the
-    undercloud to the overcloud deployment.
+    as a dict.
     """
 
     passwords = {}
