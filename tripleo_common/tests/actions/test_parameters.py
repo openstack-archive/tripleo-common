@@ -626,6 +626,9 @@ class GeneratePasswordsActionTest(base.TestCase):
         }
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
             'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
@@ -695,6 +698,14 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {}
         }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
         mock_get_orchestration_client.return_value = mock_orchestration
 
         action = parameters.GeneratePasswordsAction()
@@ -706,6 +717,68 @@ class GeneratePasswordsActionTest(base.TestCase):
             mock_ctx,
             "overcloud",
             "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'cache_delete')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    def test_placement_passwords_upgrade(self, mock_get_object_client,
+                                         mock_get_workflow_client,
+                                         mock_get_snmpd_readonly_user_password,
+                                         mock_fernet_keys_setup,
+                                         mock_create_ssh_keypair,
+                                         mock_get_orchestration_client,
+                                         mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        passwords = _EXISTING_PASSWORDS.copy()
+
+        mock_ctx = mock.MagicMock()
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': passwords
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+        mock_get_object_client.return_value = swift
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {},
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+        mock_get_orchestration_client.return_value = mock_orchestration
+
+        action = parameters.GeneratePasswordsAction()
+        result = action.run(mock_ctx)
+
+        self.assertEqual(
+            passwords['NovaPassword'],
+            result['PlacementPassword']
         )
 
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
@@ -752,9 +825,11 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {}
         }
-
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
             'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
@@ -825,6 +900,9 @@ class GeneratePasswordsActionTest(base.TestCase):
         }
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
             'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
@@ -909,6 +987,14 @@ class GeneratePasswordsActionTest(base.TestCase):
                 'AdminPassword': 'ExistingPasswordInHeat',
             }
         }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
         mock_get_orchestration_client.return_value = mock_orchestration
 
         action = parameters.GeneratePasswordsAction()
@@ -944,6 +1030,14 @@ class GetPasswordsActionTest(base.TestCase):
         mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
         mock_get_orchestration_client.return_value = mock_orchestration
 
         action = parameters.GetPasswordsAction()
@@ -972,6 +1066,15 @@ class GetPasswordsActionTest(base.TestCase):
         mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+
         mock_get_orchestration_client.return_value = mock_orchestration
 
         action = parameters.GetPasswordsAction()
@@ -1003,6 +1106,14 @@ class GetPasswordsActionTest(base.TestCase):
         mock_get_object_client.return_value = swift
 
         mock_orchestration = mock.MagicMock()
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
         mock_get_orchestration_client.return_value = mock_orchestration
 
         action = parameters.GetPasswordsAction()
