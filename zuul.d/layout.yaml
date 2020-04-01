@@ -23,9 +23,7 @@
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-standalone:
             dependencies: *deps_unit_lint
-        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-upgrades:
-            dependencies: *deps_unit_lint
-        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
+        - tripleo-ci-centos-8-scenario000-multinode-oooq-container-updates:
             dependencies: *deps_unit_lint
             files:
               - workbooks/package_update.yaml
@@ -35,18 +33,6 @@
               - tripleo_common/actions/container_images.py
               - tripleo_common/image/kolla_builder.py
               - scripts/.*$
-        - tripleo-ci-centos-7-scenario007-multinode-oooq-container:
-            dependencies: *deps_unit_lint
-            files:
-              - ^container-images/.*$
-              - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-scenario009-multinode-oooq-container:
-            dependencies: *deps_unit_lint
-            files:
-              - ^container-images/.*$
-              - tripleo_common/image/kolla_builder.py
-        - tripleo-ci-centos-7-standalone-upgrade:
-            dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario001-standalone:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario002-standalone:
@@ -54,10 +40,6 @@
         - tripleo-ci-centos-8-scenario003-standalone:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario004-standalone:
-            dependencies: *deps_unit_lint
-        - tripleo-ci-centos-7-scenario012-standalone:
-            dependencies: *deps_unit_lint
-        - tripleo-ci-centos-7-containerized-undercloud-upgrades:
             dependencies: *deps_unit_lint
         - tripleo-buildimage-overcloud-full-centos-8:
             dependencies: *deps_unit_lint
