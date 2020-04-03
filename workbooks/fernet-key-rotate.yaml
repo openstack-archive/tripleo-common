@@ -48,7 +48,7 @@ workflows:
           extra_vars:
             fernet_keys: <% task(rotate_keys).result %>
           use_openstack_credentials: true
-          playbook: /usr/share/tripleo-ansible/playbooks/rotate-keys.yaml
+          playbook: /usr/share/ansible/tripleo-playbooks/rotate-keys.yaml
           execution_id: <% execution().id %>
         on-success: send_message
         publish:
