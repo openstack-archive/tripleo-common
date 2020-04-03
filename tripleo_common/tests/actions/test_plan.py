@@ -54,23 +54,6 @@ notresources:
 """
 
 
-ROLES_DATA_YAML_CONTENTS = """
-- name: MyController
-  CountDefault: 1
-  ServicesDefault:
-    - OS::TripleO::Services::CACerts
-
-- name: Compute
-  HostnameFormatDefault: '%stackname%-novacompute-%index%'
-  ServicesDefault:
-    - OS::TripleO::Services::NovaCompute
-    - OS::TripleO::Services::DummyService
-
-- name: CustomRole
-  ServicesDefault:
-    - OS::TripleO::Services::Kernel
-"""
-
 SAMPLE_ROLE = """
 ###############################################################################
 # Role: sample                                                                #
@@ -308,67 +291,6 @@ class DeletePlanActionTest(base.TestCase):
             mock_calls, any_order=True)
 
         swift.delete_container.assert_called_with(self.container_name)
-
-
-class ListRolesActionTest(base.TestCase):
-
-    def setUp(self):
-        super(ListRolesActionTest, self).setUp()
-        self.container = 'overcloud'
-        self.ctx = mock.MagicMock()
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run(self, get_obj_client_mock):
-        # setup swift
-        swift = mock.MagicMock()
-        swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
-        get_obj_client_mock.return_value = swift
-
-        # Test
-        action = plan.ListRolesAction()
-        result = action.run(self.ctx)
-
-        # verify
-        expected = ['MyController', 'Compute', 'CustomRole']
-        self.assertEqual(expected, result)
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run_show_detail(self, get_obj_client_mock):
-        # setup swift
-        swift = mock.MagicMock()
-        swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
-        get_obj_client_mock.return_value = swift
-
-        # Test
-        action = plan.ListRolesAction(detail=True)
-        result = action.run(self.ctx)
-
-        # verify
-        expected = [
-            {u'CountDefault': 1,
-             u'ServicesDefault': [u'OS::TripleO::Services::CACerts'],
-             u'name': u'MyController'},
-            {u'HostnameFormatDefault': u'%stackname%-novacompute-%index%',
-             u'ServicesDefault': [u'OS::TripleO::Services::NovaCompute',
-                                  u'OS::TripleO::Services::DummyService'],
-             u'name': u'Compute'},
-            {u'ServicesDefault': [u'OS::TripleO::Services::Kernel'],
-             u'name': u'CustomRole'}]
-
-        self.assertEqual(expected, result)
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_no_roles_data_file(self, get_obj_client_mock):
-
-        swift = mock.MagicMock()
-        swift.get_object.side_effect = swiftexceptions.ClientException("404")
-        get_obj_client_mock.return_value = swift
-
-        action = plan.ListRolesAction()
-        result = action.run(self.ctx)
-
-        error_str = ('Error retrieving roles data from deployment plan: 404')
-        self.assertEqual(result.error, error_str)
 
 
 class ExportPlanActionTest(base.TestCase):

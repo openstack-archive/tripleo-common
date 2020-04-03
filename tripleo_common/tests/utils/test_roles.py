@@ -16,6 +16,9 @@
 import mock
 import yaml
 
+import six
+from swiftclient import exceptions as swiftexceptions
+
 from tripleo_common.exception import NotFound
 from tripleo_common.exception import RoleMetadataError
 from tripleo_common.tests import base
@@ -78,6 +81,23 @@ SAMPLE_ROLE_OBJ_NETWORK_DICT = {
             'subnet': 'internal_api_subnet'}
     }
 }
+
+ROLES_DATA_YAML_CONTENTS = """
+- name: MyController
+  CountDefault: 1
+  ServicesDefault:
+    - OS::TripleO::Services::CACerts
+
+- name: Compute
+  HostnameFormatDefault: '%stackname%-novacompute-%index%'
+  ServicesDefault:
+    - OS::TripleO::Services::NovaCompute
+    - OS::TripleO::Services::DummyService
+
+- name: CustomRole
+  ServicesDefault:
+    - OS::TripleO::Services::Kernel
+"""
 
 
 class TestRolesUtils(base.TestCase):
@@ -247,3 +267,92 @@ class TestRolesUtils(base.TestCase):
                               '/roles',
                               ['sample', 'sample:sample'])
             open_mock.assert_any_call('/roles/sample.yaml', 'r')
+
+    def test_list_role(self):
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
+
+        # Test
+        result = rolesutils.get_roles_from_plan(swift)
+
+        # verify
+        expected = ['MyController', 'Compute', 'CustomRole']
+        self.assertEqual(expected, result)
+
+    def test_list_role_show_detail(self):
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
+
+        # Test
+        result = rolesutils.get_roles_from_plan(swift, detail=True)
+
+        # verify
+        expected = [
+            {u'CountDefault': 1,
+             u'ServicesDefault': [u'OS::TripleO::Services::CACerts'],
+             u'name': u'MyController'},
+            {u'HostnameFormatDefault': u'%stackname%-novacompute-%index%',
+             u'ServicesDefault': [u'OS::TripleO::Services::NovaCompute',
+                                  u'OS::TripleO::Services::DummyService'],
+             u'name': u'Compute'},
+            {u'ServicesDefault': [u'OS::TripleO::Services::Kernel'],
+             u'name': u'CustomRole'}]
+
+        self.assertEqual(expected, result)
+
+    def test_no_roles_data_file(self):
+
+        swift = mock.MagicMock()
+        swift.get_object.side_effect = swiftexceptions.ClientException("404")
+
+        ex = self.assertRaises(RuntimeError,
+                               rolesutils.get_roles_from_plan, swift)
+        error_str = ('Error retrieving roles data from deployment plan: 404')
+        self.assertEqual(six.text_type(ex), error_str)
+
+    @mock.patch(
+        'tripleo_common.utils.stack_parameters.get_flattened_parameters')
+    def test_valid_roles_list(self, mock_params):
+
+        swift = mock.MagicMock()
+
+        heat = mock.MagicMock()
+        mock_params.return_value = {
+            'heat_resource_tree': {
+                'resources': {
+                    '1': {
+                        'id': '1',
+                        'name': 'Root',
+                        'resources': [
+                            '2'
+                        ],
+                        'parameters': [
+                            'ComputeCount'
+                        ]
+                    },
+                    '2': {
+                        'id': '2',
+                        'name': 'CephStorageHostsDeployment',
+                        'type': 'OS::Heat::StructuredDeployments'
+                    }
+                },
+                'parameters': {
+                    'ComputeCount': {
+                        'default': 1,
+                        'type': 'Number',
+                        'name': 'ComputeCount'
+                    }
+                },
+            },
+            'environment_parameters': None,
+        }
+
+        swift.get_object.return_value = ({}, ROLES_DATA_YAML_CONTENTS)
+        # Test
+        result = rolesutils.get_roles_from_plan(swift, heat, valid=True)
+
+        # verify
+        expected = ['Compute']
+        self.assertEqual(expected, result)
