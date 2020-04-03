@@ -42,9 +42,16 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
     'centos-release-openstack-train',
     'epel-release'
 ] %}
+{% if base_distro == 'centos' and base_distro_tag.startswith('8') %}
+{%   set base_centos_yum_repos_to_enable_append = ['HighAvailability'] %}
+{%   set base_centos_yum_repos_to_disable_remove = ['influxdb'] %}
+{% endif %}
+
+{% if base_distro == 'centos' and base_distro_tag.startswith('7') %}
 {% set base_centos_yum_repo_packages_append = [
     'centos-release-opstools'
 ] %}
+{% endif %}
 
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
 
@@ -361,7 +368,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # workaround for LP #1814233
 # Review https://review.opendev.org/#/c/634365/
 # Remove when https://review.opendev.org/#/c/634402/ is merged
-{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10'] %}
+{% set rabbitmq_packages_remove = ['rabbitmq-server-3.7.10', 'rabbitmq-server-3.7.*', 'rabbitmq-server-3.8.*'] %}
 {% set rabbitmq_packages_append = [
     'libqb',
     'pacemaker',
