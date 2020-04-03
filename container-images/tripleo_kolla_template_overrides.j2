@@ -347,7 +347,10 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 
 # Required to allow the mysql-migrate-db.sh data extraction script to be used
 # during an upgrade.
-{% set placement_api_packages_append = ['mariadb'] %}
+# LP #1866093: placement calls the mysql CLI directly, and when
+# users are configured to authenticate via ed25519, mysql CLI
+# requires client_ed25519.so, which is provided by mariadb-server
+{% set placement_api_packages_append = ['mariadb', 'mariadb-server'] %}
 
 
 {# rabbitmq #}
