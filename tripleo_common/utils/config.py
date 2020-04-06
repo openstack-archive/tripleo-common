@@ -246,13 +246,9 @@ class Config(object):
                     with self._open_file(filepath) as param_config:
                         param_config.write(json.dumps(role[config]))
                 elif config == 'ansible_group_vars':
-                    # NOTE(aschultz): ansible group vars are for specific role
-                    # services so we merge them in with the others so they
-                    # end up in the role vars. This means the last var
-                    # definition wins and will override them all.
-                    if role_name not in role_group_vars:
-                        role_group_vars[role_name] = {}
-                    role_group_vars[role_name].update(role[config])
+                    role_config = role[config].copy()
+                    role_config.update(role_group_vars[role_name])
+                    role_group_vars[role_name] = role_config
                 else:
                     # NOTE(emilien): Move this condition to the
                     # upper level once THT is adapted for all tasks to be
