@@ -35,28 +35,6 @@ from tripleo_common.utils import swift as swiftutils
 LOG = logging.getLogger(__name__)
 
 
-class CreateContainerAction(base.TripleOAction):
-    """Creates an object container
-
-    This action creates an object container for a given name.  If a container
-    with the same name already exists an exception is raised.
-    """
-
-    def __init__(self, container):
-        super(CreateContainerAction, self).__init__()
-        self.container = container
-
-    def run(self, context):
-        oc = self.get_object_client(context)
-        try:
-            plan_utils.create_plan_container(oc, self.container)
-
-        except Exception as err:
-            err_msg = ("Container creation failed for plan:%s" % (err))
-            LOG.exception(err_msg)
-            return actions.Result(error=err_msg)
-
-
 class ListPlansAction(base.TripleOAction):
     """Lists deployment plans
 

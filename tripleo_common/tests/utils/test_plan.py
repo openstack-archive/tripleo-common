@@ -20,6 +20,7 @@ import sys
 import yaml
 import zlib
 
+import six
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
@@ -976,3 +977,47 @@ class PlanTest(base.TestCase):
             {'environments/containers-default-parameters.yaml': True},
             container='overcloud'
         )
+
+    def test_create_plan_container(self):
+        # Setup
+        container_name = 'Test-container-7'
+        swift = mock.MagicMock()
+        swift.get_account.return_value = [
+            '', [{'name': 'test1'}, {'name': 'test2'}]]
+
+        # Test
+        plan_utils.create_plan_container(swift, container_name)
+
+        # Verify
+        swift.put_container.assert_called_once_with(
+            container_name,
+            headers={'x-container-meta-usage-tripleo': 'plan'}
+        )
+
+    def test_container_exists(self):
+        # Setup
+        container_name = 'Test-container-7'
+        swift = mock.MagicMock()
+        swift.get_account.return_value = [
+            '', [{'name': 'Test-container-7'}, {'name': 'test2'}]]
+
+        # Test
+        error_str = ('A container with the name %s already'
+                     ' exists.') % container_name
+        err = self.assertRaises(RuntimeError,
+                                plan_utils.create_plan_container,
+                                swift, container_name)
+        self.assertEquals(error_str, six.text_type(err))
+
+    def test_run_invalid_name(self):
+        # Setup
+        container_name = 'Invalid_underscore'
+        swift = mock.MagicMock()
+
+        # Test
+        error_str = ('The plan name must only contain '
+                     'letters, numbers or dashes')
+        err = self.assertRaises(RuntimeError,
+                                plan_utils.create_plan_container,
+                                swift, container_name)
+        self.assertEquals(error_str, six.text_type(err))

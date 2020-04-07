@@ -97,39 +97,6 @@ class UpdateRoleParametersAction(base.TripleOAction):
             return actions.Result(six.text_type(err))
 
 
-class GenerateFencingParametersAction(base.TripleOAction):
-    """Generates fencing configuration for a deployment.
-
-    :param nodes_json: list of nodes & attributes in json format
-    :param delay: time to wait before taking fencing action
-    :param ipmi_level: IPMI user level to use
-    :param ipmi_cipher: IPMI cipher suite to use
-    :param ipmi_lanplus: whether to use IPMIv2.0
-    """
-
-    def __init__(self, nodes_json, delay,
-                 ipmi_level, ipmi_cipher, ipmi_lanplus):
-        super(GenerateFencingParametersAction, self).__init__()
-        self.nodes_json = nodes_json
-        self.delay = delay
-        self.ipmi_level = ipmi_level
-        self.ipmi_cipher = ipmi_cipher
-        self.ipmi_lanplus = ipmi_lanplus
-
-    def run(self, context):
-        """Returns the parameters for fencing controller nodes"""
-        try:
-            return stack_param_utils.generate_fencing_parameters(
-                self.get_baremetal_client(context),
-                self.get_compute_client(context),
-                self.nodes_json,
-                self.delay, self.ipmi_level,
-                self.ipmi_cipher, self.ipmi_lanplus)
-        except Exception as err:
-            LOG.exception(six.text_type(err))
-            return actions.Result(six.text_type(err))
-
-
 class GetFlattenedParametersAction(base.TripleOAction):
     """Get the heat stack tree and parameters in flattened structure.
 

@@ -16,7 +16,6 @@ import mock
 
 
 from heatclient import exc as heatexceptions
-from mistral_lib import actions
 from oslo_concurrency import processutils
 from swiftclient import exceptions as swiftexceptions
 
@@ -124,69 +123,6 @@ UPDATED_ROLE_OBJ = {
     'networks': ['InternalApi', 'ExternalApi'],
     'tags': ['primary']
 }
-
-
-class CreateContainerActionTest(base.TestCase):
-
-    def setUp(self):
-        super(CreateContainerActionTest, self).setUp()
-        # A container that name enforces all validation rules
-        self.container_name = 'Test-container-7'
-        self.expected_list = ['', [{'name': 'test1'}, {'name': 'test2'}]]
-        self.ctx = mock.MagicMock()
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run(self, get_obj_client_mock):
-
-        # Setup
-        swift = mock.MagicMock()
-        swift.get_account.return_value = self.expected_list
-        get_obj_client_mock.return_value = swift
-
-        # Test
-        action = plan.CreateContainerAction(self.container_name)
-        action.run(self.ctx)
-
-        # Verify
-        swift.put_container.assert_called_once_with(
-            self.container_name,
-            headers={'x-container-meta-usage-tripleo': 'plan'}
-        )
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run_container_exists(self, get_obj_client_mock):
-
-        # Setup
-        swift = mock.MagicMock()
-        swift.get_account.return_value = [
-            '', [{'name': 'Test-container-7'}, {'name': 'test2'}]]
-        get_obj_client_mock.return_value = swift
-
-        # Test
-        action = plan.CreateContainerAction(self.container_name)
-        result = action.run(self.ctx)
-
-        error_str = ('Container creation failed for plan:'
-                     'A container with the name %s already'
-                     ' exists.') % self.container_name
-        self.assertEqual(result, actions.Result(
-            None, error_str))
-
-    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
-    def test_run_invalid_name(self, get_obj_client_mock):
-        # Setup
-        swift = mock.MagicMock()
-        get_obj_client_mock.return_value = swift
-
-        # Test
-        action = plan.CreateContainerAction("invalid_underscore")
-        result = action.run(self.ctx)
-
-        error_str = ('Container creation failed for plan:'
-                     'The plan name must only contain '
-                     'letters, numbers or dashes')
-        self.assertEqual(result, actions.Result(
-            None, error_str))
 
 
 class ListPlansActionTest(base.TestCase):
