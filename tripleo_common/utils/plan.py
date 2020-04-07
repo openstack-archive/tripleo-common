@@ -416,6 +416,17 @@ def generate_passwords(swift, heat, mistral=None,
     except heat_exc.HTTPNotFound:
         stack_env = None
 
+    try:
+        # We can't rely on the existence of PlacementPassword to
+        # determine if placement extraction has occured as it was added
+        # in stein while the service extraction was delayed to train.
+        # Inspect the endpoint map instead.
+        endpoint_res = heat.resources.get(container, 'EndpointMap')
+        endpoints = endpoint_res.attributes.get('endpoint_map', {})
+        placement_extracted = 'PlacementPublic' in endpoints
+    except heat_exc.HTTPNotFound:
+        placement_extracted = False
+
     passwords = password_utils.generate_passwords(
         stack_env=stack_env,
         rotate_passwords=rotate_passwords
@@ -431,6 +442,15 @@ def generate_passwords(swift, heat, mistral=None,
         for i in ('RpcPassword', 'NotifyPassword'):
             if i not in env['passwords']:
                 env['passwords'][i] = env['passwords']['RabbitPassword']
+
+    # NOTE(owalsh): placement previously used NovaPassword
+    # Default to the same password for PlacementPassword if it is an
+    # upgrade (i.e NovaPassword is set) so we do not need to update the
+    # password in keystone
+    if not placement_extracted and 'NovaPassword' in env['passwords']:
+        LOG.debug('Setting PlacementPassword to NovaPassword')
+        env['passwords']['PlacementPassword'] = \
+            env['passwords']['NovaPassword']
 
     # ensure all generated passwords are present in plan env,
     # but respect any values previously generated and stored

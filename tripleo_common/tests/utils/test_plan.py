@@ -627,6 +627,9 @@ class PlanTest(base.TestCase):
         }
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
             'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
@@ -683,6 +686,14 @@ class PlanTest(base.TestCase):
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {}
         }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
 
         result = plan_utils.generate_passwords(swift, mock_orchestration)
 
@@ -692,6 +703,56 @@ class PlanTest(base.TestCase):
             swift,
             "overcloud",
             "tripleo.parameters.get"
+        )
+
+    @mock.patch('tripleo_common.utils.plan.'
+                'cache_delete')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    def test_placement_passwords_upgrade(self,
+                                         mock_get_snmpd_readonly_user_password,
+                                         mock_fernet_keys_setup,
+                                         mock_create_ssh_keypair,
+                                         mock_cache):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        passwords = _EXISTING_PASSWORDS.copy()
+
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': constants.DEFAULT_CONTAINER_NAME,
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'passwords': passwords
+        }, default_flow_style=False)
+        swift.get_object.return_value = ({}, mock_env)
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': {}
+        }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {},
+            'value': None
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+
+        result = plan_utils.generate_passwords(swift, mock_orchestration)
+
+        self.assertEqual(
+            passwords['NovaPassword'],
+            result['PlacementPassword']
         )
 
     @mock.patch('tripleo_common.utils.plan.'
@@ -730,6 +791,9 @@ class PlanTest(base.TestCase):
 
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
             'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
@@ -786,8 +850,12 @@ class PlanTest(base.TestCase):
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {}
         }
+
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
             'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
@@ -859,6 +927,15 @@ class PlanTest(base.TestCase):
                 'AdminPassword': 'ExistingPasswordInHeat',
             }
         }
+
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {
+                'PlacementPublic': {}
+            },
+            'value': 'existing_value'
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
 
         result = plan_utils.generate_passwords(swift, mock_orchestration)
 
