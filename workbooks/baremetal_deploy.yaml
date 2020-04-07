@@ -233,6 +233,7 @@ workflows:
           ssh_keys: <% $.ssh_keys %>
           ssh_user_name: <% $.ssh_user_name %>
           timeout: <% $.timeout %>
+          concurrency: <% $.concurrency %>
           connection_timeout: <% $.connection_timeout %>
           queue_name: <% $.queue_name %>
         publish:
