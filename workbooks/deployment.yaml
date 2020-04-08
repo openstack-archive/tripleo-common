@@ -432,15 +432,15 @@ workflows:
 
       uuids_to_names:
         action: ironic.node_get_by_instance_uuid
-        on-success: get_private_key
-        # This task will fail on split-stack and nova-less deployment.
-        # We'll complete the conversion later in the cycle and backport to Train.
-        # https://bugs.launchpad.net/tripleo/+bug/1858459
-        on-error: ansible_skipped
+        on-complete: get_private_key
         input:
           instance_uuid: <% $.node %>
           fields: ['instance_info']
         with-items: node in <% $.nodes %>
+        publish-on-error:
+          limit_hosts: <% $.nodes.join(',') %>
+        publish:
+          limit_hosts: <% list(task().result.instance_info.display_name).join(',') %>
 
       get_private_key:
         action: tripleo.validations.get_privkey
@@ -518,7 +518,7 @@ workflows:
           override_ansible_cfg: <% $.override_ansible_cfg %>
           command_timeout: <% $.config_download_timeout %>
           execution_id: <% execution().id %>
-          limit_hosts: <% $.nodes and list(task(uuids_to_names).result.instance_info.display_name).join(',') or false %>
+          limit_hosts: <% $.nodes and $.get(limit_hosts) or false %>
           skip_tags: <% $.skip_tags %>
         publish:
           log_path: <% task().result.get('log_path') %>
@@ -538,13 +538,6 @@ workflows:
         publish:
           status: SUCCESS
           message: Ansible passed.
-          deployment_status: DEPLOY_SUCCESS
-
-      ansible_skipped:
-        on-success: send_message
-        publish:
-          status: SUCCESS
-          message: Ansible skipped.
           deployment_status: DEPLOY_SUCCESS
 
       ansible_timeout:
