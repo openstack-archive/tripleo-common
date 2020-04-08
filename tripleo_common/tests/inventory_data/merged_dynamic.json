@@ -1,0 +1,970 @@
+{
+    "CellController": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "Compute": {
+        "children": [
+            "cell1_Compute",
+            "overcloud_Compute"
+        ]
+    },
+    "Controller": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "Undercloud": {
+        "hosts": [
+            "undercloud"
+        ],
+        "vars": {
+            "ansible_connection": "local",
+            "ansible_host": "localhost",
+            "ansible_python_interpreter": "/usr/bin/python2",
+            "ansible_remote_tmp": "/tmp/ansible-${USER}",
+            "auth_url": "https://192.168.24.2:13000",
+            "cacert": "/etc/pki/ca-trust/source/anchors/cm-local-ca.pem",
+            "os_auth_token": "gAAAAABedRLI4L-0UK1i3r0lkHVPFeGE2FB40mk7tjWw_US3nwQvzZlwKPM_uCq1wYeBqkCLwiXW61BrZswCi9M3mI-6HeniTi9qV7nXUyLHrWw1Kh5woAEGPyjmdiMiTh_P0WFKobYqXdP0oFwcN_LWr-mnYE1YWluvX4qKeUEeIOXHVj8OtMg",
+            "overcloud_admin_password": "9RDyelRD5PT5Jk6q4efjYG6Es",
+            "overcloud_horizon_url": "https://10.0.0.5:443/dashboard",
+            "overcloud_keystone_url": "https://10.0.0.5:13000",
+            "plan": "",
+            "plans": [
+                "cell1",
+                "overcloud"
+            ],
+            "project_name": "admin",
+            "undercloud_service_list": [
+                "tripleo_nova_compute",
+                "tripleo_heat_engine",
+                "tripleo_ironic_conductor",
+                "tripleo_swift_container_server",
+                "tripleo_swift_object_server",
+                "tripleo_mistral_engine"
+            ],
+            "undercloud_swift_url": "https://192.168.24.2:13808/v1/AUTH_b0d47705b94c486889fd2b26ce343763",
+            "username": "admin"
+        }
+    },
+    "_meta": {
+        "hostvars": {
+            "cell1-cellcontrol-0": {
+                "ansible_host": "192.168.24.29",
+                "canonical_hostname": "cell1-cellcontrol-0.localdomain",
+                "ctlplane_hostname": "cell1-cellcontrol-0.ctlplane.localdomain",
+                "ctlplane_ip": "192.168.24.29",
+                "deploy_server_id": "2a668e02-96b3-48a5-9cf2-7bde46830e23",
+                "external_hostname": "cell1-cellcontrol-0.external.localdomain",
+                "external_ip": "10.0.0.38",
+                "internal_api_hostname": "cell1-cellcontrol-0.internalapi.localdomain",
+                "internal_api_ip": "172.16.2.119",
+                "management_ip": "192.168.24.29",
+                "storage_hostname": "cell1-cellcontrol-0.storage.localdomain",
+                "storage_ip": "172.16.1.167",
+                "storage_mgmt_hostname": "cell1-cellcontrol-0.storagemgmt.localdomain",
+                "storage_mgmt_ip": "172.16.3.183",
+                "tenant_hostname": "cell1-cellcontrol-0.tenant.localdomain",
+                "tenant_ip": "172.16.0.125"
+            },
+            "cell1-compute-0": {
+                "ansible_host": "192.168.24.10",
+                "canonical_hostname": "cell1-compute-0.localdomain",
+                "ctlplane_hostname": "cell1-compute-0.ctlplane.localdomain",
+                "ctlplane_ip": "192.168.24.10",
+                "deploy_server_id": "5b31842e-1118-4961-95cf-47d7a326e839",
+                "external_ip": "192.168.24.10",
+                "internal_api_hostname": "cell1-compute-0.internalapi.localdomain",
+                "internal_api_ip": "172.16.2.18",
+                "management_ip": "192.168.24.10",
+                "storage_hostname": "cell1-compute-0.storage.localdomain",
+                "storage_ip": "172.16.1.218",
+                "storage_mgmt_ip": "192.168.24.10",
+                "tenant_hostname": "cell1-compute-0.tenant.localdomain",
+                "tenant_ip": "172.16.0.27"
+            },
+            "overcloud-controller-0": {
+                "ansible_host": "192.168.24.12",
+                "canonical_hostname": "overcloud-controller-0.localdomain",
+                "ctlplane_hostname": "overcloud-controller-0.ctlplane.localdomain",
+                "ctlplane_ip": "192.168.24.12",
+                "deploy_server_id": "6c1befea-4173-49bd-9507-631cc33f44a2",
+                "external_hostname": "overcloud-controller-0.external.localdomain",
+                "external_ip": "10.0.0.10",
+                "internal_api_hostname": "overcloud-controller-0.internalapi.localdomain",
+                "internal_api_ip": "172.16.2.199",
+                "management_ip": "192.168.24.12",
+                "storage_hostname": "overcloud-controller-0.storage.localdomain",
+                "storage_ip": "172.16.1.13",
+                "storage_mgmt_hostname": "overcloud-controller-0.storagemgmt.localdomain",
+                "storage_mgmt_ip": "172.16.3.89",
+                "tenant_hostname": "overcloud-controller-0.tenant.localdomain",
+                "tenant_ip": "172.16.0.167"
+            },
+            "overcloud-novacompute-0": {
+                "ansible_host": "192.168.24.13",
+                "canonical_hostname": "overcloud-novacompute-0.localdomain",
+                "ctlplane_hostname": "overcloud-novacompute-0.ctlplane.localdomain",
+                "ctlplane_ip": "192.168.24.13",
+                "deploy_server_id": "c5c20c87-60f8-4dc9-a0e8-1f185c4b8a8c",
+                "external_ip": "192.168.24.13",
+                "internal_api_hostname": "overcloud-novacompute-0.internalapi.localdomain",
+                "internal_api_ip": "172.16.2.241",
+                "management_ip": "192.168.24.13",
+                "storage_hostname": "overcloud-novacompute-0.storage.localdomain",
+                "storage_ip": "172.16.1.235",
+                "storage_mgmt_ip": "192.168.24.13",
+                "tenant_hostname": "overcloud-novacompute-0.tenant.localdomain",
+                "tenant_ip": "172.16.0.242"
+            }
+        }
+    },
+    "allovercloud": {
+        "children": [
+            "cell1_allovercloud",
+            "overcloud_allovercloud"
+        ]
+    },
+    "boot_params_service": {
+        "children": [
+            "cell1_boot_params_service",
+            "overcloud_boot_params_service"
+        ]
+    },
+    "ca_certs": {
+        "children": [
+            "cell1_ca_certs",
+            "overcloud_ca_certs"
+        ]
+    },
+    "cell1": {
+        "children": [
+            "cell1_allovercloud"
+        ]
+    },
+    "cell1_CellController": {
+        "hosts": [
+            "cell1-cellcontrol-0"
+        ],
+        "vars": {
+            "ansible_ssh_user": "heat-admin",
+            "bootstrap_server_id": "2a668e02-96b3-48a5-9cf2-7bde46830e23",
+            "serial": "1",
+            "tripleo_role_name": "CellController",
+            "tripleo_role_networks": [
+                "ctlplane",
+                "external",
+                "internal_api",
+                "management",
+                "storage",
+                "storage_mgmt",
+                "tenant"
+            ]
+        }
+    },
+    "cell1_Compute": {
+        "hosts": [
+            "cell1-compute-0"
+        ],
+        "vars": {
+            "ansible_ssh_user": "heat-admin",
+            "bootstrap_server_id": "2a668e02-96b3-48a5-9cf2-7bde46830e23",
+            "serial": "1",
+            "tripleo_role_name": "Compute",
+            "tripleo_role_networks": [
+                "ctlplane",
+                "external",
+                "internal_api",
+                "management",
+                "storage",
+                "storage_mgmt",
+                "tenant"
+            ]
+        }
+    },
+    "cell1_allovercloud": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_boot_params_service": {
+        "children": [
+            "cell1_Compute"
+        ]
+    },
+    "cell1_ca_certs": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_cell1": {
+        "children": [
+            "cell1_allovercloud"
+        ]
+    },
+    "cell1_certmonger_user": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_chrony": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_container_image_prepare": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_haproxy": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_iscsid": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_keepalived": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_kernel": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_logrotate_crond": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_mysql": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_mysql_client": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_nova_compute": {
+        "children": [
+            "cell1_Compute"
+        ]
+    },
+    "cell1_nova_conductor": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_nova_libvirt": {
+        "children": [
+            "cell1_Compute"
+        ]
+    },
+    "cell1_nova_libvirt_guests": {
+        "children": [
+            "cell1_Compute"
+        ]
+    },
+    "cell1_nova_metadata": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_nova_migration_target": {
+        "children": [
+            "cell1_Compute"
+        ]
+    },
+    "cell1_nova_vnc_proxy": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_oslo_messaging_rpc": {
+        "children": [
+            "cell1_CellController"
+        ]
+    },
+    "cell1_overcloud": {
+        "children": [
+            "cell1_allovercloud"
+        ]
+    },
+    "cell1_ovn_controller": {
+        "children": [
+            "cell1_Compute"
+        ]
+    },
+    "cell1_ovn_metadata": {
+        "children": [
+            "cell1_Compute"
+        ]
+    },
+    "cell1_podman": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_snmp": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_sshd": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_timezone": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_tripleo_firewall": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_tripleo_packages": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "cell1_tuned": {
+        "children": [
+            "cell1_CellController",
+            "cell1_Compute"
+        ]
+    },
+    "certmonger_user": {
+        "children": [
+            "cell1_certmonger_user",
+            "overcloud_certmonger_user"
+        ]
+    },
+    "chrony": {
+        "children": [
+            "cell1_chrony",
+            "overcloud_chrony"
+        ]
+    },
+    "cinder_api": {
+        "children": [
+            "overcloud_cinder_api"
+        ]
+    },
+    "cinder_scheduler": {
+        "children": [
+            "overcloud_cinder_scheduler"
+        ]
+    },
+    "cinder_volume": {
+        "children": [
+            "overcloud_cinder_volume"
+        ]
+    },
+    "container_image_prepare": {
+        "children": [
+            "cell1_container_image_prepare",
+            "overcloud_container_image_prepare"
+        ]
+    },
+    "glance_api": {
+        "children": [
+            "overcloud_glance_api"
+        ]
+    },
+    "haproxy": {
+        "children": [
+            "cell1_haproxy",
+            "overcloud_haproxy"
+        ]
+    },
+    "heat_api": {
+        "children": [
+            "overcloud_heat_api"
+        ]
+    },
+    "heat_api_cfn": {
+        "children": [
+            "overcloud_heat_api_cfn"
+        ]
+    },
+    "heat_api_cloudwatch_disabled": {
+        "children": [
+            "overcloud_heat_api_cloudwatch_disabled"
+        ]
+    },
+    "heat_engine": {
+        "children": [
+            "overcloud_heat_engine"
+        ]
+    },
+    "horizon": {
+        "children": [
+            "overcloud_horizon"
+        ]
+    },
+    "iscsid": {
+        "children": [
+            "cell1_iscsid",
+            "overcloud_iscsid"
+        ]
+    },
+    "keepalived": {
+        "children": [
+            "cell1_keepalived",
+            "overcloud_keepalived"
+        ]
+    },
+    "kernel": {
+        "children": [
+            "cell1_kernel",
+            "overcloud_kernel"
+        ]
+    },
+    "keystone": {
+        "children": [
+            "overcloud_keystone"
+        ]
+    },
+    "keystone_admin_api": {
+        "children": [
+            "overcloud_keystone_admin_api"
+        ]
+    },
+    "keystone_public_api": {
+        "children": [
+            "overcloud_keystone_public_api"
+        ]
+    },
+    "logrotate_crond": {
+        "children": [
+            "cell1_logrotate_crond",
+            "overcloud_logrotate_crond"
+        ]
+    },
+    "memcached": {
+        "children": [
+            "overcloud_memcached"
+        ]
+    },
+    "mysql": {
+        "children": [
+            "cell1_mysql",
+            "overcloud_mysql"
+        ]
+    },
+    "mysql_client": {
+        "children": [
+            "cell1_mysql_client",
+            "overcloud_mysql_client"
+        ]
+    },
+    "neutron_api": {
+        "children": [
+            "overcloud_neutron_api"
+        ]
+    },
+    "neutron_plugin_ml2_ovn": {
+        "children": [
+            "overcloud_neutron_plugin_ml2_ovn"
+        ]
+    },
+    "nova_api": {
+        "children": [
+            "overcloud_nova_api"
+        ]
+    },
+    "nova_compute": {
+        "children": [
+            "cell1_nova_compute",
+            "overcloud_nova_compute"
+        ]
+    },
+    "nova_conductor": {
+        "children": [
+            "cell1_nova_conductor",
+            "overcloud_nova_conductor"
+        ]
+    },
+    "nova_libvirt": {
+        "children": [
+            "cell1_nova_libvirt",
+            "overcloud_nova_libvirt"
+        ]
+    },
+    "nova_libvirt_guests": {
+        "children": [
+            "cell1_nova_libvirt_guests",
+            "overcloud_nova_libvirt_guests"
+        ]
+    },
+    "nova_metadata": {
+        "children": [
+            "cell1_nova_metadata",
+            "overcloud_nova_metadata"
+        ]
+    },
+    "nova_migration_target": {
+        "children": [
+            "cell1_nova_migration_target",
+            "overcloud_nova_migration_target"
+        ]
+    },
+    "nova_scheduler": {
+        "children": [
+            "overcloud_nova_scheduler"
+        ]
+    },
+    "nova_vnc_proxy": {
+        "children": [
+            "cell1_nova_vnc_proxy",
+            "overcloud_nova_vnc_proxy"
+        ]
+    },
+    "oslo_messaging_notify": {
+        "children": [
+            "overcloud_oslo_messaging_notify"
+        ]
+    },
+    "oslo_messaging_rpc": {
+        "children": [
+            "cell1_oslo_messaging_rpc",
+            "overcloud_oslo_messaging_rpc"
+        ]
+    },
+    "overcloud": {
+        "children": [
+            "overcloud_allovercloud"
+        ]
+    },
+    "overcloud_Compute": {
+        "hosts": [
+            "overcloud-novacompute-0"
+        ],
+        "vars": {
+            "ansible_ssh_user": "heat-admin",
+            "bootstrap_server_id": "6c1befea-4173-49bd-9507-631cc33f44a2",
+            "serial": "1",
+            "tripleo_role_name": "Compute",
+            "tripleo_role_networks": [
+                "ctlplane",
+                "external",
+                "internal_api",
+                "management",
+                "storage",
+                "storage_mgmt",
+                "tenant"
+            ]
+        }
+    },
+    "overcloud_Controller": {
+        "hosts": [
+            "overcloud-controller-0"
+        ],
+        "vars": {
+            "ansible_ssh_user": "heat-admin",
+            "bootstrap_server_id": "6c1befea-4173-49bd-9507-631cc33f44a2",
+            "serial": "1",
+            "tripleo_role_name": "Controller",
+            "tripleo_role_networks": [
+                "ctlplane",
+                "external",
+                "internal_api",
+                "management",
+                "storage",
+                "storage_mgmt",
+                "tenant"
+            ]
+        }
+    },
+    "overcloud_allovercloud": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_boot_params_service": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_ca_certs": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_certmonger_user": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_chrony": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_cinder_api": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_cinder_scheduler": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_cinder_volume": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_container_image_prepare": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_glance_api": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_haproxy": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_heat_api": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_heat_api_cfn": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_heat_api_cloudwatch_disabled": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_heat_engine": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_horizon": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_iscsid": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_keepalived": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_kernel": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_keystone": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_keystone_admin_api": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_keystone_public_api": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_logrotate_crond": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_memcached": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_mysql": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_mysql_client": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_neutron_api": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_neutron_plugin_ml2_ovn": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_nova_api": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_nova_compute": {
+        "children": [
+            "overcloud_Compute"
+        ]
+    },
+    "overcloud_nova_conductor": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_nova_libvirt": {
+        "children": [
+            "overcloud_Compute"
+        ]
+    },
+    "overcloud_nova_libvirt_guests": {
+        "children": [
+            "overcloud_Compute"
+        ]
+    },
+    "overcloud_nova_metadata": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_nova_migration_target": {
+        "children": [
+            "overcloud_Compute"
+        ]
+    },
+    "overcloud_nova_scheduler": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_nova_vnc_proxy": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_oslo_messaging_notify": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_oslo_messaging_rpc": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_overcloud": {
+        "children": [
+            "overcloud_allovercloud"
+        ]
+    },
+    "overcloud_ovn_controller": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_ovn_dbs": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_ovn_metadata": {
+        "children": [
+            "overcloud_Compute"
+        ]
+    },
+    "overcloud_placement": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_podman": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_snmp": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_sshd": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_swift_proxy": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_swift_ringbuilder": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_swift_storage": {
+        "children": [
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_timezone": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_tripleo_firewall": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_tripleo_packages": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "overcloud_tuned": {
+        "children": [
+            "overcloud_Compute",
+            "overcloud_Controller"
+        ]
+    },
+    "ovn_controller": {
+        "children": [
+            "cell1_ovn_controller",
+            "overcloud_ovn_controller"
+        ]
+    },
+    "ovn_dbs": {
+        "children": [
+            "overcloud_ovn_dbs"
+        ]
+    },
+    "ovn_metadata": {
+        "children": [
+            "cell1_ovn_metadata",
+            "overcloud_ovn_metadata"
+        ]
+    },
+    "placement": {
+        "children": [
+            "overcloud_placement"
+        ]
+    },
+    "podman": {
+        "children": [
+            "cell1_podman",
+            "overcloud_podman"
+        ]
+    },
+    "snmp": {
+        "children": [
+            "cell1_snmp",
+            "overcloud_snmp"
+        ]
+    },
+    "sshd": {
+        "children": [
+            "cell1_sshd",
+            "overcloud_sshd"
+        ]
+    },
+    "swift_proxy": {
+        "children": [
+            "overcloud_swift_proxy"
+        ]
+    },
+    "swift_ringbuilder": {
+        "children": [
+            "overcloud_swift_ringbuilder"
+        ]
+    },
+    "swift_storage": {
+        "children": [
+            "overcloud_swift_storage"
+        ]
+    },
+    "timezone": {
+        "children": [
+            "cell1_timezone",
+            "overcloud_timezone"
+        ]
+    },
+    "tripleo_firewall": {
+        "children": [
+            "cell1_tripleo_firewall",
+            "overcloud_tripleo_firewall"
+        ]
+    },
+    "tripleo_packages": {
+        "children": [
+            "cell1_tripleo_packages",
+            "overcloud_tripleo_packages"
+        ]
+    },
+    "tuned": {
+        "children": [
+            "cell1_tuned",
+            "overcloud_tuned"
+        ]
+    }
+}

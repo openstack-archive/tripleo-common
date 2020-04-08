@@ -92,7 +92,6 @@ class TripleoInventory(object):
                  undercloud_key_file=None, serial=1):
         self.session = session
         self.hclient = hclient
-        self.hosts_format_dict = False
         self.host_network = host_network or HOST_NETWORK
         self.auth_url = auth_url
         self.cacert = cacert
@@ -141,9 +140,9 @@ class TripleoInventory(object):
         """
         return self.UNDERCLOUD_SERVICES
 
-    def _hosts(self, alist):
+    def _hosts(self, alist, dynamic=True):
         """Static yaml inventories reqire a different hosts format?!"""
-        if self.hosts_format_dict:
+        if not dynamic:
             return {x: {} for x in alist}
         else:
             return alist
@@ -158,10 +157,10 @@ class TripleoInventory(object):
 
         return stack
 
-    def list(self):
+    def list(self, dynamic=True):
         ret = OrderedDict({
             'Undercloud': {
-                'hosts': self._hosts(['undercloud']),
+                'hosts': self._hosts(['undercloud'], dynamic),
                 'vars': {
                     'ansible_host': 'localhost',
                     'ansible_python_interpreter': sys.executable,
@@ -205,7 +204,7 @@ class TripleoInventory(object):
             ret['Undercloud']['vars']['overcloud_admin_password'] =\
                 admin_password
 
-        if not self.hosts_format_dict:
+        if dynamic:
             # Prevent Ansible from repeatedly calling us to get empty host
             # details
             ret['_meta'] = {'hostvars': self.hostvars}
@@ -263,7 +262,7 @@ class TripleoInventory(object):
 
                 children.append(role)
 
-                if self.hosts_format_dict:
+                if not dynamic:
                     hosts_format = hosts
                 else:
                     hosts_format = [h for h in hosts.keys()]
@@ -304,10 +303,19 @@ class TripleoInventory(object):
                 self.get_overcloud_environment().get(
                     'parameter_defaults', {}).get('ContainerCli')
 
-            ret['overcloud'] = {
-                'children': self._hosts(sorted(children)),
+            ret['allovercloud'] = {
+                'children': self._hosts(sorted(children), dynamic),
                 'vars': overcloud_vars
             }
+
+            ret[self.plan_name] = {
+                'children': self._hosts(['allovercloud'], dynamic)
+            }
+            if self.plan_name != 'overcloud':
+                ret['overcloud'] = {
+                    'children': self._hosts(['allovercloud'], dynamic),
+                    'deprecated': 'Deprecated by allovercloud group in Ussuri'
+                }
 
         # Associate services with roles
         roles_by_service = self.get_roles_by_service(
@@ -340,7 +348,7 @@ class TripleoInventory(object):
             if service_children:
                 svc_host = service.lower()
                 ret[svc_host] = {
-                    'children': self._hosts(service_children),
+                    'children': self._hosts(service_children, dynamic),
                     'vars': {
                         'ansible_ssh_user': self.ansible_ssh_user
                     }
@@ -368,8 +376,7 @@ class TripleoInventory(object):
 
         # For some reason the json/yaml format needed for static and
         # dynamic inventories is different for the hosts/children?!
-        self.hosts_format_dict = True
-        inventory = self.list()
+        inventory = self.list(dynamic=False)
 
         if extra_vars:
             for var, value in extra_vars.items():
