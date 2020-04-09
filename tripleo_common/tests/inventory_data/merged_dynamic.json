@@ -30,7 +30,6 @@
             "overcloud_admin_password": "9RDyelRD5PT5Jk6q4efjYG6Es",
             "overcloud_horizon_url": "https://10.0.0.5:443/dashboard",
             "overcloud_keystone_url": "https://10.0.0.5:13000",
-            "plan": "",
             "plans": [
                 "cell1",
                 "overcloud"
