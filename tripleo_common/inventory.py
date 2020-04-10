@@ -250,10 +250,6 @@ class TripleoInventory(object):
                         hosts[name].update({
                             'deploy_server_id': role_node_id_map[
                                 'server_ids'][role][idx]})
-                    # Add variable for listing enabled networks in the node
-                    hosts[name].update({
-                        'enabled_networks':
-                            [str(net) for net in role_net_ip_map[role]]})
                     # Add variable for IP on each network
                     for net in role_net_ip_map[role]:
                         hosts[name].update({
@@ -265,8 +261,6 @@ class TripleoInventory(object):
                             "%s_hostname" % net:
                                 role_net_hostname_map[role][net][idx]})
 
-                    networks.update(hosts[name]['enabled_networks'])
-
                 children.append(role)
 
                 if self.hosts_format_dict:
@@ -275,6 +269,11 @@ class TripleoInventory(object):
                     hosts_format = [h for h in hosts.keys()]
                     hosts_format.sort()
 
+                role_networks = sorted([
+                    str(net) for net in role_net_ip_map[role]
+                ])
+                networks.update(role_networks)
+
                 ret[role] = {
                     'hosts': hosts_format,
                     'vars': {
@@ -282,6 +281,7 @@ class TripleoInventory(object):
                         'bootstrap_server_id': role_node_id_map.get(
                             'bootstrap_server_id'),
                         'tripleo_role_name': role,
+                        'tripleo_role_networks': role_networks,
                         'serial': self.serial,
                     }
 
