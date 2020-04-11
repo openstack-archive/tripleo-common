@@ -103,7 +103,8 @@ class TripleoInventories(object):
                             )
 
         # 'plan' doesn't make sense when using multiple plans
-        inventory['Undercloud']['vars']['plan'] = ''
+        if len(self.stack_to_inv_obj_map) > 1:
+            del inventory['Undercloud']['vars']['plan']
         # sort plans list for consistency
         inventory['Undercloud']['vars']['plans'].sort()
         return inventory
