@@ -210,6 +210,14 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
     'resource-agents',
     'xinetd'
 ] %}
+# LP #1866093: auth_ed25519 currently requires puppet-tripleo to
+# call a python script depending on pynacl
+{% if distro_python_version.startswith('3') %}
+{% set mariadb_packages_append = mariadb_packages_append + ['python3-pynacl'] %}
+{% else %}
+{% set mariadb_packages_append = mariadb_packages_append + ['python2-pynacl'] %}
+{% endif %}
+
 
 
 {# mistral #}
