@@ -36,7 +36,7 @@ class OrchestrationDeployAction(base.TripleOAction):
 
     def __init__(self, server_id, config, name, input_values=[],
                  action='CREATE', signal_transport='TEMP_URL_SIGNAL',
-                 timeout=300, group='script'):
+                 timeout=600, group='script'):
         super(OrchestrationDeployAction, self).__init__()
         self.server_id = server_id
         self.config = config
@@ -89,7 +89,7 @@ class OrchestrationDeployAction(base.TripleOAction):
 
         swift_url = deployment_utils.create_temp_url(swift_client,
                                                      self.name,
-                                                     self.timeout)
+                                                     self.timeout / 60)
         container_name, object_name = \
             self._extract_container_object_from_swift_url(swift_url)
 
