@@ -1,0 +1,438 @@
+_meta:
+  hostvars: {}
+Undercloud:
+  hosts:
+  - undercloud
+  vars:
+    ansible_connection: local
+    ansible_host: localhost
+    ansible_python_interpreter: /usr/bin/python2
+    ansible_remote_tmp: /tmp/ansible-${USER}
+    auth_url: https://192.168.24.2:13000
+    cacert: /etc/pki/ca-trust/source/anchors/cm-local-ca.pem
+    os_auth_token: gAAAAABedRLI4L-0UK1i3r0lkHVPFeGE2FB40mk7tjWw_US3nwQvzZlwKPM_uCq1wYeBqkCLwiXW61BrZswCi9M3mI-6HeniTi9qV7nXUyLHrWw1Kh5woAEGPyjmdiMiTh_P0WFKobYqXdP0oFwcN_LWr-mnYE1YWluvX4qKeUEeIOXHVj8OtMg
+    overcloud_admin_password: 9RDyelRD5PT5Jk6q4efjYG6Es
+    overcloud_horizon_url: https://10.0.0.5:443/dashboard
+    overcloud_keystone_url: https://10.0.0.5:13000
+    plan: overcloud
+    plans:
+    - overcloud
+    project_name: admin
+    undercloud_service_list:
+    - tripleo_nova_compute
+    - tripleo_heat_engine
+    - tripleo_ironic_conductor
+    - tripleo_swift_container_server
+    - tripleo_swift_object_server
+    - tripleo_mistral_engine
+    undercloud_swift_url: https://192.168.24.2:13808/v1/AUTH_b0d47705b94c486889fd2b26ce343763
+    username: admin
+Controller:
+  children:
+  - overcloud_Controller
+overcloud_Controller:
+  hosts:
+    overcloud-controller-0:
+      ansible_host: 192.168.24.12
+      canonical_hostname: overcloud-controller-0.localdomain
+      ctlplane_hostname: overcloud-controller-0.ctlplane.localdomain
+      ctlplane_ip: 192.168.24.12
+      deploy_server_id: 6c1befea-4173-49bd-9507-631cc33f44a2
+      external_hostname: overcloud-controller-0.external.localdomain
+      external_ip: 10.0.0.10
+      internal_api_hostname: overcloud-controller-0.internalapi.localdomain
+      internal_api_ip: 172.16.2.199
+      management_ip: 192.168.24.12
+      storage_hostname: overcloud-controller-0.storage.localdomain
+      storage_ip: 172.16.1.13
+      storage_mgmt_hostname: overcloud-controller-0.storagemgmt.localdomain
+      storage_mgmt_ip: 172.16.3.89
+      tenant_hostname: overcloud-controller-0.tenant.localdomain
+      tenant_ip: 172.16.0.167
+  vars:
+    ansible_ssh_user: heat-admin
+    bootstrap_server_id: 6c1befea-4173-49bd-9507-631cc33f44a2
+    serial: '1'
+    tripleo_role_name: Controller
+    tripleo_role_networks:
+    - ctlplane
+    - external
+    - internal_api
+    - management
+    - storage
+    - storage_mgmt
+    - tenant
+Compute:
+  children:
+  - overcloud_Compute
+overcloud_Compute:
+  hosts:
+    overcloud-novacompute-0:
+      ansible_host: 192.168.24.13
+      canonical_hostname: overcloud-novacompute-0.localdomain
+      ctlplane_hostname: overcloud-novacompute-0.ctlplane.localdomain
+      ctlplane_ip: 192.168.24.13
+      deploy_server_id: c5c20c87-60f8-4dc9-a0e8-1f185c4b8a8c
+      external_ip: 192.168.24.13
+      internal_api_hostname: overcloud-novacompute-0.internalapi.localdomain
+      internal_api_ip: 172.16.2.241
+      management_ip: 192.168.24.13
+      storage_hostname: overcloud-novacompute-0.storage.localdomain
+      storage_ip: 172.16.1.235
+      storage_mgmt_ip: 192.168.24.13
+      tenant_hostname: overcloud-novacompute-0.tenant.localdomain
+      tenant_ip: 172.16.0.242
+  vars:
+    ansible_ssh_user: heat-admin
+    bootstrap_server_id: 6c1befea-4173-49bd-9507-631cc33f44a2
+    serial: '1'
+    tripleo_role_name: Compute
+    tripleo_role_networks:
+    - ctlplane
+    - external
+    - internal_api
+    - management
+    - storage
+    - storage_mgmt
+    - tenant
+allovercloud:
+  children:
+  - overcloud_allovercloud
+overcloud_allovercloud:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+overcloud:
+  children:
+  - overcloud_allovercloud
+overcloud_overcloud:
+  children:
+  - overcloud_allovercloud
+kernel:
+  children:
+  - overcloud_kernel
+overcloud_kernel:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+nova_conductor:
+  children:
+  - overcloud_nova_conductor
+overcloud_nova_conductor:
+  children:
+  - overcloud_Controller
+snmp:
+  children:
+  - overcloud_snmp
+overcloud_snmp:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+mysql:
+  children:
+  - overcloud_mysql
+overcloud_mysql:
+  children:
+  - overcloud_Controller
+cinder_api:
+  children:
+  - overcloud_cinder_api
+overcloud_cinder_api:
+  children:
+  - overcloud_Controller
+swift_proxy:
+  children:
+  - overcloud_swift_proxy
+overcloud_swift_proxy:
+  children:
+  - overcloud_Controller
+swift_ringbuilder:
+  children:
+  - overcloud_swift_ringbuilder
+overcloud_swift_ringbuilder:
+  children:
+  - overcloud_Controller
+heat_api:
+  children:
+  - overcloud_heat_api
+overcloud_heat_api:
+  children:
+  - overcloud_Controller
+container_image_prepare:
+  children:
+  - overcloud_container_image_prepare
+overcloud_container_image_prepare:
+  children:
+  - overcloud_Controller
+timezone:
+  children:
+  - overcloud_timezone
+overcloud_timezone:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+iscsid:
+  children:
+  - overcloud_iscsid
+overcloud_iscsid:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+boot_params_service:
+  children:
+  - overcloud_boot_params_service
+overcloud_boot_params_service:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+heat_api_cloudwatch_disabled:
+  children:
+  - overcloud_heat_api_cloudwatch_disabled
+overcloud_heat_api_cloudwatch_disabled:
+  children:
+  - overcloud_Controller
+tripleo_firewall:
+  children:
+  - overcloud_tripleo_firewall
+overcloud_tripleo_firewall:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+swift_storage:
+  children:
+  - overcloud_swift_storage
+overcloud_swift_storage:
+  children:
+  - overcloud_Controller
+keystone_admin_api:
+  children:
+  - overcloud_keystone_admin_api
+overcloud_keystone_admin_api:
+  children:
+  - overcloud_Controller
+keepalived:
+  children:
+  - overcloud_keepalived
+overcloud_keepalived:
+  children:
+  - overcloud_Controller
+certmonger_user:
+  children:
+  - overcloud_certmonger_user
+overcloud_certmonger_user:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+mysql_client:
+  children:
+  - overcloud_mysql_client
+overcloud_mysql_client:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+glance_api:
+  children:
+  - overcloud_glance_api
+overcloud_glance_api:
+  children:
+  - overcloud_Controller
+keystone:
+  children:
+  - overcloud_keystone
+overcloud_keystone:
+  children:
+  - overcloud_Controller
+cinder_volume:
+  children:
+  - overcloud_cinder_volume
+overcloud_cinder_volume:
+  children:
+  - overcloud_Controller
+ovn_dbs:
+  children:
+  - overcloud_ovn_dbs
+overcloud_ovn_dbs:
+  children:
+  - overcloud_Controller
+memcached:
+  children:
+  - overcloud_memcached
+overcloud_memcached:
+  children:
+  - overcloud_Controller
+oslo_messaging_rpc:
+  children:
+  - overcloud_oslo_messaging_rpc
+overcloud_oslo_messaging_rpc:
+  children:
+  - overcloud_Controller
+nova_vnc_proxy:
+  children:
+  - overcloud_nova_vnc_proxy
+overcloud_nova_vnc_proxy:
+  children:
+  - overcloud_Controller
+oslo_messaging_notify:
+  children:
+  - overcloud_oslo_messaging_notify
+overcloud_oslo_messaging_notify:
+  children:
+  - overcloud_Controller
+keystone_public_api:
+  children:
+  - overcloud_keystone_public_api
+overcloud_keystone_public_api:
+  children:
+  - overcloud_Controller
+nova_api:
+  children:
+  - overcloud_nova_api
+overcloud_nova_api:
+  children:
+  - overcloud_Controller
+nova_metadata:
+  children:
+  - overcloud_nova_metadata
+overcloud_nova_metadata:
+  children:
+  - overcloud_Controller
+heat_engine:
+  children:
+  - overcloud_heat_engine
+overcloud_heat_engine:
+  children:
+  - overcloud_Controller
+nova_migration_target:
+  children:
+  - overcloud_nova_migration_target
+overcloud_nova_migration_target:
+  children:
+  - overcloud_Compute
+podman:
+  children:
+  - overcloud_podman
+overcloud_podman:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+tripleo_packages:
+  children:
+  - overcloud_tripleo_packages
+overcloud_tripleo_packages:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+nova_scheduler:
+  children:
+  - overcloud_nova_scheduler
+overcloud_nova_scheduler:
+  children:
+  - overcloud_Controller
+nova_compute:
+  children:
+  - overcloud_nova_compute
+overcloud_nova_compute:
+  children:
+  - overcloud_Compute
+nova_libvirt_guests:
+  children:
+  - overcloud_nova_libvirt_guests
+overcloud_nova_libvirt_guests:
+  children:
+  - overcloud_Compute
+neutron_plugin_ml2_ovn:
+  children:
+  - overcloud_neutron_plugin_ml2_ovn
+overcloud_neutron_plugin_ml2_ovn:
+  children:
+  - overcloud_Controller
+logrotate_crond:
+  children:
+  - overcloud_logrotate_crond
+overcloud_logrotate_crond:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+haproxy:
+  children:
+  - overcloud_haproxy
+overcloud_haproxy:
+  children:
+  - overcloud_Controller
+sshd:
+  children:
+  - overcloud_sshd
+overcloud_sshd:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+placement:
+  children:
+  - overcloud_placement
+overcloud_placement:
+  children:
+  - overcloud_Controller
+cinder_scheduler:
+  children:
+  - overcloud_cinder_scheduler
+overcloud_cinder_scheduler:
+  children:
+  - overcloud_Controller
+nova_libvirt:
+  children:
+  - overcloud_nova_libvirt
+overcloud_nova_libvirt:
+  children:
+  - overcloud_Compute
+ovn_metadata:
+  children:
+  - overcloud_ovn_metadata
+overcloud_ovn_metadata:
+  children:
+  - overcloud_Compute
+tuned:
+  children:
+  - overcloud_tuned
+overcloud_tuned:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+chrony:
+  children:
+  - overcloud_chrony
+overcloud_chrony:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+horizon:
+  children:
+  - overcloud_horizon
+overcloud_horizon:
+  children:
+  - overcloud_Controller
+neutron_api:
+  children:
+  - overcloud_neutron_api
+overcloud_neutron_api:
+  children:
+  - overcloud_Controller
+ca_certs:
+  children:
+  - overcloud_ca_certs
+overcloud_ca_certs:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
+heat_api_cfn:
+  children:
+  - overcloud_heat_api_cfn
+overcloud_heat_api_cfn:
+  children:
+  - overcloud_Controller
+ovn_controller:
+  children:
+  - overcloud_ovn_controller
+overcloud_ovn_controller:
+  children:
+  - overcloud_Compute
+  - overcloud_Controller
