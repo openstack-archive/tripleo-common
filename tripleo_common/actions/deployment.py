@@ -130,7 +130,6 @@ class DeploymentStatusAction(base.TripleOAction):
 
     def run(self, context):
         orchestration_client = self.get_orchestration_client(context)
-        workflow_client = self.get_workflow_client(context)
         swift_client = self.get_object_client(context)
 
         try:
@@ -153,15 +152,6 @@ class DeploymentStatusAction(base.TripleOAction):
         ansible_status = None
         # Will get set to new status if an update is required
         status_update = None
-
-        cd_execs = workflow_client.executions.find(
-            workflow_name='tripleo.deployment.v1.config_download_deploy')
-        cd_execs.sort(key=lambda x: x.updated_at)
-        if cd_execs:
-            cd_exec = workflow_client.executions.get(cd_execs[-1].id)
-            cd_status = cd_exec.state
-            ansible_status = json.loads(
-                cd_exec.output).get('deployment_status')
 
         def update_status(status):
             # If we need to update the status return it
