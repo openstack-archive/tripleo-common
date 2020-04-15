@@ -53,6 +53,7 @@ FAKE_STACK = {
                  'upgrade_tasks': [{'name': 'Stop fake service',
                                     'service': 'name=fake state=stopped',
                                     'when': ['nova_api_enabled.rc == 0',
+                                             False,
                                              'httpd_enabled.rc != 0',
                                              'step|int == 1']},
                                    {'name': 'Stop nova-compute service',
