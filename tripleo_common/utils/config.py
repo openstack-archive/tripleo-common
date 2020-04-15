@@ -126,6 +126,9 @@ class Config(object):
             if not isinstance(whenexpr, list):
                 whenexpr = [whenexpr]
             for w in whenexpr:
+                # "when" accepts booleans and regex only work for strings
+                if not isinstance(w, six.string_types):
+                    continue
                 # remove all spaces to make the regex match easier
                 w = re.sub(r'\s+', '', w)
                 # make \|int optional incase forgotten; use only step digit:
