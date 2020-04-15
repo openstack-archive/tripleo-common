@@ -16,14 +16,12 @@ import json
 import logging
 import os
 
-from heatclient import exc as heat_exc
 from mistral_lib import actions
-from swiftclient import exceptions as swiftexceptions
+import six
 
 from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import overcloudrc
-from tripleo_common.utils import plan as plan_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -44,44 +42,14 @@ class OvercloudRcAction(base.TripleOAction):
         self.no_proxy = no_proxy
 
     def run(self, context):
-        orchestration_client = self.get_orchestration_client(context)
+        heat = self.get_orchestration_client(context)
         swift = self.get_object_client(context)
-
         try:
-            stack = orchestration_client.stacks.get(self.container)
-        except heat_exc.HTTPNotFound:
-            error = (
-                "The Heat stack {} could not be found. Make sure you have "
-                "deployed before calling this action.").format(self.container)
-            return actions.Result(error=error)
-
-        # We need to check parameter_defaults first for a user provided
-        # password. If that doesn't exist, we then should look in the
-        # automatically generated passwords.
-        # TODO(d0ugal): Abstract this operation somewhere. We shouldn't need to
-        # know about the structure of the environment to get a password.
-        try:
-            env = plan_utils.get_env(swift, self.container)
-        except swiftexceptions.ClientException as err:
-            err_msg = ("Error retrieving environment for plan %s: %s" % (
-                self.container, err))
-            LOG.error(err_msg)
-            return actions.Result(error=err_msg)
-
-        try:
-            parameter_defaults = env['parameter_defaults']
-            passwords = env['passwords']
-            admin_pass = parameter_defaults.get('AdminPassword')
-            if admin_pass is None:
-                admin_pass = passwords['AdminPassword']
-        except KeyError:
-            error = ("Unable to find the AdminPassword in the plan "
-                     "environment.")
-            return actions.Result(error=error)
-
-        region_name = parameter_defaults.get('KeystoneRegion')
-        return overcloudrc.create_overcloudrc(stack, self.no_proxy, admin_pass,
-                                              region_name)
+            return overcloudrc.create_overcloudrc(
+                swift, heat, self.container, self.no_proxy)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))
 
 
 class DeploymentFailuresAction(base.TripleOAction):
