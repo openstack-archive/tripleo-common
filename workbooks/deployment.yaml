@@ -369,6 +369,7 @@ workflows:
       - verbosity: 0
       - blacklist: []
       - override_ansible_cfg: ""
+      - connection_timeout: 600
       - config_download_timeout: 14400
       - nodes: []
       - playbook_name: deploy_steps_playbook.yaml
@@ -516,6 +517,7 @@ workflows:
           trash_output: true
           blacklisted_hostnames: <% $.blacklisted_hostnames %>
           override_ansible_cfg: <% $.override_ansible_cfg %>
+          timeout: <% $.connection_timeout %>
           command_timeout: <% $.config_download_timeout %>
           execution_id: <% execution().id %>
           limit_hosts: <% $.nodes and $.get(limit_hosts) or false %>
