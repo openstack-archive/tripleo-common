@@ -147,7 +147,7 @@ class TestConfig(base.TestCase):
                                                'service': 'name=fake '
                                                'state=stopped',
                                                'when': ['nova_api_enabled.rc'
-                                                        ' == 0',
+                                                        ' == 0', False,
                                                         'httpd_enabled.rc'
                                                         ' != 0',
                                                         'step|int == 1']}],
