@@ -380,7 +380,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
 
         if self.blacklisted_hostnames:
             host_pattern = ':'.join(
-                ['!%s' % h for h in self.blacklisted_hostnames])
+                ['!%s' % h for h in self.blacklisted_hostnames if h])
             command.extend(['--limit', host_pattern])
 
         if self.tags:
