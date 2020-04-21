@@ -179,7 +179,7 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleomaster/centos-binary-zaqar-wsgi:current-tripleo
   image_source: kolla
-- imagename: docker.io/ceph/daemon:v4.0.10-stable-4.0-nautilus-centos-7-x86_64
+- imagename: docker.io/ceph/daemon:v4.0.12-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
 - imagename: docker.io/prom/prometheus:v2.7.2
   image_source: prom
