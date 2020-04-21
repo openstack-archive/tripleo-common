@@ -54,6 +54,8 @@
       copy:
         content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item_only) }} ]"
         dest: "/var/lib/heat-config/check-mode/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
+      when:
+        - deployment_content is defined
 
     - name: Run hiera deployment for check mode
       shell: |
@@ -134,11 +136,15 @@
   slurp:
     src: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}.rendered"
   register: deployment_content
+  when:
+    - not ansible_check_mode|bool
 
 - name: "Remote copy deployment file for {{ item }}"
   copy:
     content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item_only) }} ]"
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
+  when:
+    - deployment_content is defined
 
 - name: "Check if deployed file exists for {{ item }}"
   stat:
@@ -151,7 +157,9 @@
   register: previous_deployment_result
   ignore_errors: true
   failed_when: false
-  when: deployed_file_stat.stat.exists
+  when:
+    - deployed_file_stat is defined
+    - deployed_file_stat.stat.exists
 
 - name: "Remove deployed file for {{ item }} when previous deployment failed"
   file:
