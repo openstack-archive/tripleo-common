@@ -116,10 +116,10 @@ class TestKollaImageBuilder(base.TestCase):
             'kolla-build',
             '--config-file',
             'kolla-config.conf',
-            'nova-compute',
-            'nova-libvirt',
-            'heat-docker-agents-centos',
-            'image-with-missing-tag',
+            '^nova-compute$',
+            '^nova-libvirt$',
+            '^heat-docker-agents-centos$',
+            '^image-with-missing-tag$',
         ], env=env, stdout=-1, universal_newlines=True)
 
     @mock.patch('tripleo_common.image.base.open',
@@ -141,10 +141,10 @@ class TestKollaImageBuilder(base.TestCase):
             'kolla-build',
             '--config-file',
             'kolla-config.conf',
-            'nova-compute',
-            'nova-libvirt',
-            'heat-docker-agents-centos',
-            'image-with-missing-tag',
+            '^nova-compute$',
+            '^nova-libvirt$',
+            '^heat-docker-agents-centos$',
+            '^image-with-missing-tag$',
             '--template-only',
             '--work-dir', '/tmp/kolla',
         ], env=env, stdout=-1, universal_newlines=True)
@@ -152,10 +152,10 @@ class TestKollaImageBuilder(base.TestCase):
             'kolla-build',
             '--config-file',
             'kolla-config.conf',
-            'nova-compute',
-            'nova-libvirt',
-            'heat-docker-agents-centos',
-            'image-with-missing-tag',
+            '^nova-compute$',
+            '^nova-libvirt$',
+            '^heat-docker-agents-centos$',
+            '^image-with-missing-tag$',
             '--list-dependencies',
         ], env=env, stdout=-1, stderr=-1, universal_newlines=True)
         calls = [call1, call2]
@@ -197,9 +197,9 @@ class TestKollaImageBuilder(base.TestCase):
             'kolla-build',
             '--config-file',
             'kolla-config.conf',
-            'nova-libvirt',
-            'heat-docker-agents-centos',
-            'image-with-missing-tag',
+            '^nova-libvirt$',
+            '^heat-docker-agents-centos$',
+            '^image-with-missing-tag$',
         ], env=env, stdout=-1, universal_newlines=True)
 
 

@@ -509,7 +509,8 @@ class KollaImageBuilder(base.BaseImageManager):
             image = self.imagename_to_regex(i.get('imagename'))
             # Make sure the image was properly parsed and not purposely skipped
             if image and image not in excludes:
-                cmd.append(image)
+                # NOTE(mgoddard): Use a full string match.
+                cmd.append("^%s$" % image)
 
         if template_only:
             # build the dep list cmd line
