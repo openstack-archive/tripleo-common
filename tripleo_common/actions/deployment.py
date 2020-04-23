@@ -15,7 +15,6 @@
 import json
 import logging
 import os
-import yaml
 
 from heatclient import exc as heat_exc
 from mistral_lib import actions
@@ -25,7 +24,6 @@ from tripleo_common.actions import base
 from tripleo_common import constants
 from tripleo_common.utils import overcloudrc
 from tripleo_common.utils import plan as plan_utils
-from tripleo_common.utils import swift as swiftutils
 
 LOG = logging.getLogger(__name__)
 
@@ -114,77 +112,3 @@ class DeploymentFailuresAction(base.TripleOAction):
         except IOError:
             return self._format_return(
                 'Ansible errors file not found at %s' % failures_file)
-
-
-class DeploymentStatusAction(base.TripleOAction):
-    """Get the deployment status and update it if necessary
-
-    The status will be set based off of the stack status and any running
-    config_download workflow.
-    """
-
-    def __init__(self,
-                 plan=constants.DEFAULT_CONTAINER_NAME):
-        super(DeploymentStatusAction, self).__init__()
-        self.plan = plan
-
-    def run(self, context):
-        orchestration_client = self.get_orchestration_client(context)
-        swift_client = self.get_object_client(context)
-
-        try:
-            stack = orchestration_client.stacks.get(self.plan)
-        except heat_exc.HTTPNotFound:
-            return dict(status_update=None,
-                        deployment_status=None)
-
-        try:
-            body = swiftutils.get_object_string(swift_client,
-                                                '%s-messages' % self.plan,
-                                                'deployment_status.yaml')
-
-            deployment_status = yaml.safe_load(body)['deployment_status']
-        except swiftexceptions.ClientException:
-            deployment_status = None
-
-        stack_status = stack.stack_status
-        cd_status = None
-        ansible_status = None
-        # Will get set to new status if an update is required
-        status_update = None
-
-        def update_status(status):
-            # If we need to update the status return it
-            if deployment_status != status:
-                return status
-
-        # Update the status if needed. We do this since tripleoclient does not
-        # yet use a single API for overcloud deployment. Since there is no long
-        # running process to make sure the status is updated, we instead update
-        # the status if needed when we get it with this action.
-        #
-        # The logic here is:
-        #
-        # If stack or config_download is in progress, then the status is
-        # deploying.
-        #
-        # Else if stack is failed or config_download is failed or ansible is
-        # failed, then the status is failed.
-        #
-        # Else if config_download status is success and ansible is success
-        # then status is success.
-        #
-        # Else, we just return the read deployment_status from earlier.
-        if stack_status.endswith('IN_PROGRESS') or cd_status == 'RUNNING':
-            status_update = update_status('DEPLOYING')
-        elif stack_status.endswith('FAILED') or cd_status == 'FAILED' \
-                or ansible_status == 'DEPLOY_FAILED':
-            status_update = update_status('DEPLOY_FAILED')
-        elif cd_status == 'SUCCESS' and ansible_status == 'DEPLOY_SUCCESS':
-            status_update = update_status('DEPLOY_SUCCESS')
-
-        return dict(cd_status=cd_status,
-                    stack_status=stack_status,
-                    deployment_status=deployment_status,
-                    ansible_status=ansible_status,
-                    status_update=status_update)
