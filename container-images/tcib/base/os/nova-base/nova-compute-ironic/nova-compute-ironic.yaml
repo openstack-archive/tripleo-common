@@ -1,0 +1,14 @@
+tcib_actions:
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-ironic /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - genisoimage
+  - nvme-cli
+  - openstack-nova-compute
+  - python3-novajoin
+  modules:
+  - disable: virt:rhel
+  - enable: virt:8.2
+tcib_user: nova

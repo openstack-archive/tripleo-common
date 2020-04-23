@@ -1,0 +1,8 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/ceilometer-agent-notification /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - openstack-ceilometer-notification
+  - python3-pyngus
+tcib_user: ceilometer

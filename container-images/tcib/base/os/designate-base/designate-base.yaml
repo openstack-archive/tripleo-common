@@ -1,0 +1,9 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla designate
+tcib_packages:
+  common:
+  - openstack-designate-common
+  - python3-oslo-reports
+  - python3-suds
+  - python3-tooz

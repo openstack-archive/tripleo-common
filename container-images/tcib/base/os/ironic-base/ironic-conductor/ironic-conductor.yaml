@@ -1,0 +1,34 @@
+tcib_actions:
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: if [ "{{ tcib_distro }}" == "rhel" ]; then dnf -y install {{ tcib_packages['rhel'] | join(' ') }}; fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-conductor /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - genisoimage
+  - dosfstools
+  - e2fsprogs
+  - gdisk
+  - ipmitool
+  - openssh-clients
+  - openstack-ironic-conductor
+  - openstack-ironic-staging-drivers
+  - parted
+  - psmisc
+  - python3-dracclient
+  - python3-ironic-inspector-client
+  - python3-proliantutils
+  - python3-pysnmp
+  - python3-scciclient
+  - python3-sushy
+  - python3-systemd
+  - qemu-img
+  - util-linux
+  - xfsprogs
+  modules:
+  - disable: virt:rhel
+  - enable: virt:8.2
+  rhel:
+  - python-ovirt-engine-sdk4
+  - python3dist\(ansible\)
+tcib_user: ironic

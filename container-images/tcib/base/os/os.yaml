@@ -1,0 +1,20 @@
+tcib_actions:
+- run: dnf install -y {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+tcib_packages:
+  common:
+  - cronie
+  - iscsi-initiator-utils
+  - python3-barbicanclient
+  - python3-cinderclient
+  - python3-designateclient
+  - python3-glanceclient
+  - python3-gnocchiclient
+  - python3-ironicclient
+  - python3-keystoneclient
+  - python3-manilaclient
+  - python3-neutronclient
+  - python3-novaclient
+  - python3-octaviaclient
+  - python3-openstackclient
+  - python3-swiftclient
+  - python3-zaqarclient

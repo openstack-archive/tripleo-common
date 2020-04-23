@@ -1,0 +1,7 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: 'echo "%kolla ALL=(root) NOPASSWD: /usr/bin/chown -R barbican /var/lib/barbican/, /bin/chown -R barbican /var/lib/barbican/" > /etc/sudoers.d/barbican_sudoers && chmod 640 /etc/sudoers.d/barbican_sudoers'
+- run: usermod -a -G kolla barbican
+tcib_packages:
+  common:
+  - openstack-barbican-common

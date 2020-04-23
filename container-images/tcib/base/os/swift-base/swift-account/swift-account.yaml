@@ -1,0 +1,7 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-account-server /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - openstack-swift-account
+tcib_user: swift

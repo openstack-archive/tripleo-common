@@ -1,0 +1,64 @@
+tcib_actions:
+- run: >-
+    if [ '{{ tcib_distro }}' == 'rhel' ]; then
+    {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}
+    fi
+- run: if [ "{{ tcib_distro }}" == "rhel" ]; then dnf -y install {{ tcib_packages['rhel'] | join(' ') }}; fi
+- run: if [ "$(uname -m)" == "x86_64" ]; then dnf -y install {{ tcib_packages['x86_64'] | join(' ') }}; fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: mkdir -p /var/lib/collectd && useradd -d /var/lib/collectd -l -M --shell /usr/sbin/nologin collectd && chown collectd:collectd /var/lib/collectd
+- run: chown -R collectd /var/lib/collectd  && chown -R collectd /etc/collectd*  && chown -R collectd /var/run/
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/collectd /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - collectd
+  - collectd-amqp1
+  - collectd-apache
+  - collectd-bind
+  - collectd-ceph
+  - collectd-chrony
+  - collectd-connectivity
+  - collectd-curl
+  - collectd-curl_json
+  - collectd-curl_xml
+  - collectd-dbi
+  - collectd-disk
+  - collectd-dns
+  - collectd-generic-jmx
+  - collectd-ipmi
+  - collectd-iptables
+  - collectd-log_logstash
+  - collectd-mcelog
+  - collectd-memcachec
+  - collectd-mysql
+  - collectd-netlink
+  - collectd-openldap
+  - collectd-ovs-events
+  - collectd-ovs-stats
+  - collectd-ping
+  - collectd-procevent
+  - collectd-python
+  - collectd-sensors
+  - collectd-sensubility
+  - collectd-smart
+  - collectd-snmp
+  - collectd-snmp-agent
+  - collectd-sysevent
+  - collectd-utils
+  - collectd-virt
+  - collectd-write_http
+  - collectd-write_kafka
+  - collectd-write_prometheus
+  - python3-collectd-gnocchi
+  - python3-sqlalchemy-collectd
+  modules:
+  - disable: virt:rhel
+  - enable: virt:8.2
+  rhel:
+  - python3-collectd-rabbitmq-monitoring
+  x86_64:
+  - collectd-hugepages
+  - collectd-pcie-errors
+  - collectd-pmu
+  - collectd-rdt
+  - collectd-turbostat
