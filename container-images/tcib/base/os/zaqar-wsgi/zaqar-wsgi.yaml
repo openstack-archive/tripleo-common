@@ -1,0 +1,10 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: mkdir -p /var/www/cgi-bin/zaqar && chown -R zaqar /var/www/cgi-bin/zaqar && cp -a /usr/lib/python3.6/site-packages/zaqar/transport/wsgi/app.py /var/www/cgi-bin/zaqar/ && chmod 755 /var/www/cgi-bin/zaqar && sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+tcib_packages:
+  common:
+  - httpd
+  - mod_ssl
+  - openstack-zaqar
+  - python3-ldappool
+  - python3-mod_wsgi

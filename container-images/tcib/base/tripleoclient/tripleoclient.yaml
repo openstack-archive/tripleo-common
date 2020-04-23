@@ -1,0 +1,16 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- copy: /usr/share/tripleo-common/container-images/kolla/tripleoclient/create_super_user.sh /usr/local/bin/create_super_user.sh
+- run: chmod 750 /usr/local/bin/create_super_user.sh
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/tripleoclient/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - sudo
+  - e2fsprogs
+  - git
+  - openssh-clients
+  - openstack-tripleo-validations
+  - puppet-tripleo
+  - python3-openstackclient
+  - python3-tripleoclient
+  - xfsprogs

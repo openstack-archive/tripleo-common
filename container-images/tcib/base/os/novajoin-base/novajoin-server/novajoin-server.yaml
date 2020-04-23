@@ -1,0 +1,2 @@
+tcib_actions:
+- run: mkdir -p /novajoin-server

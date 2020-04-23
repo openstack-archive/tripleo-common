@@ -1,0 +1,14 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf  && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+- run: echo -e "re ^(/tftpboot/) /tftpboot/\2\nre ^/tftpboot/ /tftpboot/\nre ^(^/) /tftpboot/\1\nre ^([^/]) /tftpboot/\1" > /map-file
+- run: echo ". /usr/local/bin/kolla_httpd_setup"> /usr/local/bin/kolla_extend_start && chmod 755 /usr/local/bin/kolla_extend_start
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-pxe /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - httpd
+  - ipxe-bootimgs
+  - mod_ssl
+  - python3-mod_wsgi
+  - syslinux-tftpboot
+  - tftp-server

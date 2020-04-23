@@ -1,0 +1,6 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: mkdir -p /var/lib/named/ /run/named && chown -R root /var/lib/named /run/named && chmod 755 /run/named
+tcib_packages:
+  common:
+  - bind

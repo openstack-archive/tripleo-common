@@ -1,0 +1,6 @@
+tcib_actions:
+- run: mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_host
+- run: dnf install -y {{ tcib_packages | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla nova
+tcib_packages:
+- openstack-nova-common
