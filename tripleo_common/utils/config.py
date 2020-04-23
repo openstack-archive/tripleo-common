@@ -19,13 +19,19 @@ import os
 import re
 import shutil
 import six
+import tempfile
 import warnings
 import yaml
 
 import jinja2
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
 from tripleo_common.utils.safe_import import git
+from tripleo_common.utils import swift as swiftutils
+from tripleo_common.utils import tarball
+
+LOG = logging.getLogger(__name__)
 
 warnings.filterwarnings('once')
 
@@ -557,3 +563,69 @@ class Config(object):
         self.write_config(stack, name, config_dir, config_type)
         self.snapshot_config_dir(git_repo, commit_message)
         return config_dir
+
+
+def get_overcloud_config(swift, heat,
+                         container=constants.DEFAULT_CONTAINER_NAME,
+                         container_config=constants.CONFIG_CONTAINER_NAME,
+                         config_dir=None, config_type=None):
+    if not config_dir:
+        config_dir = tempfile.mkdtemp(prefix='tripleo-',
+                                      suffix='-config')
+
+    # Since the config-download directory is now a git repo, first download
+    # the existing config container if it exists so we can reuse the
+    # existing git repo.
+    try:
+        swiftutils.download_container(swift, container_config,
+                                      config_dir)
+        # Delete the existing container before we re-upload, otherwise
+        # files may not be fully overwritten.
+        swiftutils.delete_container(swift, container_config)
+    except swiftexceptions.ClientException as err:
+        if err.http_status != 404:
+            raise
+
+    # Delete downloaded tarball as it will be recreated later and we don't
+    # want to include the old tarball in the new tarball.
+    old_tarball_path = os.path.join(
+        config_dir, '%s.tar.gz' % container_config)
+    if os.path.exists(old_tarball_path):
+        os.unlink(old_tarball_path)
+
+    config = Config(heat)
+    message = "Automatic commit with fresh config download\n\n"
+
+    config_path = config.download_config(container, config_dir,
+                                         config_type,
+                                         preserve_config_dir=True,
+                                         commit_message=message)
+
+    with tempfile.NamedTemporaryFile() as tmp_tarball:
+        tarball.create_tarball(config_path, tmp_tarball.name,
+                               excludes=['.tox', '*.pyc', '*.pyo'])
+        tarball.tarball_extract_to_swift_container(
+            swift,
+            tmp_tarball.name,
+            container_config)
+        # Also upload the tarball to the container for use by export later
+        with open(tmp_tarball.name, 'rb') as t:
+            swift.put_object(container_config,
+                             '%s.tar.gz' % container_config, t)
+    if os.path.exists(config_path):
+        shutil.rmtree(config_path)
+
+
+def download_overcloud_config(swift,
+                              container_config=constants.CONFIG_CONTAINER_NAME,
+                              work_dir=None):
+    if not work_dir:
+        work_dir = tempfile.mkdtemp(prefix='tripleo-', suffix='-config')
+
+    swiftutils.download_container(swift, container_config, work_dir)
+    symlink_path = os.path.join(
+        os.path.dirname(work_dir), 'config-download-latest')
+    if os.path.exists(symlink_path):
+        os.unlink(symlink_path)
+    os.symlink(work_dir, symlink_path)
+    return work_dir
