@@ -26,7 +26,7 @@ from tripleo_common import constants
 from tripleo_common.utils import parameters
 from tripleo_common.utils import plan as plan_utils
 from tripleo_common.utils import swift as swiftutils
-from tripleo_common.utils import tarball as tarball
+from tripleo_common.utils import tarball
 
 LOG = logging.getLogger(__name__)
 
