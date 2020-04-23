@@ -12,15 +12,22 @@
 #   License for the specific language governing permissions and limitations
 #   under the License.
 
+import logging
+
+from heatclient import exc as heat_exc
 from six.moves import urllib
+from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
 from tripleo_common.utils import common as common_utils
+from tripleo_common.utils import plan as plan_utils
 
 try:  # py3
     from shlex import quote
 except ImportError:  # py2
     from pipes import quote
+
+LOG = logging.getLogger(__name__)
 
 
 def get_service_ips(stack):
@@ -66,7 +73,47 @@ fi
 """
 
 
-def create_overcloudrc(stack, no_proxy, admin_password, region_name):
+def create_overcloudrc(swift, heat,
+                       container=constants.DEFAULT_CONTAINER_NAME,
+                       no_proxy=""):
+    try:
+        stack = heat.stacks.get(container)
+    except heat_exc.HTTPNotFound:
+        error = (
+            "The Heat stack {} could not be found. Make sure you have "
+            "deployed before calling this action.").format(container)
+        raise RuntimeError(error)
+
+    # We need to check parameter_defaults first for a user provided
+    # password. If that doesn't exist, we then should look in the
+    # automatically generated passwords.
+    # TODO(d0ugal): Abstract this operation somewhere. We shouldn't need to
+    # know about the structure of the environment to get a password.
+    try:
+        env = plan_utils.get_env(swift, container)
+    except swiftexceptions.ClientException as err:
+        err_msg = ("Error retrieving environment for plan %s: %s" % (
+            container, err))
+        LOG.error(err_msg)
+        raise RuntimeError(err_msg)
+
+    try:
+        parameter_defaults = env['parameter_defaults']
+        passwords = env['passwords']
+        admin_pass = parameter_defaults.get('AdminPassword')
+        if admin_pass is None:
+            admin_pass = passwords['AdminPassword']
+    except KeyError:
+        error = ("Unable to find the AdminPassword in the plan "
+                 "environment.")
+        raise RuntimeError(error)
+
+    region_name = parameter_defaults.get('KeystoneRegion')
+    return _create_overcloudrc(stack, no_proxy,
+                               admin_pass, region_name)
+
+
+def _create_overcloudrc(stack, no_proxy, admin_password, region_name):
     """Given the stack and proxy settings, create the overcloudrc
 
     stack: Heat stack containing the deployed overcloud
