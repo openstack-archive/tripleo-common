@@ -1,0 +1,12 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla swift
+- copy: /usr/share/tripleo-common/container-images/kolla/swift-base/swift-rootwrap /usr/bin/swift-rootwrap
+- copy: /usr/share/tripleo-common/container-images/kolla/swift-base/swift-sudoers /etc/sudoers.d/swift-sudoers
+- run: chmod 755 /usr/bin/swift-rootwrap && chmod 440 /etc/sudoers.d/swift-sudoers
+- run: touch /etc/swift/rootwrap.conf && chmod 644 /etc/swift/rootwrap.conf && crudini --set /etc/swift/rootwrap.conf DEFAULT filters_path /etc/swift/rootwrap.d,/usr/share/swift/rootwrap && crudini --set /etc/swift/rootwrap.conf DEFAULT exec_dirs /sbin,/usr/sbin,/bin,/usr/bin && crudini --set /etc/swift/rootwrap.conf DEFAULT use_syslog False && crudini --set /etc/swift/rootwrap.conf DEFAULT syslog_log_facility syslog && crudini --set /etc/swift/rootwrap.conf DEFAULT syslog_log_level ERROR
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/swift-base/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - nmap-ncat
+  - openstack-swift

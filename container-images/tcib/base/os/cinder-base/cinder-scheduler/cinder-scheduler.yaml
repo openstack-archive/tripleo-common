@@ -1,0 +1,3 @@
+tcib_actions:
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-scheduler /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_user: cinder

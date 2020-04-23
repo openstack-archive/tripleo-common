@@ -1,0 +1,22 @@
+tcib_actions:
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla {{ tcib_user }}
+- copy: /usr/share/tripleo-common/container-images/kolla/glance-api/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: chmod 755 /usr/local/bin/kolla_extend_start
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/glance-api /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+- run: sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf &&  sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/glance-api/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - httpd
+  - mod_ssl
+  - openstack-glance
+  - python3-oslo-vmware
+  - python3-rados
+  - python3-rbd
+  - qemu-img
+  modules:
+  - disable: virt:rhel
+  - enable: virt:8.2
+tcib_user: glance

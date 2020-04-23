@@ -1,0 +1,18 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: mkdir -p /etc/libqb
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-volume /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - libqb
+  - nfs-utils
+  - nvmetcli
+  - pacemaker
+  - pacemaker-remote
+  - pcs
+  - python3-cinderlib
+  - python3-rtslib
+  - resource-agents
+  - sysfsutils
+  - targetcli
+tcib_user: cinder

@@ -1,0 +1,35 @@
+tcib_actions:
+- run: 'echo "%kolla ALL=(root) NOPASSWD: /usr/local/bin/kolla_security_reset" > /etc/sudoers.d/security_reset && chmod 640 /etc/sudoers.d/security_reset'
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- copy: /usr/share/tripleo-common/container-images/kolla/mariadb/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: chmod 755 /usr/local/bin/kolla_extend_start
+- run: usermod -a -G kolla {{ tcib_user }}
+- copy: /usr/share/tripleo-common/container-images/kolla/mariadb/security_reset.expect /usr/local/bin/kolla_security_reset
+- run: chmod 755 /usr/local/bin/kolla_security_reset
+- run: rm -rf /var/lib/mysql/* /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
+- run: mkdir -p /etc/libqb
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/mariadb /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_cmd: kolla_start
+tcib_entrypoint: dumb-init --
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/mariadb/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - expect
+  - galera
+  - hostname
+  - libqb
+  - mariadb
+  - mariadb-backup
+  - mariadb-server-galera
+  - mariadb-server-utils
+  - pacemaker
+  - pacemaker-remote
+  - pcs
+  - resource-agents
+  - rsync
+  - tar
+  - xinetd
+  modules:
+  - enable: mariadb:10.3
+tcib_user: mysql

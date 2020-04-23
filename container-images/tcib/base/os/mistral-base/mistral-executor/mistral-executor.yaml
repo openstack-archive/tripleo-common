@@ -1,0 +1,21 @@
+tcib_actions:
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/mistral-executor /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+- run: test -f /usr/bin/ansible-playbook-3 || ln -s /usr/bin/ansible-playbook /usr/bin/ansible-playbook-3
+- run: useradd validations
+tcib_packages:
+  common:
+  - ipmitool
+  - openstack-mistral-executor
+  - openstack-nova-common
+  - openstack-tripleo-heat-templates
+  - openstack-tripleo-validations
+  - python3-novajoin
+  - qemu-img
+  modules:
+  - disable: virt:rhel
+  - enable: virt:8.2
+  - disable: container-tools:rhel8
+  - enable: container-tools:2.0
+tcib_user: mistral

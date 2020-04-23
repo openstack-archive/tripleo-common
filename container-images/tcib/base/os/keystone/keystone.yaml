@@ -1,0 +1,23 @@
+tcib_actions:
+- run: dnf module -y enable mod_auth_openidc && dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla keystone
+- run: mkdir -p /var/www/cgi-bin/keystone && chown -R keystone /var/www/cgi-bin/keystone
+- copy: /usr/share/tripleo-common/container-images/kolla/keystone/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: chmod 755 /usr/local/bin/kolla_extend_start
+- run: cp -a /usr/bin/keystone-wsgi-public /var/www/cgi-bin/keystone/main
+- run: cp -a /usr/bin/keystone-wsgi-admin /var/www/cgi-bin/keystone/admin
+- run: sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf
+- run: sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/keystone /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/keystone/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - httpd
+  - mod_auth_gssapi
+  - mod_auth_mellon
+  - mod_auth_openidc
+  - mod_ssl
+  - openstack-keystone
+  - python3-ldappool
+  - python3-mod_wsgi
+  - python3-requests-kerberos

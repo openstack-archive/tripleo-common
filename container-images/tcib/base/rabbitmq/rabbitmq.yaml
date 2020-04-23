@@ -1,0 +1,18 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- copy: /usr/share/tripleo-common/container-images/kolla/rabbitmq/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: chmod 755 /usr/local/bin/kolla_extend_start
+- run: usermod -a -G kolla {{ tcib_user }}
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/rabbitmq /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/rabbitmq/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - erlang-hipe
+  - hostname
+  - libqb
+  - pacemaker
+  - pacemaker-remote
+  - pcs
+  - rabbitmq-server
+  - resource-agents
+tcib_user: rabbitmq
