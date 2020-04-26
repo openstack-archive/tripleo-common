@@ -521,38 +521,20 @@ class AnsibleGenerateInventoryAction(base.TripleOAction):
             'undercloud_key_file', None)
         self.ansible_python_interpreter = self._kwargs_for_run.pop(
             'ansible_python_interpreter', None)
-        self._work_dir = self._kwargs_for_run.pop(
+        self.work_dir = self._kwargs_for_run.pop(
             'work_dir', None)
         self.plan_name = self._kwargs_for_run.pop(
             'plan_name', 'overcloud')
         self.ssh_network = self._kwargs_for_run.pop(
             'ssh_network', 'ctlplane')
 
-    @property
-    def work_dir(self):
-        if self._work_dir:
-            return self._work_dir
-        self._work_dir = tempfile.mkdtemp(prefix='ansible-mistral-action')
-        return self._work_dir
-
     def run(self, context):
-
-        inventory_path = os.path.join(
-            self.work_dir, 'tripleo-ansible-inventory.yaml')
-
-        inv = inventory.TripleoInventory(
-            session=self.get_session(context, 'heat'),
-            hclient=self.get_orchestration_client(context),
-            auth_url=context.security.auth_uri,
-            cacert=context.security.auth_cacert,
-            project_name=context.security.project_name,
-            username=context.security.user_name,
+        return inventory.generate_tripleo_ansible_inventory(
+            heat=self.get_orchestration_client(context),
+            work_dir=self.work_dir,
+            plan=self.plan_name,
+            auth=context.security,
             ansible_ssh_user=self.ansible_ssh_user,
             undercloud_key_file=self.undercloud_key_file,
-            undercloud_connection=inventory.UNDERCLOUD_CONNECTION_SSH,
             ansible_python_interpreter=self.ansible_python_interpreter,
-            plan_name=self.plan_name,
-            host_network=self.ssh_network)
-
-        inv.write_static_inventory(inventory_path)
-        return inventory_path
+            ssh_network=self.ssh_network)

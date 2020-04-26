@@ -19,6 +19,7 @@ from collections import OrderedDict
 import logging
 import os.path
 import sys
+import tempfile
 import yaml
 
 from heatclient.exc import HTTPNotFound
@@ -90,7 +91,6 @@ class TripleoInventory(object):
                  host_network=None, ansible_python_interpreter=None,
                  undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL,
                  undercloud_key_file=None, serial=1):
-        self.session = session
         self.hclient = hclient
         self.host_network = host_network or HOST_NETWORK
         self.auth_url = auth_url
@@ -168,15 +168,16 @@ class TripleoInventory(object):
                     # see https://github.com/ansible/ansible/issues/41808
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
                     'auth_url': self.auth_url,
-                    'cacert': self.cacert,
-                    'os_auth_token':
-                    self.session.get_token() if self.session else None,
                     'plan': self.plan_name,
                     'project_name': self.project_name,
                     'username': self.username,
                 },
             }
         })
+
+        if self.cacert:
+            ret['Undercloud']['vars']['cacert'] = \
+                self.cacert
 
         if self.ansible_python_interpreter:
             ret['Undercloud']['vars']['ansible_python_interpreter'] = \
@@ -188,12 +189,6 @@ class TripleoInventory(object):
             if self.undercloud_key_file:
                 ret['Undercloud']['vars']['ansible_ssh_private_key_file'] = \
                     self.undercloud_key_file
-
-        swift_url = None
-        if self.session:
-            swift_url = self.session.get_endpoint(service_type='object-store',
-                                                  interface='public')
-        ret['Undercloud']['vars']['undercloud_swift_url'] = swift_url
 
         ret['Undercloud']['vars']['undercloud_service_list'] = \
             self.get_undercloud_service_list()
@@ -385,3 +380,33 @@ class TripleoInventory(object):
 
         with open(inventory_file_path, 'w') as inventory_file:
             yaml.dump(inventory, inventory_file, TemplateDumper)
+
+
+def generate_tripleo_ansible_inventory(heat, auth,
+                                       cacert=None,
+                                       plan='overcloud',
+                                       work_dir=None,
+                                       ansible_python_interpreter=None,
+                                       ansible_ssh_user='tripleo-admin',
+                                       undercloud_key_file=None,
+                                       ssh_network='ctlplane'):
+    if not work_dir:
+        work_dir = tempfile.mkdtemp(prefix='tripleo-ansible')
+
+    inventory_path = os.path.join(
+        work_dir, 'tripleo-ansible-inventory.yaml')
+    inv = TripleoInventory(
+        hclient=heat,
+        auth_url=auth.auth_uri,
+        cacert=cacert,
+        project_name=auth.project_name,
+        username=auth.user_name,
+        ansible_ssh_user=ansible_ssh_user,
+        undercloud_key_file=undercloud_key_file,
+        undercloud_connection=UNDERCLOUD_CONNECTION_SSH,
+        ansible_python_interpreter=ansible_python_interpreter,
+        plan_name=plan,
+        host_network=ssh_network)
+
+    inv.write_static_inventory(inventory_path)
+    return inventory_path

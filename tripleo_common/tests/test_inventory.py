@@ -117,13 +117,8 @@ class TestInventory(base.TestCase):
         self.mock_stack.outputs = self.outputs_data['outputs']
         self.hclient.stacks.get.return_value = self.mock_stack
 
-        self.session = MagicMock()
-        self.session.get_token.return_value = 'atoken'
-        self.session.get_endpoint.return_value = 'anendpoint'
-
         self.outputs = StackOutputs(self.mock_stack)
         self.inventory = TripleoInventory(
-            session=self.session,
             hclient=self.hclient,
             plan_name=self.plan_name,
             auth_url='xyz://keystone.local',
@@ -230,7 +225,6 @@ class TestInventory(base.TestCase):
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
                          'auth_url': 'xyz://keystone.local',
                          'cacert': 'acacert',
-                         'os_auth_token': 'atoken',
                          'overcloud_keystone_url': 'xyz://keystone',
                          'overcloud_admin_password': 'theadminpw',
                          'plan': 'overcloud',
@@ -242,7 +236,6 @@ class TestInventory(base.TestCase):
                              'tripleo_swift_container_server',
                              'tripleo_swift_object_server',
                              'tripleo_mistral_engine'],
-                         'undercloud_swift_url': 'anendpoint',
                          'username': 'admin'}}}
         inv_list = inventory.list()
         for k in expected:
@@ -251,20 +244,12 @@ class TestInventory(base.TestCase):
     def test_ansible_ssh_user(self):
         self._try_alternative_args(
             ansible_ssh_user='my-custom-admin',
-            undercloud_connection='ssh',
-            session=self.session,)
+            undercloud_connection='ssh')
 
-    def test_no_session(self):
-        self._try_alternative_args(
-            ansible_ssh_user='my-custom-admin',
-            undercloud_connection='ssh',
-            session=None)
-
-    def _try_alternative_args(self, ansible_ssh_user, session,
+    def _try_alternative_args(self, ansible_ssh_user,
                               undercloud_connection):
         key_file = '/var/lib/mistral/.ssh/%s-key' % ansible_ssh_user
         self.inventory = TripleoInventory(
-            session=session,
             hclient=self.hclient,
             plan_name=self.plan_name,
             auth_url='xyz://keystone.local',
@@ -347,8 +332,6 @@ class TestInventory(base.TestCase):
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
                          'auth_url': 'xyz://keystone.local',
                          'cacert': 'acacert',
-                         'os_auth_token':
-                         'atoken' if session else None,
                          'overcloud_keystone_url': 'xyz://keystone',
                          'overcloud_admin_password': 'theadminpw',
                          'plan': 'overcloud',
@@ -360,8 +343,6 @@ class TestInventory(base.TestCase):
                              'tripleo_swift_container_server',
                              'tripleo_swift_object_server',
                              'tripleo_mistral_engine'],
-                         'undercloud_swift_url':
-                         'anendpoint' if session else None,
                          'username': 'admin'}}}
 
         inv_list = self.inventory.list()
@@ -475,7 +456,6 @@ class TestInventory(base.TestCase):
                                         '/tmp/ansible-${USER}',
                                     'auth_url': 'xyz://keystone.local',
                                     'cacert': 'acacert',
-                                    'os_auth_token': 'atoken',
                                     'overcloud_admin_password': 'theadminpw',
                                     'overcloud_keystone_url': 'xyz://keystone',
                                     'plan': 'overcloud',
@@ -487,7 +467,6 @@ class TestInventory(base.TestCase):
                                         'tripleo_swift_container_server',
                                         'tripleo_swift_object_server',
                                         'tripleo_mistral_engine'],
-                                    'undercloud_swift_url': 'anendpoint',
                                     'username': 'admin'}}}
         if extra_vars:
             expected['Undercloud']['vars']['anextravar'] = 123
