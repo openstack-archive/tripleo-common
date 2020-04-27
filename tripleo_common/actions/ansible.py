@@ -110,7 +110,7 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'gathering', 'smart')
     config.set('defaults', 'fact_caching', 'jsonfile')
     config.set('defaults', 'fact_caching_connection',
-               '/var/lib/mistral/ansible_fact_cache')
+               '~/.ansible/fact_cache')
 
     # Set the pull interval to lower CPU overhead
     config.set('defaults', 'internal_poll_interval', '0.05')
