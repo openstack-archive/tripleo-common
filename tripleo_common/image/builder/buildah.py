@@ -33,7 +33,8 @@ class BuildahBuilder(base.BaseBuilder):
 
     def __init__(self, work_dir, deps, base='fedora', img_type='binary',
                  tag='latest', namespace='master',
-                 registry_address='127.0.0.1:8787', push_containers=True):
+                 registry_address='127.0.0.1:8787', push_containers=True,
+                 volumes=[]):
         """Setup the parameters to build with Buildah.
 
         :params work_dir: Directory where the Dockerfiles or Containerfiles
@@ -51,6 +52,8 @@ class BuildahBuilder(base.BaseBuilder):
         :params registry_address: IP + port of the registry where we push
             the images. Default is 127.0.0.1:8787.
         :params push: Flag to bypass registry push if False. Default is True
+        :params volumes: Bind mount volumes used during buildah bud.
+            Default to [].
         """
 
         super(BuildahBuilder, self).__init__()
@@ -63,6 +66,7 @@ class BuildahBuilder(base.BaseBuilder):
         self.namespace = namespace
         self.registry_address = registry_address
         self.push_containers = push_containers
+        self.volumes = volumes
         # Each container image has a Dockerfile or a Containerfile.
         # Buildah needs to know the base directory later.
         self.cont_map = {os.path.basename(root): root for root, dirs,
@@ -123,12 +127,15 @@ class BuildahBuilder(base.BaseBuilder):
         # TODO(emilien): Stop ignoring TLS. The deployer should either secure
         # the registry or add it to insecure_registries.
         logfile = container_build_path + '/' + container_name + '-build.log'
+        bud_args = ['bud']
+        for v in self.volumes:
+            bud_args.extend(['--volume', v])
         # TODO(aschultz): drop --format docker when oci format is properly
         # supported by the undercloud registry
-        args = self.buildah_cmd + ['bud', '--format', 'docker',
-                                   '--tls-verify=False', '--logfile',
-                                   logfile, '-t', destination,
-                                   container_build_path]
+        bud_args.extend(['--format', 'docker', '--tls-verify=False',
+                         '--logfile', logfile, '-t', destination,
+                         container_build_path])
+        args = self.buildah_cmd + bud_args
         print("Building %s image with: %s" % (container_name, ' '.join(args)))
         process.execute(
             *args,
