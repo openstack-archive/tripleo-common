@@ -916,8 +916,10 @@ container_images_template:
   - ContainerRsyslogConfigImage
   - ContainerRsyslogSidecarImage
   - ContainerRsyslogSidecarConfigImage
+  - ContainerOctaviaRsyslogImage
   services:
   - OS::TripleO::Services::HAproxy
+  - OS::TripleO::Services::OctaviaHealthManager
   - OS::TripleO::Services::Rsyslog
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftStorage
