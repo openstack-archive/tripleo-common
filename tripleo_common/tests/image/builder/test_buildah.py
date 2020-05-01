@@ -110,6 +110,15 @@ class TestBuildahBuilder(base.TestCase):
         )
 
     @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_with_excludes(self, mock_process):
+        container_build_path = WORK_DIR + '/' + 'fedora-base'
+        bb(WORK_DIR, DEPS, excludes=['fedora-base']).build(
+            'fedora-base',
+            container_build_path
+        )
+        assert not mock_process.called
+
+    @mock.patch.object(process, 'execute', autospec=True)
     def test_push(self, mock_process):
         args = copy.copy(BUILDAH_CMD_BASE)
         dest = '127.0.0.1:8787/master/fedora-binary-fedora-base:latest'
