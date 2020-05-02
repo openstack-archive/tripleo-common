@@ -283,6 +283,9 @@ workflows:
           queue_name: <% $.queue_name %>
           ssh_network: <% $.get('ssh_network') %>
           deployment_options: <% $.get('deployment_options', {}) %>
+          tags: <% $.get('tags') %>
+          skip_tags: <% $.get('skip_tags') %>
+          limit_hosts: <% $.get('limit_hosts') %>
         publish-on-error:
           message: <% task().result %>
         on-success: set_deployment_success
@@ -374,7 +377,9 @@ workflows:
       - nodes: []
       - playbook_name: deploy_steps_playbook.yaml
       - deployment_options: {}
+      - tags: ""
       - skip_tags: ""
+      - limit_hosts: ""
 
     tags:
       - tripleo-common-managed
@@ -522,6 +527,7 @@ workflows:
           execution_id: <% execution().id %>
           limit_hosts: <% $.nodes and $.get(limit_hosts) or false %>
           skip_tags: <% $.skip_tags %>
+          tags: <% $.tags %>
         publish:
           log_path: <% task().result.get('log_path') %>
           deployment_status: DEPLOY_SUCCESS
