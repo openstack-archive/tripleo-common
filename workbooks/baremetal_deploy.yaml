@@ -77,7 +77,6 @@ workflows:
       - ssh_user_name: heat-admin
       - timeout: 3600
       - concurrency: 20
-      - connection_timeout: 600
       - queue_name: tripleo
 
     tags:
@@ -234,7 +233,6 @@ workflows:
           ssh_user_name: <% $.ssh_user_name %>
           timeout: <% $.timeout %>
           concurrency: <% $.concurrency %>
-          connection_timeout: <% $.connection_timeout %>
           queue_name: <% $.queue_name %>
         publish:
           ctlplane_ips: <% task().result.ctlplane_ips %>
