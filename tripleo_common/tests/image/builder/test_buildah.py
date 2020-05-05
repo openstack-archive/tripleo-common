@@ -89,6 +89,25 @@ class TestBuildahBuilder(base.TestCase):
         )
 
     @mock.patch.object(process, 'execute', autospec=True)
+    def test_build_without_img_type(self, mock_process):
+        args = copy.copy(BUILDAH_CMD_BASE)
+        dest = '127.0.0.1:8787/master/fedora-fedora-base:latest'
+        container_build_path = WORK_DIR + '/' + 'fedora-base'
+        logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
+        buildah_cmd_build = ['bud', '--format', 'docker',
+                             '--tls-verify=False', '--logfile',
+                             logfile, '-t', dest, container_build_path]
+        args.extend(buildah_cmd_build)
+        bb(WORK_DIR, DEPS, img_type=False).build('fedora-base',
+                                                 container_build_path)
+        mock_process.assert_called_once_with(
+            *args,
+            check_exit_code=True,
+            run_as_root=False,
+            use_standard_locale=True
+        )
+
+    @mock.patch.object(process, 'execute', autospec=True)
     def test_build_with_volumes(self, mock_process):
         args = copy.copy(BUILDAH_CMD_BASE)
         dest = '127.0.0.1:8787/master/fedora-binary-fedora-base:latest'
