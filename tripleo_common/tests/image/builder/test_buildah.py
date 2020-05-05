@@ -111,11 +111,8 @@ class TestBuildahBuilder(base.TestCase):
 
     @mock.patch.object(process, 'execute', autospec=True)
     def test_build_with_excludes(self, mock_process):
-        container_build_path = WORK_DIR + '/' + 'fedora-base'
-        bb(WORK_DIR, DEPS, excludes=['fedora-base']).build(
-            'fedora-base',
-            container_build_path
-        )
+        bb(WORK_DIR, DEPS, excludes=['fedora-base'])._generate_container(
+            'fedora-base')
         assert not mock_process.called
 
     @mock.patch.object(process, 'execute', autospec=True)
