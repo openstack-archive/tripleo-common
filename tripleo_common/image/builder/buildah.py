@@ -44,7 +44,8 @@ class BuildahBuilder(base.BaseBuilder):
         :params base: Base image on which the containers are built.
             Default to fedora.
         :params img_type: Method used to build the image. All TripleO images
-            are built from binary method.
+            are built from binary method. Can be set to false to remove it
+            from image name.
         :params tag: Tag used to identify the images that we build.
             Default to latest.
         :params namespace: Namespace used to build the containers.
@@ -90,6 +91,22 @@ class BuildahBuilder(base.BaseBuilder):
                       'deps: %s' % container_name)
         return self.cont_map.get(container_name, '')
 
+    def _get_destination(self, container_name):
+        """Return the destination of a container image to push.
+
+        :params container_name: Name of the container.
+        """
+
+        destination = "{}/{}/{}".format(
+            self.registry_address,
+            self.namespace,
+            self.base,
+        )
+        if self.img_type:
+            destination += '-' + self.img_type
+        destination += '-' + container_name + ':' + self.tag
+        return destination
+
     def _generate_container(self, container_name):
         """Generate a container image by building and pushing the image.
 
@@ -98,15 +115,7 @@ class BuildahBuilder(base.BaseBuilder):
 
         self.build(container_name, self._find_container_dir(container_name))
         if self.push_containers:
-            destination = "{}/{}/{}-{}-{}:{}".format(
-                self.registry_address,
-                self.namespace,
-                self.base,
-                self.img_type,
-                container_name,
-                self.tag
-            )
-            self.push(destination)
+            self.push(self._get_destination(container_name))
 
     def build(self, container_name, container_build_path):
         """Build an image from a given directory.
@@ -119,14 +128,6 @@ class BuildahBuilder(base.BaseBuilder):
         if container_name in self.excludes:
             return
 
-        destination = "{}/{}/{}-{}-{}:{}".format(
-            self.registry_address,
-            self.namespace,
-            self.base,
-            self.img_type,
-            container_name,
-            self.tag
-        )
         # 'buildah bud' is the command we want because Kolla uses Dockefile to
         # build images.
         # TODO(emilien): Stop ignoring TLS. The deployer should either secure
@@ -138,7 +139,8 @@ class BuildahBuilder(base.BaseBuilder):
         # TODO(aschultz): drop --format docker when oci format is properly
         # supported by the undercloud registry
         bud_args.extend(['--format', 'docker', '--tls-verify=False',
-                         '--logfile', logfile, '-t', destination,
+                         '--logfile', logfile, '-t',
+                         self._get_destination(container_name),
                          container_build_path])
         args = self.buildah_cmd + bud_args
         print("Building %s image with: %s" % (container_name, ' '.join(args)))
@@ -153,8 +155,8 @@ class BuildahBuilder(base.BaseBuilder):
         """Push an image to a container registry.
 
         :params destination: URL to used to push the container. It contains
-            the registry address, namespace, base, img_type, container name
-            and tag.
+            the registry address, namespace, base, img_type (optional),
+            container name and tag.
         """
         # TODO(emilien): Stop ignoring TLS. The deployer should either secure
         # the registry or add it to insecure_registries.
