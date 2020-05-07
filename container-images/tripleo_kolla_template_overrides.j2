@@ -47,11 +47,9 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 {%   set base_centos_yum_repos_to_disable_remove = ['influxdb'] %}
 {% endif %}
 
-{% if base_distro == 'centos' and base_distro_tag.startswith('7') %}
 {% set base_centos_yum_repo_packages_append = [
     'centos-release-opstools'
 ] %}
-{% endif %}
 
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
 
