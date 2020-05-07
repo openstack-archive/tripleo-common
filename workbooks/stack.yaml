@@ -96,7 +96,7 @@ workflows:
         retry:
           delay: 15
           count: <% $.timeout / 15 %>
-          continue-on: <% $.stack_status = 'DELETE_FAILED' or $.stack in task().result.stacks.select([$.stack_name, $.id]).flatten() %>
+          continue-on: <% $.stack in task().result.stacks.select([$.stack_name, $.id]).flatten() and $.stack_status = 'DELETE_IN_PROGRESS' %>
         on-complete:
           fail: <% $.stack_status = 'DELETE_FAILED' %>
 
