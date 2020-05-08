@@ -114,8 +114,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_LOCAL_TEMP': action.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST':
-                'tripleo,profile_tasks,tripleo_states',
-            'ANSIBLE_STDOUT_CALLBACK': 'tripleo',
+                'tripleo_dense,tripleo_profile_tasks,tripleo_states',
+            'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
         python_version = sys.version_info.major
@@ -155,8 +155,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_LOCAL_TEMP': action.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST':
-                'tripleo,profile_tasks,tripleo_states',
-            'ANSIBLE_STDOUT_CALLBACK': 'tripleo',
+                'tripleo_dense,tripleo_profile_tasks,tripleo_states',
+            'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
         python_version = sys.version_info.major
@@ -196,8 +196,8 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_LOCAL_TEMP': action.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST':
-                'tripleo,profile_tasks,tripleo_states',
-            'ANSIBLE_STDOUT_CALLBACK': 'tripleo',
+                'tripleo_dense,tripleo_profile_tasks,tripleo_states',
+            'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
         python_version = sys.version_info.major
