@@ -64,14 +64,18 @@ class J2SwiftLoader(jinja2.BaseLoader):
 def j2_render_and_put(swift, j2_template, j2_data, yaml_f,
                       container=constants.DEFAULT_CONTAINER_NAME):
 
+    def raise_helper(msg):
+        raise jinja2.exceptions.TemplateError(msg)
+
     # Search for templates relative to the current template path first
     template_base = os.path.dirname(yaml_f)
     j2_loader = J2SwiftLoader(swift, container, template_base)
 
     try:
         # Render the j2 template
-        template = jinja2.Environment(loader=j2_loader).from_string(
-            j2_template)
+        jinja2_env = jinja2.Environment(loader=j2_loader)
+        jinja2_env.globals['raise'] = raise_helper
+        template = jinja2_env.from_string(j2_template)
         r_template = template.render(**j2_data)
     except jinja2.exceptions.TemplateError as ex:
         error_msg = ("Error rendering template %s : %s"

@@ -1,0 +1,12 @@
+---
+other:
+  - |
+    The jinja2 template rendering function is extensended with a ``raise``
+    method. This can be used to raise errors conditionally in the Jinja2
+    templated tripleo-heat-tempaltes, for example in case some required property
+    is not defined in roles_data or network_data. The following example
+    demonstrates how to raise an error conditionally in a template::
+
+      {%- if condition %}
+        {{ raise('MESSAGE') }}
+      {%- endif %}
