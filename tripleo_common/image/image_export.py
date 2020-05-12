@@ -327,8 +327,8 @@ def parse_type_map_file(type_map_path):
     content_type = None
     type_map = {}
     with open(type_map_path, 'r') as f:
-        for l in f:
-            line = l[:-1]
+        for x in f:
+            line = x[:-1]
             if not line:
                 if uri and content_type:
                     type_map[content_type] = uri

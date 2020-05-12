@@ -740,10 +740,10 @@ class BaseImageUploader(object):
 
         if manifest.get('schemaVersion', 2) == 1:
             config = json.loads(manifest['history'][0]['v1Compatibility'])
-            layers = list(reversed([l['blobSum']
-                                    for l in manifest['fsLayers']]))
+            layers = list(reversed([x['blobSum']
+                                    for x in manifest['fsLayers']]))
         else:
-            layers = [l['digest'] for l in manifest['layers']]
+            layers = [x['digest'] for x in manifest['layers']]
 
             parts['digest'] = manifest['config']['digest']
             config_headers = {
@@ -1630,10 +1630,10 @@ class PythonImageUploader(BaseImageUploader):
         manifests_str.append(manifest_str)
         manifest = json.loads(manifest_str)
         if manifest.get('schemaVersion', 2) == 1:
-            layers.extend(reversed([l['blobSum']
-                                    for l in manifest['fsLayers']]))
+            layers.extend(reversed([x['blobSum']
+                                    for x in manifest['fsLayers']]))
         elif manifest.get('mediaType') == MEDIA_MANIFEST_V2:
-            layers.extend(l['digest'] for l in manifest['layers'])
+            layers.extend(x['digest'] for x in manifest['layers'])
         elif manifest.get('mediaType') == MEDIA_MANIFEST_V2_LIST:
             image, _, tag = image_url.geturl().rpartition(':')
             for man in manifest.get('manifests', []):
@@ -2006,24 +2006,24 @@ class PythonImageUploader(BaseImageUploader):
         layer_found = None
         # Check in global view or do a HEAD call for the supplied
         # digests to see if the layer is already in the registry
-        for l in check_layers:
-            if not l:
+        for x in check_layers:
+            if not x:
                 continue
             known_path, ref_image = image_utils.uploaded_layers_details(
-                cls._global_view_proxy(), l['digest'], scope='remote')
+                cls._global_view_proxy(), x['digest'], scope='remote')
             if ref_image == norm_image:
                 LOG.debug('[%s] Layer %s already exists at %s' %
-                          (image, l['digest'], known_path))
-                layer_found = l
+                          (image, x['digest'], known_path))
+                layer_found = x
                 break
             else:
-                parts['digest'] = l['digest']
+                parts['digest'] = x['digest']
                 blob_url = cls._build_url(
                     target_url, CALL_BLOB % parts)
                 if session.head(blob_url, timeout=30).status_code == 200:
                     LOG.debug('[%s] Layer already exists: %s' %
-                              (image, l['digest']))
-                    layer_found = l
+                              (image, x['digest']))
+                    layer_found = x
                     break
         if layer_found:
             layer['digest'] = layer_found['digest']
@@ -2259,11 +2259,11 @@ class PythonImageUploader(BaseImageUploader):
     def _get_all_local_layers_by_digest(cls):
         all_layers = cls._containers_json('overlay-layers', 'layers.json')
         layers_by_digest = {}
-        for l in all_layers:
-            if 'diff-digest' in l:
-                layers_by_digest[l['diff-digest']] = l
-            if 'compressed-diff-digest' in l:
-                layers_by_digest[l['compressed-diff-digest']] = l
+        for x in all_layers:
+            if 'diff-digest' in x:
+                layers_by_digest[x['diff-digest']] = x
+            if 'compressed-diff-digest' in x:
+                layers_by_digest[x['compressed-diff-digest']] = x
         return layers_by_digest
 
     @classmethod
@@ -2338,7 +2338,7 @@ class PythonImageUploader(BaseImageUploader):
         image, manifest, config_str = cls._image_manifest_config(name)
         config = json.loads(config_str)
 
-        layers = [l['digest'] for l in manifest['layers']]
+        layers = [x['digest'] for x in manifest['layers']]
         i, _ = cls._image_tag_from_url(image_url)
         digest = image['digest']
         created = image['created']

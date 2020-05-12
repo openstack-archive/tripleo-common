@@ -69,14 +69,14 @@ def generate_role_with_colon_format(content, defined_role, generated_role):
 
     # "Compute:Compute" is invalid format
     if generated_role == defined_role:
-        msg = ("Generated role name cannot be same as existing role name (%s) "
+        msg = ("Generated role name cannot be same as existing role name ({}) "
                "with colon format".format(defined_role))
         raise ValueError(msg)
 
     # "Compute:A" is invalid format
     if not generated_role.startswith(defined_role):
-        msg = ("Generated role name (%s) name should start with existing role "
-               "name (%s)".format(generated_role, defined_role))
+        msg = ("Generated role name ({}) name should start with existing role "
+               "name ({})".format(generated_role, defined_role))
         raise ValueError(msg)
 
     name_line = "name:%s" % defined_role
