@@ -349,12 +349,12 @@ URI: sha256:1234abcd/index.json
         if manifest.get('schemaVersion', 2) == 1:
             config_str = None
             manifest_type = image_uploader.MEDIA_MANIFEST_V1
-            layers = list(reversed([l['blobSum']
-                                    for l in manifest['fsLayers']]))
+            layers = list(reversed([x['blobSum']
+                                    for x in manifest['fsLayers']]))
         else:
             config_str = '{"config": {}}'
             manifest_type = image_uploader.MEDIA_MANIFEST_V2
-            layers = [l['digest'] for l in manifest['layers']]
+            layers = [x['digest'] for x in manifest['layers']]
         manifest_str = json.dumps(manifest)
         calc_digest = hashlib.sha256()
         calc_digest.update(manifest_str.encode('utf-8'))

@@ -1944,6 +1944,7 @@ class TestPythonImageUploader(base.TestCase):
                           '.manifest.v2+json'
             }
         )
+
     @mock.patch('tripleo_common.image.image_uploader.'
                 'RegistrySessionHelper.check_status')
     def test_upload_url(self, check_status):
