@@ -237,14 +237,12 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # NOTE: Mistral executor needs:
 #   ipmitool: for baremetal node discovery
 #   nova-common: to run nova-manage cells_v2 commands on
-#   openstack-tripleo-validations: validations
 #   qemu-img: convert Octavia amphora qcow2 to raw
 #   tripleo-heat-templates: to load the default plan from the CLI/UI
 {% set mistral_executor_packages_append = [
   'ipmitool',
   'openstack-nova-common',
   'openstack-tripleo-heat-templates',
-  'openstack-tripleo-validations',
   'qemu-img'
 ] %}
 # novajoin: This is required for TLS everywhere, as config_drive will contain
@@ -781,8 +779,6 @@ RUN mkdir -p /openstack && \
 {% if distro_python_version.startswith('3') %}
 RUN test -f /usr/bin/ansible-playbook-3 || ln -s /usr/bin/ansible-playbook /usr/bin/ansible-playbook-3
 {% endif %}
-USER root
-RUN useradd validations
 USER mistral
 {% endblock %}
 
