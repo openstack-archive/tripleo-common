@@ -13,7 +13,8 @@
 #   under the License.
 #
 
-import mock
+from unittest import mock
+
 import yaml
 
 import six

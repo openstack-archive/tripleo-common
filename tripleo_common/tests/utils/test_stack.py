@@ -13,10 +13,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import tempfile
+from unittest import mock
+
 import yaml
 
 from heatclient import exc as heat_exc
-import mock
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants

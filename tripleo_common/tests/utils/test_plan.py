@@ -14,11 +14,12 @@
 # limitations under the License.
 
 import json
-import mock
 import os
 import sys
-import yaml
+from unittest import mock
 import zlib
+
+import yaml
 
 import six
 from swiftclient import exceptions as swiftexceptions

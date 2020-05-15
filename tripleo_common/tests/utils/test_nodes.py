@@ -14,8 +14,8 @@
 # limitations under the License.
 
 import collections
+from unittest import mock
 
-import mock
 from testtools import matchers
 
 from tripleo_common import exception

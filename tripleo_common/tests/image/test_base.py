@@ -13,8 +13,7 @@
 #   under the License.
 #
 
-
-import mock
+from unittest import mock
 
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageSpecificationException

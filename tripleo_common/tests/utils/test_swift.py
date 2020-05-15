@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
+from unittest import mock
 
 from tripleo_common.tests import base
 from tripleo_common.utils import swift as swift_utils

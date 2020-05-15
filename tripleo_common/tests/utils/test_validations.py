@@ -12,9 +12,9 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from unittest import mock
 
 from collections import namedtuple
-import mock
 import yaml
 
 from tripleo_common.constants import PLAN_NAME_PATTERN

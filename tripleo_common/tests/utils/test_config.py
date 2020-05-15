@@ -12,14 +12,15 @@
 
 import datetime
 import fixtures
-import mock
 import os
+from unittest import mock
+from unittest.mock import patch
+from unittest.mock import call
 import uuid
 import warnings
+
 import yaml
 
-from mock import call
-from mock import patch
 
 from tripleo_common import constants
 from tripleo_common.tests import base

@@ -16,7 +16,6 @@
 import hashlib
 import io
 import json
-import mock
 import operator
 import os
 import requests
@@ -24,6 +23,7 @@ from requests_mock.contrib import fixture as rm_fixture
 import six
 from six.moves.urllib.parse import urlparse
 import tempfile
+from unittest import mock
 import zlib
 
 from oslo_concurrency import processutils
