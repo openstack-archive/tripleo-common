@@ -128,7 +128,7 @@ workflows:
       - ansible_queue_name: tripleo
       - module_path: /usr/share/ansible-modules
       - ansible_extra_env_variables:
-            ANSIBLE_LOG_PATH: /var/log/mistral/package_update.log
+            ANSIBLE_LOG_PATH: /var/log/containers/mistral/package_update.log
             ANSIBLE_HOST_KEY_CHECKING: 'False'
       - verbosity: 1
       - work_dir: /var/lib/mistral
@@ -180,7 +180,7 @@ workflows:
         on-error: node_update_failed
         publish-on-error:
           status: FAILED
-          message: Ansible failed, check log at /var/log/mistral/package_update.log.
+          message: Ansible failed, check log at /var/log/containers/mistral/package_update.log.
         publish:
           log_path: <% task().result.get('log_path') %>
 
