@@ -185,7 +185,7 @@ class TestBuildahBuilder(base.TestCase):
         mock_submit.side_effect = R_FAILED_LIST
         _b = bb(WORK_DIR, DEPS)
         self.assertRaises(
-            SystemError,
+            RuntimeError,
             _b.build_all,
             deps=BUILD_ALL_LIST_CONTAINERS
         )
