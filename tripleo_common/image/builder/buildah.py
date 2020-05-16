@@ -17,6 +17,7 @@
 from concurrent import futures
 import os
 import six
+import tenacity
 
 from oslo_concurrency import processutils
 from oslo_log import log as logging
@@ -151,6 +152,11 @@ class BuildahBuilder(base.BaseBuilder):
             use_standard_locale=True
         )
 
+    @tenacity.retry(  # Retry up to 10 times with jittered exponential backoff
+        reraise=True,
+        wait=tenacity.wait_random_exponential(multiplier=1, max=15),
+        stop=tenacity.stop_after_attempt(10)
+    )
     def push(self, destination):
         """Push an image to a container registry.
 
