@@ -37,6 +37,11 @@ JINJA_SNIPPET = r"""
       DefaultPasswords: {get_attr: [DefaultPasswords, passwords]}
 {% endfor %}"""
 
+JINJA_RAISE_CONFIG = r"""
+# Jinja raise extension
+{{ raise('MESSAGE') }}
+"""
+
 ROLE_DATA_YAML = r"""
 -
   name: CustomRole
@@ -389,6 +394,20 @@ class ProcessTemplatesTest(base.TestCase):
         # Test - J2 exclude file empty
         self.assertTrue(
             {'name': []} == template_utils.get_j2_excludes_file(swift))
+
+    def test_j2_render_and_put_raise_in_template(self):
+
+        # setup swift
+        swift = mock.MagicMock()
+        swift.get_object = mock.MagicMock()
+        swift.get_container = mock.MagicMock()
+
+        # Test
+        args = (swift, JINJA_RAISE_CONFIG, {'role': 'CustomRole'},
+                'customrole-config.yaml', constants.DEFAULT_CONTAINER_NAME)
+        self.assertRaises(RuntimeError,
+                          template_utils.j2_render_and_put,
+                          *args)
 
     def test_heat_resource_exists(self):
         heat_client = mock.MagicMock()
