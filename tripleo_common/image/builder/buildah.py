@@ -114,6 +114,9 @@ class BuildahBuilder(base.BaseBuilder):
         :params container_name: Name of the container.
         """
 
+        if container_name in self.excludes:
+            return
+
         self.build(container_name, self._find_container_dir(container_name))
         if self.push_containers:
             self.push(self._get_destination(container_name))
@@ -125,9 +128,6 @@ class BuildahBuilder(base.BaseBuilder):
         :params container_build_path: Directory where the Dockerfile or
             Containerfile and other files are located to build the image.
         """
-
-        if container_name in self.excludes:
-            return
 
         # 'buildah bud' is the command we want because Kolla uses Dockefile to
         # build images.
