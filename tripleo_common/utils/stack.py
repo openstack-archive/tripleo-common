@@ -166,13 +166,14 @@ def deploy_stack(swift, heat, container, skip_deploy_identifier=False,
 
     stack_is_new = stack is None
 
-    # update StackAction, DeployIdentifier and UpdateIdentifier
+    # update StackAction, DeployIdentifier
 
     parameters = dict()
     if not skip_deploy_identifier:
         parameters['DeployIdentifier'] = int(time.time())
     else:
         parameters['DeployIdentifier'] = ''
+
     parameters['StackAction'] = 'CREATE' if stack_is_new else 'UPDATE'
 
     try:
