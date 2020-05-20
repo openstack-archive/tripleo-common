@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 import yaml
 
-import mock
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants

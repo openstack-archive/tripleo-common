@@ -13,7 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import collections
-import mock
+from unittest import mock
+
 import yaml
 
 from mistral_lib import actions

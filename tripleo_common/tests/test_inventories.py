@@ -14,9 +14,10 @@
 
 import fixtures
 import os
+from unittest.mock import MagicMock
+
 import yaml
 
-from mock import MagicMock
 from tripleo_common.tests import base
 from tripleo_common.inventories import TripleoInventories
 

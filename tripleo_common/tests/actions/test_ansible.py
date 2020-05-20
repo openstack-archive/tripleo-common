@@ -14,7 +14,6 @@
 # under the License.
 
 import json
-import mock
 import os
 import random
 from six.moves import configparser
@@ -22,6 +21,7 @@ import shutil
 import string
 import sys
 import tempfile
+from unittest import mock
 
 from oslo_concurrency import processutils
 

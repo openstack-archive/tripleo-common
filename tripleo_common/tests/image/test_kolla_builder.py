@@ -13,12 +13,12 @@
 #   under the License.
 #
 
-
-import mock
 import os
 import six
 import sys
 import tempfile
+from unittest import mock
+
 import yaml
 
 from tripleo_common import constants

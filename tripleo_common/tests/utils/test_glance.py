@@ -14,9 +14,9 @@
 # limitations under the License.
 
 import collections
+from unittest import mock
 
 from glanceclient import exc as exceptions
-import mock
 import testtools
 
 from tripleo_common.tests import base

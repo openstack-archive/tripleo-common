@@ -15,10 +15,11 @@
 import fixtures
 import os
 import sys
+from unittest.mock import MagicMock
+
 import yaml
 
 from heatclient.exc import HTTPNotFound
-from mock import MagicMock
 
 from tripleo_common.inventory import StackOutputs
 from tripleo_common.inventory import TripleoInventory

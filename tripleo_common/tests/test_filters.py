@@ -14,8 +14,7 @@
 # limitations under the License.
 
 import sys
-
-import mock
+from unittest import mock
 
 from tripleo_common.tests import base
 from tripleo_common.tests import fake_nova

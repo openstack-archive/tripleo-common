@@ -15,10 +15,9 @@
 """Unit tests for image.builder.buildah"""
 
 import copy
-import mock
-
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor as tpe
+from unittest import mock
 
 from tripleo_common.image.builder.buildah import BuildahBuilder as bb
 from tripleo_common.tests import base

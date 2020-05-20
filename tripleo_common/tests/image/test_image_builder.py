@@ -13,9 +13,8 @@
 #   under the License.
 #
 
-
-import mock
 import subprocess
+from unittest import mock
 
 from tripleo_common.image.exception import ImageBuilderException
 from tripleo_common.image.image_builder import DibImageBuilder

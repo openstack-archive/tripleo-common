@@ -19,8 +19,7 @@
 Test cases for tripleo_common.arch module.
 """
 
-import mock
-
+from unittest import mock
 from unittest import TestCase
 
 from tripleo_common import arch

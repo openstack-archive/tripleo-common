@@ -17,8 +17,8 @@
 
 
 import os
+from unittest import mock
 
-import mock
 from oslo_concurrency import processutils
 
 from tripleo_common.tests import base

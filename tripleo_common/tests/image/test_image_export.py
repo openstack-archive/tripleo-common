@@ -16,13 +16,13 @@
 import hashlib
 import io
 import json
-import mock
 import os
 import requests
 import shutil
 import six
 from six.moves.urllib.parse import urlparse
 import tempfile
+from unittest import mock
 import zlib
 
 from tripleo_common.image import image_export
