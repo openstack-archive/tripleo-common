@@ -144,7 +144,7 @@
     content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item_only) }} ]"
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
   when:
-    - deployment_content is defined
+    - not ansible_check_mode|bool
 
 - name: "Check if deployed file exists for {{ item }}"
   stat:
