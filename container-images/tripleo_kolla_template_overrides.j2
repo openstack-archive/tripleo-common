@@ -33,13 +33,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 
 {% block dumb_init_installation %}{% endblock %}
 
-# Remove EPEL and the dependencies requiring it
-{% set base_centos_yum_repo_keys_remove = [
-    '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Cloud',
-] %}
-
 {% set base_centos_yum_repo_packages_remove = [
-    'centos-release-openstack-train',
     'epel-release'
 ] %}
 {% if base_distro == 'centos' and base_distro_tag.startswith('8') %}
@@ -47,7 +41,11 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
     'HighAvailability',
     'centos-opstools'
 ] %}
-{%   set base_centos_yum_repos_to_disable_remove = ['influxdb'] %}
+{%   set base_centos_yum_repos_to_disable_remove = [
+    'influxdb',
+    'epel',
+    'epel-modular'
+] %}
 {% endif %}
 
 {% set base_centos_yum_repo_packages_append = [
@@ -459,6 +457,7 @@ STOPSIGNAL SIGTERM
 # a yum update in the kolla base image. All the other images should inherit this
 # but if the base distro container is out of date (i.g. 7.4 but 7.5 is out) this
 # will pull in the updated packages available. Related issue LP#1770355
+RUN rm -rf /etc/yum.repos.d/CentOS-OpenStack-train.repo
 RUN yum update -y && yum clean all && rm -rf /var/cache/yum
 {% endblock %}
 
@@ -1054,3 +1053,4 @@ RUN mkdir -p /openstack && \
     ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-rsync /openstack/healthcheck && \
     chmod a+rx /openstack/healthcheck
 {% endblock %}
+
