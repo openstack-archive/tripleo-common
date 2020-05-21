@@ -44,4 +44,4 @@ parameter_defaults:
 
       ceph_grafana_namespace: docker.io/grafana
       ceph_grafana_image: grafana
-      ceph_grafana_tag: 5.2.4
+      ceph_grafana_tag: 5.4.3
