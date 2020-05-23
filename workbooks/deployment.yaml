@@ -444,9 +444,9 @@ workflows:
           fields: ['instance_info']
         with-items: node in <% $.nodes %>
         publish-on-error:
-          limit_hosts: <% $.nodes.join(',') %>
+          nodes_names: <% $.nodes.join(',') %>
         publish:
-          limit_hosts: <% list(task().result.instance_info.display_name).join(',') %>
+          nodes_names: <% list(task().result.instance_info.display_name).join(',') %>
 
       get_private_key:
         action: tripleo.validations.get_privkey
@@ -525,7 +525,7 @@ workflows:
           timeout: <% $.connection_timeout %>
           command_timeout: <% $.config_download_timeout %>
           execution_id: <% execution().id %>
-          limit_hosts: <% $.nodes and $.get(limit_hosts) or false %>
+          limit_hosts: <% ($.nodes_names or $.limit_hosts) or false %>
           skip_tags: <% $.skip_tags %>
           tags: <% $.tags %>
         publish:
