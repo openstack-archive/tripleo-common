@@ -250,6 +250,8 @@ class FindNodeHandlerTest(base.TestCase):
     def test_unknown_driver(self):
         self.assertRaises(exception.InvalidNode,
                           nodes._find_node_handler, {'pm_type': 'foobar'})
+        self.assertRaises(exception.InvalidNode,
+                          nodes._find_node_handler, {'pm_type': 'ipmi_foo'})
 
 
 class NodesTest(base.TestCase):
