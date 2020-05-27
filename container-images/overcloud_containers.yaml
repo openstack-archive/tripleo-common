@@ -1,183 +1,183 @@
 container_images:
-- imagename: docker.io/tripleomaster/centos-binary-aodh-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-aodh-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-aodh-evaluator:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-aodh-evaluator:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-aodh-listener:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-aodh-listener:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-aodh-notifier:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-aodh-notifier:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-barbican-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-barbican-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-barbican-keystone-listener:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-barbican-keystone-listener:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-barbican-worker:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-barbican-worker:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ceilometer-central:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ceilometer-central:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ceilometer-compute:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ceilometer-compute:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ceilometer-notification:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ceilometer-notification:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ceilometer-ipmi:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ceilometer-ipmi:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-cinder-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-cinder-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-cinder-backup:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-cinder-backup:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-cinder-scheduler:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-cinder-scheduler:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-cinder-volume:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-cinder-volume:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-collectd:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-collectd:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-cron:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-cron:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-designate-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-backend-bind9:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-designate-backend-bind9:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-central:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-designate-central:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-mdns:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-designate-mdns:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-producer:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-designate-producer:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-sink:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-designate-sink:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-designate-worker:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-designate-worker:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-etcd:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-etcd:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-glance-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-glance-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-gnocchi-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-gnocchi-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-gnocchi-metricd:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-gnocchi-metricd:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-gnocchi-statsd:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-gnocchi-statsd:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-haproxy:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-haproxy:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-heat-all:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-heat-all:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-heat-api-cfn:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-heat-api-cfn:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-heat-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-heat-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-heat-engine:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-heat-engine:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-horizon:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-horizon:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ironic-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ironic-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ironic-conductor:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ironic-conductor:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ironic-inspector:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ironic-inspector:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ironic-pxe:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ironic-pxe:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ironic-neutron-agent:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ironic-neutron-agent:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-iscsid:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-iscsid:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-keepalived:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-keepalived:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-keystone:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-keystone:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-manila-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-manila-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-manila-scheduler:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-manila-scheduler:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-manila-share:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-manila-share:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-mariadb:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-mariadb:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-memcached:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-memcached:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-mistral-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-mistral-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-mistral-engine:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-mistral-engine:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-mistral-executor:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-mistral-executor:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-mistral-event-engine:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-mistral-event-engine:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-multipathd:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-multipathd:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-dhcp-agent:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-dhcp-agent:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-l3-agent:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-l3-agent:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-metadata-agent:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-metadata-agent:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-openvswitch-agent:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-openvswitch-agent:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-sriov-agent:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-sriov-agent:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-mlnx-agent:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-mlnx-agent:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-server:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-server:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-neutron-metadata-agent-ovn:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-neutron-metadata-agent-ovn:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-nova-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-compute-ironic:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-nova-compute-ironic:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-compute:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-nova-compute:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-conductor:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-nova-conductor:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-libvirt:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-nova-libvirt:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-novncproxy:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-nova-novncproxy:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-nova-scheduler:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-nova-scheduler:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-novajoin-notifier:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-novajoin-notifier:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-novajoin-server:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-novajoin-server:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-octavia-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-octavia-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-octavia-health-manager:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-octavia-health-manager:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-octavia-housekeeping:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-octavia-housekeeping:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-octavia-worker:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-octavia-worker:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ovn-controller:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ovn-controller:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ovn-nb-db-server:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ovn-nb-db-server:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ovn-northd:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ovn-northd:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-ovn-sb-db-server:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-ovn-sb-db-server:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-placement-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-placement-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-qdrouterd:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-qdrouterd:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-rabbitmq:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-rabbitmq:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-redis:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-redis:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-sahara-api:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-sahara-api:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-sahara-engine:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-sahara-engine:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-swift-account:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-swift-account:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-swift-container:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-swift-container:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-swift-object:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-swift-object:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-swift-proxy-server:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-swift-proxy-server:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-tripleoclient:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-tripleoclient:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-zaqar-wsgi:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-zaqar-wsgi:current-tripleo
   image_source: kolla
 - imagename: docker.io/ceph/daemon:v4.0.12-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
@@ -189,7 +189,7 @@ container_images:
   image_source: prom
 - imagename: docker.io/grafana/grafana:5.4.3
   image_source: grafana
-- imagename: docker.io/tripleomaster/centos-binary-tempest:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-tempest:current-tripleo
   image_source: kolla
-- imagename: docker.io/tripleomaster/centos-binary-rsyslog:current-tripleo
+- imagename: docker.io/tripleou/centos-binary-rsyslog:current-tripleo
   image_source: kolla
