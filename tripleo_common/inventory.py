@@ -382,7 +382,9 @@ class TripleoInventory(object):
             yaml.dump(inventory, inventory_file, TemplateDumper)
 
 
-def generate_tripleo_ansible_inventory(heat, auth,
+def generate_tripleo_ansible_inventory(heat, auth_url,
+                                       username,
+                                       project_name,
                                        cacert=None,
                                        plan='overcloud',
                                        work_dir=None,
@@ -397,10 +399,10 @@ def generate_tripleo_ansible_inventory(heat, auth,
         work_dir, 'tripleo-ansible-inventory.yaml')
     inv = TripleoInventory(
         hclient=heat,
-        auth_url=auth.auth_uri,
+        auth_url=auth_url,
+        username=username,
+        project_name=project_name,
         cacert=cacert,
-        project_name=auth.project_name,
-        username=auth.user_name,
         ansible_ssh_user=ansible_ssh_user,
         undercloud_key_file=undercloud_key_file,
         undercloud_connection=UNDERCLOUD_CONNECTION_SSH,
