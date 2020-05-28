@@ -14,11 +14,13 @@
         - openstack-tox-linters
         - openstack-tox-py36
         - openstack-tox-py37
+        - openstack-tox-py38
         - tripleo-ci-centos-8-containers-multinode:
             dependencies: &deps_unit_lint
               - openstack-tox-linters
               - openstack-tox-py36
               - openstack-tox-py37
+              - openstack-tox-py38
         - tripleo-ci-centos-8-undercloud-containers:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-standalone:
