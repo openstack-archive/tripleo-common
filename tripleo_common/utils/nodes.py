@@ -266,34 +266,34 @@ class iBootDriverInfo(PrefixedDriverInfo):
 
 DRIVER_INFO = {
     # production drivers
-    '(ipmi|.*_ipmitool)': PrefixedDriverInfo('ipmi', has_port=True,
-                                             default_port=623,
-                                             hardware_type='ipmi',
-                                             mandatory_fields=['pm_addr']
-                                             ),
-    '(idrac|.*_drac)': PrefixedDriverInfo('drac', has_port=True,
-                                          hardware_type='idrac'),
-    '(ilo|.*_ilo)': PrefixedDriverInfo('ilo', has_port=True,
-                                       hardware_type='ilo'),
-    '(irmc|.*_irmc)': PrefixedDriverInfo('irmc', has_port=True,
-                                         hardware_type='irmc'),
-    'redfish': RedfishDriverInfo(),
-    'xclarity': PrefixedDriverInfo('xclarity', has_port=True),
+    r'^(ipmi|.*_ipmitool)$': PrefixedDriverInfo('ipmi', has_port=True,
+                                                default_port=623,
+                                                hardware_type='ipmi',
+                                                mandatory_fields=['pm_addr']
+                                                ),
+    r'^(idrac|.*_drac)$': PrefixedDriverInfo('drac', has_port=True,
+                                             hardware_type='idrac'),
+    r'^(ilo|.*_ilo)$': PrefixedDriverInfo('ilo', has_port=True,
+                                          hardware_type='ilo'),
+    r'^(irmc|.*_irmc)$': PrefixedDriverInfo('irmc', has_port=True,
+                                            hardware_type='irmc'),
+    r'^redfish$': RedfishDriverInfo(),
+    r'^xclarity$': PrefixedDriverInfo('xclarity', has_port=True),
     # test drivers
-    r'staging\-ovirt': oVirtDriverInfo(),
-    r'(staging\-iboot|.*_iboot)': iBootDriverInfo(),
-    r'(staging\-wol|.*wol)': DriverInfo(
+    r'^staging\-ovirt$': oVirtDriverInfo(),
+    r'^(staging\-iboot|.*_iboot)$': iBootDriverInfo(),
+    r'^(staging\-wol|.*wol)$': DriverInfo(
         'wol',
         mapping={
             'pm_addr': 'wol_host',
             'pm_port': 'wol_port',
         },
         hardware_type='staging-wol'),
-    r'(staging\-amt|.*_amt)': PrefixedDriverInfo('amt',
-                                                 hardware_type='staging-amt'),
+    r'^(staging\-amt|.*_amt)$': PrefixedDriverInfo(
+        'amt', hardware_type='staging-amt'),
     # fake_pxe was used when no management interface was supported, now
     # manual-management is used for the same purpose
-    r'(manual\-management|fake_pxe|fake_agent)': DriverInfo(
+    r'^(manual\-management|fake_pxe|fake_agent)$': DriverInfo(
         'fake', mapping={}, hardware_type='manual-management'),
     r'^fake(|\-hardware)$': DriverInfo('fake', mapping={},
                                        hardware_type='fake-hardware'),
@@ -302,7 +302,7 @@ DRIVER_INFO = {
 
 def find_driver_handler(driver):
     for driver_tpl, handler in DRIVER_INFO.items():
-        if re.match(driver_tpl, driver) is not None:
+        if re.search(driver_tpl, driver) is not None:
             return handler
 
     # FIXME(dtantsur): handle all drivers without hardcoding them
