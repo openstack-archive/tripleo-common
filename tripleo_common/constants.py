@@ -153,6 +153,10 @@ DO_NOT_ROTATE_LIST = (
     'KeystoneFernetKey0',
     'KeystoneFernetKey1',
     'KeystoneFernetKeys',
+    'CephClientKey',
+    'CephClusterFSID',
+    'CephManilaClientKey',
+    'CephRgwKey',
 )
 
 PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
