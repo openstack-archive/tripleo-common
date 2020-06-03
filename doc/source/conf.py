@@ -50,7 +50,7 @@ add_function_parentheses = True
 add_module_names = True
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'native'
 
 # -- Options for HTML output --------------------------------------------------
 
@@ -78,6 +78,6 @@ latex_documents = [
 # intersphinx_mapping = {'http://docs.python.org/': None}
 
 # openstackdocstheme options
-repository_name = 'openstack/tripleo-common'
-bug_project = 'tripleo'
-bug_tag = 'documentation'
+openstackdocs_repo_name = 'openstack/tripleo-common'
+openstackdocs_bug_project = 'tripleo'
+openstackdocs_bug_tag = 'documentation'
