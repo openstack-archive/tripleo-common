@@ -28,6 +28,8 @@
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-standalone:
             dependencies: *deps_unit_lint
+            vars:
+              build_container_images: true
         - tripleo-build-containers-ubi-8:
             dependencies: *deps_unit_lint
             files:
@@ -48,8 +50,30 @@
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario003-standalone:
             dependencies: *deps_unit_lint
+            vars:
+              build_container_images: true
+            files:
+              - ^container-images/tcib/base/os/designate.*$
+              - ^container-images/tcib/base/os/mistral.*$
+              - ^container-images/tcib/base/os/sahara.*$
         - tripleo-ci-centos-8-scenario004-standalone:
             dependencies: *deps_unit_lint
+            vars:
+              build_container_images: true
+            files:
+              - ^container-images/tcib/base/os/manila.*$
+        - tripleo-ci-centos-8-scenario007-standalone:
+            dependencies: *deps_unit_lint
+            vars:
+              build_container_images: true
+            files:
+              - ^container-images/tcib/base/os/neutron.*$
+        - tripleo-ci-centos-8-scenario010-standalone:
+            dependencies: *deps_unit_lint
+            vars:
+              build_container_images: true
+            files:
+              - ^container-images/tcib/base/os/octavia.*$
         - tripleo-buildimage-overcloud-full-centos-8:
             dependencies: *deps_unit_lint
             files:
