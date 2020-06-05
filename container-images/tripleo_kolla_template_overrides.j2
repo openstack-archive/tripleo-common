@@ -257,10 +257,6 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 
 {# neutron #}
 
-# Remove python3-networking-mlnx - only added from ussuri release
-{% if distro_python_version.startswith('3') %}
-{% set neutron_base_packages_remove = ['python3-networking-mlnx'] %}
-{% endif %}
 # NOTE (jaosorior): neutron-server with TLS everywhere needs httpd and mod_ssl packages.
 # NOTE (hjensas): python2-networking-baremetal ML2 plug-in for ironic neutron integration.
 # NOTE (ramishra): python2-networking-ansible ML2 plug-in for neutron ansible integration.
