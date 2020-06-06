@@ -3,7 +3,7 @@
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
 process=$1
-socket='/var/run/libvirt/virtlogd-sock'
+socket='/run/libvirt/virtlogd-sock'
 if [[ $process == "virtlogd" ]]; then
     healthcheck_socket $process $socket
     exit $?
