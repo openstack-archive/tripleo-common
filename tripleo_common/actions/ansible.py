@@ -32,7 +32,6 @@ from oslo_rootwrap import subprocess
 
 from tripleo_common.actions import base
 from tripleo_common import constants
-from tripleo_common import inventory
 
 LOG = logging.getLogger(__name__)
 
@@ -508,35 +507,3 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 msg = "An error happened while cleaning work directory: " + e
                 LOG.error(msg)
                 return actions.Result(error=msg)
-
-
-class AnsibleGenerateInventoryAction(base.TripleOAction):
-    """Executes tripleo-ansible-inventory to generate an inventory"""
-
-    def __init__(self, **kwargs):
-        self._kwargs_for_run = kwargs
-        self.ansible_ssh_user = self._kwargs_for_run.pop(
-            'ansible_ssh_user', 'tripleo-admin')
-        self.undercloud_key_file = self._kwargs_for_run.pop(
-            'undercloud_key_file', None)
-        self.ansible_python_interpreter = self._kwargs_for_run.pop(
-            'ansible_python_interpreter', None)
-        self.work_dir = self._kwargs_for_run.pop(
-            'work_dir', None)
-        self.plan_name = self._kwargs_for_run.pop(
-            'plan_name', 'overcloud')
-        self.ssh_network = self._kwargs_for_run.pop(
-            'ssh_network', 'ctlplane')
-
-    def run(self, context):
-        return inventory.generate_tripleo_ansible_inventory(
-            heat=self.get_orchestration_client(context),
-            work_dir=self.work_dir,
-            plan=self.plan_name,
-            auth_url=context.security.auth_uri,
-            username=context.security.user_name,
-            project_name=context.security.project_name,
-            ansible_ssh_user=self.ansible_ssh_user,
-            undercloud_key_file=self.undercloud_key_file,
-            ansible_python_interpreter=self.ansible_python_interpreter,
-            ssh_network=self.ssh_network)
