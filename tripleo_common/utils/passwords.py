@@ -51,13 +51,12 @@ def generate_passwords(stack_env=None,
         if (stack_env and name in stack_env.get('parameter_defaults', {}) and
                 not rotate_passwords):
             passwords[name] = stack_env['parameter_defaults'][name]
-        elif name.startswith("Ceph"):
-            if name == "CephClusterFSID":
-                # The FSID must be a UUID
-                passwords[name] = six.text_type(uuid.uuid4())
-            else:
-                # CephX keys aren't random strings
-                passwords[name] = create_cephx_key()
+        elif name in ('CephClientKey', 'CephManilaClientKey', 'CephRgwKey'):
+            # CephX keys aren't random strings
+            passwords[name] = create_cephx_key()
+        elif name == "CephClusterFSID":
+            # The FSID must be a UUID
+            passwords[name] = six.text_type(uuid.uuid4())
         # Since by default passlib.pwd.genword uses all digits and ascii upper
         # & lowercase letters, it provides ~5.95 entropy per character.
         # Make the length of the default authkey 4096 bytes, which should give
