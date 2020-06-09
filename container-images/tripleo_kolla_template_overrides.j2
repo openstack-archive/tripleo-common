@@ -36,20 +36,23 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 # Remove EPEL and the dependencies requiring it
 {% set base_centos_yum_repo_keys_remove = [
     '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Cloud',
+    '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Virtualization-RDO',
 ] %}
 
 {% set base_centos_yum_repo_packages_remove = [
-    'centos-release-openstack-train',
+    'centos-release-openstack-ussuri',
     'epel-release'
 ] %}
 {% if base_distro == 'centos' and base_distro_tag.startswith('8') %}
 {%   set base_centos_yum_repos_to_enable_append = ['HighAvailability'] %}
-{%   set base_centos_yum_repos_to_disable_remove = ['centos-rabbitmq-38', 'centos-opstools', 'influxdb'] %}
-{% endif %}
-
-{% set base_centos_yum_repo_packages_append = [
-    'centos-release-opstools'
+{%   set base_centos_yum_repos_to_disable_remove = [
+    'centos-rabbitmq-38',
+    'centos-opstools',
+    'epel',
+    'epel-modular',
+    'influxdb'
 ] %}
+{% endif %}
 
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
 
