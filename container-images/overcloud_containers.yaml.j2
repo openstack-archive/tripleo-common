@@ -749,15 +749,6 @@ container_images_template:
   - OS::TripleO::Services::SwiftRingBuilder
   - OS::TripleO::Services::SwiftStorage
 
-# NOTE: the TripleoClient service will likely be just a stub to allow
-# us to obtain this container via the prepare commands.
-- imagename: "{{namespace}}/{{name_prefix}}tripleoclient{{name_suffix}}:{{tag}}"
-  image_source: kolla
-  params:
-  - ContainerTripleoclientImage
-  services:
-  - OS::TripleO::Services::TripleoClient
-
 - imagename: "{{namespace}}/{{name_prefix}}zaqar-wsgi{{name_suffix}}:{{tag}}"
   image_source: kolla
   params:
