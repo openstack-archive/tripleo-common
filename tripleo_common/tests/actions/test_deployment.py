@@ -206,6 +206,8 @@ class OrchestrationDeployActionTest(base.TestCase):
 
 class DeployStackActionTest(base.TestCase):
 
+    @mock.patch('tripleo_common.actions.deployment.DeployStackAction.'
+                '_prune_unused_services', return_value=False)
     @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -216,7 +218,7 @@ class DeployStackActionTest(base.TestCase):
     def test_run(self, get_orchestration_client_mock,
                  mock_get_object_client, mock_get_template_contents,
                  mock_process_multiple_environments_and_files,
-                 mock_time):
+                 mock_time, mock_prune):
 
         mock_ctx = mock.MagicMock()
         # setup swift
@@ -283,6 +285,71 @@ class DeployStackActionTest(base.TestCase):
             "overcloud-swift-rings", "swift-rings.tar.gz",
             "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
 
+    @mock.patch('tripleo_common.utils.plan.update_in_env')
+    @mock.patch('tripleo_common.utils.plan.get_env')
+    @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction.run')
+    @mock.patch('tripleo_common.actions.deployment.DeployStackAction.'
+                '_prune_unused_services', return_value=True)
+    @mock.patch('tripleo_common.actions.deployment.time')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
+    @mock.patch(
+        'tripleo_common.actions.base.TripleOAction.get_orchestration_client')
+    def test_run_role_changes(self, get_orchestration_client_mock,
+                              mock_get_object_client,
+                              mock_time, mock_prune, mock_template_action,
+                              mock_get_env, mock_update_in_env):
+
+        mock_ctx = mock.MagicMock()
+        # setup swift
+        swift = mock.MagicMock(url="http://test.com")
+        mock_env = yaml.safe_dump({
+            'name': 'overcloud',
+            'temp_environment': 'temp_environment',
+            'template': 'template',
+            'environments': [{u'path': u'environments/test.yaml'}],
+            'parameter_defaults': {'random_existing_data': 'a_value'},
+        }, default_flow_style=False)
+        swift.get_object.side_effect = (
+            ({}, mock_env),
+            ({}, mock_env),
+        )
+        mock_get_object_client.return_value = swift
+
+        heat = mock.MagicMock()
+        heat.stacks.get.return_value = None
+        get_orchestration_client_mock.return_value = heat
+
+        # freeze time at datetime.datetime(2016, 9, 8, 16, 24, 24)
+        mock_time.time.return_value = 1473366264
+
+        mock_template_action.return_value = {
+            'stack_name': 'overcloud',
+            'template': {'heat_template_version': '2016-04-30'},
+            'environment': {},
+            'files': {}
+        }
+
+        action = deployment.DeployStackAction(1, 'overcloud')
+        action.run(mock_ctx)
+
+        mock_prune.assert_called_once()
+        self.assertEqual(mock_template_action.call_count, 2)
+
+        heat.stacks.create.assert_called_once_with(
+            environment={},
+            files={},
+            stack_name='overcloud',
+            template={'heat_template_version': '2016-04-30'},
+            timeout_mins=1,
+        )
+        swift.delete_object.assert_called_once_with(
+            "overcloud-swift-rings", "swift-rings.tar.gz")
+        swift.copy_object.assert_called_once_with(
+            "overcloud-swift-rings", "swift-rings.tar.gz",
+            "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
+
+    @mock.patch('tripleo_common.actions.deployment.DeployStackAction.'
+                '_prune_unused_services', return_value=False)
     @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -294,7 +361,7 @@ class DeployStackActionTest(base.TestCase):
             self, get_orchestration_client_mock,
             mock_get_object_client, mock_get_template_contents,
             mock_process_multiple_environments_and_files,
-            mock_time):
+            mock_time, mock_prune):
 
         mock_ctx = mock.MagicMock()
         # setup swift
@@ -361,6 +428,8 @@ class DeployStackActionTest(base.TestCase):
             "overcloud-swift-rings", "swift-rings.tar.gz",
             "overcloud-swift-rings/swift-rings.tar.gz-%d" % 1473366264)
 
+    @mock.patch('tripleo_common.actions.deployment.DeployStackAction.'
+                '_prune_unused_services', return_value=False)
     @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -371,7 +440,7 @@ class DeployStackActionTest(base.TestCase):
     def test_run_create_failed(
         self, get_orchestration_client_mock, mock_get_object_client,
         mock_get_template_contents,
-        mock_process_multiple_environments_and_files, mock_time):
+        mock_process_multiple_environments_and_files, mock_time, mock_prune):
 
         mock_ctx = mock.MagicMock()
         # setup swift
@@ -408,6 +477,8 @@ class DeployStackActionTest(base.TestCase):
             error="Error during stack creation: ERROR: Oops\n")
         self.assertEqual(expected, action.run(mock_ctx))
 
+    @mock.patch('tripleo_common.actions.deployment.DeployStackAction.'
+                '_prune_unused_services', return_value=False)
     @mock.patch('tripleo_common.update.check_neutron_mechanism_drivers')
     @mock.patch('tripleo_common.actions.deployment.time')
     @mock.patch('heatclient.common.template_utils.'
@@ -420,7 +491,7 @@ class DeployStackActionTest(base.TestCase):
         self, get_orchestration_client_mock, mock_get_object_client,
         mock_get_template_contents,
         mock_process_multiple_environments_and_files, mock_time,
-        mock_check_neutron_drivers):
+        mock_check_neutron_drivers, mock_prune):
 
         mock_ctx = mock.MagicMock()
         # setup swift
@@ -510,6 +581,61 @@ class DeployStackActionTest(base.TestCase):
             self.assertIn('content', my_params['CAMap']['overcloud-ca'])
             self.assertEqual('ANOTER FAKE CERT',
                              my_params['CAMap']['overcloud-ca']['content'])
+
+    def test_prune_unused_services(self):
+        resource_registry = {
+            'OS::TripleO::Services::Foo': 'bar.yaml',
+            'OS::TripleO::Services::Baz': 'OS::Heat::None',
+        }
+        swift = mock.MagicMock()
+        mock_put = mock.MagicMock()
+        swift.put_object = mock_put
+        action = deployment.DeployStackAction(1, 'overcloud',
+                                              skip_deploy_identifier=True)
+
+        test_role_data = [{
+            'name': 'Controller',
+            'ServicesDefault': [
+                'OS::TripleO::Services::Foo',
+                'OS::TripleO::Services::Baz']
+            }]
+
+        test_role_data_result = [{
+            'name': 'Controller',
+            'ServicesDefault': [
+                'OS::TripleO::Services::Foo']
+            }]
+
+        action.role_data = test_role_data
+
+        action._prune_unused_services(resource_registry, swift)
+
+        data = yaml.safe_dump(test_role_data_result, default_flow_style=False)
+        mock_put.assert_called_once_with('overcloud', 'roles_data.yaml', data)
+
+    def test_prune_unused_services_no_removal(self):
+        resource_registry = {
+            'OS::TripleO::Services::Foo': 'bar.yaml',
+            'OS::TripleO::Services::Baz': 'biz.yaml',
+        }
+        swift = mock.MagicMock()
+        mock_put = mock.MagicMock()
+        swift.put_object = mock_put
+        action = deployment.DeployStackAction(1, 'overcloud',
+                                              skip_deploy_identifier=True)
+
+        test_role_data = [{
+            'name': 'Controller',
+            'ServicesDefault': [
+                'OS::TripleO::Services::Foo',
+                'OS::TripleO::Services::Baz']
+            }]
+
+        action.role_data = test_role_data
+
+        action._prune_unused_services(resource_registry, swift)
+
+        mock_put.assert_not_called()
 
 
 class OvercloudRcActionTestCase(base.TestCase):
