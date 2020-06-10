@@ -192,6 +192,8 @@ container_images:
 - image_source: tripleo
   imagename: quay.io/tripleotrain/openstack-ovn-sb-db-server:current-tripleo
 - image_source: tripleo
+  imagename: quay.io/tripleotrain/openstack-panko-api:current-tripleo
+- image_source: tripleo
   imagename: quay.io/tripleotrain/openstack-placement-api:current-tripleo
 - image_source: tripleo
   imagename: quay.io/tripleotrain/openstack-qdrouterd:current-tripleo

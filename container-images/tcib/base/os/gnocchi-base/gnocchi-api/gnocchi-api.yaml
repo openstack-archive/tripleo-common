@@ -5,9 +5,3 @@ tcib_actions:
 tcib_packages:
   common:
   - gnocchi-api
-  - httpd
-  - mod_ssl
-  - python3-boto3
-  - python3-cradox
-  - python3-ldappool
-  - python3-mod_wsgi
