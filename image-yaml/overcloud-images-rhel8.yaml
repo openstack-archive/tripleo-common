@@ -6,6 +6,7 @@ disk_images:
     release: 8
     elements:
       - selinux-permissive
+      - interface-names
     environment:
       FS_TYPE: xfs
     options:
@@ -17,3 +18,4 @@ disk_images:
     release: 8
     elements:
       - selinux-permissive
+      - interface-names
