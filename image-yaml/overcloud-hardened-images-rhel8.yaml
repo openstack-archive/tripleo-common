@@ -5,3 +5,5 @@ disk_images:
     distro: rhel
     environment:
       DIB_RELEASE: '8'
+    elements:
+      - interface-names

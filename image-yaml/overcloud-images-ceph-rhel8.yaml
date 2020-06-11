@@ -4,3 +4,5 @@ disk_images:
     type: qcow2
     distro: rhel
     release: 8
+    elements:
+      - interface-names
