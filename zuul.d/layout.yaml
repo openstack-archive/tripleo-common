@@ -27,6 +27,10 @@
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-standalone:
             dependencies: *deps_unit_lint
+        - tripleo-build-containers-ubi-8:
+            dependencies: *deps_unit_lint
+            files:
+              - ^container-images/.*$
         - tripleo-ci-centos-8-scenario000-multinode-oooq-container-updates:
             dependencies: *deps_unit_lint
             files:
