@@ -1,7 +1,9 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage nfast barbican
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: 'echo "%kolla ALL=(root) NOPASSWD: /usr/bin/chown -R barbican /var/lib/barbican/, /bin/chown -R barbican /var/lib/barbican/" > /etc/sudoers.d/barbican_sudoers && chmod 640 /etc/sudoers.d/barbican_sudoers'
+- copy: /usr/share/tripleo-common/container-images/kolla/barbican-base/sudoers /etc/sudoers.d/barbican_sudoers
+- run: chmod 640 /etc/sudoers.d/barbican_sudoers
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/barbican-base/*'', wantlist=True) }}'
 tcib_packages:
   common:
   - openstack-barbican-common
