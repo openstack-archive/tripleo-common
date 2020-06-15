@@ -1,5 +1,4 @@
 tcib_actions:
-- run: 'echo "%kolla ALL=(root) NOPASSWD: /usr/local/bin/kolla_security_reset" > /etc/sudoers.d/security_reset && chmod 640 /etc/sudoers.d/security_reset'
 - run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - copy: /usr/share/tripleo-common/container-images/kolla/mariadb/extend_start.sh /usr/local/bin/kolla_extend_start
