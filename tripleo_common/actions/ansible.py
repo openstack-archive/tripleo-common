@@ -69,7 +69,8 @@ def write_default_ansible_cfg(work_dir,
         '{}/callback_plugins'.format(
             constants.DEFAULT_VALIDATIONS_BASEDIR,
             constants.DEFAULT_VALIDATIONS_LEGACY_BASEDIR))
-    callbacks_whitelist = ','.join(['tripleo', 'profile_tasks'])
+    callbacks_whitelist = ','.join(['tripleo', 'profile_tasks',
+                                    'tripleo_states'])
     action_plugins_path = (
         '~/.ansible/plugins/action:'
         '/usr/share/ansible/plugins/action:'
@@ -619,7 +620,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
                 env_variables.update({
                     # the whitelist could be collected from multiple
                     # arguments if we find a use case for it
-                    'ANSIBLE_CALLBACK_WHITELIST': 'tripleo,profile_tasks',
+                    'ANSIBLE_CALLBACK_WHITELIST':
+                        'tripleo,profile_tasks,tripleo_states',
                     'ANSIBLE_STDOUT_CALLBACK': 'tripleo',
                     'PROFILE_TASKS_TASK_OUTPUT_LIMIT':
                         six.text_type(self.profile_tasks_limit),
