@@ -403,7 +403,6 @@ def generate_tripleo_ansible_inventory(heat, auth,
         username=auth.user_name,
         ansible_ssh_user=ansible_ssh_user,
         undercloud_key_file=undercloud_key_file,
-        undercloud_connection=UNDERCLOUD_CONNECTION_SSH,
         ansible_python_interpreter=ansible_python_interpreter,
         plan_name=plan,
         host_network=ssh_network)
