@@ -598,7 +598,6 @@ class StackParametersTest(base.TestCase):
                              "delay": 28,
                              "ipaddr": "172.16.0.1:8000",
                              "ipport": "8000",
-                             "lanplus": True,
                              "privlvl": 5,
                              "login": "root",
                              "passwd": "calvin",
