@@ -9,6 +9,8 @@
       - tripleo-undercloud-jobs
       - tripleo-build-containers-jobs
       - tripleo-standalone-scenarios-full
+    vars:
+      ensure_global_symlinks: true
     check:
       jobs:
         - openstack-tox-linters
