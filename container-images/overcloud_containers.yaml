@@ -207,7 +207,7 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleorocky/centos-binary-zaqar:current-tripleo
   image_source: kolla
-- imagename: docker.io/ceph/daemon:v3.2.10-stable-3.2-luminous-centos-7-x86_64
+- imagename: docker.io/ceph/daemon:v3.2.14-stable-3.2-luminous-centos-7-x86_64
   image_source: ceph
 - imagename: docker.io/tripleorocky/centos-binary-tempest:current-tripleo
   image_source: kolla
