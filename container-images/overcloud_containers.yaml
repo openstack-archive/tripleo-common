@@ -94,6 +94,6 @@ container_images:
 - imagename: docker.io/tripleoqueens/centos-binary-swift-object:current-tripleo
 - imagename: docker.io/tripleoqueens/centos-binary-swift-proxy-server:current-tripleo
 - imagename: docker.io/tripleoqueens/centos-binary-zaqar:current-tripleo
-- imagename: docker.io/ceph/daemon:v3.2.10-stable-3.2-luminous-centos-7-x86_64
+- imagename: docker.io/ceph/daemon:v3.2.14-stable-3.2-luminous-centos-7-x86_64
 - imagename: docker.io/tripleoqueens/centos-binary-tempest:current-tripleo
 - imagename: docker.io/tripleoqueens/centos-binary-rsyslog-base:current-tripleo

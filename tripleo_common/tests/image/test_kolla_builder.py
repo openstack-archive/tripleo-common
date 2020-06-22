@@ -167,7 +167,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'namespace': 'docker.io/tripleoqueens',
                 'ceph_namespace': 'docker.io/ceph',
                 'ceph_image': 'daemon',
-                'ceph_tag': 'v3.2.10-stable-3.2-luminous-centos-7-x86_64',
+                'ceph_tag': 'v3.2.14-stable-3.2-luminous-centos-7-x86_64',
                 'logging': 'files',
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
