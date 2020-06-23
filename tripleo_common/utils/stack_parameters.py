@@ -170,12 +170,13 @@ def generate_fencing_parameters(ironic, compute, nodes_json, delay,
 
         if driver_proto in {'ipmi', 'ipmitool', 'drac', 'idrac', 'ilo',
                             'redfish'}:
-            # IPMI fencing driver
             if driver_proto == "redfish":
                 node_data["agent"] = "fence_redfish"
                 params["systems_uri"] = node["pm_system_id"]
             else:
                 node_data["agent"] = "fence_ipmilan"
+                if ipmi_lanplus:
+                    params["lanplus"] = ipmi_lanplus
             params["ipaddr"] = node["pm_addr"]
             params["passwd"] = node["pm_password"]
             params["login"] = node["pm_user"]
@@ -189,8 +190,6 @@ def generate_fencing_parameters(ironic, compute, nodes_json, delay,
                     params["ssl_insecure"] = "true"
                 else:
                     params["ssl_insecure"] = "false"
-            if ipmi_lanplus:
-                params["lanplus"] = ipmi_lanplus
             if delay:
                 params["delay"] = delay
             if ipmi_cipher:
