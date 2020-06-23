@@ -17,6 +17,7 @@
 import json
 import logging
 import os
+import re
 import requests
 import sys
 import tempfile
@@ -32,7 +33,8 @@ from tripleo_common import constants
 from tripleo_common.image import kolla_builder
 from tripleo_common.utils import passwords as password_utils
 from tripleo_common.utils import swift as swiftutils
-from tripleo_common.utils.validations import pattern_validator
+
+LOG = logging.getLogger(__name__)
 
 LOG = logging.getLogger(__name__)
 
@@ -560,3 +562,10 @@ def purge_excess_keys(max_keys, keys_map):
     for key_path in key_paths[1:keys_to_be_purged + 1]:
         del keys_map[key_path]
     return keys_map
+
+
+def pattern_validator(pattern, value):
+    LOG.debug('Validating %s with pattern %s', value, pattern)
+    if not re.match(pattern, value):
+        return False
+    return True
