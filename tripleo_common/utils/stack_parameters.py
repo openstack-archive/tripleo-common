@@ -220,3 +220,23 @@ def generate_fencing_parameters(ironic, compute, nodes_json, delay,
 
     fence_params["FencingConfig"]["devices"] = devices
     return {"parameter_defaults": fence_params}
+
+
+def get_network_configs(swift, heat, container, role_name):
+    processed_data = template_utils.process_templates(
+        swift, heat, container=container
+    )
+
+    # Default temporary value is used when no user input for any
+    # interface routes for the role networks to find network config.
+    role_networks = processed_data['template'].get('resources', {}).get(
+        role_name + 'GroupVars', {}).get('properties', {}).get(
+            'value', {}).get('role_networks', [])
+    for nw in role_networks:
+        rt = nw + 'InterfaceRoutes'
+        if rt not in processed_data['environment']['parameter_defaults']:
+            processed_data['environment']['parameter_defaults'][rt] = [[]]
+
+    network_configs = stack_utils.preview_stack_and_network_configs(
+        heat, processed_data, container, role_name)
+    return network_configs

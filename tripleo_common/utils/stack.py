@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import time
 import uuid
@@ -278,3 +279,67 @@ def get_local_cacert(local_ca_path):
         return None
     except Exception:
         raise
+
+
+def preview_stack_and_network_configs(heat, processed_data,
+                                      container, role_name):
+    # stacks.preview method raises validation message if stack is
+    # already deployed. here renaming container to get preview data.
+    container_temp = container + "-TEMP"
+    fields = {
+        'template': processed_data['template'],
+        'files': processed_data['files'],
+        'environment': processed_data['environment'],
+        'stack_name': container_temp,
+    }
+    preview_data = heat.stacks.preview(**fields)
+
+    try:
+        stack = heat.stacks.get(container_temp)
+    except heat_exc.HTTPNotFound:
+        msg = "Error retrieving stack: %s" % container_temp
+        LOG.exception(msg)
+        raise RuntimeError(msg)
+
+    return get_network_config(preview_data, stack.stack_name, role_name)
+
+
+def get_network_config(preview_data, stack_name, role_name):
+    result = None
+    if preview_data:
+        for res in preview_data.resources:
+            net_script = process_preview_list(res, stack_name,
+                                              role_name)
+            if net_script:
+                ns_len = len(net_script)
+                start_index = (net_script.find(
+                    "echo '{\"network_config\"", 0, ns_len) + 6)
+                # In file network/scripts/run-os-net-config.sh
+                end_str = "' > /etc/os-net-config/config.json"
+                end_index = net_script.find(end_str, start_index, ns_len)
+                if (end_index > start_index):
+                    net_config = net_script[start_index:end_index]
+                    if net_config:
+                        result = json.loads(net_config)
+                break
+    if not result:
+        err_msg = ("Unable to determine network config for role '%s'."
+                   % role_name)
+        LOG.exception(err_msg)
+        raise RuntimeError(err_msg)
+    return result
+
+
+def process_preview_list(res, stack_name, role_name):
+    if type(res) == list:
+        for item in res:
+            out = process_preview_list(item, stack_name, role_name)
+            if out:
+                return out
+    elif type(res) == dict:
+        res_stack_name = stack_name + '-' + role_name
+        if res['resource_name'] == "OsNetConfigImpl" and \
+            res['resource_identity'] and \
+            res_stack_name in res['resource_identity']['stack_name']:
+            return res['properties']['config']
+    return None
