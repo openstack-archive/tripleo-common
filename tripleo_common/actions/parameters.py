@@ -445,12 +445,13 @@ class GenerateFencingParametersAction(base.TripleOAction):
 
             if driver_proto in {'ipmi', 'ipmitool', 'drac', 'idrac', 'ilo',
                                 'redfish'}:
-                # IPMI fencing driver
                 if driver_proto == "redfish":
                     node_data["agent"] = "fence_redfish"
                     params["systems_uri"] = node["pm_system_id"]
                 else:
                     node_data["agent"] = "fence_ipmilan"
+                    if self.ipmi_lanplus:
+                        params["lanplus"] = self.ipmi_lanplus
                 params["ipaddr"] = node["pm_addr"]
                 params["passwd"] = node["pm_password"]
                 params["login"] = node["pm_user"]
@@ -464,8 +465,6 @@ class GenerateFencingParametersAction(base.TripleOAction):
                         params["ssl_insecure"] = "true"
                     else:
                         params["ssl_insecure"] = "false"
-                if self.ipmi_lanplus:
-                    params["lanplus"] = self.ipmi_lanplus
                 if self.delay:
                     params["delay"] = self.delay
                 if self.ipmi_cipher:
