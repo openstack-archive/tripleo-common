@@ -16,10 +16,12 @@ from unittest import mock
 import yaml
 
 from swiftclient import exceptions as swiftexceptions
+from ironicclient import exceptions as ironicexceptions
 
 from tripleo_common import constants
 from tripleo_common.tests import base
 from tripleo_common.utils import stack_parameters
+from tripleo_common.utils import nodes
 
 
 class StackParametersTest(base.TestCase):
@@ -474,6 +476,64 @@ class StackParametersTest(base.TestCase):
         # Test
         result = stack_parameters.get_flattened_parameters(swift, mock_heat)
         self.assertEqual(result, expected_value)
+
+    def test_generate_hostmap(self):
+
+        # two instances in 'nova list'.
+        # vm1 with id=123 and vm2 with id=234
+        server1 = mock.MagicMock()
+        server1.id = 123
+        server1.name = 'vm1'
+
+        server2 = mock.MagicMock()
+        server2.id = 234
+        server2.name = 'vm2'
+
+        servers = mock.MagicMock()
+        servers = [server1, server2]
+
+        compute_client = mock.MagicMock()
+        compute_client.servers.list.side_effect = (servers, )
+
+        # we assume instance id=123 has been provisioned using bm node 'bm1'
+        # while instance id=234 is in error state, so no bm node has been used
+
+        def side_effect(args):
+            if args == 123:
+                return bm1
+            elif args == 234:
+                raise ironicexceptions.NotFound
+
+        baremetal_client = mock.MagicMock()
+        baremetal_client.node.get_by_instance_uuid = mock.MagicMock(
+            side_effect=side_effect)
+
+        # bm server with name='bm1' and uuid='9876'
+        bm1 = mock.MagicMock()
+        bm1.uuid = 9876
+        bm1.name = 'bm1'
+
+        # 'bm1' has a single port with mac='aa:bb:cc:dd:ee:ff'
+        port1 = mock.MagicMock()
+        port1.address = 'aa:bb:cc:dd:ee:ff'
+
+        def side_effect2(node, *args):
+            if node == 9876:
+                return [port1, ]
+            else:
+                raise ironicexceptions.NotFound
+
+        baremetal_client.port.list = mock.MagicMock(side_effect=side_effect2)
+
+        expected_hostmap = {
+            'aa:bb:cc:dd:ee:ff': {
+                'compute_name': 'vm1',
+                'baremetal_name': 'bm1'
+                }
+            }
+
+        result = nodes.generate_hostmap(baremetal_client, compute_client)
+        self.assertEqual(result, expected_hostmap)
 
     @mock.patch('tripleo_common.utils.nodes.generate_hostmap')
     def test_generate_fencing_parameters(self, mock_generate_hostmap):
