@@ -863,6 +863,13 @@ container_images_template:
   - OS::TripleO::Services::GlanceApi
   - OS::TripleO::Services::GlanceApiEdge
 
+- imagename: "{{namespace_stein}}/{{name_prefix_stein}}manila-api{{name_suffix_stein}}:{{tag_stein}}"
+  image_source: kolla
+  params:
+  - ContainerManilaApiImageStein
+  services:
+  - OS::TripleO::Services::ManilaApi
+
 - imagename: "{{namespace_stein}}/{{name_prefix_stein}}heat-engine{{name_suffix_stein}}:{{tag_stein}}"
   image_source: kolla
   params:
