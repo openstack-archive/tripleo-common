@@ -8,5 +8,5 @@ tcib_packages:
   - mod_ssl
   - openstack-octavia-api
   - python3-mod_wsgi
-  - python3-networking-ovn
+  - python3-ovn-octavia-provider
 tcib_user: octavia
