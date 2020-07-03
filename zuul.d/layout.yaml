@@ -46,6 +46,18 @@
               - scripts/.*$
         - tripleo-ci-centos-8-scenario001-standalone:
             dependencies: *deps_unit_lint
+            vars:
+              build_container_images: true
+            files:
+              - ^container-images/tcib/base/collectd.*$
+              - ^container-images/tcib/base/os/aodh.*$
+              - ^container-images/tcib/base/os/ceilometer.*$
+              - ^container-images/tcib/base/os/cinder.*$
+              - ^container-images/tcib/base/os/gnocchi.*$
+              - ^container-images/tcib/base/os/heat.*$
+              - ^container-images/tcib/base/qdrouterd.*$
+              - ^container-images/tcib/base/rabbitmq.*$
+              - ^container-images/tcib/base/redis.*$
         - tripleo-ci-centos-8-scenario002-standalone:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario003-standalone:
