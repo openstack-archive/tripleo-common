@@ -241,6 +241,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             'name_suffix': '',
             'rhel_containers': False,
             'neutron_driver': 'ovn',
+            'default_tag': True,
         }
         for key in (
                 'namespace',
@@ -277,6 +278,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             'ceph_tag': 'latest',
             'name_prefix': 'prefix-',
             'name_suffix': '-suffix',
+            'default_tag': False,
             'tag': 'master',
             'rhel_containers': False,
             'neutron_driver': 'ovn',

@@ -717,18 +717,23 @@ class BaseImageUploader(object):
         wait=tenacity.wait_random_exponential(multiplier=1, max=10),
         stop=tenacity.stop_after_attempt(5)
     )
-    def _inspect(cls, image_url, session=None):
+    def _inspect(cls, image_url, session=None, default_tag=False):
         image, tag = cls._image_tag_from_url(image_url)
         parts = {
             'image': image,
             'tag': tag
         }
 
-        manifest_url = cls._build_url(
-            image_url, CALL_MANIFEST % parts
-        )
         tags_url = cls._build_url(
             image_url, CALL_TAGS % parts
+        )
+        tags_r = RegistrySessionHelper.get(session, tags_url, timeout=30)
+        tags = tags_r.json()['tags']
+        if default_tag and tag not in tags:
+            parts['tag'] = tags[-1]
+
+        manifest_url = cls._build_url(
+            image_url, CALL_MANIFEST % parts
         )
         manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
 
@@ -745,8 +750,6 @@ class BaseImageUploader(object):
                                              image_url.geturl())
             else:
                 raise
-
-        tags_r = RegistrySessionHelper.get(session, tags_url, timeout=30)
 
         manifest_str = cls._get_response_text(manifest_r)
 
@@ -780,8 +783,6 @@ class BaseImageUploader(object):
                 timeout=30
             )
             config = config_r.json()
-
-        tags = tags_r.json()['tags']
 
         image, tag = cls._image_tag_from_url(image_url)
         name = '%s%s' % (image_url.netloc, image)
@@ -932,7 +933,8 @@ class BaseImageUploader(object):
             )
         return tag_label
 
-    def discover_image_tags(self, images, tag_from_label=None):
+    def discover_image_tags(self, images, tag_from_label=None,
+                            default_tag=False):
         image_urls = [self._image_to_url(i) for i in images]
 
         # prime self.insecure_registries by testing every image
@@ -941,7 +943,8 @@ class BaseImageUploader(object):
 
         discover_args = []
         for image in images:
-            discover_args.append((self, image, tag_from_label))
+            discover_args.append((self, image, tag_from_label,
+                                  default_tag))
 
         versioned_images = {}
         with futures.ThreadPoolExecutor(max_workers=16) as p:
@@ -2379,10 +2382,10 @@ class PythonImageUploader(BaseImageUploader):
         return image, manifest, config_str
 
     @classmethod
-    def _inspect(cls, image_url, session=None):
+    def _inspect(cls, image_url, session=None, default_tag=False):
         if image_url.scheme == 'docker':
             return super(PythonImageUploader, cls)._inspect(
-                image_url, session=session)
+                image_url, session=session, default_tag=default_tag)
         if image_url.scheme != 'containers-storage':
             raise ImageUploaderException('Inspect not implemented for %s' %
                                          image_url.geturl())
@@ -2543,7 +2546,7 @@ def upload_task(args):
 
 
 def discover_tag_from_inspect(args):
-    self, image, tag_from_label = args
+    self, image, tag_from_label, default_tag = args
     image_url = self._image_to_url(image)
     username, password = self.credentials_for_registry(image_url.netloc)
     try:
@@ -2556,7 +2559,7 @@ def discover_tag_from_inspect(args):
                 'missing registry credentials or the provided '
                 'container or namespace does not exist. %s' % e)
         raise
-    i = self._inspect(image_url, session=session)
+    i = self._inspect(image_url, session=session, default_tag=default_tag)
     session.close()
     if ':' in image_url.path:
         # break out the tag from the url to be the fallback tag
