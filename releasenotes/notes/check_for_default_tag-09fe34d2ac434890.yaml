@@ -1,0 +1,6 @@
+---
+fixes:
+  - When the default tag doesn't exist in the container repo during container
+    image prepare, and a tag wasn't set in the actual input for
+    ContainerImagePrepare, the latest tag from the repo will be used instead of
+    failing with a not found error.

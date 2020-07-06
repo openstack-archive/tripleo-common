@@ -254,6 +254,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'current-tripleo',
                 'rhel_containers': False,
                 'neutron_driver': 'ovn',
+                'default_tag': True,
             },
             builder.container_images_template_inputs()
         )
@@ -281,6 +282,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'master',
                 'rhel_containers': False,
                 'neutron_driver': 'ovn',
+                'default_tag': False,
             },
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleotrain',

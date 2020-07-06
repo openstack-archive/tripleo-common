@@ -527,12 +527,12 @@ class TestBaseImageUploader(base.TestCase):
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+            (self.uploader, 'docker.io/t/foo', 'rdo_version', False)
         )
         self.assertRaises(
             requests.exceptions.HTTPError,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+            (self.uploader, 'docker.io/t/foo', 'rdo_version', False)
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -554,63 +554,65 @@ class TestBaseImageUploader(base.TestCase):
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                (self.uploader, 'docker.io/t/foo', 'rdo_version'))
+                (self.uploader, 'docker.io/t/foo', 'rdo_version', False))
         )
 
         # templated labels -> tag
         self.assertEqual(
             ('docker.io/t/foo', '1.0.0-20180125'),
             image_uploader.discover_tag_from_inspect(
-                (self.uploader, 'docker.io/t/foo', '{release}-{version}'))
+                (self.uploader, 'docker.io/t/foo', '{release}-{version}',
+                 False))
         )
 
         # simple label -> tag with fallback
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                (self.uploader, 'docker.io/t/foo:a', 'bar'))
+                (self.uploader, 'docker.io/t/foo:a', 'bar', False))
         )
 
         # templated labels -> tag with fallback
         self.assertEqual(
             ('docker.io/t/foo', 'a'),
             image_uploader.discover_tag_from_inspect(
-                (self.uploader, 'docker.io/t/foo:a', '{releases}-{versions}'))
+                (self.uploader, 'docker.io/t/foo:a', '{releases}-{versions}',
+                 False))
         )
 
         # Invalid template
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', '{release}-{version')
+            (self.uploader, 'docker.io/t/foo', '{release}-{version', False)
         )
 
         # Missing label in template
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', '{releases}-{version}')
+            (self.uploader, 'docker.io/t/foo', '{releases}-{version}', False)
         )
 
         # no tag_from_label specified
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', None)
+            (self.uploader, 'docker.io/t/foo', None, False)
         )
 
         # missing RepoTags entry
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', 'build_version')
+            (self.uploader, 'docker.io/t/foo', 'build_version', False)
         )
 
         # missing Labels entry
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', 'version')
+            (self.uploader, 'docker.io/t/foo', 'version', False)
         )
 
         # inspect call failed
@@ -618,7 +620,7 @@ class TestBaseImageUploader(base.TestCase):
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+            (self.uploader, 'docker.io/t/foo', 'rdo_version', False)
         )
 
         # handle auth issues
@@ -632,12 +634,12 @@ class TestBaseImageUploader(base.TestCase):
         self.assertRaises(
             ImageUploaderException,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+            (self.uploader, 'docker.io/t/foo', 'rdo_version', False)
         )
         self.assertRaises(
             requests.exceptions.HTTPError,
             image_uploader.discover_tag_from_inspect,
-            (self.uploader, 'docker.io/t/foo', 'rdo_version')
+            (self.uploader, 'docker.io/t/foo', 'rdo_version', False)
         )
 
     @mock.patch('concurrent.futures.ThreadPoolExecutor')
@@ -665,9 +667,9 @@ class TestBaseImageUploader(base.TestCase):
         mock_map.assert_called_once_with(
             image_uploader.discover_tag_from_inspect,
             [
-                (self.uploader, 'docker.io/t/foo', 'rdo_release'),
-                (self.uploader, 'docker.io/t/bar', 'rdo_release'),
-                (self.uploader, 'docker.io/t/baz', 'rdo_release')
+                (self.uploader, 'docker.io/t/foo', 'rdo_release', False),
+                (self.uploader, 'docker.io/t/bar', 'rdo_release', False),
+                (self.uploader, 'docker.io/t/baz', 'rdo_release', False)
             ])
 
     @mock.patch('tripleo_common.image.image_uploader.'
