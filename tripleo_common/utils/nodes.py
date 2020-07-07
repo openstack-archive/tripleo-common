@@ -19,6 +19,7 @@ import re
 from oslo_utils import netutils
 import six
 
+from ironicclient import exceptions as ironicexceptions
 from oslo_concurrency import processutils
 from tripleo_common import exception
 from tripleo_common.utils import glance
@@ -708,10 +709,16 @@ def generate_hostmap(baremetal_client, compute_client):
     """Create a map between Compute nodes and Baremetal nodes"""
     hostmap = {}
     for node in compute_client.servers.list():
-        bm_node = baremetal_client.node.get_by_instance_uuid(node.id)
-        for port in baremetal_client.port.list(node=bm_node.uuid):
-            hostmap[port.address] = {"compute_name": node.name,
-                                     "baremetal_name": bm_node.name}
+        try:
+            bm_node = baremetal_client.node.get_by_instance_uuid(node.id)
+            for port in baremetal_client.port.list(node=bm_node.uuid):
+                hostmap[port.address] = {"compute_name": node.name,
+                                         "baremetal_name": bm_node.name}
+        except ironicexceptions.NotFound:
+            LOG.warning('Baremetal node for server %s not found - skipping it',
+                        node.id)
+            pass
+
     if hostmap == {}:
         return None
     else:
