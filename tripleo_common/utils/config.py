@@ -121,14 +121,18 @@ class Config(object):
         return os.fdopen(
             os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w')
 
-    def _write_tasks_per_step(self, tasks, role, filepath, step):
+    def _write_tasks_per_step(self, tasks, role, filepath, step, strict=False):
 
-        def step_in_task(task, step):
+        def step_in_task(task, step, strict):
             whenexpr = task.get('when', None)
             if whenexpr is None:
-                # If no step is defined, it will be executed for all
-                # steps.
-                return True
+                if not strict:
+                    # If no step is defined, it will be executed for all
+                    # steps if strict is false
+                    return True
+                else:
+                    # We only want the task with the step defined.
+                    return False
             if not isinstance(whenexpr, list):
                 whenexpr = [whenexpr]
             for w in whenexpr:
@@ -145,9 +149,14 @@ class Config(object):
                         return True
                     else:
                         return False
+            # No match
+            if strict:
+                return False
             return True
 
-        tasks_per_step = [task for task in tasks if step_in_task(task, step)]
+        tasks_per_step = [task for task in tasks if step_in_task(task,
+                                                                 step,
+                                                                 strict)]
         with self._open_file(filepath) as conf_file:
             yaml.safe_dump(tasks_per_step, conf_file, default_flow_style=False)
         return tasks_per_step
@@ -264,12 +273,14 @@ class Config(object):
                     # run per step.
                     # We include it here to allow the CI to pass until THT
                     # changed is not merged.
-                    if config in constants.PER_STEP_TASKS:
-                        for i in range(constants.DEFAULT_STEPS_MAX):
+                    if config in constants.PER_STEP_TASKS.keys():
+                        for i in range(len(constants.PER_STEP_TASKS[config])):
                             filepath = os.path.join(role_path, '%s_step%s.yaml'
                                                     % (config, i))
-                            self._write_tasks_per_step(role[config], role_name,
-                                                       filepath, i)
+                            self._write_tasks_per_step(
+                                role[config], role_name,
+                                filepath,
+                                i, constants.PER_STEP_TASKS[config][i])
 
                     try:
                         data = role[config]
