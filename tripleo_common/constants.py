@@ -217,4 +217,9 @@ EXCLUSIVE_NEUTRON_DRIVERS = ['ovn', 'openvswitch']
 
 DEFAULT_STEPS_MAX = 6
 
-PER_STEP_TASKS = ['upgrade_tasks', 'deploy_steps_tasks']
+_PER_STEP_TASK_STRICTNESS = [False for i in range(DEFAULT_STEPS_MAX)]
+
+PER_STEP_TASKS = {
+    'upgrade_tasks': _PER_STEP_TASK_STRICTNESS,
+    'deploy_steps_tasks': _PER_STEP_TASK_STRICTNESS
+}
