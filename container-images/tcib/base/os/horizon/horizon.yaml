@@ -1,0 +1,18 @@
+tcib_actions:
+- run: mv /etc/rpm/macros.image-language-conf /tmp && dnf -y install openstack-dashboard && mv /tmp/macros.image-language-conf /etc/rpm && dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- copy: /usr/share/tripleo-common/container-images/kolla/horizon/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: chmod 755 /usr/local/bin/kolla_extend_start
+- run: 'sed -i -r ''s,^(Listen 80),#\1,'' /etc/httpd/conf/httpd.conf && sed -i -r ''s,^(Listen 443),#\1,'' /etc/httpd/conf.d/ssl.conf && ln -s /usr/share/openstack-dashboard/openstack_dashboard /usr/lib/python3.6/site-packages/openstack_dashboard && ln -s /usr/share/openstack-dashboard/static /usr/lib/python3.6/site-packages/static && chown -R apache /etc/openstack-dashboard /usr/share/openstack-dashboard && chown -R apache /usr/share/openstack-dashboard/static && sed -i "s|WEBROOT = ''/dashboard/''|WEBROOT = ''/''|" /etc/openstack-dashboard/local_settings && cp /usr/share/openstack-dashboard/manage.py /usr/bin/manage.py && rm -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/?[^_]*.py* && rm -f /usr/lib/python3.6/site-packages/openstack_dashboard/local/enabled/?[^_]*.py* && for locale in /usr/lib/python3.6/site-packages/*/locale; do (cd ${locale%/*} && /usr/bin/django-admin compilemessages) done'
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/horizon /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/horizon/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - gettext
+  - httpd
+  - mod_ssl
+  - openstack-heat-ui
+  - openstack-ironic-ui
+  - openstack-manila-ui
+  - openstack-octavia-ui
+  - python3-mod_wsgi

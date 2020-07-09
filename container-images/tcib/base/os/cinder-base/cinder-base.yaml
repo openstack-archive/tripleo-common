@@ -1,0 +1,15 @@
+tcib_actions:
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla cinder
+tcib_packages:
+  common:
+  - ceph-common
+  - cryptsetup
+  - lvm2
+  - openstack-cinder
+  - python3-automaton
+  - python3-oslo-vmware
+  modules:
+  - disable: virt:rhel
+  - enable: virt:8.2

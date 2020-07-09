@@ -1,0 +1,9 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: groupadd --force --gid 42480 tempest && useradd -l -M --shell /usr/sbin/nologin --uid 42480 --gid 42480 tempest
+- run: usermod -a -G kolla tempest
+tcib_packages:
+  common:
+  - iputils
+  - openstack-tempest-all
+tcib_user: tempest

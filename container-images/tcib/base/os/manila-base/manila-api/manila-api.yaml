@@ -1,0 +1,10 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: mkdir -p /var/www/cgi-bin/manila && cp -a /usr/bin/manila-wsgi /var/www/cgi-bin/manila/manila-wsgi && sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+- run: chown -R manila /var/www/cgi-bin/manila && chmod 755 /var/www/cgi-bin/manila/manila-wsgi
+tcib_packages:
+  common:
+  - httpd
+  - mod_ssl
+  - python3-mod_wsgi
+tcib_user: manila

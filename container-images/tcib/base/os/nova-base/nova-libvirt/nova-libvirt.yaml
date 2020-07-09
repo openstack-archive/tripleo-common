@@ -1,0 +1,29 @@
+tcib_actions:
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: if [ "$(uname -m)" == "x86_64" ]; then dnf -y install {{ tcib_packages['x86_64'] | join(' ') }}; fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-libvirt /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - ceph-common
+  - cyrus-sasl-scram
+  - libcgroup-tools
+  - libguestfs
+  - libseccomp
+  - libvirt-client
+  - libvirt-daemon
+  - libvirt-daemon-config-nwfilter
+  - libvirt-daemon-driver-nwfilter
+  - openssl-perl
+  - openstack-nova-migration
+  - openvswitch
+  - podman
+  - qemu-kvm
+  - trousers
+  modules:
+  - disable: container-tools:rhel8
+  - enable: container-tools:2.0
+  - disable: virt:rhel
+  - enable: virt:8.2
+  x86_64:
+  - edk2-ovmf

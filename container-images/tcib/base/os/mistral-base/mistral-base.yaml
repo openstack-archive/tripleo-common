@@ -1,0 +1,9 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla mistral
+tcib_packages:
+  common:
+  - openstack-mistral-common
+  - openstack-tripleo-common
+  - python3-shade
+  - python3dist\(ansible\)

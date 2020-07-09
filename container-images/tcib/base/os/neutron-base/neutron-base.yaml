@@ -1,0 +1,18 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla neutron
+- copy: /usr/share/tripleo-common/container-images/kolla/neutron-base/neutron_sudoers /etc/sudoers.d/neutron_sudoers
+- run: chmod 440 /etc/sudoers.d/neutron_sudoers
+# TODO(emilien) add support for tripleo-common being installed from source
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/neutron-base/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - iputils
+  - net-tools
+  - openstack-neutron
+  - openstack-neutron-ml2
+  - openvswitch
+  - python3-networking-baremetal
+  - python3-networking-vmware-nsx
+  - python3-openvswitch
+  - python3-oslo-vmware
