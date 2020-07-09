@@ -58,8 +58,6 @@ container_images:
 - image_source: tripleo
   imagename: quay.io/tripleomaster/openstack-designate-producer:current-tripleo
 - image_source: tripleo
-  imagename: quay.io/tripleomaster/openstack-designate-base:current-tripleo
-- image_source: tripleo
   imagename: quay.io/tripleomaster/openstack-designate-sink:current-tripleo
 - image_source: tripleo
   imagename: quay.io/tripleomaster/openstack-designate-worker:current-tripleo
