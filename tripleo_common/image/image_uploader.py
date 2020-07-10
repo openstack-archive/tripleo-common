@@ -987,8 +987,15 @@ class BaseImageUploader(object):
                 raise
             image_labels = self._image_labels(
                 url, session=session)
-            if set(labels).issubset(set(image_labels)):
-                images_with_labels.append(image)
+            # The logic is the following: if one of the labels in
+            # modify_only_with_labels parameter is present in the image, it
+            # will match and add the images that need to be modified.
+            for label in labels:
+                if label in image_labels:
+                    # we found a matching label, adding the image
+                    # and leave the loop.
+                    images_with_labels.append(image)
+                    break
 
         return images_with_labels
 
