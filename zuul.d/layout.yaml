@@ -17,7 +17,7 @@
         - openstack-tox-py36
         - openstack-tox-py37
         - openstack-tox-py38
-        - tripleo-cross-tripleoclient-py38
+        - tripleo-cross-tripleoclient-py37
         - tripleo-ci-centos-8-containers-multinode:
             dependencies: &deps_unit_lint
               - openstack-tox-linters
@@ -104,7 +104,7 @@
       jobs:
         - openstack-tox-linters
         - openstack-tox-lower-constraints
-        - tripleo-cross-tripleoclient-py38
+        - tripleo-cross-tripleoclient-py37
         - tripleo-buildimage-overcloud-full-centos-8:
             files:
               - ^image-yaml/.*$
