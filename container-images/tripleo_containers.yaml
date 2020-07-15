@@ -217,7 +217,7 @@ container_images:
   imagename: quay.io/tripleomaster/openstack-tripleoclient:current-tripleo
 - image_source: tripleo
   imagename: quay.io/tripleomaster/openstack-zaqar-wsgi:current-tripleo
-- imagename: docker.io/ceph/daemon:v4.0.10-stable-4.0-nautilus-centos-7-x86_64
+- imagename: docker.io/ceph/daemon:v4.0.12-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
 - imagename: docker.io/prom/prometheus:v2.7.2
   image_source: prom
