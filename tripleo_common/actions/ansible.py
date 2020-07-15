@@ -527,8 +527,14 @@ class AnsiblePlaybookAction(base.TripleOAction):
         else:
             command = [ansible_playbook_cmd, self.playbook]
 
+        # --limit should always take precedence over blacklisted hosts.
+        # https://bugzilla.redhat.com/show_bug.cgi?id=1857298
         if self.limit_hosts:
             command.extend(['--limit', self.limit_hosts])
+        elif self.blacklisted_hostnames:
+            host_pattern = ':'.join(
+                ['!%s' % h for h in self.blacklisted_hostnames if h])
+            command.extend(['--limit', host_pattern])
 
         if self.module_path:
             command.extend(['--module-path', self.module_path])
@@ -559,11 +565,6 @@ class AnsiblePlaybookAction(base.TripleOAction):
 
         if self.inventory:
             command.extend(['--inventory-file', self.inventory])
-
-        if self.blacklisted_hostnames:
-            host_pattern = ':'.join(
-                ['!%s' % h for h in self.blacklisted_hostnames if h])
-            command.extend(['--limit', host_pattern])
 
         if self.tags:
             command.extend(['--tags', self.tags])
