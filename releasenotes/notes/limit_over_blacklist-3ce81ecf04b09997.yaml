@@ -1,0 +1,10 @@
+---
+fixes:
+  - |
+    Fix `bug 1887692 <https://bugs.launchpad.net/tripleo/+bug/1887692>`__ so
+    limit_hosts will take precedence over the blacklisted_hostnames.
+    And therefore Ansible won't be run with two --limit if both limit hosts
+    and blacklisted hostnames are in use. When we want to run Ansible on
+    specific hosts, we will ignore the blacklisted nodes and assume we know
+    what we do. In the case of the scale-down scenario, the unreachable nodes
+    are ignored.
