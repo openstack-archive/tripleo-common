@@ -26,6 +26,7 @@ tcib_packages:
   - pacemaker
   - pacemaker-remote
   - pcs
+  - python3-pynacl
   - resource-agents
   - rsync
   - tar
