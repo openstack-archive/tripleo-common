@@ -536,7 +536,7 @@ class BaseImageUploader(object):
                 extra_env_variables=dict(os.environ),
                 override_ansible_cfg=(
                     "[defaults]\n"
-                    "stdout_callback=yaml\n"
+                    "stdout_callback=tripleo_dense\n"
                     "log_path=%s\n" % log_f
                 )
             ).run(None)
