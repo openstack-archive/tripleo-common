@@ -87,6 +87,90 @@ class AnsiblePlaybookActionTest(base.TestCase):
 
     @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
     @mock.patch("oslo_concurrency.processutils.execute")
+    def test_run_with_limit(self, mock_execute, mock_write_cfg):
+
+        mock_execute.return_value = ('', '')
+
+        action = ansible.AnsiblePlaybookAction(
+            playbook=self.playbook, limit_hosts=['compute35'],
+            blacklisted_hostnames=['compute21'],
+            remote_user=self.remote_user, become=self.become,
+            become_user=self.become_user, extra_vars=self.extra_vars,
+            verbosity=self.verbosity, config_download_args=['--check',
+                                                            '--diff'])
+        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
+        mock_write_cfg.return_value = ansible_config_path
+
+        action.run(self.ctx)
+
+        mock_write_cfg.assert_called_once_with(action.work_dir,
+                                               self.remote_user,
+                                               ssh_private_key=None,
+                                               override_ansible_cfg=None)
+
+        pb = os.path.join(action.work_dir, 'playbook.yaml')
+        env = {
+            'HOME': action.work_dir,
+            'ANSIBLE_LOCAL_TEMP': action.work_dir,
+            'ANSIBLE_CONFIG': ansible_config_path,
+            'ANSIBLE_CALLBACK_WHITELIST':
+                'tripleo_dense,tripleo_profile_tasks,tripleo_states',
+            'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
+            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
+        }
+        python_version = sys.version_info.major
+        ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
+        mock_execute.assert_called_once_with(
+            ansible_playbook_cmd, '-v', pb, '--limit', "['compute35']",
+            '--become', '--become-user',
+            self.become_user, '--extra-vars', json.dumps(self.extra_vars),
+            '--check', '--diff', env_variables=env, cwd=action.work_dir,
+            log_errors=processutils.LogErrors.ALL)
+
+    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch("oslo_concurrency.processutils.execute")
+    def test_run_with_blacklist(self, mock_execute, mock_write_cfg):
+
+        mock_execute.return_value = ('', '')
+
+        action = ansible.AnsiblePlaybookAction(
+            playbook=self.playbook, limit_hosts=None,
+            blacklisted_hostnames=['compute21'],
+            remote_user=self.remote_user, become=self.become,
+            become_user=self.become_user, extra_vars=self.extra_vars,
+            verbosity=self.verbosity, config_download_args=['--check',
+                                                            '--diff'])
+        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
+        mock_write_cfg.return_value = ansible_config_path
+
+        action.run(self.ctx)
+
+        mock_write_cfg.assert_called_once_with(action.work_dir,
+                                               self.remote_user,
+                                               ssh_private_key=None,
+                                               override_ansible_cfg=None)
+
+        pb = os.path.join(action.work_dir, 'playbook.yaml')
+        env = {
+            'HOME': action.work_dir,
+            'ANSIBLE_LOCAL_TEMP': action.work_dir,
+            'ANSIBLE_CONFIG': ansible_config_path,
+            'ANSIBLE_CALLBACK_WHITELIST':
+                'tripleo_dense,tripleo_profile_tasks,tripleo_states',
+            'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
+            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
+        }
+        python_version = sys.version_info.major
+        ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
+        mock_execute.assert_called_once_with(
+            ansible_playbook_cmd, '-v', pb, '--limit', '!compute21',
+            '--become', '--become-user', self.become_user, '--extra-vars',
+            json.dumps(self.extra_vars), '--check', '--diff',
+            env_variables=env, cwd=action.work_dir,
+            log_errors=processutils.LogErrors.ALL)
+
+    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch("oslo_concurrency.processutils.execute")
     def test_post_message(self, mock_execute, mock_write_cfg):
 
         action = ansible.AnsiblePlaybookAction(
