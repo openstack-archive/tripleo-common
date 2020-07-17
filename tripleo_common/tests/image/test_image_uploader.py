@@ -1235,7 +1235,7 @@ class TestSkopeoImageUploader(base.TestCase):
             extra_env_variables=mock.ANY,
             override_ansible_cfg=(
                 "[defaults]\n"
-                "stdout_callback=yaml\n"
+                "stdout_callback=tripleo_dense\n"
                 "log_path=%s/tripleo-container-image-prepare-ansible.log\n"
                 % os.path.dirname(logfile.name)
             )
