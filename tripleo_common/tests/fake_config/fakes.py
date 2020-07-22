@@ -29,7 +29,10 @@ FAKE_STACK = {
     'outputs': [
         {'output_key': 'RoleConfig',
          'output_value': {
-             'foo_config': 'foo'}},
+             'foo_config': 'foo',
+             'external_deploy_steps_tasks': [{'name': 'Fake external task',
+                                              'debug': 'name=hello',
+                                              'when': 'step|int == 1'}]}},
         {'output_key': 'HostnameNetworkConfigMap',
          'output_value': {}},
         {'output_key': 'RoleData',
