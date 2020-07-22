@@ -185,6 +185,7 @@
 - name: "Run deployment {{ item }}"
   shell: |
     /usr/libexec/os-refresh-config/configure.d/55-heat-config
+    timeout 20 bash -c -- 'while [ ! -f /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json ]; do sleep 1; done'
     exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
   become: true
   environment:
@@ -196,6 +197,7 @@
 - name: "Run async deployment {{ item }}"
   shell: |
     /usr/libexec/os-refresh-config/configure.d/55-heat-config
+    timeout 20 bash -c -- 'while [ ! -f /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json ]; do sleep 1; done'
     exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
   become: true
   environment:
