@@ -121,7 +121,7 @@ class Config(object):
         return os.fdopen(
             os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w')
 
-    def _write_tasks_per_step(self, tasks, role, filepath, step, strict=False):
+    def _write_tasks_per_step(self, tasks, filepath, step, strict=False):
 
         def step_in_task(task, step, strict):
             whenexpr = task.get('when', None)
@@ -279,9 +279,8 @@ class Config(object):
                             filepath = os.path.join(role_path, '%s_step%s.yaml'
                                                     % (config, i))
                             self._write_tasks_per_step(
-                                role[config], role_name,
-                                filepath,
-                                i, constants.PER_STEP_TASKS[config][i])
+                                role[config], filepath, i,
+                                constants.PER_STEP_TASKS[config][i])
 
                     try:
                         data = role[config]
