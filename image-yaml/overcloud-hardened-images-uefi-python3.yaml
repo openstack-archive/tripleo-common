@@ -22,7 +22,7 @@ disk_images:
       - remove-machine-id
       - remove-resolvconf
       - modprobe
-      - overcloud-secure-uefi
+      - overcloud-partition-uefi
       - openssh
       - disable-nouveau
     packages:
