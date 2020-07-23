@@ -171,7 +171,7 @@ class TestConfig(base.TestCase):
                                         % step)
                 playbook_tasks = self.config._write_tasks_per_step(
                     self.config.stack_outputs.get('RoleData')[role]
-                    ['upgrade_tasks'], role, filepath, step)
+                    ['upgrade_tasks'], filepath, step)
                 self.assertTrue(os.path.isfile(filepath))
                 self.assertEqual(expected_tasks[role][step], playbook_tasks)
 
