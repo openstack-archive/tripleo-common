@@ -655,7 +655,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
                     lines.append(line)
                     if not self.trash_output:
                         stdout.append(line)
-                    if time.time() - start > 30:
+                    if time.time() - start > 5:
                         self.post_message(queue, ''.join(lines))
                         lines = []
                         start = time.time()
