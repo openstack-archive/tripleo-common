@@ -42,6 +42,7 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
     'centos-opstools'
 ] %}
 {%   set base_centos_yum_repos_to_disable_remove = [
+    'centos-rabbitmq-38',
     'influxdb',
     'epel',
     'epel-modular'
