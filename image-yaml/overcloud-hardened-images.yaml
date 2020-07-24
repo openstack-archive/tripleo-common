@@ -23,6 +23,7 @@ disk_images:
       - remove-resolvconf
       - modprobe
       - overcloud-partition
+      - overcloud-secure
       - openssh
       - disable-nouveau
     packages:
