@@ -180,7 +180,7 @@ class TestConfig(base.TestCase):
                                         % step)
                 playbook_tasks = self.config._write_tasks_per_step(
                     self.config.stack_outputs.get('RoleData')[role]
-                    ['upgrade_tasks'], role, filepath, step)
+                    ['upgrade_tasks'], filepath, step)
                 self.assertTrue(os.path.isfile(filepath))
                 self.assertEqual(expected_tasks[role][step], playbook_tasks)
 
@@ -1076,7 +1076,6 @@ class OvercloudConfigTest(base.TestCase):
         # Everything should come back
         tasks_per_step = self.config._write_tasks_per_step(
             tasks,
-            'Compute',
             'Compute/update_tasks_step0.yaml',
             0
         )
@@ -1086,7 +1085,6 @@ class OvercloudConfigTest(base.TestCase):
         # Using stict the tasks with no conditional will be dropped
         tasks_per_step = self.config._write_tasks_per_step(
             tasks,
-            'Compute',
             'Compute/update_tasks_step0.yaml',
             0,
             strict=True,
@@ -1100,7 +1098,6 @@ class OvercloudConfigTest(base.TestCase):
         # Some tasks will be filtered out for step 3.
         tasks_per_step = self.config._write_tasks_per_step(
             tasks,
-            'Compute',
             'Compute/update_tasks_step3.yaml',
             3
         )
@@ -1124,7 +1121,6 @@ class OvercloudConfigTest(base.TestCase):
         # Even more tasks will be filtered out for step 3 with strict.
         tasks_per_step = self.config._write_tasks_per_step(
             tasks,
-            'Compute',
             'Compute/update_tasks_step3.yaml',
             3,
             strict=True,
