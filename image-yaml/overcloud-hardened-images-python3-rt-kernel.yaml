@@ -1,0 +1,44 @@
+disk_images:
+  -
+    imagename: overcloud-hardened-full-rt-kernel
+    type: qcow2
+    elements:
+      - dhcp-all-interfaces
+      - openvswitch
+      - overcloud-agent
+      - overcloud-base
+      - overcloud-controller
+      - overcloud-compute
+      - overcloud-ceph-storage
+      - puppet-modules
+      - stable-interface-names
+      - bootloader
+      - element-manifest
+      - dynamic-login
+      - iptables
+      - enable-packages-install
+      - override-pip-and-virtualenv
+      - dracut-regenerate
+      - remove-machine-id
+      - remove-resolvconf
+      - modprobe
+      - overcloud-partition
+      - openssh
+      - disable-nouveau
+    packages:
+      - kernel-rt
+      - python3-psutil
+      - python3-debtcollector
+      - sos
+      - device-mapper-multipath
+      - openstack-heat-agents
+      - os-net-config
+      - jq
+    options:
+      - "--min-tmpfs=7"
+    environment:
+      DIB_PYTHON_VERSION: '3'
+      DIB_MODPROBE_BLACKLIST: 'usb-storage cramfs freevxfs jffs2 hfs hfsplus squashfs udf vfat bluetooth'
+      DIB_BOOTLOADER_DEFAULT_CMDLINE: 'nofb nomodeset vga=normal console=tty0 console=ttyS0,115200 audit=1 nousb'
+      DIB_IMAGE_SIZE: '40'
+      COMPRESS_IMAGE: '1'
