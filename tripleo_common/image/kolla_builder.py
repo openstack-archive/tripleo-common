@@ -330,10 +330,14 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     )
     uploader = manager.uploader('python')
     images = [i.get('imagename', '') for i in result]
+    if result:
+        default_tag = result[0].get('default_tag', False)
+    else:
+        default_tag = False
 
     if tag_from_label:
         image_version_tags = uploader.discover_image_tags(
-            images, tag_from_label)
+            images, tag_from_label, default_tag)
         for entry in result:
             imagename = entry.get('imagename', '')
             image_no_tag = imagename.rpartition(':')[0]
@@ -438,6 +442,12 @@ class KollaImageBuilder(base.BaseImageManager):
         hyphenated appropriately.
         '''
         mapping = dict(kwargs)
+        # set a flag to record whether the default tag is used or not. the
+        # logic here is that if the tag key is not already in mapping then it
+        # wil be added during the template render, so default_tag is set to
+        # True.
+        mapping['default_tag'] = 'tag' not in mapping
+
         if CONTAINER_IMAGES_DEFAULTS is None:
             return
         for k, v in CONTAINER_IMAGES_DEFAULTS.items():
