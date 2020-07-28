@@ -178,45 +178,17 @@
   become: true
   when: (force | bool)
 
-- name: Set fact for async_deployment
-  set_fact:
-    use_async_deployment: "{{ (async_deployment | default(False)) or (item == 'NetworkDeployment') }}"
-
-- name: "Run deployment {{ item }}"
-  shell: |
-    /usr/libexec/os-refresh-config/configure.d/55-heat-config
-    timeout 20 bash -c -- 'while [ ! -f /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json ]; do sleep 1; done'
-    exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
-  become: true
-  environment:
-    HEAT_SHELL_CONFIG: /var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}
-  register: deployment_sync_result
-  ignore_errors: yes
-  when: not use_async_deployment|bool
-
 - name: "Run async deployment {{ item }}"
   shell: |
     /usr/libexec/os-refresh-config/configure.d/55-heat-config
-    timeout 20 bash -c -- 'while [ ! -f /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json ]; do sleep 1; done'
     exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
   become: true
   environment:
     HEAT_SHELL_CONFIG: /var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}
   register: deployment_async_result
   ignore_errors: yes
-  when: use_async_deployment|bool
-  async: "{{ async_timeout | default(300) }}"
+  async: "{{ async_timeout | default(1800) }}"
   poll: "{{ async_poll | default(3) }}"
-
-- name: "Output for sync deployment {{ item }}"
-  debug:
-    msg:
-      - stderr: "{{ deployment_sync_result.stderr.split('\n') }}"
-      - status_code: "{{ deployment_sync_result.rc }}"
-  tags:
-    - output
-  failed_when: deployment_sync_result.rc != 0
-  when: not ansible_check_mode|bool and not use_async_deployment|bool
 
 - name: "Output for async deployment {{ item }}"
   debug:
@@ -226,7 +198,7 @@
   tags:
     - output
   failed_when: deployment_async_result.rc != 0
-  when: not ansible_check_mode|bool and use_async_deployment|bool
+  when: not ansible_check_mode|bool
 
 - name: "Check-mode for Run deployment {{ item }} (changed status indicates deployment would run)"
   stat:
