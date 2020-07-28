@@ -49,6 +49,8 @@ LOG = logging.getLogger(__name__)
 
 SECURE_REGISTRIES = (
     'trunk.registry.rdoproject.org',
+    'registry.redhat.io',
+    'registry.access.redhat.com',
     'docker.io',
     'registry-1.docker.io',
 )
@@ -243,6 +245,55 @@ class RegistrySessionHelper(object):
                         session.reauthenticate(**session.auth_args)
 
         request.raise_for_status()
+
+    @staticmethod
+    def check_redirect_trusted(request_response, request_session,
+                               stream=True, timeout=30):
+        """Check if we've been redirected to a trusted source
+
+        Because we may be using auth, we may not want to leak authentication
+        keys to an untrusted source. If we get a redirect, we need to check
+        that the redirect url is one of our sources that we trust. Otherwise
+        we drop the Authorization header from the redirect request. We'll
+        add the header back into the request session after performing the
+        request to ensure that future usage of the session.
+
+        :param: request_response: Response object of the request to check
+        :param: request_session: Session to use when redirecting
+        :param: stream: Should we stream the response of the redirect
+        :param: tiemout: Timeout for the redirect request
+        """
+        # we're not a redirect, just return the original response
+        if not (request_response.status_code >= 300
+                and request_response.status_code < 400):
+            return request_response
+        # parse the destination location
+        redir_url = parse.urlparse(request_response.headers['Location'])
+        # close the response since we're going to replace it
+        request_response.close()
+        auth_header = request_session.headers.pop('Authorization', None)
+        # ok we got a redirect, let's check where we are going
+        if len([h for h in SECURE_REGISTRIES if h in redir_url.netloc]) > 0:
+            # we're going to a trusted location, add the header back and
+            # return response
+            request_session.headers.update({'Authorization': auth_header})
+            request_response = request_session.get(redir_url.geturl(),
+                                                   stream=stream,
+                                                   timeout=timeout)
+        else:
+            # we didn't trust the place we're going, request without auth but
+            # add the auth back to the request session afterwards
+            request_response = request_session.get(redir_url.geturl(),
+                                                   stream=stream,
+                                                   timeout=timeout)
+            request_session.headers.update({'Authorization': auth_header})
+
+        request_response.encoding = 'utf-8'
+        # recheck status here to make sure we didn't get a 401 from
+        # our redirect host path.
+        RegistrySessionHelper.check_status(session=request_session,
+                                           request=request_response)
+        return request_response
 
     @staticmethod
     def _action(action, request_session, *args, **kwargs):
@@ -758,8 +809,12 @@ class BaseImageUploader(object):
                 session,
                 config_url,
                 headers=config_headers,
-                timeout=30
+                timeout=30,
+                allow_redirects=False
             )
+            # check if the blob is a redirect
+            config_r = RegistrySessionHelper.check_redirect_trusted(
+                config_r, session, stream=False)
             config = config_r.json()
 
         image, tag = cls._image_tag_from_url(image_url)
@@ -1694,12 +1749,19 @@ class PythonImageUploader(BaseImageUploader):
         chunk_size = None
         LOG.info("[%s] Fetching layer %s from %s" %
                  (image, digest, source_blob_url))
-        with session.get(
-                source_blob_url, stream=True, timeout=30) as blob_req:
-            # TODO(aschultz): unsure if necessary or if only when using .text
+        with session.get(source_blob_url,
+                         stream=True,
+                         timeout=30,
+                         allow_redirects=False) as blob_req:
             blob_req.encoding = 'utf-8'
+            # raise for status here to ensure we didn't got a 401
             RegistrySessionHelper.check_status(session=session,
                                                request=blob_req)
+            # Requests to docker.io redirect to CDN for the actual content
+            # so we need to check if our initial blob request is a redirect
+            # and follow as necessary.
+            blob_req = RegistrySessionHelper.check_redirect_trusted(blob_req,
+                                                                    session)
             for data in blob_req.iter_content(chunk_size):
                 LOG.debug("[%s] Read %i bytes for %s" %
                           (image, len(data), digest))
@@ -1853,8 +1915,12 @@ class PythonImageUploader(BaseImageUploader):
                 r = RegistrySessionHelper.get(
                     source_session,
                     source_config_url,
-                    timeout=30
+                    timeout=30,
+                    allow_redirects=False
                 )
+                # check if the blob was a redirect
+                r = RegistrySessionHelper.check_redirect_trusted(
+                    r, source_session, stream=False)
 
                 config_str = cls._get_response_text(r)
                 manifest['config']['size'] = len(config_str)

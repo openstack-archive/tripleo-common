@@ -76,6 +76,66 @@ class TestRegistrySessionHelper(base.TestCase):
         session_reauth_mock.assert_called_once_with()
         raise_for_status_mock.assert_called_once()
 
+    def test_check_redirect_trusted_no_redirect(self):
+        get_mock = mock.Mock()
+        session = mock.Mock()
+        session.headers = {'Authorization': 'foo'}
+        session.auth_args = {}
+        session.get = get_mock
+        resp = mock.Mock()
+        resp.status_code = 200
+
+        r = image_uploader.RegistrySessionHelper.check_redirect_trusted(
+            resp, session)
+
+        self.assertEqual(resp, r)
+
+    def test_check_redirect_trusted_is_trusted(self):
+        get_result = mock.Mock()
+        get_result.status_code = 200
+        get_mock = mock.Mock()
+        get_mock.return_value = get_result
+        session = mock.Mock()
+        session.headers = {'Authorization': 'foo'}
+        session.auth_args = {}
+        session.get = get_mock
+        resp = mock.Mock()
+        resp.headers = {'Location': 'https://registry.redhat.io/v2'}
+        resp.status_code = 307
+
+        r = image_uploader.RegistrySessionHelper.check_redirect_trusted(
+            resp, session)
+
+        self.assertNotEqual(resp, r)
+        self.assertEqual(get_result, r)
+        get_mock.assert_called_once_with('https://registry.redhat.io/v2',
+                                         stream=True,
+                                         timeout=30)
+        self.assertEqual(session.headers['Authorization'], 'foo')
+
+    def test_check_redirect_trusted_not_trusted(self):
+        get_result = mock.Mock()
+        get_result.status_code = 200
+        get_mock = mock.Mock()
+        get_mock.return_value = get_result
+        session = mock.Mock()
+        session.headers = {'Authorization': 'foo'}
+        session.auth_args = {}
+        session.get = get_mock
+        resp = mock.Mock()
+        resp.headers = {'Location': 'http://172.16.12.12:8787/'}
+        resp.status_code = 307
+
+        r = image_uploader.RegistrySessionHelper.check_redirect_trusted(
+            resp, session, False, 12)
+
+        self.assertNotEqual(resp, r)
+        self.assertEqual(get_result, r)
+        get_mock.assert_called_once_with('http://172.16.12.12:8787/',
+                                         stream=False,
+                                         timeout=12)
+        self.assertEqual(session.headers['Authorization'], 'foo')
+
     @mock.patch('tripleo_common.image.image_uploader.RegistrySessionHelper'
                 '.check_status')
     def test_action(self, mock_status):
@@ -2073,6 +2133,8 @@ class TestPythonImageUploader(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.image_uploader.'
+                'RegistrySessionHelper.check_redirect_trusted')
+    @mock.patch('tripleo_common.image.image_uploader.'
                 'PythonImageUploader._copy_manifest_config_to_registry')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'RegistrySessionHelper.get')
@@ -2082,7 +2144,8 @@ class TestPythonImageUploader(base.TestCase):
                 'PythonImageUploader.'
                 '_copy_layer_registry_to_registry')
     def test_copy_registry_to_registry(self, _copy_layer, _upload_url,
-                                       mock_get, mock_copy_manifest):
+                                       mock_get, mock_copy_manifest,
+                                       mock_trusted):
         source_url = urlparse('docker://docker.io/t/nova-api:latest')
         target_url = urlparse('docker://192.168.2.1:5000/t/nova-api:latest')
         _upload_url.return_value = 'https://192.168.2.1:5000/v2/upload'
@@ -2090,7 +2153,10 @@ class TestPythonImageUploader(base.TestCase):
         source_session = mock.Mock()
         target_session = mock.Mock()
 
-        mock_get.return_value.text = '{}'
+        mock_resp = mock.Mock()
+        mock_resp.text = '{}'
+        mock_get.return_value = mock_resp
+        mock_trusted.return_value = mock_resp
 
         manifest = json.dumps({
             'mediaType': image_uploader.MEDIA_MANIFEST_V2,
@@ -2118,7 +2184,8 @@ class TestPythonImageUploader(base.TestCase):
         mock_get.assert_called_once_with(
             source_session,
             'https://registry-1.docker.io/v2/t/nova-api/blobs/sha256:1234',
-            timeout=30
+            timeout=30,
+            allow_redirects=False
         )
         target_manifest = {
             'config': {
@@ -2134,6 +2201,9 @@ class TestPythonImageUploader(base.TestCase):
                          'distribution.manifest.v2+json',
         }
 
+        mock_trusted.assert_called_once_with(mock_resp,
+                                             source_session,
+                                             stream=False)
         mock_copy_manifest.assert_has_calls([
             mock.call(
                 target_url=target_url,
