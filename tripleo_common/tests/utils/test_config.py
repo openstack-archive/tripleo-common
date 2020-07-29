@@ -59,7 +59,7 @@ class TestConfig(base.TestCase):
                             'service_metadata_settings',
                             'service_names',
                             'upgrade_batch_tasks', 'upgrade_tasks',
-                            'external_deploy_tasks']
+                            'external_deploy_steps_tasks']
 
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
@@ -74,6 +74,11 @@ class TestConfig(base.TestCase):
         mock_mkdir.assert_called()
         expected_calls = []
         for config in config_type_list:
+            if 'external' in config:
+                for step in range(constants.DEFAULT_STEPS_MAX):
+                    expected_calls += [call('/tmp/tht/%s_step%s.yaml' %
+                                       (config, step))]
+
             for role in fake_role:
                 if 'external' in config:
                     continue
