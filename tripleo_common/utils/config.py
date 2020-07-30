@@ -279,6 +279,16 @@ class Config(object):
 
         role_config = self.get_role_config()
         for config_name, config in six.iteritems(role_config):
+
+            # External tasks are in RoleConfig and not defined per role.
+            # So we don't use the RoleData to create the per step playbooks.
+            if config_name in constants.EXTERNAL_TASKS:
+                for i in range(constants.DEFAULT_STEPS_MAX):
+                    filepath = os.path.join(config_dir,
+                                            '%s_step%s.yaml'
+                                            % (config_name, i))
+                    self._write_tasks_per_step(config, filepath, i)
+
             conf_path = os.path.join(config_dir, config_name)
             # Add .yaml extension only if there's no extension already
             if '.' not in conf_path:
