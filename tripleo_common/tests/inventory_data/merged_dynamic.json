@@ -186,18 +186,34 @@
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+            "container_cli": "podman",
+            "ctlplane_vip": "192.168.24.21",
+            "external_vip": "10.0.0.6",
+            "internal_api_vip": "172.16.2.11",
+            "redis_vip": "192.168.24.21",
+            "storage_mgmt_vip": "172.16.3.26",
+            "storage_vip": "172.16.1.131"
+        }
+
     },
     "cell1_boot_params_service": {
         "children": [
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_ca_certs": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_cell1": {
         "children": [
@@ -208,97 +224,151 @@
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_chrony": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_container_image_prepare": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_haproxy": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_iscsid": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_keepalived": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_kernel": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_logrotate_crond": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_mysql": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_mysql_client": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_nova_compute": {
         "children": [
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_nova_conductor": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_nova_libvirt": {
         "children": [
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_nova_libvirt_guests": {
         "children": [
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_nova_metadata": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_nova_migration_target": {
         "children": [
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_nova_vnc_proxy": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_oslo_messaging_rpc": {
         "children": [
             "cell1_CellController"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_overcloud": {
         "children": [
@@ -308,54 +378,81 @@
     "cell1_ovn_controller": {
         "children": [
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_ovn_metadata": {
         "children": [
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_podman": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_snmp": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_sshd": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_timezone": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_tripleo_firewall": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_tripleo_packages": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cell1_tuned": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "certmonger_user": {
         "children": [
@@ -604,205 +701,328 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "container_cli": "podman",
+          "ctlplane_vip": "192.168.24.7",
+          "external_vip": "10.0.0.5",
+          "internal_api_vip": "172.16.2.164",
+          "redis_vip": "172.16.2.196",
+          "storage_mgmt_vip": "172.16.3.44",
+          "storage_vip": "172.16.1.147"
+        }
     },
     "overcloud_boot_params_service": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_ca_certs": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_certmonger_user": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_chrony": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_cinder_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_cinder_scheduler": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_cinder_volume": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_container_image_prepare": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_glance_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_haproxy": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_heat_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_heat_api_cfn": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_heat_api_cloudwatch_disabled": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_heat_engine": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_horizon": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_iscsid": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_keepalived": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_kernel": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_keystone": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_keystone_admin_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_keystone_public_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_logrotate_crond": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_memcached": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_mysql": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_mysql_client": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_neutron_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_neutron_plugin_ml2_ovn": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_compute": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_conductor": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_libvirt": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_libvirt_guests": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_metadata": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_migration_target": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_scheduler": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_nova_vnc_proxy": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_oslo_messaging_notify": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_oslo_messaging_rpc": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_overcloud": {
         "children": [
@@ -813,79 +1033,121 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_ovn_dbs": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_ovn_metadata": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_placement": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_podman": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_snmp": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_sshd": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_swift_proxy": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_swift_ringbuilder": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_swift_storage": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_timezone": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_tripleo_firewall": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_tripleo_packages": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_tuned": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "ovn_controller": {
         "children": [

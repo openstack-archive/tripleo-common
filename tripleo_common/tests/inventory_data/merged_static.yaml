@@ -66,6 +66,14 @@ cell1_allovercloud:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    container_cli: podman
+    ctlplane_vip: 192.168.24.21
+    external_vip: 10.0.0.6
+    internal_api_vip: 172.16.2.11
+    redis_vip: 192.168.24.21
+    storage_mgmt_vip: 172.16.3.26
+    storage_vip: 172.16.1.131
 cell1:
   children:
     cell1_allovercloud: {}
@@ -83,6 +91,8 @@ cell1_kernel:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 keepalived:
   children:
     cell1_keepalived: {}
@@ -90,6 +100,8 @@ keepalived:
 cell1_keepalived:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 mysql:
   children:
     cell1_mysql: {}
@@ -97,6 +109,8 @@ mysql:
 cell1_mysql:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_libvirt:
   children:
     cell1_nova_libvirt: {}
@@ -104,6 +118,8 @@ nova_libvirt:
 cell1_nova_libvirt:
   children:
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 container_image_prepare:
   children:
     cell1_container_image_prepare: {}
@@ -111,6 +127,8 @@ container_image_prepare:
 cell1_container_image_prepare:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 timezone:
   children:
     cell1_timezone: {}
@@ -119,6 +137,8 @@ cell1_timezone:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 iscsid:
   children:
     cell1_iscsid: {}
@@ -127,6 +147,8 @@ cell1_iscsid:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_libvirt_guests:
   children:
     cell1_nova_libvirt_guests: {}
@@ -134,6 +156,8 @@ nova_libvirt_guests:
 cell1_nova_libvirt_guests:
   children:
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 tripleo_firewall:
   children:
     cell1_tripleo_firewall: {}
@@ -142,6 +166,8 @@ cell1_tripleo_firewall:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 snmp:
   children:
     cell1_snmp: {}
@@ -150,6 +176,8 @@ cell1_snmp:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 certmonger_user:
   children:
     cell1_certmonger_user: {}
@@ -158,6 +186,8 @@ cell1_certmonger_user:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 boot_params_service:
   children:
     cell1_boot_params_service: {}
@@ -165,6 +195,8 @@ boot_params_service:
 cell1_boot_params_service:
   children:
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 oslo_messaging_rpc:
   children:
     cell1_oslo_messaging_rpc: {}
@@ -172,6 +204,8 @@ oslo_messaging_rpc:
 cell1_oslo_messaging_rpc:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_vnc_proxy:
   children:
     cell1_nova_vnc_proxy: {}
@@ -179,6 +213,8 @@ nova_vnc_proxy:
 cell1_nova_vnc_proxy:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_metadata:
   children:
     cell1_nova_metadata: {}
@@ -186,6 +222,8 @@ nova_metadata:
 cell1_nova_metadata:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 mysql_client:
   children:
     cell1_mysql_client: {}
@@ -194,6 +232,8 @@ cell1_mysql_client:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_migration_target:
   children:
     cell1_nova_migration_target: {}
@@ -201,6 +241,8 @@ nova_migration_target:
 cell1_nova_migration_target:
   children:
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 podman:
   children:
     cell1_podman: {}
@@ -209,6 +251,8 @@ cell1_podman:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 tripleo_packages:
   children:
     cell1_tripleo_packages: {}
@@ -217,6 +261,8 @@ cell1_tripleo_packages:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_conductor:
   children:
     cell1_nova_conductor: {}
@@ -224,6 +270,8 @@ nova_conductor:
 cell1_nova_conductor:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_compute:
   children:
     cell1_nova_compute: {}
@@ -231,6 +279,8 @@ nova_compute:
 cell1_nova_compute:
   children:
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 logrotate_crond:
   children:
     cell1_logrotate_crond: {}
@@ -239,6 +289,8 @@ cell1_logrotate_crond:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 haproxy:
   children:
     cell1_haproxy: {}
@@ -246,6 +298,8 @@ haproxy:
 cell1_haproxy:
   children:
     cell1_CellController: {}
+  vars:
+    ansible_ssh_user: heat-admin
 sshd:
   children:
     cell1_sshd: {}
@@ -254,6 +308,8 @@ cell1_sshd:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 ovn_metadata:
   children:
     cell1_ovn_metadata: {}
@@ -261,6 +317,8 @@ ovn_metadata:
 cell1_ovn_metadata:
   children:
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 tuned:
   children:
     cell1_tuned: {}
@@ -269,6 +327,8 @@ cell1_tuned:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 chrony:
   children:
     cell1_chrony: {}
@@ -277,6 +337,8 @@ cell1_chrony:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 ca_certs:
   children:
     cell1_ca_certs: {}
@@ -285,6 +347,8 @@ cell1_ca_certs:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 ovn_controller:
   children:
     cell1_ovn_controller: {}
@@ -292,6 +356,8 @@ ovn_controller:
 cell1_ovn_controller:
   children:
     cell1_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 Controller:
   children:
     overcloud_Controller: {}
@@ -332,6 +398,14 @@ overcloud_allovercloud:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    container_cli: podman
+    ctlplane_vip: 192.168.24.7
+    external_vip: 10.0.0.5
+    internal_api_vip: 172.16.2.164
+    redis_vip: 172.16.2.196
+    storage_mgmt_vip: 172.16.3.44
+    storage_vip: 172.16.1.147
 overcloud:
   children:
     overcloud_allovercloud: {}
@@ -342,240 +416,344 @@ overcloud_kernel:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_nova_conductor:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_snmp:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_mysql:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 cinder_api:
   children:
     overcloud_cinder_api: {}
 overcloud_cinder_api:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 swift_proxy:
   children:
     overcloud_swift_proxy: {}
 overcloud_swift_proxy:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 swift_ringbuilder:
   children:
     overcloud_swift_ringbuilder: {}
 overcloud_swift_ringbuilder:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 heat_api:
   children:
     overcloud_heat_api: {}
 overcloud_heat_api:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_container_image_prepare:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_timezone:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_iscsid:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_boot_params_service:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 heat_api_cloudwatch_disabled:
   children:
     overcloud_heat_api_cloudwatch_disabled: {}
 overcloud_heat_api_cloudwatch_disabled:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_tripleo_firewall:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 swift_storage:
   children:
     overcloud_swift_storage: {}
 overcloud_swift_storage:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 keystone_admin_api:
   children:
     overcloud_keystone_admin_api: {}
 overcloud_keystone_admin_api:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_keepalived:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_certmonger_user:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_mysql_client:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 glance_api:
   children:
     overcloud_glance_api: {}
 overcloud_glance_api:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 keystone:
   children:
     overcloud_keystone: {}
 overcloud_keystone:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 cinder_volume:
   children:
     overcloud_cinder_volume: {}
 overcloud_cinder_volume:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 ovn_dbs:
   children:
     overcloud_ovn_dbs: {}
 overcloud_ovn_dbs:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 memcached:
   children:
     overcloud_memcached: {}
 overcloud_memcached:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_oslo_messaging_rpc:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_nova_vnc_proxy:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 oslo_messaging_notify:
   children:
     overcloud_oslo_messaging_notify: {}
 overcloud_oslo_messaging_notify:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 keystone_public_api:
   children:
     overcloud_keystone_public_api: {}
 overcloud_keystone_public_api:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_api:
   children:
     overcloud_nova_api: {}
 overcloud_nova_api:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_nova_metadata:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 heat_engine:
   children:
     overcloud_heat_engine: {}
 overcloud_heat_engine:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_nova_migration_target:
   children:
     overcloud_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_podman:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_tripleo_packages:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 nova_scheduler:
   children:
     overcloud_nova_scheduler: {}
 overcloud_nova_scheduler:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_nova_compute:
   children:
     overcloud_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_nova_libvirt_guests:
   children:
     overcloud_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 neutron_plugin_ml2_ovn:
   children:
     overcloud_neutron_plugin_ml2_ovn: {}
 overcloud_neutron_plugin_ml2_ovn:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_logrotate_crond:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_haproxy:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_sshd:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 placement:
   children:
     overcloud_placement: {}
 overcloud_placement:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 cinder_scheduler:
   children:
     overcloud_cinder_scheduler: {}
 overcloud_cinder_scheduler:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_nova_libvirt:
   children:
     overcloud_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_ovn_metadata:
   children:
     overcloud_Compute: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_tuned:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_chrony:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 horizon:
   children:
     overcloud_horizon: {}
 overcloud_horizon:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 neutron_api:
   children:
     overcloud_neutron_api: {}
 overcloud_neutron_api:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_ca_certs:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 heat_api_cfn:
   children:
     overcloud_heat_api_cfn: {}
 overcloud_heat_api_cfn:
   children:
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
 overcloud_ovn_controller:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
+  vars:
+    ansible_ssh_user: heat-admin
