@@ -1,0 +1,10 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla heat
+- run: sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+tcib_packages:
+  common:
+  - httpd
+  - mod_ssl
+  - openstack-heat-common
+  - python3-mod_wsgi

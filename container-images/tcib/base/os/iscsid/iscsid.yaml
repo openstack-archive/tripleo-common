@@ -1,0 +1,12 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- copy: /usr/share/tripleo-common/container-images/kolla/iscsid/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: chmod 755 /usr/local/bin/kolla_extend_start
+- run: rm /etc/iscsi/initiatorname.iscsi
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/iscsid /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/iscsid/*'', wantlist=True) }}'
+tcib_packages:
+  common:
+  - iscsi-initiator-utils
+  - python3-rtslib
+  - targetcli

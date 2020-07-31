@@ -1,0 +1,8 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+tcib_packages:
+  common:
+  - openstack-heat-api
+  - openstack-heat-engine
+  - openstack-heat-monolith
+tcib_user: heat

@@ -1,0 +1,9 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla {{ tcib_user }}
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-inspector /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - openstack-ironic-inspector
+  - openstack-ironic-inspector-dnsmasq
+tcib_user: ironic-inspector

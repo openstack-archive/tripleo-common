@@ -1,0 +1,11 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf  && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/placement-api /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - httpd
+  - mod_ssl
+  - openstack-placement-api
+  - openstack-placement-common
+  - python3-mod_wsgi

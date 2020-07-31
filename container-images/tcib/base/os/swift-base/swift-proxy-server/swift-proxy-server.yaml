@@ -1,0 +1,12 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/swift-proxy /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+- run: sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+tcib_packages:
+  common:
+  - httpd
+  - mod_ssl
+  - openstack-ceilometer-common
+  - openstack-swift-proxy
+  - python3-ceilometermiddleware
+tcib_user: swift

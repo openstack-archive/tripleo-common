@@ -1,0 +1,11 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: usermod -a -G kolla qdrouterd && mkdir -p /var/lib/qdrouterd && chown -R qdrouterd /var/lib/qdrouterd
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/qdrouterd /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - cyrus-sasl-lib
+  - cyrus-sasl-plain
+  - qpid-dispatch-router
+  - qpid-dispatch-tools
+tcib_user: qdrouterd

@@ -1,0 +1,29 @@
+tcib_actions:
+- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: rm -f /etc/machine-id
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-compute /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - ceph-common
+  - device-mapper-multipath
+  - e2fsprogs
+  - genisoimage
+  - iscsi-initiator-utils
+  - nfs-utils
+  - nvme-cli
+  - openssh-server
+  - openstack-nova-compute
+  - openstack-nova-migration
+  - openvswitch
+  - parted
+  - python3-libguestfs
+  - python3-oslo-vmware
+  - python3-rtslib
+  - sysfsutils
+  - targetcli
+  - xfsprogs
+  modules:
+  - disable: virt:rhel
+  - enable: virt:8.2
+tcib_user: nova

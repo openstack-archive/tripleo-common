@@ -1,0 +1,3 @@
+tcib_actions:
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/neutron-dhcp /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
+tcib_user: neutron

@@ -1,0 +1,11 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: mkdir -p /var/www/cgi-bin/aodh && chmod 755 /var/www/cgi-bin/aodh && cp -a /usr/bin/aodh-api /var/www/cgi-bin/aodh/ && sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
+- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/aodh-api /openstack/healthcheck && chmod a+rx /openstack/healthcheck
+tcib_packages:
+  common:
+  - httpd
+  - mod_ssl
+  - openstack-aodh-api
+  - python3-ldappool
+  - python3-mod_wsgi
