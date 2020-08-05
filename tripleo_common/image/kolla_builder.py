@@ -192,6 +192,12 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
         modify_append_tag = cip_entry.get('modify_append_tag',
                                           time.strftime(
                                               '-modified-%Y%m%d%H%M%S'))
+
+        # do not use tag_from_label if a tag is specified in the set
+        tag_from_label = None
+        if not mapping_args.get('tag'):
+            tag_from_label = cip_entry.get('tag_from_label')
+
         if multi_arch and 'multi_arch' in cip_entry:
             # individual entry sets multi_arch,
             # so set global multi_arch to False
@@ -206,7 +212,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             mapping_args=mapping_args,
             output_env_file='image_params',
             output_images_file='upload_data',
-            tag_from_label=cip_entry.get('tag_from_label'),
+            tag_from_label=tag_from_label,
             append_tag=modify_append_tag,
             modify_role=modify_role,
             modify_vars=modify_vars,

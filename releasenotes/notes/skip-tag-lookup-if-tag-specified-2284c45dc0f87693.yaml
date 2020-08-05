@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    When using specifying ContainerImagePrepare if a tag is explicitly provided
+    in a set, the tag_from_label functionality will not be run as we use
+    the defined tag for the containers. Previously we would still attempt
+    tag lookups even if we wanted a specific tag.
