@@ -379,7 +379,7 @@ class ImageUploadManager(BaseImageManager):
        """
 
     def __init__(self, config_files=None,
-                 dry_run=False, cleanup=CLEANUP_FULL,
+                 cleanup=CLEANUP_FULL,
                  mirrors=None, registry_credentials=None,
                  multi_arch=False, lock=None):
         if config_files is None:
@@ -390,7 +390,6 @@ class ImageUploadManager(BaseImageManager):
             'python': PythonImageUploader()
         }
         self.uploaders['python'].init_global_state(lock)
-        self.dry_run = dry_run
         self.cleanup = cleanup
         if mirrors:
             for uploader in self.uploaders.values():
@@ -472,7 +471,7 @@ class ImageUploadManager(BaseImageManager):
             uploader = self.uploader(uploader)
             tasks.append(UploadTask(
                 image_name, pull_source, push_destination,
-                append_tag, modify_role, modify_vars, self.dry_run,
+                append_tag, modify_role, modify_vars,
                 self.cleanup, multi_arch))
 
         # NOTE(mwhahaha): We want to randomize the upload process because of
@@ -1177,9 +1176,6 @@ class SkopeoImageUploader(BaseImageUploader):
         target_image_local_url = parse.urlparse('containers-storage:%s' %
                                                 t.target_image)
 
-        if t.dry_run:
-            return []
-
         target_username, target_password = self.credentials_for_registry(
             t.target_image_url.netloc)
         target_session = self.authenticate(
@@ -1486,9 +1482,6 @@ class PythonImageUploader(BaseImageUploader):
         source_local = t.source_image.startswith('containers-storage:')
         target_image_local_url = parse.urlparse('containers-storage:%s' %
                                                 t.target_image)
-        if t.dry_run:
-            return []
-
         target_username, target_password = self.credentials_for_registry(
             t.target_image_url.netloc)
         try:
@@ -2562,7 +2555,7 @@ class PythonImageUploader(BaseImageUploader):
 class UploadTask(object):
 
     def __init__(self, image_name, pull_source, push_destination,
-                 append_tag, modify_role, modify_vars, dry_run, cleanup,
+                 append_tag, modify_role, modify_vars, cleanup,
                  multi_arch):
         self.image_name = image_name
         self.pull_source = pull_source
@@ -2570,7 +2563,6 @@ class UploadTask(object):
         self.append_tag = append_tag or ''
         self.modify_role = modify_role
         self.modify_vars = modify_vars
-        self.dry_run = dry_run
         self.cleanup = cleanup
         self.multi_arch = multi_arch
 

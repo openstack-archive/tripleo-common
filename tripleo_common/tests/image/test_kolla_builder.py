@@ -955,9 +955,7 @@ class TestPrepare(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.kolla_builder.container_images_prepare')
-    @mock.patch('tripleo_common.image.image_uploader.ImageUploadManager',
-                autospec=True)
-    def test_container_images_prepare_multi_dry_run(self, mock_im, mock_cip):
+    def test_container_images_prepare_multi_dry_run(self, mock_cip):
         mock_lock = mock.MagicMock()
         mapping_args = {
             'namespace': 't',
@@ -1049,11 +1047,6 @@ class TestPrepare(base.TestCase):
                 lock=mock_lock
             )
         ])
-
-        mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full',
-                                        mirrors={}, registry_credentials=None,
-                                        multi_arch=False, lock=mock_lock)
-
         self.assertEqual(
             {
                 'BarImage': 't/bar:1.0',
@@ -1065,10 +1058,7 @@ class TestPrepare(base.TestCase):
         )
 
     @mock.patch('tripleo_common.image.kolla_builder.container_images_prepare')
-    @mock.patch('tripleo_common.image.image_uploader.ImageUploadManager',
-                autospec=True)
-    def test_container_images_prepare_multi_tag_from_label(self, mock_im,
-                                                           mock_cip):
+    def test_container_images_prepare_multi_tag_from_label(self, mock_cip):
         mock_lock = mock.MagicMock()
         mapping_args = {
             'namespace': 't',
@@ -1166,10 +1156,6 @@ class TestPrepare(base.TestCase):
                 lock=mock_lock
             )
         ])
-
-        mock_im.assert_called_once_with(mock.ANY, dry_run=True, cleanup='full',
-                                        mirrors={}, registry_credentials=None,
-                                        multi_arch=False, lock=mock_lock)
 
         self.assertEqual(
             {
