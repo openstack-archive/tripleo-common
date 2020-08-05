@@ -57,3 +57,4 @@ disk_images:
       - "--min-tmpfs=7"
     environment:
       DIB_PYTHON_VERSION: '3'
+      DIB_DHCP_TIMEOUT: '60'
