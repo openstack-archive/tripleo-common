@@ -221,5 +221,7 @@ _PER_STEP_TASK_STRICTNESS = [False for i in range(DEFAULT_STEPS_MAX)]
 
 PER_STEP_TASKS = {
     'upgrade_tasks': _PER_STEP_TASK_STRICTNESS,
-    'deploy_steps_tasks': _PER_STEP_TASK_STRICTNESS
+    'deploy_steps_tasks': _PER_STEP_TASK_STRICTNESS,
+    'update_tasks': _PER_STEP_TASK_STRICTNESS,
+    'post_update_tasks': [False, False, False, False]
 }
