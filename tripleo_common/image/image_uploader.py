@@ -888,7 +888,8 @@ class BaseImageUploader(object):
             tags_get_args.append((self, image, session))
 
         images = []
-        with futures.ThreadPoolExecutor(max_workers=16) as p:
+        workers = min(max(2, processutils.get_worker_count() // 2), 8)
+        with futures.ThreadPoolExecutor(max_workers=workers) as p:
             for image, tags in p.map(tags_for_image, tags_get_args):
                 if not tags:
                     continue
