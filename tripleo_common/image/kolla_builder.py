@@ -224,14 +224,13 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
         )
         env_params.update(prepare_data['image_params'])
 
-        if push_destination or pull_source or modify_role:
+        if not dry_run and (push_destination or pull_source or modify_role):
             with tempfile.NamedTemporaryFile(mode='w') as f:
                 yaml.safe_dump({
                     'container_images': prepare_data['upload_data']
                 }, f)
                 uploader = image_uploader.ImageUploadManager(
                     [f.name],
-                    dry_run=dry_run,
                     cleanup=cleanup,
                     mirrors=mirrors,
                     registry_credentials=creds,
