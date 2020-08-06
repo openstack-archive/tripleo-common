@@ -28,6 +28,7 @@ import zlib
 
 from oslo_concurrency import processutils
 from tripleo_common.image.exception import ImageNotFoundException
+from tripleo_common.image.exception import ImageRateLimitedException
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image import image_uploader
 from tripleo_common.tests import base
@@ -75,6 +76,23 @@ class TestRegistrySessionHelper(base.TestCase):
         image_uploader.RegistrySessionHelper.check_status(session, request)
         session_reauth_mock.assert_called_once_with()
         raise_for_status_mock.assert_called_once()
+
+    def test_check_status_ratelimit(self):
+        session = mock.Mock()
+        session_reauth_mock = mock.Mock()
+        session.headers = {}
+        session.auth_args = {}
+        session.reauthenticate = session_reauth_mock
+        raise_for_status_mock = mock.Mock()
+        request = mock.Mock()
+        request.headers = {'www-authenticate': 'foo'}
+        request.raise_for_status = raise_for_status_mock
+        request.status_code = 429
+
+        self.assertRaises(ImageRateLimitedException,
+                          image_uploader.RegistrySessionHelper.check_status,
+                          session,
+                          request)
 
     def test_check_redirect_trusted_no_redirect(self):
         get_mock = mock.Mock()
