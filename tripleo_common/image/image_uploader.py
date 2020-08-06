@@ -37,6 +37,7 @@ from oslo_log import log as logging
 from tripleo_common.actions import ansible
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageNotFoundException
+from tripleo_common.image.exception import ImageRateLimitedException
 from tripleo_common.image.exception import ImageUploaderException
 from tripleo_common.image.exception import ImageUploaderThreadException
 from tripleo_common.image import image_export
@@ -244,6 +245,10 @@ class RegistrySessionHelper(object):
                         )
                         session.reauthenticate(**session.auth_args)
 
+        if status_code == 429:
+            raise ImageRateLimitedException('Rate Limited while requesting '
+                                            '{}'.format(request.url))
+
         request.raise_for_status()
 
     @staticmethod
@@ -296,6 +301,14 @@ class RegistrySessionHelper(object):
         return request_response
 
     @staticmethod
+    @tenacity.retry(  # Retry up to 5 times with longer time for rate limit
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(
+            ImageRateLimitedException
+        ),
+        wait=tenacity.wait_random_exponential(multiplier=1.5, max=60),
+        stop=tenacity.stop_after_attempt(5)
+    )
     def _action(action, request_session, *args, **kwargs):
         """ Perform a session action and retry if auth fails
 
@@ -1728,12 +1741,13 @@ class PythonImageUploader(BaseImageUploader):
         return r.headers['Location']
 
     @classmethod
-    @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
+    @tenacity.retry(  # Retry up to 5 times with longer time
         reraise=True,
         retry=tenacity.retry_if_exception_type(
-            requests.exceptions.RequestException
+            (requests.exceptions.RequestException,
+             ImageRateLimitedException)
         ),
-        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        wait=tenacity.wait_random_exponential(multiplier=1.5, max=60),
         stop=tenacity.stop_after_attempt(5)
     )
     def _layer_stream_registry(cls, digest, source_url, calc_digest,
