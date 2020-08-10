@@ -12,7 +12,9 @@ tcib_actions:
     crudini --set /etc/dnf/dnf.conf main plugins 1 &&
     crudini --set /etc/dnf/dnf.conf main skip_missing_names_on_install False &&
     crudini --set /etc/dnf/dnf.conf main tsflags nodocs
-- run: groupadd --force --gid 42400 kolla && useradd -l -M --shell /usr/sbin/nologin --uid 42400 --gid 42400 kolla
+- copy: /usr/share/tripleo-common/container-images/kolla/base/uid_gid_manage.sh /usr/local/bin/uid_gid_manage
+- run: chmod 755 /usr/local/bin/uid_gid_manage
+- run: bash /usr/local/bin/uid_gid_manage kolla hugetlbfs libvirt qemu
 - run: touch /usr/local/bin/kolla_extend_start && chmod 755 /usr/local/bin/kolla_extend_start
 - copy: /usr/share/tripleo-common/container-images/kolla/base/set_configs.py /usr/local/bin/kolla_set_configs
 - run: chmod 755 /usr/local/bin/kolla_set_configs
