@@ -18,6 +18,10 @@ class ImageBuilderException(Exception):
     pass
 
 
+class ImageRateLimitedException(Exception):
+    """Rate Limited request"""
+
+
 class ImageSpecificationException(Exception):
     pass
 
