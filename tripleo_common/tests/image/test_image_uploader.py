@@ -1316,8 +1316,8 @@ class TestSkopeoImageUploader(base.TestCase):
             override_ansible_cfg=(
                 "[defaults]\n"
                 "stdout_callback=tripleo_dense\n"
-                "log_path=%s/tripleo-container-image-prepare-ansible.log\n"
-                % os.path.dirname(logfile.name)
+                "log_path="
+                "/var/log/tripleo-container-image-prepare-ansible.log\n"
             )
         )
 
