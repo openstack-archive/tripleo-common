@@ -1,6 +1,6 @@
 tcib_actions:
+- run: bash /usr/local/bin/uid_gid_manage keystone
 - run: dnf module -y enable mod_auth_openidc && dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: usermod -a -G kolla keystone
 - run: mkdir -p /var/www/cgi-bin/keystone && chown -R keystone /var/www/cgi-bin/keystone
 - copy: /usr/share/tripleo-common/container-images/kolla/keystone/extend_start.sh /usr/local/bin/kolla_extend_start
 - run: chmod 755 /usr/local/bin/kolla_extend_start

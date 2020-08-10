@@ -1,6 +1,6 @@
 tcib_actions:
+- run: bash /usr/local/bin/uid_gid_manage aodh
 - run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: usermod -a -G kolla aodh
 tcib_packages:
   common:
   - openstack-aodh-common

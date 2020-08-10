@@ -1,6 +1,6 @@
 tcib_actions:
+- run: bash /usr/local/bin/uid_gid_manage swift
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: usermod -a -G kolla swift
 - copy: /usr/share/tripleo-common/container-images/kolla/swift-base/swift-rootwrap /usr/bin/swift-rootwrap
 - copy: /usr/share/tripleo-common/container-images/kolla/swift-base/swift-sudoers /etc/sudoers.d/swift-sudoers
 - run: chmod 755 /usr/bin/swift-rootwrap && chmod 440 /etc/sudoers.d/swift-sudoers

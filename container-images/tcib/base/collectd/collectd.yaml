@@ -1,4 +1,5 @@
 tcib_actions:
+- run: bash /usr/local/bin/uid_gid_manage collectd
 - run: >-
     if [ '{{ tcib_distro }}' == 'rhel' ]; then
     {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}
@@ -6,8 +7,7 @@ tcib_actions:
 - run: if [ "{{ tcib_distro }}" == "rhel" ]; then dnf -y install {{ tcib_packages['rhel'] | join(' ') }}; fi
 - run: if [ "$(uname -m)" == "x86_64" ]; then dnf -y install {{ tcib_packages['x86_64'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: mkdir -p /var/lib/collectd && useradd -d /var/lib/collectd -l -M --shell /usr/sbin/nologin collectd && chown collectd:collectd /var/lib/collectd
-- run: chown -R collectd /var/lib/collectd  && chown -R collectd /etc/collectd*  && chown -R collectd /var/run/
+- run: chown -R collectd:collectd /etc/collectd* /var/run/
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/collectd /openstack/healthcheck && chmod a+rx /openstack/healthcheck
 tcib_packages:
   common:
