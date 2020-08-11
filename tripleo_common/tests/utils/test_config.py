@@ -907,3 +907,107 @@ class TestConfig(base.TestCase):
                          mock_open.call_args_list[0][0][0])
         self.assertEqual('/tmp/tht/Controller/NetworkConfig',
                          mock_open.call_args_list[1][0][0])
+
+    @patch.object(ooo_config.Config, '_open_file')
+    def test_overcloud_config__write_tasks_per_step(self, mock_open_file):
+        heat = mock.MagicMock()
+        self.config = ooo_config.Config(heat)
+
+        # TODO: how can I share this tasks definition between to test
+        # as a fixture So that I do two several test cases instead of
+        # a big one.
+        tasks = [
+            {
+                "when": "step|int == 0",
+                "name": "Simple check"
+            },
+            {
+                "when": "(step|int == 0)",
+                "name": "Check within parenthesis"
+            },
+            {
+                "when": ["step|int == 0", "test1", False],
+                "name": "Check with list with boolean"
+            },
+            {
+                "when": ["test1", False, "step|int == 0"],
+                "name": "Check with list with boolean other order"
+            },
+            {
+                "when": "step|int == 0 or step|int == 3",
+                "name": "Check with boolean expression"
+            },
+            {
+                "when": "(step|int == 0 or step|int == 3) and other_cond",
+                "name": "Complex boolean expression"
+            },
+            {
+                "name": "Task with no conditional"
+            }
+        ]
+
+        # Everything should come back
+        tasks_per_step = self.config._write_tasks_per_step(
+            tasks,
+            'Compute/update_tasks_step0.yaml',
+            0
+        )
+
+        self.assertEqual(tasks, tasks_per_step)
+
+        # Using stict the tasks with no conditional will be dropped
+        tasks_per_step = self.config._write_tasks_per_step(
+            tasks,
+            'Compute/update_tasks_step0.yaml',
+            0,
+            strict=True,
+        )
+
+        expected_tasks = [task for task in tasks
+                          if task != {"name": "Task with no conditional"}]
+        self.assertEqual(expected_tasks,
+                         tasks_per_step)
+
+        # Some tasks will be filtered out for step 3.
+        tasks_per_step = self.config._write_tasks_per_step(
+            tasks,
+            'Compute/update_tasks_step3.yaml',
+            3
+        )
+
+        self.assertEqual(
+            [
+                {
+                    "when": "step|int == 0 or step|int == 3",
+                    "name": "Check with boolean expression"
+                },
+                {
+                    "when": "(step|int == 0 or step|int == 3) and other_cond",
+                    "name": "Complex boolean expression"
+                },
+                {
+                    "name": "Task with no conditional"
+                }
+            ],
+            tasks_per_step)
+
+        # Even more tasks will be filtered out for step 3 with strict.
+        tasks_per_step = self.config._write_tasks_per_step(
+            tasks,
+            'Compute/update_tasks_step3.yaml',
+            3,
+            strict=True,
+        )
+
+        self.assertEqual(
+            [
+                {
+                    "when": "step|int == 0 or step|int == 3",
+                    "name": "Check with boolean expression"
+                },
+                {
+                    "when": "(step|int == 0 or step|int == 3) and other_cond",
+                    "name": "Complex boolean expression"
+                },
+            ],
+            tasks_per_step)
