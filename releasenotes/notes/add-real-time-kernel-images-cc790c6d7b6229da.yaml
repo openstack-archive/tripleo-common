@@ -1,0 +1,4 @@
+---
+features:
+  - Added a image yaml for real time kernels support .  If you use it,
+    don't forget to also add the rhel-8-for-x86_64-rt-rpms channel.
