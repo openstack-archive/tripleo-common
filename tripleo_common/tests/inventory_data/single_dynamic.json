@@ -128,7 +128,16 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "container_cli": "podman",
+          "ctlplane_vip": "192.168.24.7",
+          "external_vip": "10.0.0.5",
+          "internal_api_vip": "172.16.2.164",
+          "redis_vip": "172.16.2.196",
+          "storage_mgmt_vip": "172.16.3.44",
+          "storage_vip": "172.16.1.147"
+        }
     },
     "overcloud": {
         "children": [
@@ -144,7 +153,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "ca_certs": {
         "children": [
@@ -155,7 +167,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "certmonger_user": {
         "children": [
@@ -166,7 +181,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "chrony": {
         "children": [
@@ -177,7 +195,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cinder_api": {
         "children": [
@@ -187,7 +208,10 @@
     "overcloud_cinder_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cinder_scheduler": {
         "children": [
@@ -197,7 +221,10 @@
     "overcloud_cinder_scheduler": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "cinder_volume": {
         "children": [
@@ -207,7 +234,10 @@
     "overcloud_cinder_volume": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "container_image_prepare": {
         "children": [
@@ -217,7 +247,10 @@
     "overcloud_container_image_prepare": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "glance_api": {
         "children": [
@@ -227,7 +260,10 @@
     "overcloud_glance_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "haproxy": {
         "children": [
@@ -237,7 +273,10 @@
     "overcloud_haproxy": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "heat_api": {
         "children": [
@@ -247,7 +286,10 @@
     "overcloud_heat_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "heat_api_cfn": {
         "children": [
@@ -257,7 +299,10 @@
     "overcloud_heat_api_cfn": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "heat_api_cloudwatch_disabled": {
         "children": [
@@ -267,7 +312,10 @@
     "overcloud_heat_api_cloudwatch_disabled": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "heat_engine": {
         "children": [
@@ -277,7 +325,10 @@
     "overcloud_heat_engine": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "horizon": {
         "children": [
@@ -287,7 +338,10 @@
     "overcloud_horizon": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "iscsid": {
         "children": [
@@ -298,7 +352,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "keepalived": {
         "children": [
@@ -308,7 +365,10 @@
     "overcloud_keepalived": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "kernel": {
         "children": [
@@ -319,7 +379,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "keystone": {
         "children": [
@@ -329,7 +392,10 @@
     "overcloud_keystone": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "keystone_admin_api": {
         "children": [
@@ -339,7 +405,10 @@
     "overcloud_keystone_admin_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "keystone_public_api": {
         "children": [
@@ -349,7 +418,10 @@
     "overcloud_keystone_public_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "logrotate_crond": {
         "children": [
@@ -360,7 +432,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "memcached": {
         "children": [
@@ -370,7 +445,10 @@
     "overcloud_memcached": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "mysql": {
         "children": [
@@ -380,7 +458,10 @@
     "overcloud_mysql": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "mysql_client": {
         "children": [
@@ -391,7 +472,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "neutron_api": {
         "children": [
@@ -401,7 +485,10 @@
     "overcloud_neutron_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "neutron_plugin_ml2_ovn": {
         "children": [
@@ -411,7 +498,10 @@
     "overcloud_neutron_plugin_ml2_ovn": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_api": {
         "children": [
@@ -421,7 +511,10 @@
     "overcloud_nova_api": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_compute": {
         "children": [
@@ -431,7 +524,10 @@
     "overcloud_nova_compute": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_conductor": {
         "children": [
@@ -441,7 +537,10 @@
     "overcloud_nova_conductor": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_libvirt": {
         "children": [
@@ -451,7 +550,10 @@
     "overcloud_nova_libvirt": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_libvirt_guests": {
         "children": [
@@ -461,7 +563,10 @@
     "overcloud_nova_libvirt_guests": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_metadata": {
         "children": [
@@ -471,7 +576,10 @@
     "overcloud_nova_metadata": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_migration_target": {
         "children": [
@@ -481,7 +589,10 @@
     "overcloud_nova_migration_target": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_scheduler": {
         "children": [
@@ -491,7 +602,10 @@
     "overcloud_nova_scheduler": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "nova_vnc_proxy": {
         "children": [
@@ -501,7 +615,10 @@
     "overcloud_nova_vnc_proxy": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "oslo_messaging_notify": {
         "children": [
@@ -511,7 +628,10 @@
     "overcloud_oslo_messaging_notify": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "oslo_messaging_rpc": {
         "children": [
@@ -521,7 +641,10 @@
     "overcloud_oslo_messaging_rpc": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "overcloud_overcloud": {
         "children": [
@@ -537,7 +660,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "ovn_dbs": {
         "children": [
@@ -547,7 +673,10 @@
     "overcloud_ovn_dbs": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "ovn_metadata": {
         "children": [
@@ -557,7 +686,10 @@
     "overcloud_ovn_metadata": {
         "children": [
             "overcloud_Compute"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "placement": {
         "children": [
@@ -567,7 +699,10 @@
     "overcloud_placement": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "podman": {
         "children": [
@@ -578,7 +713,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "snmp": {
         "children": [
@@ -589,7 +727,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "sshd": {
         "children": [
@@ -600,7 +741,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "swift_proxy": {
         "children": [
@@ -610,7 +754,10 @@
     "overcloud_swift_proxy": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "swift_ringbuilder": {
         "children": [
@@ -620,7 +767,10 @@
     "overcloud_swift_ringbuilder": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "swift_storage": {
         "children": [
@@ -630,7 +780,10 @@
     "overcloud_swift_storage": {
         "children": [
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "timezone": {
         "children": [
@@ -641,7 +794,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "tripleo_firewall": {
         "children": [
@@ -652,7 +808,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "tripleo_packages": {
         "children": [
@@ -663,7 +822,10 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     },
     "tuned": {
         "children": [
@@ -674,6 +836,9 @@
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
-        ]
+        ],
+        "vars": {
+          "ansible_ssh_user": "heat-admin"
+        }
     }
 }

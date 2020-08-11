@@ -87,7 +87,7 @@ class TripleoInventories(object):
                             inventory[new_key] = {
                                 'children': {x: {} for x in roles}
                             }
-                        if vars in inv[key]:
+                        if 'vars' in inv[key]:
                             inventory[new_key]['vars'] = inv[key]['vars']
                         if key == 'allovercloud':
                             # useful to have just stack name refer to children

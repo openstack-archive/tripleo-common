@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import collections
 import fixtures
 import os
 from unittest.mock import MagicMock
@@ -28,7 +29,7 @@ class _TestInventoriesBase(base.TestCase):
         self.read_inventory_data()
 
     def read_inventory_data(self):
-        inventory_data = {}
+        inventory_data = collections.OrderedDict()
         inventory_dir = os.path.join(
             os.path.dirname(__file__), 'inventory_data'
         )
@@ -78,7 +79,7 @@ class TestInventoriesStatic(_TestInventoriesBase):
         self.inventories.write_static_inventory(inv_path)
         expected = self.inventory_data['merged_static']
         with open(inv_path, 'r') as f:
-            loaded_inv = yaml.safe_load(f)
+            loaded_inv = collections.OrderedDict(yaml.safe_load(f))
         self.assertEqual(expected, loaded_inv)
 
 
@@ -101,7 +102,7 @@ class TestInventoriesDynamic(_TestInventoriesBase):
 
     def test_merge(self):
         actual = dict(self.inventories._merge())
-        expected = self.inventory_data['merged_dynamic']
+        expected = dict(self.inventory_data['merged_dynamic'])
         self.assertEqual(expected, actual)
 
     def test_list(self):
