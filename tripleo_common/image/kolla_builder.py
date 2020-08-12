@@ -457,6 +457,12 @@ class KollaImageBuilder(base.BaseImageManager):
         if CONTAINER_IMAGES_DEFAULTS is None:
             return
         for k, v in CONTAINER_IMAGES_DEFAULTS.items():
+            # Handle CentOS8 since we shipped train with py2 support, we need
+            # to still support it while handling the namespace switch for
+            # CentOS8 but only for the defaults
+            if (k == 'namespace' and v == 'docker.io/tripleotrain'
+                    and sys.version_info.major > 2):
+                v += 'centos8'
             mapping.setdefault(k, v)
         np = mapping['name_prefix']
         if np and not np.endswith('-'):

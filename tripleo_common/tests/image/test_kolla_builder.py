@@ -14,6 +14,7 @@
 #
 
 
+import copy
 import mock
 import os
 import six
@@ -213,7 +214,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             with open(imagefile.name, 'w') as f:
                 f.write(template_filedata)
 
-    def test_container_images_from_template(self):
+    @mock.patch.object(sys, 'version_info')
+    def test_container_images_from_template(self, mock_ver):
+        mock_ver.major = 2
         builder = kb.KollaImageBuilder(self.filelist)
         result = builder.container_images_from_template(
             push_destination='localhost:8787',
@@ -224,7 +227,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         container_images = yaml.safe_load(filedata)['container_images']
         self.assertEqual(container_images, result)
 
-    def test_container_images_template_inputs(self):
+    @mock.patch.object(sys, 'version_info')
+    def test_container_images_template_inputs(self, mock_ver):
+        mock_ver.major = 2
         builder = kb.KollaImageBuilder(self.filelist)
         self.assertEqual(
             kb.CONTAINER_IMAGES_DEFAULTS,
@@ -297,7 +302,56 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             )
         )
 
-    def test_container_images_from_template_filter(self):
+    @mock.patch.object(sys, 'version_info')
+    def test_container_images_template_inputs_centos8(self, mock_ver):
+        mock_ver.major = 3
+        builder = kb.KollaImageBuilder(self.filelist)
+
+        original = kb.CONTAINER_IMAGES_DEFAULTS
+        defs = copy.deepcopy(original)
+        defs['namespace'] = 'docker.io/tripleotrain'
+        kb.CONTAINER_IMAGES_DEFAULTS = defs
+        result = builder.container_images_template_inputs(
+            ceph_namespace='docker.io/cephh',
+            ceph_image='ceph-daemon',
+            ceph_tag='latest',
+            name_prefix='prefix',
+            name_suffix='suffix',
+            tag='master',
+            rhel_containers=False,
+            neutron_driver='ovn')
+        kb.CONTAINER_IMAGES_DEFAULTS = original
+
+        self.assertEqual(
+            {
+                'namespace': 'docker.io/tripleotraincentos8',
+                'ceph_namespace': 'docker.io/cephh',
+                'ceph_image': 'ceph-daemon',
+                'ceph_tag': 'latest',
+                'ceph_grafana_namespace': 'docker.io/grafana',
+                'ceph_grafana_image': 'grafana',
+                'ceph_grafana_tag': '5.2.4',
+                'ceph_prometheus_namespace': 'docker.io/prom',
+                'ceph_prometheus_image': 'prometheus',
+                'ceph_prometheus_tag': 'v2.7.2',
+                'ceph_alertmanager_namespace': 'docker.io/prom',
+                'ceph_alertmanager_image': 'alertmanager',
+                'ceph_alertmanager_tag': 'v0.16.2',
+                'ceph_node_exporter_namespace': 'docker.io/prom',
+                'ceph_node_exporter_image': 'node-exporter',
+                'ceph_node_exporter_tag': 'v0.17.0',
+                'name_prefix': 'prefix-',
+                'name_suffix': '-suffix',
+                'tag': 'master',
+                'rhel_containers': False,
+                'neutron_driver': 'ovn',
+                'default_tag': False,
+            }, result
+        )
+
+    @mock.patch.object(sys, 'version_info')
+    def test_container_images_from_template_filter(self, mock_ver):
+        mock_ver.major = 2
         builder = kb.KollaImageBuilder(self.filelist)
 
         def filter(entry):
@@ -358,9 +412,11 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 del(entry['services'])
             return entry
 
-        result = tmpl_builder.container_images_from_template(
-            filter=ffunc, neutron_driver=neutron_driver,
-            rhel_containers=rhel_containers)
+        with mock.patch.object(sys, 'version_info') as mock_ver:
+            mock_ver.major = 2
+            result = tmpl_builder.container_images_from_template(
+                filter=ffunc, neutron_driver=neutron_driver,
+                rhel_containers=rhel_containers)
 
         oc_yaml_file = os.path.join(files_dir, 'overcloud_containers.yaml')
         yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
