@@ -24,6 +24,6 @@ tcib_packages:
   - disable: container-tools:rhel8
   - enable: container-tools:2.0
   - disable: virt:rhel
-  - enable: virt:8.2
+  - enable: virt:8.3
   x86_64:
   - edk2-ovmf

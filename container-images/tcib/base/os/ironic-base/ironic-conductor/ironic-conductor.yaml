@@ -27,7 +27,7 @@ tcib_packages:
   - xfsprogs
   modules:
   - disable: virt:rhel
-  - enable: virt:8.2
+  - enable: virt:8.3
   rhel:
   - python-ovirt-engine-sdk4
   - python3dist\(ansible\)

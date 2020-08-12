@@ -7,5 +7,5 @@ tcib_packages:
   - openstack-ceilometer-central
   modules:
   - disable: virt:rhel
-  - enable: virt:8.2
+  - enable: virt:8.3
 tcib_user: ceilometer

@@ -53,7 +53,7 @@ tcib_packages:
   - python3-sqlalchemy-collectd
   modules:
   - disable: virt:rhel
-  - enable: virt:8.2
+  - enable: virt:8.3
   rhel:
   - python3-collectd-rabbitmq-monitoring
   x86_64:

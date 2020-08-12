@@ -12,4 +12,4 @@ tcib_packages:
   - python3-oslo-vmware
   modules:
   - disable: virt:rhel
-  - enable: virt:8.2
+  - enable: virt:8.3
