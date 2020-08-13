@@ -448,7 +448,6 @@ class TestUploadTask(base.TestCase):
             append_tag='baz',
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup=False,
             multi_arch=False)
         self.assertEqual(obj.repo, 'docker.io/namespace/foo')
@@ -467,7 +466,6 @@ class TestUploadTask(base.TestCase):
             append_tag=None,
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup=False,
             multi_arch=False)
         self.assertEqual(obj.repo, 'docker.io/namespace/foo')
@@ -480,7 +478,6 @@ class TestUploadTask(base.TestCase):
             append_tag=None,
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup=False,
             multi_arch=False)
         self.assertEqual(obj.target_image_no_tag,
@@ -1219,7 +1216,6 @@ class TestSkopeoImageUploader(base.TestCase):
                 None,
                 None,
                 None,
-                False,
                 'full',
                 False)
             )
@@ -1285,7 +1281,6 @@ class TestSkopeoImageUploader(base.TestCase):
                 append_tag,
                 'add-foo-plugin',
                 {'foo_version': '1.0.1'},
-                False,
                 'partial',
                 False)
             )
@@ -1349,41 +1344,13 @@ class TestSkopeoImageUploader(base.TestCase):
             self.uploader.upload_image, image_uploader.UploadTask(
                 image + ':' + tag, None, push_destination,
                 append_tag, 'add-foo-plugin', {'foo_version': '1.0.1'},
-                False, 'full', False)
+                'full', False)
         )
 
         mock_copy.assert_called_once_with(
             urlparse('docker://docker.io/t/nova-api:latest'),
             urlparse('containers-storage:docker.io/t/nova-api:latest')
         )
-
-    @mock.patch('subprocess.Popen')
-    @mock.patch('tripleo_common.actions.'
-                'ansible.AnsiblePlaybookAction', autospec=True)
-    def test_modify_upload_image_dry_run(self, mock_ansible, mock_popen):
-        mock_process = mock.Mock()
-        mock_popen.return_value = mock_process
-
-        image = 'docker.io/t/nova-api'
-        tag = 'latest'
-        append_tag = 'modify-123'
-        push_destination = 'localhost:8787'
-
-        result = self.uploader.upload_image(image_uploader.UploadTask(
-            image + ':' + tag,
-            None,
-            push_destination,
-            append_tag,
-            'add-foo-plugin',
-            {'foo_version': '1.0.1'},
-            True,
-            'full',
-            False)
-        )
-
-        mock_ansible.assert_not_called()
-        mock_process.communicate.assert_not_called()
-        self.assertEqual([], result)
 
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader.authenticate')
@@ -1407,7 +1374,6 @@ class TestSkopeoImageUploader(base.TestCase):
             append_tag,
             'add-foo-plugin',
             {'foo_version': '1.0.1'},
-            False,
             'full',
             False)
         )
@@ -1521,7 +1487,6 @@ class TestPythonImageUploader(base.TestCase):
             append_tag=None,
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup='full',
             multi_arch=False
         )
@@ -1618,7 +1583,6 @@ class TestPythonImageUploader(base.TestCase):
             append_tag=None,
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup='full',
             multi_arch=False
         )
@@ -1687,7 +1651,6 @@ class TestPythonImageUploader(base.TestCase):
             append_tag=None,
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup='full',
             multi_arch=False
         )
@@ -1755,7 +1718,6 @@ class TestPythonImageUploader(base.TestCase):
             append_tag=None,
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup='full',
             multi_arch=False
         )
@@ -1862,7 +1824,6 @@ class TestPythonImageUploader(base.TestCase):
             append_tag=append_tag,
             modify_role='add-foo-plugin',
             modify_vars={'foo_version': '1.0.1'},
-            dry_run=False,
             cleanup='full',
             multi_arch=False
         )
@@ -1980,7 +1941,6 @@ class TestPythonImageUploader(base.TestCase):
             append_tag=None,
             modify_role=None,
             modify_vars=None,
-            dry_run=False,
             cleanup='full',
             multi_arch=False
         )
