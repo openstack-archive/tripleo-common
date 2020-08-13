@@ -90,6 +90,7 @@ class TestImageExport(base.TestCase):
         }
         calc_digest = hashlib.sha256()
         layer_stream = io.BytesIO(blob_compressed)
+        mask = os.umask(0o077)
         layer_digest, _ = image_export.export_stream(
             target_url, layer, layer_stream, verify_digest=False
         )
@@ -105,6 +106,10 @@ class TestImageExport(base.TestCase):
         self.assertTrue(os.path.isfile(blob_path))
         with open(blob_path, 'rb') as f:
             self.assertEqual(blob_compressed, f.read())
+
+        os.umask(mask)
+        blob_mode = oct(os.stat(blob_path).st_mode)
+        self.assertEqual('644', blob_mode[-3:])
 
     @mock.patch('tripleo_common.image.image_export.open',
                 side_effect=MemoryError())
