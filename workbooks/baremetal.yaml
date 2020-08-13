@@ -84,12 +84,12 @@ workflows:
         action: ironic.node_get
         input:
           node_id: <% $.node_uuid %>
-          fields: ['power_state', 'last_error']
+          fields: ['power_state', 'last_error', 'reservation']
         timeout: 120 #2 minutes
         retry:
           delay: 6
           count: 20
-          continue-on: <% not task().result.power_state in [$.target_state, $.error_state] %>
+          continue-on: <% not (task().result.power_state in [$.target_state, $.error_state] and task().result.reservation = null)%>
         on-complete:
           - state_not_reached: <% task().result.power_state != $.target_state %>
 
