@@ -35,7 +35,7 @@ class BuildahBuilder(base.BaseBuilder):
     def __init__(self, work_dir, deps, base='fedora', img_type='binary',
                  tag='latest', namespace='master',
                  registry_address='127.0.0.1:8787', push_containers=True,
-                 volumes=[], excludes=[]):
+                 volumes=[], excludes=[], build_timeout=None):
         """Setup the parameters to build with Buildah.
 
         :params work_dir: Directory where the Dockerfiles or Containerfiles
@@ -57,10 +57,14 @@ class BuildahBuilder(base.BaseBuilder):
         :params volumes: Bind mount volumes used during buildah bud.
             Default to [].
         :params excludes: List of images to skip. Default to [].
+        :params build_timeout: Timeout. Default to constants.BUILD_TIMEOUT
         """
 
         super(BuildahBuilder, self).__init__()
-        self.build_timeout = constants.BUILD_TIMEOUT
+        if build_timeout is None:
+            self.build_timeout = constants.BUILD_TIMEOUT
+        else:
+            self.build_timeout = build_timeout
         self.work_dir = work_dir
         self.deps = deps
         self.base = base
