@@ -17,8 +17,9 @@
 
 from collections import OrderedDict
 import logging
-import os.path
+import os
 import sys
+import tempfile
 import yaml
 
 from heatclient.exc import HTTPNotFound
@@ -383,5 +384,7 @@ class TripleoInventory(object):
                 if var in inventory:
                     inventory[var]['vars'].update(value)
 
-        with open(inventory_file_path, 'w') as inventory_file:
+        # Atomic update as concurrent tripleoclient commands can call this
+        with tempfile.NamedTemporaryFile('w', delete=False) as inventory_file:
             yaml.dump(inventory, inventory_file, TemplateDumper)
+        os.rename(inventory_file.name, inventory_file_path)

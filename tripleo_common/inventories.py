@@ -16,7 +16,8 @@
 # under the License.
 
 from collections import OrderedDict
-import os.path
+import os
+import tempfile
 import yaml
 
 
@@ -137,8 +138,10 @@ class TripleoInventories(object):
                 if var in inventory:
                     inventory[var]['vars'].update(value)
 
-        with open(inventory_file_path, 'w') as inventory_file:
+        # Atomic update as concurrent tripleoclient commands can call this
+        with tempfile.NamedTemporaryFile('w', delete=False) as inventory_file:
             yaml.dump(inventory, inventory_file, TemplateDumper)
+        os.rename(inventory_file.name, inventory_file_path)
 
     def host(self):
         # Dynamic inventory scripts must return empty json if they don't
