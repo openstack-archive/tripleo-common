@@ -26,6 +26,22 @@
   roles:
     - octavia-undercloud
 
+- hosts: octavia_nodes
+  gather_facts: true
+  vars:
+    generate_certs: "{{ generate_certs }}"
+    octavia_confd_prefix: "/var/lib/config-data/puppet-generated/octavia"
+    ca_cert_path: "{{ ca_cert_path }}"
+    ca_private_key_path: "{{ ca_private_key_path }}"
+    client_cert_path: "{{ client_cert_path }}"
+    stack_action: "{{ stack_action }}"
+  tasks:
+    - include_role:
+        name: octavia-controller-check
+      when:
+        - generate_certs | bool
+        - stack_action == 'UPDATE'
+
 - hosts: octavia_nodes[0]
   gather_facts: True
   vars:
@@ -64,6 +80,7 @@
     private_key_content: "{{ hostvars[groups['octavia_nodes'][0]]['private_key_content'] | default('') }}"
     ca_cert_content: "{{ hostvars[groups['octavia_nodes'][0]]['ca_cert_content'] | default('') }}"
     service_pem_content: "{{ hostvars[groups['octavia_nodes'][0]]['service_pem_content'] | default('') }}"
+    update_certs: "{{ hostvars[groups['octavia_nodes'][0]]['update_certs'] | default(true) }}"
     generate_certs: "{{ generate_certs }}"
     ca_cert_path: "{{ ca_cert_path }}"
     ca_private_key_path: "{{ ca_private_key_path }}"

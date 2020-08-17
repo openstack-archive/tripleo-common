@@ -2,5 +2,13 @@
 # Previously was a stack in the overcloud
   - include_tasks: network.yml
   - include_tasks: quotas.yml
+
+  - import_tasks: check_existing_certs.yml
+    when:
+      - stack_action == 'UPDATE'
+      - generate_certs | bool
+
   - include_tasks: certs_gen.yml
-    when: generate_certs
+    when:
+      - generate_certs | bool
+      - (generate_ca | default(true)) | bool

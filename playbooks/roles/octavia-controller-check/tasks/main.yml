@@ -1,0 +1,74 @@
+---
+# Copyright 2020 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+- name: Check if octavia CA file exists on host
+  become: true
+  stat:
+    path: "{{ octavia_confd_prefix }}/{{ ca_cert_path }}"
+  register: ca_file_stat
+
+- name: Get and store CA data
+  block:
+    - name: Get CA file if exists
+      become: true
+      slurp:
+        src: "{{ octavia_confd_prefix }}/{{ ca_cert_path }}"
+      register: ca_file_data
+    - name: Store CA data
+      set_fact:
+        ca_cert: "{{ ca_file_data.content | b64decode }}"
+  when:
+    - ca_file_stat.stat.exists | bool
+
+- name: Check if octavia CA private key exists on host
+  become: true
+  stat:
+    path: "{{ octavia_confd_prefix }}/{{ ca_private_key_path }}"
+  register: ca_key_file_stat
+
+- name: Get and store CA private key
+  block:
+    - name: Get CA private key file if exists
+      become: true
+      slurp:
+        src: "{{ octavia_confd_prefix }}/{{ ca_private_key_path }}"
+      register: key_file_data
+    - name: Store CA data
+      set_fact:
+        ca_private_key: "{{ key_file_data.content | b64decode }}"
+  when:
+    - ca_key_file_stat.stat.exists | bool
+
+- name: Check if octavia client certificate exists on host
+  become: true
+  stat:
+    path: "{{ octavia_confd_prefix }}/{{ client_cert_path }}"
+  register: client_cert_file_stat
+
+# TODO(gthiemon) Remove those tasks when we support per-controller and
+# per-process client certificates for Octavia.
+- name: Get and store client certificate
+  block:
+    - name: Get client certificate file if exists
+      become: true
+      slurp:
+        src: "{{ octavia_confd_prefix }}/{{ client_cert_path }}"
+      register: client_file_data
+    - name: Store client certificate data
+      set_fact:
+        service_pem_content: "{{ client_file_data.content | b64decode }}"
+  when:
+    - client_cert_file_stat.stat.exists | bool

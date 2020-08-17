@@ -37,6 +37,7 @@ workflows:
       - overcloud_project
       - overcloud_pub_auth_uri
       - overcloud_int_auth_uri
+      - stack_action
       - ansible_extra_env_variables:
           ANSIBLE_HOST_KEY_CHECKING: 'False'
           ANSIBLE_SSH_RETRIES: '3'
@@ -110,6 +111,7 @@ workflows:
             auth_username: <% $.auth_username %>
             auth_password: <% $.auth_password %>
             auth_project_name: <% $.auth_project_name %>
+            stack_action: <% $.stack_action %>
           execution_id: <% execution().id %>
         on-success: config_octavia
 
@@ -151,6 +153,7 @@ workflows:
             generate_certs: <% $.generate_certs %>
             mgmt_port_dev: <% $.mgmt_port_dev %>
             auth_project_name: <% $.auth_project_name %>
+            stack_action: <% $.stack_action %>
           execution_id: <% execution().id %>
         on-complete: purge_local_temp_dir
       purge_local_temp_dir:
