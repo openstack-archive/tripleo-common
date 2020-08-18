@@ -139,7 +139,11 @@ class TripleoInventories(object):
                     inventory[var]['vars'].update(value)
 
         # Atomic update as concurrent tripleoclient commands can call this
-        with tempfile.NamedTemporaryFile('w', delete=False) as inventory_file:
+        inventory_file_dir = os.path.dirname(inventory_file_path)
+        with tempfile.NamedTemporaryFile(
+                'w',
+                dir=inventory_file_dir,
+                delete=False) as inventory_file:
             yaml.dump(inventory, inventory_file, TemplateDumper)
         os.rename(inventory_file.name, inventory_file_path)
 
