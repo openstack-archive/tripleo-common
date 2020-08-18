@@ -65,5 +65,6 @@
         update_certs: false
       when:
         - (octavia_node_count | int) == (ca_certs | length)
+        - not (force_certs_update | default(false))
   when:
     - (ca_certs | length) > 0

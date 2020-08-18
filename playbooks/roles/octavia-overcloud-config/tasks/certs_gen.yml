@@ -27,7 +27,40 @@
   - name: Generating certificate authority private key
     become: true
     shell: |
-      openssl genrsa -passout pass:{{ ca_passphrase }} -des3 -out {{ openssl_temp_dir }}/private/cakey.pem 2048
+      openssl genrsa -passout pass:{{ ca_passphrase }} -aes256 -out {{ openssl_temp_dir }}/private/cakey.pem 2048
+    when:
+      - not (force_certs_update | default(false) | bool)
+
+  - name: Reuse previous CA private key
+    block:
+      - name: Write previous CA private key
+        copy:
+          content: "{{ private_key_content }}"
+          dest: "{{ openssl_temp_dir }}/private/cakey.pem"
+        no_log: true
+    when:
+      - force_certs_update | default(false) | bool
+      - not (force_private_key_update | default(false) | bool)
+
+  - name: Reuse and update previous CA private key
+    block:
+      - name: Write previous CA private key
+        copy:
+          content: "{{ private_key_content }}"
+          dest: "{{ openssl_temp_dir }}/private/cakey.old.pem"
+        no_log: true
+
+      - name: Update CA private key
+        shell: |
+          openssl rsa -aes256 \
+              -passin pass:{{ ca_passphrase }} \
+              -passout pass:{{ ca_passphrase }} \
+              -in {{ openssl_temp_dir }}/private/cakey.old.pem \
+              -out {{ openssl_temp_dir }}/private/cakey.pem
+    when:
+      - force_certs_update | default(false) | bool
+      - force_private_key_update | default(false) | bool
+
   - name: Reading private key
     become: true
     shell: cat {{ openssl_temp_dir }}/private/cakey.pem
@@ -41,7 +74,7 @@
     shell: |
       openssl req -x509 -passin pass:{{ ca_passphrase }} -new -nodes -key {{ openssl_temp_dir }}/private/cakey.pem \
                   -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com" \
-                  -days 365 -config {{ openssl_temp_dir }}/openssl.cnf \
+                  -days 18250 -config {{ openssl_temp_dir }}/openssl.cnf \
                   -out {{ openssl_temp_dir }}/ca_01.pem
   - name: Reading CA certificate
     become: true
@@ -61,7 +94,7 @@
     become: true
     shell: |
       openssl ca -config {{ openssl_temp_dir }}/openssl.cnf -passin pass:{{ ca_passphrase }} -in {{ openssl_temp_dir }}/client.csr \
-                 -days 365 -out {{ openssl_temp_dir }}/client-.pem -batch
+                 -days 3650 -out {{ openssl_temp_dir }}/client-.pem -batch
   - name: Read service private key and public certifcate
     become: true
     shell: |

@@ -30,6 +30,19 @@
     - name: Store CA data
       set_fact:
         ca_cert: "{{ ca_file_data.content | b64decode }}"
+
+    - name: Get remaining validity period of the CA
+      shell: |
+        now=$(date +%s)
+        enddate=$(date +%s -d "$(openssl x509 -enddate -noout -in {{ octavia_confd_prefix }}/{{ ca_cert_path }} | cut -d= -f2)")
+        echo $((enddate - now))
+      register: validity_period
+
+    - name: Force CA update if remaining validity is less than 1 year
+      set_fact:
+        force_certs_update: true
+      when:
+        - (validity_period.stdout| int) < 31622400  # 31622400 seconds == 366 days
   when:
     - ca_file_stat.stat.exists | bool
 
@@ -46,9 +59,20 @@
       slurp:
         src: "{{ octavia_confd_prefix }}/{{ ca_private_key_path }}"
       register: key_file_data
-    - name: Store CA data
+    - name: Store CA private key
       set_fact:
         ca_private_key: "{{ key_file_data.content | b64decode }}"
+
+    - name: Detect if key is encrypted with AES256
+      shell: grep -q 'AES-256-CBC' {{ octavia_confd_prefix }}/{{ ca_private_key_path }}
+      failed_when: false
+      register: ca_private_key_aes_256
+    - name: Store flag if a private key update is required
+      set_fact:
+        force_private_key_update: true
+        force_certs_update: true
+      when:
+        - ca_private_key_aes_256.rc != 0
   when:
     - ca_key_file_stat.stat.exists | bool
 

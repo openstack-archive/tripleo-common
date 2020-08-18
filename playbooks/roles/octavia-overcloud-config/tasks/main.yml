@@ -11,4 +11,4 @@
   - include_tasks: certs_gen.yml
     when:
       - generate_certs | bool
-      - (generate_ca | default(true)) | bool
+      - (generate_ca | default(true)) | bool or (force_certs_update | default(false) | bool)
