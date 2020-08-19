@@ -52,7 +52,7 @@ def init_prepare_defaults(defaults_file):
 
 DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                      'container-images',
-                                     'overcloud_containers.yaml.j2')
+                                     'tripleo_containers.yaml.j2')
 
 DEFAULT_PREPARE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                     'container-images',

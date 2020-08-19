@@ -29,7 +29,7 @@ from tripleo_common.tests import base
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__),
                              '..', '..', '..', 'container-images',
-                             'overcloud_containers.yaml.j2')
+                             'tripleo_containers.yaml.j2')
 
 
 DEFAULTS_PATH = os.path.join(os.path.dirname(__file__),
@@ -358,15 +358,15 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def _test_container_images_yaml_in_sync_helper(self, neutron_driver=None,
                                                    rhel_containers=False,
                                                    remove_images=[]):
-        '''Confirm overcloud_containers.tpl.yaml equals overcloud_containers.yaml
+        '''Confirm overcloud_containers.tpl.yaml equals tripleo_containers.yaml
 
-        TODO(sbaker) remove when overcloud_containers.yaml is deleted
+        TODO(sbaker) remove when tripleo_containers.yaml is deleted
         '''
         mod_dir = os.path.dirname(sys.modules[__name__].__file__)
         project_dir = os.path.abspath(os.path.join(mod_dir, '../../../'))
         files_dir = os.path.join(project_dir, 'container-images')
 
-        oc_tmpl_file = os.path.join(files_dir, 'overcloud_containers.yaml.j2')
+        oc_tmpl_file = os.path.join(files_dir, 'tripleo_containers.yaml.j2')
         tmpl_builder = kb.KollaImageBuilder([oc_tmpl_file])
 
         def ffunc(entry):
@@ -380,12 +380,12 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             filter=ffunc, neutron_driver=neutron_driver,
             rhel_containers=rhel_containers)
 
-        oc_yaml_file = os.path.join(files_dir, 'overcloud_containers.yaml')
+        oc_yaml_file = os.path.join(files_dir, 'tripleo_containers.yaml')
         yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
         container_images = yaml_builder.load_config_files(
             yaml_builder.CONTAINER_IMAGES)
 
-        # remove image references from overcloud_containers.yaml specified
+        # remove image references from tripleo_containers.yaml specified
         # in remove_images param.
         for image in remove_images:
             container_images.remove(image)
@@ -394,26 +394,29 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
     def test_container_images_yaml_in_sync(self):
         remove_images = [
-            {'image_source': 'kolla',
+            {'image_source': 'tripleo',
+                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
+                             'ovn-base:' + KB_DEFAULT_TAG},
+            {'image_source': 'tripleo',
                 'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
                              'ovn-northd:' + KB_DEFAULT_TAG},
-            {'image_source': 'kolla',
+            {'image_source': 'tripleo',
                 'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
                              'ovn-controller:' + KB_DEFAULT_TAG},
-            {'image_source': 'kolla',
+            {'image_source': 'tripleo',
                 'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
                              'ovn-nb-db-server:' + KB_DEFAULT_TAG},
-            {'image_source': 'kolla',
+            {'image_source': 'tripleo',
                 'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
                              'ovn-sb-db-server:' + KB_DEFAULT_TAG},
-            {'image_source': 'kolla',
+            {'image_source': 'tripleo',
                 'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
                              'neutron-metadata-agent-ovn:' + KB_DEFAULT_TAG}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
 
     def test_container_images_yaml_in_sync_for_ovn(self):
-        # remove neutron-server image reference from overcloud_containers.yaml
+        # remove neutron-server image reference from tripleo_containers.yaml
         remove_images = []
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
@@ -472,7 +475,7 @@ class TestPrepare(base.TestCase):
     def test_prepare_simple(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
-                {'image_source': 'kolla',
+                {'image_source': 'tripleo',
                  'imagename': '192.0.2.0:8787/t/p-nova-compute:l'}
             ],
             'environments/containers-default-parameters.yaml': {
@@ -501,7 +504,7 @@ class TestPrepare(base.TestCase):
     def test_prepare_includes(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
-                {'image_source': 'kolla',
+                {'image_source': 'tripleo',
                  'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
             ],
             'environments/containers-default-parameters.yaml': {
@@ -528,7 +531,7 @@ class TestPrepare(base.TestCase):
         # assert same result as includes only. includes trumps excludes
         self.assertEqual({
             'container_images.yaml': [
-                {'image_source': 'kolla',
+                {'image_source': 'tripleo',
                  'imagename': '192.0.2.0:8787/t/p-nova-libvirt:l'}
             ],
             'environments/containers-default-parameters.yaml': {
@@ -555,7 +558,7 @@ class TestPrepare(base.TestCase):
     def test_prepare_push_dest(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [{
-                'image_source': 'kolla',
+                'image_source': 'tripleo',
                 'imagename': 'docker.io/t/p-nova-api:l',
                 'push_destination': '192.0.2.0:8787',
             }],
@@ -591,7 +594,7 @@ class TestPrepare(base.TestCase):
         mock_gur.return_value = '192.0.2.0:8787'
         self.assertEqual({
             'container_images.yaml': [{
-                'image_source': 'kolla',
+                'image_source': 'tripleo',
                 'imagename': 'docker.io/t/p-nova-api:l',
                 'push_destination': '192.0.2.0:8787',
             }],
@@ -649,7 +652,7 @@ class TestPrepare(base.TestCase):
     def test_prepare_neutron_driver_default(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
-                {'image_source': 'kolla',
+                {'image_source': 'tripleo',
                  'imagename': 't/p-neutron-server:l'}
             ],
             'environments/containers-default-parameters.yaml': {
@@ -678,9 +681,9 @@ class TestPrepare(base.TestCase):
     def test_prepare_neutron_driver_ovn(self, mock_insecure):
         self.assertEqual({
             'container_images.yaml': [
-                {'image_source': 'kolla',
+                {'image_source': 'tripleo',
                  'imagename': 't/p-neutron-server:l'},
-                {'image_source': 'kolla',
+                {'image_source': 'tripleo',
                  'imagename': 't/p-ovn-controller:l'}
             ],
             'environments/containers-default-parameters.yaml': {

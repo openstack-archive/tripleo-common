@@ -300,7 +300,7 @@ def default_image_params():
 
     template_file = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                  'container-images',
-                                 'overcloud_containers.yaml.j2')
+                                 'tripleo_containers.yaml.j2')
     builder = kolla_builder.KollaImageBuilder([template_file])
     result = builder.container_images_from_template(filter=ffunc)
 
