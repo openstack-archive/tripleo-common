@@ -37,7 +37,7 @@ tcib_envs:
 tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/base/*'', wantlist=True) }}'
 tcib_labels:
   maintainer: OpenStack TripleO team
-  kolla_version: none
+  tcib_managed: True
 tcib_packages:
   common:
   - ca-certificates
