@@ -58,7 +58,7 @@ def init_prepare_defaults(defaults_file):
 
 DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                      'container-images',
-                                     'overcloud_containers.yaml.j2')
+                                     'tripleo_containers.yaml.j2')
 
 DEFAULT_PREPARE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
                                     'container-images',
@@ -538,8 +538,9 @@ class KollaImageBuilder(base.BaseImageManager):
         container_images.sort(key=lambda i: i.get('imagename'))
         for i in container_images:
             # Do not attempt to build containers that are not from kolla or
-            # are in our exclude list
-            if not i.get('image_source', '') == 'kolla':
+            # tripleo, or are in our exclude list
+            allowed_source_list = ['kolla', 'tripleo']
+            if i.get('image_source', '') not in allowed_source_list:
                 continue
             image = self.imagename_to_regex(i.get('imagename'))
             # Make sure the image was properly parsed and not purposely skipped
