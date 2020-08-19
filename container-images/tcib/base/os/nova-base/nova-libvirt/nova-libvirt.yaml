@@ -10,6 +10,7 @@ tcib_packages:
   - libcgroup-tools
   - libguestfs
   - libseccomp
+  - libvirt-admin
   - libvirt-client
   - libvirt-daemon
   - libvirt-daemon-config-nwfilter
