@@ -1,6 +1,5 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage {{ tcib_user }}
-- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
 - run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: mkdir /etc/libqb
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/redis /openstack/healthcheck && chmod a+rx /openstack/healthcheck
@@ -14,6 +13,4 @@ tcib_packages:
   - redis
   - resource-agents
   - stunnel
-  modules:
-  - install: redis:5
 tcib_user: redis
