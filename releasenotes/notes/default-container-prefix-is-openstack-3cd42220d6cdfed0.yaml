@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    The default container prefix is `openstack-` instead of `centos-binary-`
+    starting with Victoria.

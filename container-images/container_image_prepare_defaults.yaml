@@ -14,7 +14,7 @@ parameter_defaults:
     set:
       # Container image name components for OpenStack images.
       namespace: docker.io/tripleomaster
-      name_prefix: centos-binary-
+      name_prefix: openstack-
       name_suffix: ''
       tag: current-tripleo
       default_tag: True
