@@ -1,5 +1,4 @@
 tcib_actions:
-- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 # this need to happen after installing nova-compute because the distgit does usermod to add libvirt/qemu groups
 - run: bash /usr/local/bin/uid_gid_manage nova
@@ -10,7 +9,4 @@ tcib_packages:
   - nvme-cli
   - openstack-nova-compute
   - python3-novajoin
-  modules:
-  - disable: virt:rhel
-  - enable: virt:8.2
 tcib_user: nova
