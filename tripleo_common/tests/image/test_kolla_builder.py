@@ -396,9 +396,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         remove_images = [
             {'image_source': 'tripleo',
                 'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
-                             'ovn-base:' + KB_DEFAULT_TAG},
-            {'image_source': 'tripleo',
-                'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
                              'ovn-northd:' + KB_DEFAULT_TAG},
             {'image_source': 'tripleo',
                 'imagename': KB_DEFAULT_NAMESPACE + '/' + KB_DEFAULT_PREFIX +
