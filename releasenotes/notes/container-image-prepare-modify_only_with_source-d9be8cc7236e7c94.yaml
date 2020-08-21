@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Added `modify_only_with_source` to the ContainerImagePrepare set that can
+    be used to limit modify container images to a specific image_source as
+    defined in the services to container images mapping.
