@@ -588,8 +588,7 @@ class BaseImageUploader(object):
             else:
                 raise OSError('Log output is not a file.')
         except (AttributeError, OSError):
-            tmp_dir = tempfile.gettempdir()
-            log_f = os.path.join(tmp_dir, log_name)
+            log_f = os.path.join('/var/log', log_name)
         try:
             LOG.info('Ansible action starting')
             ansible.AnsiblePlaybookAction(
