@@ -151,7 +151,7 @@ def write_default_ansible_cfg(work_dir,
         sio_cfg = StringIO()
         sio_cfg.write(override_ansible_cfg)
         sio_cfg.seek(0)
-        config.readfp(sio_cfg)
+        config.read_file(sio_cfg)
         sio_cfg.close()
 
     with open(ansible_config_path, 'w') as configfile:
