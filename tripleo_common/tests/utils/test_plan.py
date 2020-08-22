@@ -1031,7 +1031,7 @@ class PlanTest(base.TestCase):
 
         kib.assert_called_once_with(
             [os.path.join(sys.prefix, 'share', 'tripleo-common',
-                          'container-images', 'overcloud_containers.yaml.j2')]
+                          'container-images', 'tripleo_containers.yaml.j2')]
         )
         params = {
             'ContainerNovaComputeImage': 't/cb-nova-compute:liberty',

@@ -1,0 +1,6 @@
+---
+other:
+  - |
+    `container-images/tripleo_containers.yaml.j2` is now used to determine what
+    containers are used for which services when running the container image
+    prepare process runs.
