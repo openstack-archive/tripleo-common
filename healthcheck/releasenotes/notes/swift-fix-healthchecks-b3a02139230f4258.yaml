@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes a few Swift healthchecks by using correct procps output filters. Also
+    merged a few healthcheck scripts because some containers do use the same
+    base images.

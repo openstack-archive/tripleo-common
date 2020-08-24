@@ -117,7 +117,7 @@ get_url_from_vhost () {
 
 check_swift_interval () {
     service=$1
-    if pgrep -f swift-${service} >&3 2>&1; then
+    if ps -ef | grep --quiet [s]wift-${service} >&3 2>&1; then
         interval=$(get_config_val $conf $service interval 300)
         last=`grep -o "\"replication_last\": [0-9]*" $cache | cut -f 2 -d " "`
         now=`date +%s`
