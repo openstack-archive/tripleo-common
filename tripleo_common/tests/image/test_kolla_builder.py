@@ -955,6 +955,15 @@ class TestPrepare(base.TestCase):
                     'modify_role': 'add-foo-plugin',
                     'modify_only_with_labels': ['kolla_version'],
                     'modify_vars': {'foo_version': '1.0.1'}
+                }, {
+                    'set': mapping_args,
+                    'tag_from_label': 'bar',
+                    'includes': ['nova', 'neutron'],
+                    'push_destination': True,
+                    'modify_role': 'add-foo-plugin',
+                    'modify_only_with_source': ['kolla', 'tripleo'],
+                    'modify_vars': {'foo_version': '1.0.1'}
+
                 }]
             }
         }
@@ -969,6 +978,19 @@ class TestPrepare(base.TestCase):
                 },
                 'upload_data': []
             }, {
+                'image_params': {
+                    'BarImage': 't/bar:1.0',
+                    'BazImage': 't/baz:1.0'
+                },
+                'upload_data': [{
+                    'imagename': 't/bar:1.0',
+                    'push_destination': '192.0.2.1:8787'
+                }, {
+                    'imagename': 't/baz:1.0',
+                    'push_destination': '192.0.2.1:8787'
+                }]
+            },
+            {
                 'image_params': {
                     'BarImage': 't/bar:1.0',
                     'BazImage': 't/baz:1.0'
@@ -1000,6 +1022,7 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role=None,
                 modify_only_with_labels=None,
+                modify_only_with_source=None,
                 modify_vars=None,
                 mirrors={
                     'docker.io': 'http://192.0.2.2/reg/'
@@ -1023,6 +1046,31 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role='add-foo-plugin',
                 modify_only_with_labels=['kolla_version'],
+                modify_only_with_source=None,
+                modify_vars={'foo_version': '1.0.1'},
+                mirrors={
+                    'docker.io': 'http://192.0.2.2/reg/'
+                },
+                registry_credentials={
+                    'docker.io': {'my_username': 'my_password'}
+                },
+                multi_arch=False,
+                lock=mock_lock
+            ),
+            mock.call(
+                excludes=None,
+                includes=['nova', 'neutron'],
+                mapping_args=mapping_args,
+                output_env_file='image_params',
+                output_images_file='upload_data',
+                pull_source=None,
+                push_destination='192.0.2.1:8787',
+                service_filter=None,
+                tag_from_label='bar',
+                append_tag=mock.ANY,
+                modify_role='add-foo-plugin',
+                modify_only_with_labels=None,
+                modify_only_with_source=['kolla', 'tripleo'],
                 modify_vars={'foo_version': '1.0.1'},
                 mirrors={
                     'docker.io': 'http://192.0.2.2/reg/'
@@ -1035,7 +1083,7 @@ class TestPrepare(base.TestCase):
             )
         ])
 
-        mock_im.assert_called_once()
+        self.assertEqual(mock_im.call_count, 2)
 
         self.assertEqual(
             {
@@ -1114,6 +1162,7 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role=None,
                 modify_only_with_labels=None,
+                modify_only_with_source=None,
                 modify_vars=None,
                 mirrors={},
                 registry_credentials=None,
@@ -1133,6 +1182,7 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role='add-foo-plugin',
                 modify_only_with_labels=['kolla_version'],
+                modify_only_with_source=None,
                 modify_vars={'foo_version': '1.0.1'},
                 mirrors={},
                 registry_credentials=None,
@@ -1223,6 +1273,7 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role=None,
                 modify_only_with_labels=None,
+                modify_only_with_source=None,
                 modify_vars=None,
                 mirrors={},
                 registry_credentials=None,
@@ -1242,6 +1293,7 @@ class TestPrepare(base.TestCase):
                 append_tag=mock.ANY,
                 modify_role='add-foo-plugin',
                 modify_only_with_labels=['kolla_version'],
+                modify_only_with_source=None,
                 modify_vars={'foo_version': '1.0.1'},
                 mirrors={},
                 registry_credentials=None,
