@@ -180,6 +180,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
         modify_role = cip_entry.get('modify_role')
         modify_vars = cip_entry.get('modify_vars')
         modify_only_with_labels = cip_entry.get('modify_only_with_labels')
+        modify_only_with_source = cip_entry.get('modify_only_with_source')
         modify_append_tag = cip_entry.get('modify_append_tag',
                                           time.strftime(
                                               '-modified-%Y%m%d%H%M%S'))
@@ -208,6 +209,7 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
             modify_role=modify_role,
             modify_vars=modify_vars,
             modify_only_with_labels=modify_only_with_labels,
+            modify_only_with_source=modify_only_with_source,
             mirrors=mirrors,
             registry_credentials=creds,
             multi_arch=multi_arch,
@@ -249,6 +251,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                              output_images_file=None, tag_from_label=None,
                              append_tag=None, modify_role=None,
                              modify_vars=None, modify_only_with_labels=None,
+                             modify_only_with_source=None,
                              mirrors=None, registry_credentials=None,
                              multi_arch=False, lock=None):
     """Perform container image preparation
@@ -276,6 +279,9 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     :param modify_vars: dict of variables to pass to modify_role
     :param modify_only_with_labels: only modify the container images with the
                                     given labels
+    :param modify_only_with_source: only modify the container images from a
+                                    image_source in the tripleo-common service
+                                    to container mapping (e.g. kolla/tripleo)
     :param mirrors: dict of registry netloc values to mirror urls
     :param registry_credentials: dict of registry netloc values to
                                  authentication credentials for that registry.
@@ -341,9 +347,16 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                 entry['imagename'] = '%s:%s' % (
                     image_no_tag, image_version_tags[image_no_tag])
 
+    images_with_labels = []
     if modify_only_with_labels:
         images_with_labels = uploader.filter_images_with_labels(
             images, modify_only_with_labels)
+
+    images_with_source = []
+    if modify_only_with_source:
+        images_with_source = [i.get('imagename') for i in result
+                              if i.get('image_source', '')
+                              in modify_only_with_source]
 
     params = {}
     modify_append_tag = append_tag
@@ -351,8 +364,10 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
         imagename = entry.get('imagename', '')
         append_tag = ''
         if modify_role and (
-                (not modify_only_with_labels) or
-                imagename in images_with_labels):
+                (not modify_only_with_labels
+                    and not modify_only_with_source) or
+                (imagename in images_with_labels or
+                    imagename in images_with_source)):
             entry['modify_role'] = modify_role
             if modify_append_tag:
                 entry['modify_append_tag'] = modify_append_tag
