@@ -67,7 +67,6 @@
             files:
               - ^container-images/tcib/base/os/designate.*$
               - ^container-images/tcib/base/os/mistral.*$
-              - ^container-images/tcib/base/os/sahara.*$
         - tripleo-ci-centos-8-scenario004-standalone:
             dependencies: *deps_unit_lint
             vars:
