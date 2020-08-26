@@ -34,11 +34,11 @@ workflows:
       collect_puppet_hieradata:
         on-success: check_hieradata
         publish:
-          hieradata: <% env().get('role_merged_configs', {}).values().select($.keys()).flatten().select(regex('^ceph::profile::params::osds$').search($)).where($ != null).toSet() %>
+          hieradata: <% env().get('role_merged_configs', {}).values().where($ != null).where($.get('ceph::profile::params::osds')).first({}).get('ceph::profile::params::osds', {}) %>
       check_hieradata:
         on-success:
         - set_blacklisted_ips: <% not bool($.hieradata) %>
-        - fail(msg=<% 'Ceph deployment stopped, puppet-ceph hieradata found. Convert it into ceph-ansible variables. {0}'.format($.hieradata) %>): <% bool($.hieradata) %>
+        - fail(msg=<% 'Ceph deployment stopped, puppet-ceph hieradata found for ceph::profile::params::osds. Convert it to ceph-ansible variables. {0}'.format($.hieradata) %>): <% bool($.hieradata) %>
       set_blacklisted_ips:
         publish:
           blacklisted_ips: <% env().get('blacklisted_ip_addresses', []) %>
