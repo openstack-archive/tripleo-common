@@ -48,6 +48,12 @@ def init_prepare_defaults(defaults_file):
 
     global CONTAINER_IMAGES_DEFAULTS
     CONTAINER_IMAGES_DEFAULTS = CONTAINER_IMAGE_PREPARE_PARAM[0]['set']
+    # Handle CentOS8 since we shipped train with py2 support, we need
+    # to still support it while handling the namespace switch for
+    # CentOS8 but only for the defaults
+    if (CONTAINER_IMAGES_DEFAULTS['namespace'] == 'docker.io/tripleotrain'
+            and sys.version_info.major > 2):
+        CONTAINER_IMAGES_DEFAULTS['namespace'] += 'centos8'
 
 
 DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
