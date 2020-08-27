@@ -756,22 +756,6 @@ container_images_template:
   - OS::TripleO::Services::Redis
   - OS::TripleO::Services::UndercloudRedis
 
-- imagename: "{{namespace}}/{{name_prefix}}sahara-api{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-  params:
-  - ContainerSaharaApiImage
-  - ContainerSaharaConfigImage
-  services:
-  - OS::TripleO::Services::SaharaApi
-  - OS::TripleO::Services::SaharaEngine
-
-- imagename: "{{namespace}}/{{name_prefix}}sahara-engine{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-  params:
-  - ContainerSaharaEngineImage
-  services:
-  - OS::TripleO::Services::SaharaEngine
-
 - imagename: "{{namespace}}/{{name_prefix}}swift-base{{name_suffix}}:{{tag}}"
   image_source: tripleo
 
