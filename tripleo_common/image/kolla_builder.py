@@ -106,18 +106,11 @@ def build_service_filter(environment, roles_data):
         return None
     enabled_services = get_enabled_services(environment, roles_data)
     resource_registry = environment.get('resource_registry')
-    if not resource_registry:
-        # no way to tell which services are non-containerized, so
-        # filter by enabled services
-        return enabled_services
-
-    for service, env_path in environment.get('resource_registry', {}).items():
-        if service not in enabled_services:
-            continue
-        if env_path == 'OS::Heat::None':
-            enabled_services.remove(service)
-        if '/puppet/services' in env_path:
-            enabled_services.remove(service)
+    if resource_registry:
+        for service in enabled_services.copy():
+            env_path = resource_registry.get(service)
+            if env_path == 'OS::Heat::None':
+                enabled_services.remove(service)
 
     return enabled_services
 

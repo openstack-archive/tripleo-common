@@ -957,13 +957,12 @@ class TestPrepare(base.TestCase):
                 'OS::TripleO::Services::HeatApi',
                 'OS::TripleO::Services::NovaApi',
                 'OS::TripleO::Services::NovaCompute',
+                'OS::TripleO::Services::NeutronApi',
                 'OS::TripleO::Services::Kubernetes::Worker',
                 'OS::TripleO::Services::SkydiveAgent',
             ]),
             kb.build_service_filter({
                 'resource_registry': {
-                    'OS::TripleO::Services::NeutronApi':
-                    '/tht/puppet/services/foo.yaml',
                     'OS::TripleO::Services::NovaApi':
                     '/tht/docker/services/foo.yaml',
                     'OS::TripleO::Services::NovaCompute':
