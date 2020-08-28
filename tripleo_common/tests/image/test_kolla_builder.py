@@ -20,6 +20,7 @@ import os
 import six
 import sys
 import tempfile
+import unittest
 import yaml
 
 from tripleo_common import constants
@@ -217,11 +218,16 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     @mock.patch.object(sys, 'version_info')
     def test_container_images_from_template(self, mock_ver):
         mock_ver.major = 2
+        original = kb.CONTAINER_IMAGES_DEFAULTS
+        defs = copy.deepcopy(original)
+        defs['namespace'] = 'docker.io/tripleotrain'
+        kb.CONTAINER_IMAGES_DEFAULTS = defs
         builder = kb.KollaImageBuilder(self.filelist)
         result = builder.container_images_from_template(
             push_destination='localhost:8787',
             tag='liberty'
         )
+        kb.CONTAINER_IMAGES_DEFAULTS = original
         # template substitution on the container_images_template section should
         # be identical to the container_images section
         container_images = yaml.safe_load(filedata)['container_images']
@@ -236,6 +242,12 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             builder.container_images_template_inputs()
         )
 
+        original = kb.CONTAINER_IMAGES_DEFAULTS
+        defs = copy.deepcopy(original)
+        defs['namespace'] = 'docker.io/tripleotrain'
+        kb.CONTAINER_IMAGES_DEFAULTS = defs
+        result = builder.container_images_template_inputs()
+        kb.CONTAINER_IMAGES_DEFAULTS = original
         self.assertEqual(
             {
                 'namespace': 'docker.io/tripleotrain',
@@ -261,7 +273,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'neutron_driver': 'ovn',
                 'default_tag': True,
             },
-            builder.container_images_template_inputs()
+            result
         )
 
         self.assertEqual(
@@ -352,6 +364,10 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     @mock.patch.object(sys, 'version_info')
     def test_container_images_from_template_filter(self, mock_ver):
         mock_ver.major = 2
+        original = kb.CONTAINER_IMAGES_DEFAULTS
+        defs = copy.deepcopy(original)
+        defs['namespace'] = 'docker.io/tripleotrain'
+        kb.CONTAINER_IMAGES_DEFAULTS = defs
         builder = kb.KollaImageBuilder(self.filelist)
 
         def filter(entry):
@@ -368,6 +384,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             filter=filter,
             tag='liberty'
         )
+        kb.CONTAINER_IMAGES_DEFAULTS = original
         container_images = [{
             'image_source': 'kolla',
             'imagename': 'docker.io/tripleotrain/'
@@ -430,6 +447,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
         self.assertSequenceEqual(container_images, result)
 
+    @unittest.skipIf(sys.version_info.major > 2, "train defaults are py2")
     def test_container_images_yaml_in_sync(self):
         remove_images = [
             {'image_source': 'kolla',
@@ -459,6 +477,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
 
+    @unittest.skipIf(sys.version_info.major > 2, "train defaults are py2")
     def test_container_images_yaml_in_sync_for_odl(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
@@ -486,6 +505,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='odl', remove_images=remove_images)
 
+    @unittest.skipIf(sys.version_info.major > 2, "train defaults are py2")
     def test_container_images_yaml_in_sync_for_ovn(self):
         # remove neutron-server image reference from overcloud_containers.yaml
         remove_images = [
@@ -501,6 +521,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
 
+    @unittest.skipIf(sys.version_info.major > 2, "train defaults are py2")
     def test_container_images_yaml_in_sync_for_rhel(self):
         remove_images = [
             {'image_source': 'kolla',
