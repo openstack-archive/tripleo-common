@@ -20,9 +20,9 @@ parameter_defaults:
       default_tag: True
       rhel_containers: false
 
-      # Substitute neutron images based on driver. Can be 'other', 'ovn' or
-      # 'odl'. This is usually set automatically by detecting if odl or ovn
-      # services are deployed.
+      # Substitute neutron images based on driver. Can be 'other' or 'ovn'.
+      # This is usually set automatically by detecting if ovn services are
+      # deployed.
       neutron_driver: 'ovn'
 
       # Container image name components for Ceph images.
