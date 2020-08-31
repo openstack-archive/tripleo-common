@@ -76,8 +76,9 @@ class TestBuildahBuilder(base.TestCase):
         container_build_path = WORK_DIR + '/' + 'fedora-base'
         logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
         buildah_cmd_build = ['bud', '--format', 'docker',
-                             '--tls-verify=False', '--logfile',
-                             logfile, '-t', dest, container_build_path]
+                             '--tls-verify=False', '--layers',
+                             '--logfile', logfile, '-t',
+                             dest, container_build_path]
         args.extend(buildah_cmd_build)
         bb(WORK_DIR, DEPS).build('fedora-base', container_build_path)
         mock_process.assert_called_once_with(
@@ -94,8 +95,9 @@ class TestBuildahBuilder(base.TestCase):
         container_build_path = WORK_DIR + '/' + 'fedora-base'
         logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
         buildah_cmd_build = ['bud', '--format', 'docker',
-                             '--tls-verify=False', '--logfile',
-                             logfile, '-t', dest, container_build_path]
+                             '--tls-verify=False', '--layers',
+                             '--logfile', logfile, '-t', dest,
+                             container_build_path]
         args.extend(buildah_cmd_build)
         bb(WORK_DIR, DEPS, img_type=False).build('fedora-base',
                                                  container_build_path)
@@ -115,8 +117,9 @@ class TestBuildahBuilder(base.TestCase):
         buildah_cmd_build = ['bud', '--volume', '/etc/pki:/etc/pki',
                              '--volume', '/etc/dir2:/dir2',
                              '--format', 'docker',
-                             '--tls-verify=False', '--logfile',
-                             logfile, '-t', dest, container_build_path]
+                             '--tls-verify=False', '--layers',
+                             '--logfile', logfile, '-t', dest,
+                             container_build_path]
         args.extend(buildah_cmd_build)
         bb(WORK_DIR, DEPS, volumes=VOLS).build('fedora-base',
                                                container_build_path)
