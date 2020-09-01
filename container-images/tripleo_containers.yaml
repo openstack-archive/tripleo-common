@@ -199,10 +199,6 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleou/centos-binary-redis:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-sahara-api:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-sahara-engine:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleou/centos-binary-swift-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleou/centos-binary-swift-account:current-tripleo
