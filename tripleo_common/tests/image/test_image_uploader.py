@@ -800,6 +800,31 @@ class TestBaseImageUploader(base.TestCase):
             auth(url1).headers['Authorization']
         )
 
+    def test_authenticate_basic_auth(self):
+        req = self.requests
+        auth = self.uploader.authenticate
+        url1 = urlparse('docker://myrepo.com/t/nova-api:latest')
+
+        # successful auth requests
+        headers = {
+            'www-authenticate': 'Basic realm="Some Realm"'
+        }
+
+        def req_match(request):
+            resp = requests.Response()
+            resp.headers = headers
+            resp.status_code = 401
+            # if we got sent an user/password, return 200
+            if 'Authorization' in request.headers:
+                resp.status_code = 200
+            return resp
+
+        req.add_matcher(req_match)
+        self.assertEqual(
+            'Basic Zm9vOmJhcg==',
+            auth(url1, username='foo', password='bar').headers['Authorization']
+        )
+
     def test_authenticate_with_no_service(self):
         req = self.requests
         auth = self.uploader.authenticate
