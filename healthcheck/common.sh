@@ -1,5 +1,12 @@
 #!/bin/bash
-set -euxo pipefail
+set -euo pipefail
+: ${HEALTHCHECK_DEBUG:=0}
+if [ $HEALTHCHECK_DEBUG -ne 0 ]; then
+    set -x
+    exec 3>&1
+else
+    exec 3>/dev/null
+fi
 : ${HEALTHCHECK_CURL_MAX_TIME:=10}
 : ${HEALTHCHECK_CURL_USER_AGENT:=curl-healthcheck}
 : ${HEALTHCHECK_CURL_WRITE_OUT:='\n%{http_code} %{remote_ip}:%{remote_port} %{time_total} seconds\n'}

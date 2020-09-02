@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Introduce new HEALTHCHECK_DEBUG variable in order to toggle verbosity,
+    defaults to 0 (no verbosity). Setting it to 1 will activate -x flag,
+    among other things.
