@@ -17,6 +17,7 @@
 import copy
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor as tpe
+import pathlib
 from unittest import mock
 
 from tripleo_common.image.builder.buildah import BuildahBuilder as bb
@@ -70,7 +71,8 @@ R_BROKEN = (set(R_BROKEN_LISTS[0]), set(R_BROKEN_LISTS[1]))
 class TestBuildahBuilder(base.TestCase):
 
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build(self, mock_process):
+    @mock.patch.object(pathlib.Path, 'touch', autospec=True)
+    def test_build(self, mock_touch, mock_process):
         args = copy.copy(BUILDAH_CMD_BASE)
         dest = '127.0.0.1:8787/master/fedora-binary-fedora-base:latest'
         container_build_path = WORK_DIR + '/' + 'fedora-base'
@@ -88,7 +90,8 @@ class TestBuildahBuilder(base.TestCase):
         )
 
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_without_img_type(self, mock_process):
+    @mock.patch.object(pathlib.Path, 'touch', autospec=True)
+    def test_build_without_img_type(self, mock_touch, mock_process):
         args = copy.copy(BUILDAH_CMD_BASE)
         dest = '127.0.0.1:8787/master/fedora-fedora-base:latest'
         container_build_path = WORK_DIR + '/' + 'fedora-base'
@@ -107,7 +110,8 @@ class TestBuildahBuilder(base.TestCase):
         )
 
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_with_volumes(self, mock_process):
+    @mock.patch.object(pathlib.Path, 'touch', autospec=True)
+    def test_build_with_volumes(self, mock_touch, mock_process):
         args = copy.copy(BUILDAH_CMD_BASE)
         dest = '127.0.0.1:8787/master/fedora-binary-fedora-base:latest'
         container_build_path = WORK_DIR + '/' + 'fedora-base'
@@ -204,11 +208,15 @@ class TestBuildahBuilder(base.TestCase):
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_dict_ok(self, mock_build, mock_wait, mock_submit):
+    @mock.patch.object(pathlib.Path, 'touch', autospec=True)
+    def test_build_all_dict_ok(self, mock_touch,
+                               mock_build, mock_wait, mock_submit):
         bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_DICT_CONTAINERS)
 
     @mock.patch.object(tpe, 'submit', autospec=True)
     @mock.patch.object(futures, 'wait', autospec=True, return_value=R_OK)
     @mock.patch.object(process, 'execute', autospec=True)
-    def test_build_all_str_ok(self, mock_build, mock_wait, mock_submit):
+    @mock.patch.object(pathlib.Path, 'touch', autospec=True)
+    def test_build_all_str_ok(self, mock_touch,
+                              mock_build, mock_wait, mock_submit):
         bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_STR_CONTAINER)
