@@ -20,3 +20,4 @@ class ThreadingLock(base.BaseLock):
     def __init__(self):
         self._lock = threading.Lock()
         self._objects = []
+        self._sessions = {}
