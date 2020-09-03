@@ -39,6 +39,7 @@ _SUPPORTED_USERS['ceilometer']='ceilometer 42405 42405 /var/lib/ceilometer kolla
 _SUPPORTED_USERS['cinder']='cinder 42407 42407 /var/lib/cinder kolla'
 _SUPPORTED_USERS['collectd']='collectd 42409 42409 /var/lib/collectd kolla'
 _SUPPORTED_USERS['designate']='designate 42411 42411 /var/lib/designate kolla'
+_SUPPORTED_USERS['ec2api']='ec2api 42466 42466 /var/lib/ec2api kolla'
 _SUPPORTED_USERS['etcd']='etcd 42413 42413 /var/lib/etcd kolla'
 _SUPPORTED_USERS['glance']='glance 42415 42415 /var/lib/glance kolla'
 _SUPPORTED_USERS['gnocchi']='gnocchi 42416 42416 /var/lib/gnocchi kolla'

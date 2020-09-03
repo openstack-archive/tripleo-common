@@ -62,6 +62,8 @@ container_images:
 - image_source: tripleo
   imagename: quay.io/tripleotrain/openstack-designate-worker:current-tripleo
 - image_source: tripleo
+  imagename: quay.io/tripleotrain/openstack-ec2-api:current-tripleo
+- image_source: tripleo
   imagename: quay.io/tripleotrain/openstack-etcd:current-tripleo
 - image_source: tripleo
   imagename: quay.io/tripleotrain/openstack-glance-api:current-tripleo
