@@ -32,6 +32,9 @@ import tempfile
 import tenacity
 import yaml
 
+from datetime import datetime
+from dateutil.parser import parse as dt_parse
+from dateutil.tz import tzlocal
 from oslo_concurrency import processutils
 from oslo_log import log as logging
 from tripleo_common.actions import ansible
@@ -299,6 +302,69 @@ class RegistrySessionHelper(object):
         RegistrySessionHelper.check_status(session=request_session,
                                            request=request_response)
         return request_response
+
+    @staticmethod
+    def get_cached_bearer_token(lock=None, scope=None):
+        if not lock:
+            return None
+        with lock.get_lock():
+            data = lock.sessions().get(scope)
+            if data and data.get('issued_at'):
+                token_time = dt_parse(data.get('issued_at'))
+                now = datetime.now(tzlocal())
+                if (now - token_time).seconds < data.get('expires_in'):
+                    return data['token']
+        return None
+
+    @staticmethod
+    def get_bearer_token(session, lock=None, username=None, password=None,
+                         realm=None, service=None, scope=None):
+        cached_token = RegistrySessionHelper.get_cached_bearer_token(lock,
+                                                                     scope)
+        if cached_token:
+            return cached_token
+
+        auth = None
+        token_param = {}
+        if service:
+            token_param['service'] = service
+        if scope:
+            token_param['scope'] = scope
+        if username:
+            auth = requests.auth.HTTPBasicAuth(username, password)
+
+        auth_req = session.get(realm, params=token_param, auth=auth,
+                               timeout=30)
+        auth_req.raise_for_status()
+        resp = auth_req.json()
+        if lock and 'token' in resp:
+            with lock.get_lock():
+                lock.sessions().update({scope: resp})
+        elif lock and 'token' not in resp:
+            raise Exception('Invalid auth response, no token provide')
+        hash_request_id = hashlib.sha1(str(auth_req.url).encode())
+        LOG.debug(
+            'Session authenticated: id {}'.format(
+                hash_request_id.hexdigest()
+            )
+        )
+        return resp['token']
+
+    @staticmethod
+    def parse_www_authenticate(header):
+        auth_type = None
+        auth_type_match = re.search('^([A-Za-z]*) ', header)
+        if auth_type_match:
+            auth_type = auth_type_match.group(1)
+        if not auth_type:
+            return (None, None, None)
+        realm = None
+        service = None
+        if 'realm=' in header:
+            realm = re.search('realm="(.*?)"', header).group(1)
+        if 'service=' in header:
+            service = re.search('service="(.*?)"', header).group(1)
+        return (auth_type, realm, service)
 
     @staticmethod
     @tenacity.retry(  # Retry up to 5 times with longer time for rate limit
@@ -669,6 +735,8 @@ class BaseImageUploader(object):
                      session=None):
         netloc = image_url.netloc
         image, tag = self._image_tag_from_url(image_url)
+        scope = 'repository:%s:pull' % image[1:]
+
         self.is_insecure_registry(registry_host=netloc)
         url = self._build_url(image_url, path='/')
         verify = (netloc not in self.no_verify_registries)
@@ -677,6 +745,14 @@ class BaseImageUploader(object):
         else:
             session.headers.pop('Authorization', None)
             session.verify = verify
+
+        cached_token = None
+        if getattr(self, 'lock', None):
+            cached_token = RegistrySessionHelper.\
+                get_cached_bearer_token(self.lock, scope)
+
+        if cached_token:
+            session.headers['Authorization'] = 'Bearer %s' % cached_token
 
         r = session.get(url, timeout=30)
         LOG.debug('%s status code %s' % (url, r.status_code))
@@ -692,22 +768,22 @@ class BaseImageUploader(object):
         www_auth = r.headers['www-authenticate']
         token_param = {}
 
-        if www_auth.startswith('Bearer '):
-            LOG.debug('Using bearer token auth')
-            realm = re.search('realm="(.*?)"', www_auth).group(1)
-            if 'service=' in www_auth:
-                token_param['service'] = re.search(
-                    'service="(.*?)"', www_auth).group(1)
-            token_param['scope'] = 'repository:%s:pull' % image[1:]
+        (auth_type, realm, service) = \
+            RegistrySessionHelper.parse_www_authenticate(www_auth)
 
-            if username:
-                auth = requests_auth.HTTPBasicAuth(username, password)
-            LOG.debug('Token parameters: params {}'.format(token_param))
-            rauth = session.get(realm, params=token_param, auth=auth,
-                                timeout=30)
-            rauth.raise_for_status()
-            auth_header = 'Bearer %s' % rauth.json()['token']
-        elif www_auth.startswith('Basic '):
+        if auth_type and auth_type.lower() == 'bearer':
+            LOG.debug('Using bearer token auth')
+            if getattr(self, 'lock', None):
+                lock = self.lock
+            else:
+                lock = None
+            token = RegistrySessionHelper.get_bearer_token(session, lock=lock,
+                                                           username=username,
+                                                           password=password,
+                                                           realm=realm,
+                                                           service=service,
+                                                           scope=scope)
+        elif auth_type and auth_type.lower() == 'basic':
             LOG.debug('Using basic auth')
             if not username or not password:
                 raise Exception('Authentication credentials required for '
@@ -715,19 +791,20 @@ class BaseImageUploader(object):
             auth = requests_auth.HTTPBasicAuth(username, password)
             rauth = session.get(url, params=token_param, auth=auth, timeout=30)
             rauth.raise_for_status()
-            auth_header = (
-                'Basic %s' % base64.b64encode(
+            token = (
+                base64.b64encode(
                     bytes(username + ':' + password, 'utf-8')).decode('ascii')
+            )
+            hash_request_id = hashlib.sha1(str(rauth.url).encode())
+            LOG.debug(
+                'Session authenticated: id {}'.format(
+                    hash_request_id.hexdigest()
+                )
             )
         else:
             raise ImageUploaderException(
                 'Unknown www-authenticate value: %s' % www_auth)
-        hash_request_id = hashlib.sha1(str(rauth.url).encode())
-        LOG.debug(
-            'Session authenticated: id {}'.format(
-                hash_request_id.hexdigest()
-            )
-        )
+        auth_header = '%s %s' % (auth_type, token)
         session.headers['Authorization'] = auth_header
 
         setattr(session, 'reauthenticate', self.authenticate)

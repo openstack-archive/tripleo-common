@@ -19,3 +19,6 @@ class BaseLock(object):
 
     def objects(self):
         return self._objects
+
+    def sessions(self):
+        return self._sessions
