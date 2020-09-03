@@ -28,3 +28,4 @@ class ProcessLock(base.BaseLock):
     def __init__(self):
         self._lock = self._mgr.Lock()
         self._objects = self._mgr.list()
+        self._sessions = self._mgr.dict()
