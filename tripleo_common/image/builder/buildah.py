@@ -16,6 +16,7 @@
 
 from concurrent import futures
 import os
+import pathlib
 import six
 import tenacity
 
@@ -138,6 +139,12 @@ class BuildahBuilder(base.BaseBuilder):
         # TODO(emilien): Stop ignoring TLS. The deployer should either secure
         # the registry or add it to insecure_registries.
         logfile = container_build_path + '/' + container_name + '-build.log'
+
+        # TODO(ramishra) Hack to make the logfile readable by current user,
+        # as we're running buildah as root. This would be removed once we
+        # move to rootless buildah.
+        pathlib.Path(logfile).touch()
+
         bud_args = ['bud']
         for v in self.volumes:
             bud_args.extend(['--volume', v])
