@@ -859,6 +859,86 @@ class TestBaseImageUploader(base.TestCase):
             build(url1, '/t/nova-api/blobs/asdf1234')
         )
 
+    def test_inspect_default_tag(self):
+        req = self.requests
+        session = requests.Session()
+        session.headers['Authorization'] = 'Bearer asdf1234'
+        inspect = image_uploader.BaseImageUploader._inspect
+
+        url1 = urlparse('docker://docker.io/t/nova-api:latest')
+
+        manifest_resp = {
+            'schemaVersion': 2,
+            'config': {
+                'mediaType': 'text/html',
+                'digest': 'abcdef'
+            },
+            'layers': [
+                {'digest': 'aaa'},
+                {'digest': 'bbb'},
+                {'digest': 'ccc'},
+            ]
+        }
+        manifest_str = json.dumps(manifest_resp, indent=3)
+        manifest_headers = {'Docker-Content-Digest': 'eeeeee'}
+        tags_resp = {'tags': ['one', 'two']}
+        config_resp = {
+            'created': '2018-10-02T11:13:45.567533229Z',
+            'docker_version': '1.13.1',
+            'config': {
+                'Labels': {
+                    'build-date': '20181002',
+                    'build_id': '1538477701',
+                    'kolla_version': '7.0.0'
+                }
+            },
+            'architecture': 'amd64',
+            'os': 'linux',
+        }
+
+        req.get('https://registry-1.docker.io/v2/t/nova-api/tags/list',
+                json=tags_resp)
+        req.get('https://registry-1.docker.io/v2/t/nova-api/blobs/abcdef',
+                json=config_resp)
+        req.get('https://registry-1.docker.io/v2/t/nova-api/manifests/two',
+                text=manifest_str, headers=manifest_headers)
+
+        # test default_tag=True
+        self.assertEqual(
+            {
+                'Architecture': 'amd64',
+                'Created': '2018-10-02T11:13:45.567533229Z',
+                'Digest': 'eeeeee',
+                'DockerVersion': '1.13.1',
+                'Labels': {
+                    'build-date': '20181002',
+                    'build_id': '1538477701',
+                    'kolla_version': '7.0.0'
+                },
+                'Layers': ['aaa', 'bbb', 'ccc'],
+                'Name': 'docker.io/t/nova-api',
+                'Os': 'linux',
+                'RepoTags': ['one', 'two'],
+                'Tag': 'latest'
+            },
+            inspect(url1, session=session, default_tag=True)
+        )
+
+        # test default_tag=False
+        req.get('https://registry-1.docker.io/v2/t/nova-api/manifests/latest',
+                status_code=404)
+        self.assertRaises(ImageNotFoundException, inspect, url1,
+                          session=session,
+                          default_tag=False)
+
+        # test default_tag=True, but no tags returned
+        tags_resp = {'tags': []}
+        req.get('https://registry-1.docker.io/v2/t/nova-api/tags/list',
+                json=tags_resp)
+        self.assertRaises(ImageNotFoundException, inspect, url1,
+                          session=session,
+                          default_tag=True)
+
     def test_inspect(self):
         req = self.requests
         session = requests.Session()
