@@ -886,7 +886,11 @@ class BaseImageUploader(object):
         tags_r = RegistrySessionHelper.get(session, tags_url, timeout=30)
         tags = tags_r.json()['tags']
         if default_tag and tag not in tags:
-            parts['tag'] = tags[-1]
+            if tags:
+                parts['tag'] = tags[-1]
+            else:
+                raise ImageNotFoundException('Not found image: %s' %
+                                             image_url.geturl())
 
         manifest_url = cls._build_url(
             image_url, CALL_MANIFEST % parts
