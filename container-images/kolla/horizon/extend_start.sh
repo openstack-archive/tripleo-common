@@ -78,14 +78,6 @@ function config_octavia_dashboard {
         "${SITE_PACKAGES}/openstack_dashboard/local/enabled/_1482_project_load_balancer_panel.py"
 }
 
-function config_sahara_dashboard {
-    for file in ${SITE_PACKAGES}/sahara_dashboard/enabled/_*[^__].py; do
-        config_dashboard "${ENABLE_SAHARA}" \
-            "${SITE_PACKAGES}/sahara_dashboard/enabled/${file##*/}" \
-            "${SITE_PACKAGES}/openstack_dashboard/local/enabled/${file##*/}"
-    done
-}
-
 # Regenerate the compressed javascript and css if any configuration files have
 # changed.  Use a static modification date when generating the tarball
 # so that we only trigger on content changes.
@@ -111,7 +103,6 @@ config_heat_dashboard
 config_ironic_dashboard
 config_manila_ui
 config_octavia_dashboard
-config_sahara_dashboard
 
 if settings_changed; then
     ${MANAGE_PY} collectstatic --noinput --clear
