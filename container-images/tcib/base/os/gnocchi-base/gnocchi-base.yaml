@@ -4,7 +4,7 @@ tcib_actions:
 tcib_packages:
   common:
   - gnocchi-common
-  - python3-cradox
+  - python3-rados
   - python3-eventlet
   - httpd
   - librados2
