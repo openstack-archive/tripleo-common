@@ -272,7 +272,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
 
         expected = {
             'namespace': '192.0.2.0:5000/tripleomaster',
-            'ceph_namespace': 'docker.io/ceph',
+            'ceph_namespace': 'quay.ceph.io/ceph-ci',
             'ceph_image': 'ceph-daemon',
             'ceph_tag': 'latest',
             'name_prefix': 'prefix-',
@@ -302,7 +302,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             expected,
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleomaster',
-                ceph_namespace='docker.io/ceph',
+                ceph_namespace='quay.ceph.io/ceph-ci',
                 ceph_image='ceph-daemon',
                 ceph_tag='latest',
                 name_prefix='prefix',

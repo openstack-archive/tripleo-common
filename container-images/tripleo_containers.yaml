@@ -211,15 +211,15 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleou/centos-binary-zaqar-wsgi:current-tripleo
   image_source: tripleo
-- imagename: docker.io/ceph/daemon:v4.0.12-stable-4.0-nautilus-centos-7-x86_64
+- imagename: quay.ceph.io/ceph-ci/daemon:v4.0.13-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
-- imagename: docker.io/prom/prometheus:v2.7.2
+- imagename: quay.io/prometheus/prometheus:v2.7.2
   image_source: prom
-- imagename: docker.io/prom/alertmanager:v0.16.2
+- imagename: quay.io/prometheus/alertmanager:v0.16.2
   image_source: prom
-- imagename: docker.io/prom/node-exporter:v0.17.0
+- imagename: quay.io/prometheus/node-exporter:v0.17.0
   image_source: prom
-- imagename: docker.io/grafana/grafana:5.4.3
+- imagename: quay.io/app-sre/grafana:5.4.3
   image_source: grafana
 - imagename: docker.io/tripleou/centos-binary-tempest:current-tripleo
   image_source: tripleo
