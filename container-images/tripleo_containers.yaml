@@ -1,10 +1,4 @@
 container_images:
-- imagename: docker.io/tripleomaster/openstack-base:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-os:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-aodh-base:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-aodh-api:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-aodh-evaluator:current-tripleo
@@ -13,15 +7,11 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-aodh-notifier:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-barbican-base:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-barbican-api:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-barbican-keystone-listener:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-barbican-worker:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-ceilometer-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-ceilometer-central:current-tripleo
   image_source: tripleo
@@ -30,8 +20,6 @@ container_images:
 - imagename: docker.io/tripleomaster/openstack-ceilometer-notification:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-ceilometer-ipmi:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-cinder-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-cinder-api:current-tripleo
   image_source: tripleo
@@ -44,8 +32,6 @@ container_images:
 - imagename: docker.io/tripleomaster/openstack-collectd:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-cron:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-designate-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-designate-api:current-tripleo
   image_source: tripleo
@@ -65,8 +51,6 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-glance-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-gnocchi-base:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-gnocchi-api:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-gnocchi-metricd:current-tripleo
@@ -74,8 +58,6 @@ container_images:
 - imagename: docker.io/tripleomaster/openstack-gnocchi-statsd:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-haproxy:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-heat-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-heat-all:current-tripleo
   image_source: tripleo
@@ -86,8 +68,6 @@ container_images:
 - imagename: docker.io/tripleomaster/openstack-heat-engine:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-horizon:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-ironic-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-ironic-api:current-tripleo
   image_source: tripleo
@@ -105,8 +85,6 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-keystone:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-manila-base:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-manila-api:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-manila-scheduler:current-tripleo
@@ -117,8 +95,6 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-memcached:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-mistral-base:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-mistral-api:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-mistral-engine:current-tripleo
@@ -128,10 +104,6 @@ container_images:
 - imagename: docker.io/tripleomaster/openstack-mistral-event-engine:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-multipathd:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-neutron-agent-base:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-neutron-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-neutron-dhcp-agent:current-tripleo
   image_source: tripleo
@@ -149,8 +121,6 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-neutron-metadata-agent-ovn:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-nova-base:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-nova-api:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-nova-compute-ironic:current-tripleo
@@ -165,13 +135,9 @@ container_images:
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-nova-scheduler:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-novajoin-base:current-tripleo
-  image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-novajoin-notifier:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-novajoin-server:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-octavia-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-octavia-api:current-tripleo
   image_source: tripleo
@@ -180,8 +146,6 @@ container_images:
 - imagename: docker.io/tripleomaster/openstack-octavia-housekeeping:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-octavia-worker:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-ovn-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-ovn-controller:current-tripleo
   image_source: tripleo
@@ -198,8 +162,6 @@ container_images:
 - imagename: docker.io/tripleomaster/openstack-rabbitmq:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-redis:current-tripleo
-  image_source: tripleo
-- imagename: docker.io/tripleomaster/openstack-swift-base:current-tripleo
   image_source: tripleo
 - imagename: docker.io/tripleomaster/openstack-swift-account:current-tripleo
   image_source: tripleo
