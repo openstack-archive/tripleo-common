@@ -174,76 +174,157 @@ class BuildahBuilder(base.BaseBuilder):
         process.execute(*args, run_as_root=False, use_standard_locale=True)
 
     def build_all(self, deps=None):
-        """Function that browse containers dependencies and build them.
+        """Build all containers.
+
+        This function will thread the build process allowing it to complete
+        in the shortest possible time.
 
         :params deps: Dictionary defining the container images
-            dependencies.
+                      dependencies.
         """
 
         if deps is None:
             deps = self.deps
 
-        if isinstance(deps, (list,)):
-            # Only a list of images can be multi-processed because they
-            # are the last layer to build. Otherwise we could have issues
-            # to build multiple times the same layer.
-            # Number of workers will be based on CPU count with a min 2,
-            # max 8. Concurrency in Buildah isn't that great so it's not
-            # useful to go above 8.
-            workers = min(8, max(2, processutils.get_worker_count()))
-            with futures.ThreadPoolExecutor(max_workers=workers) as executor:
-                future_to_build = {executor.submit(self.build_all,
-                                   container): container for container in
-                                   deps}
-                done, not_done = futures.wait(
-                    future_to_build,
-                    timeout=self.build_timeout,
-                    return_when=futures.FIRST_EXCEPTION
-                )
-            # NOTE(cloudnull): Once the job has been completed all completed
-            #                  jobs are checked for exceptions. If any jobs
-            #                  failed a SystemError will be raised using the
-            #                  exception information. If any job was loaded
-            #                  but not executed a SystemError will be raised.
-            exceptions = list()
-            for job in done:
-                if job._exception:
-                    exceptions.append(
-                        "\nException information: {exception}".format(
-                            exception=job._exception
-                        )
-                    )
+        container_deps = self._generate_deps(deps=deps, containers=list())
+        LOG.debug("All container deps: {}".format(container_deps))
+        for containers in container_deps:
+            LOG.info("Processing containers: {}".format(containers))
+            if isinstance(deps, (list,)):
+                self._multi_build(containers=containers)
             else:
-                if exceptions:
-                    raise RuntimeError(
-                        '\nThe following errors were detected during '
-                        'container build(s):\n{exceptions}'.format(
-                            exceptions='\n'.join(exceptions)
-                        )
-                    )
+                self._multi_build(containers=[containers])
 
-                if not_done:
-                    error_msg = ('The following jobs were '
-                                 'incomplete: {}'.format(
-                                     [future_to_build[job] for job
-                                         in not_done]))
+    def _generate_deps(self, deps, containers, prio_list=None):
+        """Browse containers dependencies and return an an array.
 
-                    jobs_with_exceptions = [{
-                        'container': future_to_build[job],
-                        'exception': job._exception}
-                        for job in not_done if job._exception]
-                    if jobs_with_exceptions:
-                        for job_with_exception in jobs_with_exceptions:
-                            error_msg = error_msg + os.linesep + (
-                                "%(container)s raised the following "
-                                "exception: %(exception)s" %
-                                job_with_exception)
+        When the dependencies are generated they're captured in an array,
+        which contains additional arrays. This data structure is later
+        used in a futures queue.
 
-                    raise SystemError(error_msg)
+        :params deps: Dictionary defining the container images
+                      dependencies.
+        :params containers: List used to keep track of dependent containers.
+        :params prio_list: List used to keep track of nested dependencies.
+        :returns: list
+        """
+
+        LOG.debug("Process deps: {}".format(deps))
+        if isinstance(deps, (six.string_types,)):
+            if prio_list:
+                prio_list.append(deps)
+            else:
+                containers.append([deps])
 
         elif isinstance(deps, (dict,)):
-            for container in deps:
-                self._generate_container(container)
-                self.build_all(deps.get(container))
-        elif isinstance(deps, six.string_types):
-            self._generate_container(deps)
+            parents = list(deps.keys())
+            if prio_list:
+                prio_list.extend(parents)
+            else:
+                containers.append(parents)
+            for value in deps.values():
+                LOG.debug("Recursing with: {}".format(value))
+                self._generate_deps(
+                    deps=value,
+                    containers=containers
+                )
+
+        elif isinstance(deps, (list,)):
+            dep_list = list()
+            dep_rehash_list = list()
+            for item in deps:
+                if isinstance(item, (six.string_types,)):
+                    dep_list.append(item)
+                else:
+                    dep_rehash_list.append(item)
+
+            if dep_list:
+                containers.append(dep_list)
+
+            for item in dep_rehash_list:
+                LOG.debug("Recursing with: {}".format(item))
+                self._generate_deps(
+                    deps=item,
+                    containers=containers,
+                    prio_list=dep_list
+                )
+
+        LOG.debug("Constructed containers: {}".format(containers))
+        return containers
+
+    def _multi_build(self, containers):
+        """Build mutliple containers.
+
+        Multi-thread the build process for all containers defined within
+        the containers list.
+
+        :params containers: List defining the container images.
+        """
+
+        # Workers will use the processor core count with a max of 8. If
+        # the containers array has a length less-than the expected processor
+        # count, the workers will be adjusted to meet the expectations of the
+        # work being processed.
+        workers = min(
+            min(
+                8,
+                max(
+                    2,
+                    processutils.get_worker_count()
+                )
+            ),
+            len(containers)
+        )
+        with futures.ThreadPoolExecutor(max_workers=workers) as executor:
+            future_to_build = {
+                executor.submit(
+                    self._generate_container, container_name
+                ): container_name for container_name in containers
+            }
+            done, not_done = futures.wait(
+                future_to_build,
+                timeout=self.build_timeout,
+                return_when=futures.FIRST_EXCEPTION
+            )
+
+        # NOTE(cloudnull): Once the job has been completed all completed
+        #                  jobs are checked for exceptions. If any jobs
+        #                  failed a SystemError will be raised using the
+        #                  exception information. If any job was loaded
+        #                  but not executed a SystemError will be raised.
+        exceptions = list()
+        for job in done:
+            if job._exception:
+                exceptions.append(
+                    "\nException information: {exception}".format(
+                        exception=job._exception
+                    )
+                )
+        else:
+            if exceptions:
+                raise RuntimeError(
+                    '\nThe following errors were detected during '
+                    'container build(s):\n{exceptions}'.format(
+                        exceptions='\n'.join(exceptions)
+                    )
+                )
+
+            if not_done:
+                error_msg = (
+                    'The following jobs were incomplete: {}'.format(
+                        [future_to_build[job] for job in not_done]
+                    )
+                )
+
+                jobs_with_exceptions = [{
+                    'container': future_to_build[job],
+                    'exception': job._exception}
+                    for job in not_done if job._exception]
+                if jobs_with_exceptions:
+                    for job_with_exception in jobs_with_exceptions:
+                        error_msg = error_msg + os.linesep + (
+                            "%(container)s raised the following "
+                            "exception: %(exception)s" %
+                            job_with_exception)
+
+                raise SystemError(error_msg)
