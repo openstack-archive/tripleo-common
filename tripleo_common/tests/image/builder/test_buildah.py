@@ -37,6 +37,39 @@ BUILD_ALL_DICT_CONTAINERS = {
 }
 BUILD_ALL_STR_CONTAINER = 'container1'
 
+PREPROCESSED_CONTAINER_DEPS = [
+    {
+        "image0": [
+            "image1",
+            {
+                "image2": [
+                    {
+                        "image3": [
+                            "image4",
+                            "image5"
+                        ]
+                    },
+                    "image8",
+                    {
+                        "image6": [
+                            "image7"
+                        ]
+                    },
+                    "image9"
+                ]
+            },
+            {
+                "image10": [
+                    "image11",
+                    "image12"
+                ]
+            },
+            "image13",
+            "image14"
+        ]
+    }
+]
+
 
 class ThreadPoolExecutorReturn(object):
     _exception = None
@@ -223,3 +256,49 @@ class TestBuildahBuilder(base.TestCase):
     def test_build_all_str_ok(self, mock_touch,
                               mock_build, mock_wait, mock_submit):
         bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_STR_CONTAINER)
+
+    def test_dep_processing(self):
+        containers = list()
+        self.assertEqual(
+            bb(WORK_DIR, DEPS)._generate_deps(
+                deps=PREPROCESSED_CONTAINER_DEPS,
+                containers=containers
+            ),
+            [
+                [
+                    'image0'
+                ],
+                [
+                    'image1',
+                    'image13',
+                    'image14',
+                    'image2',
+                    'image10'
+                ],
+                [
+                    'image8',
+                    'image9',
+                    'image3',
+                    'image6'
+                ],
+                [
+                    'image4',
+                    'image5'
+                ],
+                [
+                    'image7'
+                ],
+                [
+                    'image11',
+                    'image12'
+                ]
+            ]
+        )
+
+    @mock.patch(
+        'tripleo_common.image.builder.buildah.BuildahBuilder._multi_build',
+        autospec=True
+    )
+    def test_build_all_multi_build(self, mock_multi_build):
+        bb(WORK_DIR, DEPS).build_all(deps=BUILD_ALL_LIST_CONTAINERS)
+        self.assertTrue(mock_multi_build.called)
