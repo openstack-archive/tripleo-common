@@ -115,7 +115,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST': 'tripleo,profile_tasks',
             'ANSIBLE_STDOUT_CALLBACK': 'tripleo',
-            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '0',
+            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
         python_version = sys.version_info.major
         ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
@@ -155,7 +155,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST': 'tripleo,profile_tasks',
             'ANSIBLE_STDOUT_CALLBACK': 'tripleo',
-            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '0',
+            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
         python_version = sys.version_info.major
         ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
@@ -195,7 +195,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST': 'tripleo,profile_tasks',
             'ANSIBLE_STDOUT_CALLBACK': 'tripleo',
-            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '0',
+            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
         python_version = sys.version_info.major
         ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
