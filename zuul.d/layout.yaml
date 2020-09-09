@@ -25,6 +25,11 @@
             dependencies: *deps_unit_lint
             vars:
               build_container_images: true
+        - tripleo-build-containers-ubi-8:
+            dependencies: *deps_unit_lint
+            files:
+              - ^container-images/.*$
+              - ^tripleo_common/image/builder/.*$
         - tripleo-ci-centos-8-scenario000-multinode-oooq-container-updates:
             dependencies: *deps_unit_lint
             files:
