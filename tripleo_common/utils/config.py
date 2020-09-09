@@ -234,12 +234,18 @@ class Config(object):
                     server_deployment_dir, "NetworkConfig")
                 network_config_role_path = os.path.join(
                     config_dir, server_roles[server], "NetworkConfig")
-                s_config = self.client.software_configs.get(config)
-                if getattr(s_config, 'config', ''):
+                # check if it's actual config or heat config_id
+                # this will be dropped once we stop using SoftwareConfig
+                if isinstance(config, dict):
+                    str_config = json.dumps(config)
+                else:
+                    str_config = self.client.software_configs.get(
+                        config).config
+                if str_config:
                     with self._open_file(network_config_path) as f:
-                        f.write(s_config.config)
+                        f.write(str_config)
                     with self._open_file(network_config_role_path) as f:
-                        f.write(s_config.config)
+                        f.write(str_config)
             else:
                 self.log.warning('Server with id %s is ignored from config '
                                  '(Possibly blacklisted)' % server)
