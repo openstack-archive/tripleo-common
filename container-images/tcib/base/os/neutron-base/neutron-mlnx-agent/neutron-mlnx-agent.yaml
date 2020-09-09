@@ -1,0 +1,8 @@
+tcib_actions:
+- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+tcib_packages:
+  common:
+  - python3-networking-mlnx
+  - python3-libvirt
+  - python3-ethtool
+tcib_user: neutron
