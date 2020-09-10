@@ -103,7 +103,8 @@ def write_default_ansible_cfg(work_dir,
                     datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
         os.rename(log_path, new_path)
 
-    config.set('defaults', 'forks', str(multiprocessing.cpu_count() * 10))
+    config.set('defaults', 'forks', str(min(
+        multiprocessing.cpu_count() * 4, 100)))
     config.set('defaults', 'timeout', '30')
     config.set('defaults', 'gather_timeout', '30')
 
