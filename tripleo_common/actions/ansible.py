@@ -339,8 +339,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
         python_version = sys.version_info.major
         ansible_playbook_cmd = "ansible-playbook-{}".format(python_version)
 
-        if 0 < self.verbosity < 6:
-            verbosity_option = '-' + ('v' * self.verbosity)
+        if 1 < self.verbosity < 6:
+            verbosity_option = '-' + ('v' * (self.verbosity - 1))
             command = [ansible_playbook_cmd, verbosity_option,
                        self.playbook]
         else:
