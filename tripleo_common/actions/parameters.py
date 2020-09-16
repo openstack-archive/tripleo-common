@@ -13,7 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import json
 import logging
 
 from mistral_lib import actions
@@ -24,7 +23,6 @@ from tripleo_common import constants
 from tripleo_common import exception
 from tripleo_common.utils import parameters as parameter_utils
 from tripleo_common.utils import stack_parameters as stack_param_utils
-from tripleo_common.utils import template as template_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -155,79 +153,11 @@ class GetNetworkConfigAction(base.TripleOAction):
         self.role_name = role_name
 
     def run(self, context):
-        swift = self.get_object_client(context)
-        heat = self.get_orchestration_client(context)
-
-        processed_data = template_utils.process_templates(
-            swift, heat, container=self.container
-        )
-
-        # Default temporary value is used when no user input for any
-        # interface routes for the role networks to find network config.
-        role_networks = processed_data['template'].get('resources', {}).get(
-            self.role_name + 'GroupVars', {}).get('properties', {}).get(
-                'value', {}).get('role_networks', [])
-        for nw in role_networks:
-            rt = nw + 'InterfaceRoutes'
-            if rt not in processed_data['environment']['parameter_defaults']:
-                processed_data['environment']['parameter_defaults'][rt] = [[]]
-
-        # stacks.preview method raises validation message if stack is
-        # already deployed. here renaming container to get preview data.
-        container_temp = self.container + "-TEMP"
-        fields = {
-            'template': processed_data['template'],
-            'files': processed_data['files'],
-            'environment': processed_data['environment'],
-            'stack_name': container_temp,
-        }
-        orc = self.get_orchestration_client(context)
-        preview_data = orc.stacks.preview(**fields)
         try:
-            result = self.get_network_config(preview_data, container_temp,
-                                             self.role_name)
-            return result
-        except exception.DeriveParamsError as err:
-            LOG.exception('Derive Params Error: %s' % err)
-            return actions.Result(error=str(err))
-
-    def get_network_config(self, preview_data, stack_name, role_name):
-        result = None
-        if preview_data:
-            for res in preview_data.resources:
-                net_script = self.process_preview_list(res,
-                                                       stack_name,
-                                                       role_name)
-                if net_script:
-                    ns_len = len(net_script)
-                    start_index = (net_script.find(
-                        "echo '{\"network_config\"", 0, ns_len) + 6)
-                    # In file network/scripts/run-os-net-config.sh
-                    end_str = "' > /etc/os-net-config/config.json"
-                    end_index = net_script.find(end_str, start_index, ns_len)
-                    if (end_index > start_index):
-                        net_config = net_script[start_index:end_index]
-                        if net_config:
-                            result = json.loads(net_config)
-                    break
-
-        if not result:
-            err_msg = ("Unable to determine network config for role '%s'."
-                       % self.role_name)
-            raise exception.DeriveParamsError(err_msg)
-
-        return result
-
-    def process_preview_list(self, res, stack_name, role_name):
-        if type(res) == list:
-            for item in res:
-                out = self.process_preview_list(item, stack_name, role_name)
-                if out:
-                    return out
-        elif type(res) == dict:
-            res_stack_name = stack_name + '-' + role_name
-            if res['resource_name'] == "OsNetConfigImpl" and \
-                res['resource_identity'] and \
-                res_stack_name in res['resource_identity']['stack_name']:
-                return res['properties']['config']
-        return None
+            return stack_param_utils.get_network_configs(
+                self.get_baremetal_client(context),
+                self.get_compute_client(context),
+                self.container, self.role_name)
+        except Exception as err:
+            LOG.exception(six.text_type(err))
+            return actions.Result(six.text_type(err))

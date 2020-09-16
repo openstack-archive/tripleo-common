@@ -680,3 +680,182 @@ class StackParametersTest(base.TestCase):
                              "pcmk_host_list": "compute_name_5"
                              }
                          })
+
+    @mock.patch('tripleo_common.utils.template.process_templates')
+    def test_run_valid_network_config(self, mock_process_templates):
+        swift = mock.MagicMock(url="http://test.com")
+
+        mock_env = {
+            'template': {},
+            'files': {},
+            'environment': [{'path': 'environments/test.yaml'}]
+        }
+
+        mock_process_templates.return_value = mock_env
+        mock_heat = mock.MagicMock()
+
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": "echo \'{\"network_config\": {}}\'"
+                           " > /etc/os-net-config/config.json"}
+            }])
+
+        mock_heat.stacks.get.return_value = mock.Mock(
+            stack_name="overcloud-TEMP")
+
+        expected = {"network_config": {}}
+        # Test
+        result = stack_parameters.get_network_configs(
+            swift, mock_heat, container='overcloud', role_name='Compute')
+        self.assertEqual(expected, result)
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment=[{'path': 'environments/test.yaml'}],
+            files={},
+            template={},
+            stack_name='overcloud-TEMP',
+        )
+
+    @mock.patch('tripleo_common.utils.template.process_templates')
+    def test_run_invalid_network_config(self, mock_process_templates):
+        swift = mock.MagicMock(url="http://test.com")
+
+        mock_env = {
+            'template': {},
+            'files': {},
+            'environment': [{'path': 'environments/test.yaml'}]
+        }
+
+        mock_process_templates.return_value = mock_env
+        mock_heat = mock.MagicMock()
+
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": ""}
+            }])
+
+        mock_heat.stacks.get.return_value = mock.Mock(
+            stack_name="overcloud-TEMP")
+
+        # Test
+        self.assertRaises(RuntimeError,
+                          stack_parameters.get_network_configs, swift,
+                          mock_heat, container='overcloud',
+                          role_name='Compute')
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment=[{'path': 'environments/test.yaml'}],
+            files={},
+            template={},
+            stack_name='overcloud-TEMP',
+        )
+
+    @mock.patch('tripleo_common.utils.template.process_templates')
+    def test_run_valid_network_config_with_no_if_routes_inputs(
+        self, mock_process_templates):
+        swift = mock.MagicMock(url="http://test.com")
+
+        mock_env = {
+            'template': {
+                'resources': {
+                    'ComputeGroupVars': {
+                        'properties': {
+                            'value': {
+                                'role_networks': ['InternalApi',
+                                                  'Storage']}
+                        }
+                    }
+                }
+            },
+            'files': {},
+            'environment': {'parameter_defaults': {}}
+        }
+
+        mock_process_templates.return_value = mock_env
+        mock_heat = mock.MagicMock()
+
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": "echo \'{\"network_config\": {}}\'"
+                           " > /etc/os-net-config/config.json"}
+            }])
+
+        mock_heat.stacks.get.return_value = mock.Mock(
+            stack_name="overcloud-TEMP")
+
+        expected = {"network_config": {}}
+        # Test
+        result = stack_parameters.get_network_configs(
+            swift, mock_heat, container='overcloud', role_name='Compute')
+        self.assertEqual(expected, result)
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment={
+                'parameter_defaults': {
+                    'InternalApiInterfaceRoutes': [[]],
+                    'StorageInterfaceRoutes': [[]]
+                }
+            },
+            files={},
+            template={'resources': {'ComputeGroupVars': {'properties': {
+                'value': {'role_networks': ['InternalApi', 'Storage']}
+                }}}},
+            stack_name='overcloud-TEMP',
+        )
+
+    @mock.patch('tripleo_common.utils.template.process_templates')
+    def test_run_valid_network_config_with_if_routes_inputs(
+        self, mock_process_templates):
+        swift = mock.MagicMock(url="http://test.com")
+
+        mock_env = {
+            'template': {
+                'resources': {
+                    'ComputeGroupVars': {
+                        'properties': {
+                            'value': {
+                                'role_networks': ['InternalApi',
+                                                  'Storage']}
+                        }
+                    }
+                }
+            },
+            'files': {},
+            'environment': {
+                'parameter_defaults': {
+                    'InternalApiInterfaceRoutes': ['test1'],
+                    'StorageInterfaceRoutes': ['test2']
+                }}
+        }
+
+        mock_process_templates.return_value = mock_env
+        mock_heat = mock.MagicMock()
+
+        mock_heat.stacks.preview.return_value = mock.Mock(resources=[{
+            "resource_identity": {"stack_name": "overcloud-TEMP-Compute-0"},
+            "resource_name": "OsNetConfigImpl",
+            "properties": {"config": "echo \'{\"network_config\": {}}\'"
+                           " > /etc/os-net-config/config.json"}
+            }])
+
+        mock_heat.stacks.get.return_value = mock.Mock(
+            stack_name="overcloud-TEMP")
+
+        expected = {"network_config": {}}
+        # Test
+        result = stack_parameters.get_network_configs(
+            swift, mock_heat, container='overcloud', role_name='Compute')
+        self.assertEqual(expected, result)
+        mock_heat.stacks.preview.assert_called_once_with(
+            environment={
+                'parameter_defaults': {
+                    'InternalApiInterfaceRoutes': ['test1'],
+                    'StorageInterfaceRoutes': ['test2']
+                }
+            },
+            files={},
+            template={'resources': {'ComputeGroupVars': {'properties': {
+                'value': {'role_networks': ['InternalApi', 'Storage']}
+                }}}},
+            stack_name='overcloud-TEMP',
+        )
