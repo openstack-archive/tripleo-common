@@ -110,7 +110,9 @@ def export_stream(target_url, layer, layer_stream, verify_digest=True):
                       (image, blob_path))
 
     try:
-        with open(blob_path, 'wb') as f:
+        fd = os.open(blob_path, os.O_WRONLY | os.O_CREAT)
+        os.fchmod(fd, 0o0644)
+        with os.fdopen(fd, 'wb') as f:
             count = 0
             for chunk in layer_stream:
                 count += 1
