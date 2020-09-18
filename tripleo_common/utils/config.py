@@ -225,13 +225,10 @@ class Config(object):
 
     def render_network_config(self, stack, config_dir, server_roles):
         network_config = self.get_network_config_data(stack)
+        roles_rendered = []
         for server, config in network_config.items():
-            if server in server_roles:
-                server_deployment_dir = os.path.join(
-                    config_dir, server_roles[server], server)
-                self._mkdir(server_deployment_dir)
-                network_config_path = os.path.join(
-                    server_deployment_dir, "NetworkConfig")
+            if (server in server_roles
+                    and server_roles[server] not in roles_rendered):
                 network_config_role_path = os.path.join(
                     config_dir, server_roles[server], "NetworkConfig")
                 # check if it's actual config or heat config_id
@@ -242,13 +239,9 @@ class Config(object):
                     str_config = self.client.software_configs.get(
                         config).config
                 if str_config:
-                    with self._open_file(network_config_path) as f:
-                        f.write(str_config)
                     with self._open_file(network_config_role_path) as f:
                         f.write(str_config)
-            else:
-                self.log.warning('Server with id %s is ignored from config '
-                                 '(Possibly blacklisted)' % server)
+                roles_rendered.append(server_roles[server])
 
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
