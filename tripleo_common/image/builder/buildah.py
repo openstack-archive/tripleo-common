@@ -36,7 +36,7 @@ class BuildahBuilder(base.BaseBuilder):
     def __init__(self, work_dir, deps, base='fedora', img_type='binary',
                  tag='latest', namespace='master',
                  registry_address='127.0.0.1:8787', push_containers=True,
-                 volumes=[], excludes=[], build_timeout=None):
+                 volumes=[], excludes=[], build_timeout=None, debug=False):
         """Setup the parameters to build with Buildah.
 
         :params work_dir: Directory where the Dockerfiles or Containerfiles
@@ -59,6 +59,7 @@ class BuildahBuilder(base.BaseBuilder):
             Default to [].
         :params excludes: List of images to skip. Default to [].
         :params build_timeout: Timeout. Default to constants.BUILD_TIMEOUT
+        :params debug: Enable debug flag. Default to False.
         """
 
         super(BuildahBuilder, self).__init__()
@@ -76,6 +77,7 @@ class BuildahBuilder(base.BaseBuilder):
         self.push_containers = push_containers
         self.volumes = volumes
         self.excludes = excludes
+        self.debug = debug
         # Each container image has a Dockerfile or a Containerfile.
         # Buildah needs to know the base directory later.
         self.cont_map = {os.path.basename(root): root for root, dirs,
@@ -85,6 +87,8 @@ class BuildahBuilder(base.BaseBuilder):
         # Building images with root so overlayfs is used, and not fuse-overlay
         # from userspace, which would be slower.
         self.buildah_cmd = ['sudo', 'buildah']
+        if self.debug:
+            self.buildah_cmd.append('--log-level debug')
 
     def _find_container_dir(self, container_name):
         """Return the path of the Dockerfile/Containerfile directory.
