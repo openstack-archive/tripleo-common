@@ -751,8 +751,9 @@ class DeploymentStatusActionTest(base.TestCase):
         execution.updated_at = 1
         execution.state = 'SUCCESS'
         execution.output = '{"deployment_status":"DEPLOY_SUCCESS"}'
+        execution.input = '{"plan_name":"overcloud"}'
         mistral().executions.get.return_value = execution
-        mistral().executions.find.return_value = [execution]
+        mistral().executions.list.return_value = [execution]
 
         action = deployment.DeploymentStatusAction(self.plan)
         result = action.run(self.ctx)
@@ -782,8 +783,9 @@ class DeploymentStatusActionTest(base.TestCase):
         execution.updated_at = 1
         execution.state = 'SUCCESS'
         execution.output = '{"deployment_status":"DEPLOY_SUCCESS"}'
+        execution.input = '{"plan_name":"overcloud"}'
         mistral().executions.get.return_value = execution
-        mistral().executions.find.return_value = [execution]
+        mistral().executions.list.return_value = [execution]
 
         action = deployment.DeploymentStatusAction(self.plan)
         result = action.run(self.ctx)
@@ -813,8 +815,9 @@ class DeploymentStatusActionTest(base.TestCase):
         execution.updated_at = 1
         execution.state = 'SUCCESS'
         execution.output = '{"deployment_status":"DEPLOY_SUCCESS"}'
+        execution.input = '{"plan_name":"overcloud"}'
         mistral().executions.get.return_value = execution
-        mistral().executions.find.return_value = [execution]
+        mistral().executions.list.return_value = [execution]
 
         action = deployment.DeploymentStatusAction(self.plan)
         result = action.run(self.ctx)
@@ -844,8 +847,9 @@ class DeploymentStatusActionTest(base.TestCase):
         execution.updated_at = 1
         execution.state = 'SUCCESS'
         execution.output = '{"deployment_status":"DEPLOY_SUCCESS"}'
+        execution.input = '{"plan_name":"overcloud"}'
         mistral().executions.get.return_value = execution
-        mistral().executions.find.return_value = [execution]
+        mistral().executions.list.return_value = [execution]
 
         action = deployment.DeploymentStatusAction(self.plan)
         result = action.run(self.ctx)
@@ -875,8 +879,9 @@ class DeploymentStatusActionTest(base.TestCase):
         execution.updated_at = 1
         execution.state = 'SUCCESS'
         execution.output = '{"deployment_status":"DEPLOY_FAILED"}'
+        execution.input = '{"plan_name":"overcloud"}'
         mistral().executions.get.return_value = execution
-        mistral().executions.find.return_value = [execution]
+        mistral().executions.list.return_value = [execution]
 
         action = deployment.DeploymentStatusAction(self.plan)
         result = action.run(self.ctx)
@@ -906,14 +911,47 @@ class DeploymentStatusActionTest(base.TestCase):
         execution.updated_at = 1
         execution.state = 'SUCCESS'
         execution.output = '{"deployment_status":"DEPLOY_SUCCESS"}'
+        execution.input = '{"plan_name":"overcloud"}'
         mistral().executions.get.return_value = execution
-        mistral().executions.find.return_value = [execution]
+        mistral().executions.list.return_value = [execution]
 
         action = deployment.DeploymentStatusAction(self.plan)
         result = action.run(self.ctx)
 
         self.assertEqual(result['status_update'], None)
         self.assertEqual(result['deployment_status'], None)
+
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_object_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_workflow_client')
+    @mock.patch('tripleo_common.actions.base.TripleOAction.'
+                'get_orchestration_client')
+    def test_get_deployment_status_different_plan(
+            self, heat, mistral, swift):
+
+        mock_stack = mock.Mock()
+        mock_stack.stack_status = 'COMPLETE'
+        heat().stacks.get.return_value = mock_stack
+
+        body = 'deployment_status: DEPLOY_SUCCESS'
+        swift().get_object.return_value = [mock.Mock(), body]
+
+        execution = mock.Mock()
+        execution.updated_at = 1
+        execution.state = 'SUCCESS'
+        execution.output = '{"deployment_status":"DEPLOY_FAILED"}'
+        execution.input = '{"plan_name":"foobar"}'
+        mistral().executions.get.return_value = execution
+        mistral().executions.list.return_value = [execution]
+
+        action = deployment.DeploymentStatusAction(self.plan)
+        result = action.run(self.ctx)
+
+        self.assertEqual(result['stack_status'], 'COMPLETE')
+        self.assertEqual(result['cd_status'], None)
+        self.assertEqual(result['deployment_status'], 'DEPLOY_SUCCESS')
+        self.assertEqual(result['status_update'], None)
 
 
 class DeploymentFailuresActionTest(base.TestCase):

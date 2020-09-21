@@ -450,14 +450,17 @@ class DeploymentStatusAction(base.TripleOAction):
         # Will get set to new status if an update is required
         status_update = None
 
-        cd_execs = workflow_client.executions.find(
-            workflow_name='tripleo.deployment.v1.config_download_deploy')
-        cd_execs.sort(key=lambda x: x.updated_at)
-        if cd_execs:
-            cd_exec = workflow_client.executions.get(cd_execs[-1].id)
-            cd_status = cd_exec.state
-            ansible_status = json.loads(
-                cd_exec.output).get('deployment_status')
+        for cd_exec in workflow_client.executions.list(
+                sort_keys="updated_at",
+                sort_dirs="desc",
+                fields=['input', 'output', 'state'],
+                workflow_name='tripleo.deployment.v1.config_download_deploy'
+                ):
+            if json.loads(cd_exec.input).get('plan_name') == self.plan:
+                cd_status = cd_exec.state
+                ansible_status = json.loads(
+                    cd_exec.output).get('deployment_status')
+                break
 
         def update_status(status):
             # If we need to update the status return it
