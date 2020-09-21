@@ -40,7 +40,7 @@ class AnsiblePlaybookActionTest(base.TestCase):
         self.become = True
         self.become_user = 'root'
         self.extra_vars = {"var1": True, "var2": 0}
-        self.verbosity = 1
+        self.verbosity = 2
         self.ctx = mock.MagicMock()
         self.max_message_size = 1024
 
