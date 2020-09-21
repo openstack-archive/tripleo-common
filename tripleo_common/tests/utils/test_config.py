@@ -911,11 +911,9 @@ class TestConfig(base.TestCase):
                                                          node2='config')
         config_dir = '/tmp/tht'
         self.config.render_network_config(stack, config_dir, server_roles)
-        self.assertEqual(2, mock_open.call_count)
-        self.assertEqual('/tmp/tht/Controller/node1/NetworkConfig',
-                         mock_open.call_args_list[0][0][0])
+        self.assertEqual(1, mock_open.call_count)
         self.assertEqual('/tmp/tht/Controller/NetworkConfig',
-                         mock_open.call_args_list[1][0][0])
+                         mock_open.call_args_list[0][0][0])
 
 
 class OvercloudConfigTest(base.TestCase):
