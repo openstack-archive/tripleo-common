@@ -31,9 +31,20 @@ workflows:
     tasks:
       get_pubkey:
         action: tripleo.validations.get_pubkey
-        on-success: get_blacklisted_ip_addresses
+        on-success:
+          - stack_exists: <% $.ssh_private_key != null %>
+          - get_blacklisted_ip_addresses: <% $.ssh_private_key = null %>
         publish:
           pubkey: <% task().result %>
+
+      stack_exists:
+        action: heat.stacks_get
+        input:
+          stack_id: <% $.plan_name %>
+        on-success: get_blacklisted_ip_addresses
+        on-error: create_admin_via_ssh
+        publish-on-error:
+          ssh_servers_not_blacklisted: <% $.ssh_servers %>
 
       get_blacklisted_ip_addresses:
         action: heat.stacks_output_show
