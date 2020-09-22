@@ -667,31 +667,48 @@ class BaseImageUploader(object):
             raise ImageUploaderException(
                 'Unknown authentication method for headers: %s' % r.headers)
 
+        auth = None
         www_auth = r.headers['www-authenticate']
-        if not www_auth.startswith('Bearer '):
-            raise ImageUploaderException(
-                'Unknown www-authenticate value: %s' % www_auth)
         token_param = {}
 
-        realm = re.search('realm="(.*?)"', www_auth).group(1)
-        if 'service=' in www_auth:
-            token_param['service'] = re.search(
-                'service="(.*?)"', www_auth).group(1)
-        token_param['scope'] = 'repository:%s:pull' % image[1:]
+        if www_auth.startswith('Bearer '):
+            LOG.debug('Using bearer token auth')
+            realm = re.search('realm="(.*?)"', www_auth).group(1)
+            if 'service=' in www_auth:
+                token_param['service'] = re.search(
+                    'service="(.*?)"', www_auth).group(1)
+            token_param['scope'] = 'repository:%s:pull' % image[1:]
 
-        auth = None
-        if username:
+            if username:
+                auth = requests_auth.HTTPBasicAuth(username, password)
+            LOG.debug('Token parameters: params {}'.format(token_param))
+            rauth = session.get(realm, params=token_param, auth=auth,
+                                timeout=30)
+            rauth.raise_for_status()
+            auth_header = 'Bearer %s' % rauth.json()['token']
+        elif www_auth.startswith('Basic '):
+            LOG.debug('Using basic auth')
+            if not username or not password:
+                raise Exception('Authentication credentials required for '
+                                'basic auth: %s' % url)
             auth = requests_auth.HTTPBasicAuth(username, password)
-        LOG.debug('Token parameters: params {}'.format(token_param))
-        rauth = session.get(realm, params=token_param, auth=auth, timeout=30)
-        rauth.raise_for_status()
-        session.headers['Authorization'] = 'Bearer %s' % rauth.json()['token']
+            rauth = session.get(url, params=token_param, auth=auth, timeout=30)
+            rauth.raise_for_status()
+            auth_header = (
+                'Basic %s' % base64.b64encode(
+                    six.b(username + ':' + password)).decode('ascii')
+            )
+        else:
+            raise ImageUploaderException(
+                'Unknown www-authenticate value: %s' % www_auth)
         hash_request_id = hashlib.sha1(str(rauth.url).encode())
         LOG.debug(
             'Session authenticated: id {}'.format(
                 hash_request_id.hexdigest()
             )
         )
+        session.headers['Authorization'] = auth_header
+
         setattr(session, 'reauthenticate', self.authenticate)
         setattr(
             session,
