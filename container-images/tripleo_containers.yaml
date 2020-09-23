@@ -1,11 +1,5 @@
 container_images:
 - image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-base:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-os:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-aodh-base:current-tripleo
-- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-aodh-api:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-aodh-evaluator:current-tripleo
@@ -14,15 +8,11 @@ container_images:
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-aodh-notifier:current-tripleo
 - image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-barbican-base:current-tripleo
-- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-barbican-api:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-barbican-keystone-listener:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-barbican-worker:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-ceilometer-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-ceilometer-central:current-tripleo
 - image_source: tripleo
@@ -31,8 +21,6 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-ceilometer-ipmi:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-ceilometer-notification:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-cinder-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-cinder-api:current-tripleo
 - image_source: tripleo
@@ -45,8 +33,6 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-collectd:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-cron:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-designate-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-designate-api:current-tripleo
 - image_source: tripleo
@@ -70,8 +56,6 @@ container_images:
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-glance-api:current-tripleo
 - image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-gnocchi-base:current-tripleo
-- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-gnocchi-api:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-gnocchi-metricd:current-tripleo
@@ -79,8 +63,6 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-gnocchi-statsd:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-haproxy:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-heat-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-heat-all:current-tripleo
 - image_source: tripleo
@@ -91,8 +73,6 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-heat-engine:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-horizon:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-ironic-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-ironic-api:current-tripleo
 - image_source: tripleo
@@ -110,8 +90,6 @@ container_images:
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-keystone:current-tripleo
 - image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-manila-base:current-tripleo
-- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-manila-api:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-manila-scheduler:current-tripleo
@@ -122,8 +100,6 @@ container_images:
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-memcached:current-tripleo
 - image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-mistral-base:current-tripleo
-- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-mistral-api:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-mistral-engine:current-tripleo
@@ -133,10 +109,6 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-mistral-executor:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-multipathd:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-neutron-base:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-neutron-agent-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-neutron-dhcp-agent:current-tripleo
 - image_source: tripleo
@@ -158,8 +130,6 @@ container_images:
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-neutron-sriov-agent:current-tripleo
 - image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-nova-base:current-tripleo
-- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-nova-api:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-nova-compute-ironic:current-tripleo
@@ -176,13 +146,9 @@ container_images:
 - image_source: kolla
   imagename: docker.io/tripleotrain/centos-binary-nova-serialproxy:current-tripleo
 - image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-novajoin-base:current-tripleo
-- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-novajoin-notifier:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-novajoin-server:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-octavia-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-octavia-api:current-tripleo
 - image_source: tripleo
@@ -193,8 +159,6 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-octavia-worker:current-tripleo
 - image_source: kolla
   imagename: docker.io/tripleotrain/centos-binary-opendaylight:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-ovn-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-ovn-controller:current-tripleo
 - image_source: tripleo
@@ -221,8 +185,6 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-sahara-engine:current-tripleo
 - image_source: kolla
   imagename: docker.io/tripleotrain/centos-binary-sensu-client:current-tripleo
-- image_source: tripleo
-  imagename: docker.io/tripleotrain/centos-binary-swift-base:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-swift-account:current-tripleo
 - image_source: tripleo

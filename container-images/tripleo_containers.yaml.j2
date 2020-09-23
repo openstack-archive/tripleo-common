@@ -1,14 +1,5 @@
 container_images_template:
 
-- imagename: "{{namespace}}/{{name_prefix}}base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
-- imagename: "{{namespace}}/{{name_prefix}}os{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
-- imagename: "{{namespace}}/{{name_prefix}}aodh-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}aodh-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -48,9 +39,6 @@ container_images_template:
   - OS::TripleO::Services::AodhNotifier
   - OS::TripleO::Services::UndercloudAodhNotifier
 
-- imagename: "{{namespace}}/{{name_prefix}}barbican-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}barbican-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -76,9 +64,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::BarbicanApi
   - OS::TripleO::Services::BarbicanWorker
-
-- imagename: "{{namespace}}/{{name_prefix}}ceilometer-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
 
 - imagename: "{{namespace}}/{{name_prefix}}ceilometer-central{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -116,9 +101,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::CeilometerAgentNotification
   - OS::TripleO::Services::UndercloudCeilometerAgentNotification
-
-- imagename: "{{namespace}}/{{name_prefix}}cinder-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
 
 - imagename: "{{namespace}}/{{name_prefix}}cinder-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -174,9 +156,6 @@ container_images_template:
   - ContainerCrondImage
   services:
   - OS::TripleO::Services::ContainersLogrotateCrond
-
-- imagename: "{{namespace}}/{{name_prefix}}designate-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
 
 - imagename: "{{namespace}}/{{name_prefix}}designate-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -270,9 +249,6 @@ container_images_template:
   - OS::TripleO::Services::GlanceApi
   - OS::TripleO::Services::GlanceApiEdge
 
-- imagename: "{{namespace}}/{{name_prefix}}gnocchi-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -312,9 +288,6 @@ container_images_template:
   - OS::TripleO::Services::HAproxyEdge
   - OS::TripleO::Services::UndercloudHAProxy
 
-- imagename: "{{namespace}}/{{name_prefix}}heat-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}heat-all{{name_suffix}}:{{tag}}"
   image_source: tripleo
 
@@ -350,9 +323,6 @@ container_images_template:
   - ContainerHorizonImage
   services:
   - OS::TripleO::Services::Horizon
-
-- imagename: "{{namespace}}/{{name_prefix}}ironic-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
 
 - imagename: "{{namespace}}/{{name_prefix}}ironic-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -419,9 +389,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::Keystone
 
-- imagename: "{{namespace}}/{{name_prefix}}manila-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}manila-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -465,9 +432,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::Memcached
 
-- imagename: "{{namespace}}/{{name_prefix}}mistral-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}mistral-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -507,12 +471,6 @@ container_images_template:
   - ContainerMultipathdImage
   services:
   - OS::TripleO::Services::Multipathd
-
-- imagename: "{{namespace}}/{{name_prefix}}neutron-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
-- imagename: "{{namespace}}/{{name_prefix}}neutron-agent-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-dhcp-agent{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -606,9 +564,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::NeutronSriovAgent
 
-- imagename: "{{namespace}}/{{name_prefix}}nova-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}nova-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -677,9 +632,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::NovaSerialproxy
 
-- imagename: "{{namespace}}/{{name_prefix}}novajoin-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}novajoin-notifier{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -694,9 +646,6 @@ container_images_template:
   - ContainerNovajoinConfigImage
   services:
   - OS::TripleO::Services::Novajoin
-
-- imagename: "{{namespace}}/{{name_prefix}}octavia-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
 
 - imagename: "{{namespace}}/{{name_prefix}}octavia-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -742,9 +691,6 @@ container_images_template:
   - OS::TripleO::Services::OpenDaylightApi
 {% endif %}
 {% if neutron_driver == "ovn" %}
-- imagename: "{{namespace}}/{{name_prefix}}ovn-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-
 - imagename: "{{namespace}}/{{name_prefix}}ovn-controller{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -865,9 +811,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::SensuClient
 {% endif %}
-
-- imagename: "{{namespace}}/{{name_prefix}}swift-base{{name_suffix}}:{{tag}}"
-  image_source: tripleo
 
 - imagename: "{{namespace}}/{{name_prefix}}swift-account{{name_suffix}}:{{tag}}"
   image_source: tripleo

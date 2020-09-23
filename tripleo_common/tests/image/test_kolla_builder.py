@@ -463,9 +463,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
              'imagename': 'docker.io/tripleotrain/centos-binary'
                           '-opendaylight:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary-ovn-'
-                          'base:current-tripleo'},
-            {'image_source': 'tripleo',
              'imagename': 'docker.io/tripleotrain/centos-binary'
                           '-ovn-northd:current-tripleo'},
             {'image_source': 'tripleo',
@@ -493,9 +490,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             {'image_source': 'tripleo',
              'imagename': 'docker.io/tripleotrain/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
-            {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
-                          '-ovn-base:current-tripleo'},
             {'image_source': 'tripleo',
              'imagename': 'docker.io/tripleotrain/centos-binary'
                           '-ovn-northd:current-tripleo'},
