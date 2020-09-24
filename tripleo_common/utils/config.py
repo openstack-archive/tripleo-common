@@ -63,6 +63,9 @@ class Config(object):
     def get_network_config_data(self, stack):
         return self.stack_outputs.get("HostnameNetworkConfigMap")
 
+    def get_role_network_config_data(self, stack):
+        return self.stack_outputs.get("RoleNetworkConfigMap")
+
     def get_deployment_data(self, stack,
                             nested_depth=constants.NESTED_DEPTH):
         deployments = self.client.resources.list(
@@ -224,13 +227,11 @@ class Config(object):
             raise e
 
     def render_network_config(self, stack, config_dir, server_roles):
-        network_config = self.get_network_config_data(stack)
-        roles_rendered = []
-        for server, config in network_config.items():
-            if (server in server_roles
-                    and server_roles[server] not in roles_rendered):
-                network_config_role_path = os.path.join(
-                    config_dir, server_roles[server], "NetworkConfig")
+        role_network_config = self.get_role_network_config_data(stack)
+        if role_network_config is not None:
+            for role, config in role_network_config.items():
+                network_config_role_path = os.path.join(config_dir, role,
+                                                        "NetworkConfig")
                 # check if it's actual config or heat config_id
                 # this will be dropped once we stop using SoftwareConfig
                 if isinstance(config, dict):
@@ -241,7 +242,25 @@ class Config(object):
                 if str_config:
                     with self._open_file(network_config_role_path) as f:
                         f.write(str_config)
-                roles_rendered.append(server_roles[server])
+        else:
+            network_config = self.get_network_config_data(stack)
+            roles_rendered = []
+            for server, config in network_config.items():
+                if (server in server_roles
+                        and server_roles[server] not in roles_rendered):
+                    network_config_role_path = os.path.join(
+                        config_dir, server_roles[server], "NetworkConfig")
+                    # check if it's actual config or heat config_id
+                    # this will be dropped once we stop using SoftwareConfig
+                    if isinstance(config, dict):
+                        str_config = json.dumps(config)
+                    else:
+                        str_config = self.client.software_configs.get(
+                            config).config
+                    if str_config:
+                        with self._open_file(network_config_role_path) as f:
+                            f.write(str_config)
+                    roles_rendered.append(server_roles[server])
 
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
