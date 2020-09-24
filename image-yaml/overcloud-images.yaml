@@ -51,9 +51,9 @@ disk_images:
       - network-gateway
       - enable-packages-install
       - override-pip-and-virtualenv
-    packages:
-      - python-hardware-detect
+      - extra-hardware
     options:
       - "--min-tmpfs=7"
     environment:
+      DIB_EPEL_DISABLED: '1'
       DIB_PYTHON_VERSION: '2'
