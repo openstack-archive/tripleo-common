@@ -113,7 +113,7 @@ container_images:
   imagename: docker.io/tripleotrain/centos-binary-neutron-dhcp-agent:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-neutron-l3-agent:current-tripleo
-- image_source: kolla
+- image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-neutron-metadata-agent:current-tripleo
 - image_source: tripleo
   imagename: docker.io/tripleotrain/centos-binary-neutron-mlnx-agent:current-tripleo
