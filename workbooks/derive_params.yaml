@@ -475,9 +475,6 @@ workflows:
           # The role supports the DPDK feature if the NeutronDatapathType parameter is present
           dpdk: <% let(resources => $.heat_resource_tree.resources) -> $.role_services.any($.get('parameters', []).contains('NeutronDatapathType') or $.get('resources', []).select($resources.get($)).any($.get('parameters', []).contains('NeutronDatapathType'))) %>
 
-          # The role supports the DPDK feature in ODL if the OvsEnableDpdk parameter value is true in role parameters.
-          odl_dpdk: <% let(role => $.role_name) -> $.heat_resource_tree.parameters.get(concat($role, 'Parameters'), {}).get('default', {}).get('OvsEnableDpdk', false) %>
-
           # The role supports the SRIOV feature if it includes NeutronSriovAgent services.
           sriov: <% $.role_services.any($.get('type', '').endsWith('::NeutronSriovAgent')) %>
 
@@ -487,7 +484,7 @@ workflows:
       build_feature_dict:
         on-success: filter_features
         publish:
-          feature_dict: <% dict(DPDK => ($.dpdk or $.odl_dpdk), SRIOV => $.sriov, HOST => ($.dpdk or $.odl_dpdk or $.sriov), HCI => $.hci) %>
+          feature_dict: <% dict(DPDK => $.dpdk, SRIOV => $.sriov, HOST => $.dpdk or $.sriov), HCI => $.hci) %>
 
       filter_features:
         publish:
