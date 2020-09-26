@@ -271,7 +271,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'current-tripleo',
                 'rhel_containers': False,
                 'neutron_driver': 'ovn',
-                'default_tag': True,
             },
             result
         )
@@ -299,7 +298,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'master',
                 'rhel_containers': False,
                 'neutron_driver': 'ovn',
-                'default_tag': False,
             },
             builder.container_images_template_inputs(
                 namespace='192.0.2.0:5000/tripleotrain',
@@ -357,7 +355,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'tag': 'master',
                 'rhel_containers': False,
                 'neutron_driver': 'ovn',
-                'default_tag': False,
             }, result
         )
 
@@ -869,6 +866,36 @@ class TestPrepare(base.TestCase):
                 }
             )
         )
+
+    @mock.patch.object(image_uploader, 'ImageUploadManager')
+    @mock.patch('tripleo_common.image.kolla_builder.'
+                'detect_insecure_registries', return_value={})
+    def test_prepare_default_tag(self, mock_insecure, mock_manager):
+        mock_manager_instance = mock.Mock()
+        mock_manager.return_value = mock_manager_instance
+        mock_uploader = mock.Mock()
+        mock_uploader.discover_image_tags.return_value = []
+        mock_manager_instance.uploader.return_value = mock_uploader
+
+        kb.container_images_prepare(
+            template_file=TEMPLATE_PATH,
+            output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+            output_images_file='container_images.yaml',
+            mapping_args={},
+            tag_from_label="n-v",
+        )
+        self.assertTrue(
+            mock_uploader.discover_image_tags.call_args_list[0][0][2])
+
+        kb.container_images_prepare(
+            template_file=TEMPLATE_PATH,
+            output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+            output_images_file='container_images.yaml',
+            mapping_args={"tag": "master"},
+            tag_from_label="n-v",
+        )
+        self.assertFalse(
+            mock_uploader.discover_image_tags.call_args_list[1][0][2])
 
     def test_get_enabled_services_empty(self):
         self.assertEqual(
