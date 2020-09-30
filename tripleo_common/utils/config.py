@@ -229,6 +229,9 @@ class Config(object):
             config_path = os.path.join(config_dir, role, "NetworkConfig")
             # check if it's actual config or heat config_id
             # this will be dropped once we stop using SoftwareConfig
+            if config is None:
+                continue
+
             if isinstance(config, dict):
                 str_config = json.dumps(config)
             else:
