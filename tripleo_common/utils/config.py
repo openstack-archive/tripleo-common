@@ -60,10 +60,7 @@ class Config(object):
                             servers[server_id] = name.lower()
         return servers
 
-    def get_network_config_data(self, stack):
-        return self.stack_outputs.get("HostnameNetworkConfigMap")
-
-    def get_role_network_config_data(self, stack):
+    def get_role_network_config_data(self):
         return self.stack_outputs.get("RoleNetworkConfigMap")
 
     def get_deployment_data(self, stack,
@@ -226,41 +223,19 @@ class Config(object):
                            "error {}".format(yaml_file, e))
             raise e
 
-    def render_network_config(self, stack, config_dir, server_roles):
-        role_network_config = self.get_role_network_config_data(stack)
-        if role_network_config is not None:
-            for role, config in role_network_config.items():
-                network_config_role_path = os.path.join(config_dir, role,
-                                                        "NetworkConfig")
-                # check if it's actual config or heat config_id
-                # this will be dropped once we stop using SoftwareConfig
-                if isinstance(config, dict):
-                    str_config = json.dumps(config)
-                else:
-                    str_config = self.client.software_configs.get(
-                        config).config
-                if str_config:
-                    with self._open_file(network_config_role_path) as f:
-                        f.write(str_config)
-        else:
-            network_config = self.get_network_config_data(stack)
-            roles_rendered = []
-            for server, config in network_config.items():
-                if (server in server_roles
-                        and server_roles[server] not in roles_rendered):
-                    network_config_role_path = os.path.join(
-                        config_dir, server_roles[server], "NetworkConfig")
-                    # check if it's actual config or heat config_id
-                    # this will be dropped once we stop using SoftwareConfig
-                    if isinstance(config, dict):
-                        str_config = json.dumps(config)
-                    else:
-                        str_config = self.client.software_configs.get(
-                            config).config
-                    if str_config:
-                        with self._open_file(network_config_role_path) as f:
-                            f.write(str_config)
-                    roles_rendered.append(server_roles[server])
+    def render_network_config(self, config_dir):
+        role_network_config = self.get_role_network_config_data()
+        for role, config in role_network_config.items():
+            config_path = os.path.join(config_dir, role, "NetworkConfig")
+            # check if it's actual config or heat config_id
+            # this will be dropped once we stop using SoftwareConfig
+            if isinstance(config, dict):
+                str_config = json.dumps(config)
+            else:
+                str_config = self.client.software_configs.get(config).config
+            if str_config:
+                with self._open_file(config_path) as f:
+                    f.write(str_config)
 
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
@@ -576,7 +551,7 @@ class Config(object):
                 f.write(template_data)
 
         # Render NetworkConfig data
-        self.render_network_config(stack, config_dir, server_roles)
+        self.render_network_config(config_dir)
 
         shutil.copyfile(
             os.path.join(templates_path, 'deployments.yaml'),
