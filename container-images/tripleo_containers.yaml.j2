@@ -485,6 +485,7 @@ container_images_template:
   - ContainerNeutronL3AgentImage
   services:
   - OS::TripleO::Services::NeutronL3Agent
+  - OS::TripleO::Services::ComputeNeutronL3Agent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-metadata-agent{{name_suffix}}:{{tag}}"
   image_source: tripleo
