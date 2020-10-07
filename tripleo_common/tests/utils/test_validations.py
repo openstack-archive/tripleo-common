@@ -262,7 +262,7 @@ class RunValidationTest(base.TestCase):
             'validation_path',
             'identity_file',
             'plan',
-            '/usr/share/openstack-tripleo-validations'
+            '/usr/share/ansible'
         )
         mock_download_validation.assert_called_once_with(
             mock_get_object_client(), 'plan', 'validation')
