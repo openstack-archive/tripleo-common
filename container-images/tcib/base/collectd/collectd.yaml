@@ -24,6 +24,7 @@ tcib_packages:
   - collectd-ipmi
   - collectd-iptables
   - collectd-log_logstash
+  - collectd-libpod-stats
   - collectd-mcelog
   - collectd-memcachec
   - collectd-mysql
