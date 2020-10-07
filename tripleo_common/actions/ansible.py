@@ -45,33 +45,49 @@ def write_default_ansible_cfg(work_dir,
     ansible_config_path = os.path.join(work_dir, 'ansible.cfg')
     shutil.copy(base_ansible_cfg, ansible_config_path)
 
-    modules_path = ('/root/.ansible/plugins/modules:'
-                    '/usr/share/ansible/tripleo-plugins/modules:'
-                    '/usr/share/ansible/plugins/modules:'
-                    '/usr/share/ansible-modules:'
-                    '%s/library' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+    modules_path = (
+        '/root/.ansible/plugins/modules:'
+        '/usr/share/ansible/tripleo-plugins/modules:'
+        '/usr/share/ansible/plugins/modules:'
+        '/usr/share/ansible-modules:'
+        '{}/library:'
+        '{}/library'.format(constants.DEFAULT_VALIDATIONS_BASEDIR,
+                            constants.DEFAULT_VALIDATIONS_LEGACY_BASEDIR))
     lookups_path = (
         '/root/.ansible/plugins/lookup:'
         '/usr/share/ansible/tripleo-plugins/lookup:'
         '/usr/share/ansible/plugins/lookup:'
-        '%s/lookup_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+        '{}/lookup_plugins:'
+        '{}/lookup_plugins'.format(
+            constants.DEFAULT_VALIDATIONS_BASEDIR,
+            constants.DEFAULT_VALIDATIONS_LEGACY_BASEDIR))
     callbacks_path = (
         '~/.ansible/plugins/callback:'
         '/usr/share/ansible/tripleo-plugins/callback:'
         '/usr/share/ansible/plugins/callback:'
-        '%s/callback_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+        '{}/callback_plugins:'
+        '{}/callback_plugins'.format(
+            constants.DEFAULT_VALIDATIONS_BASEDIR,
+            constants.DEFAULT_VALIDATIONS_LEGACY_BASEDIR))
+
     callbacks_whitelist = ','.join(['tripleo_dense', 'tripleo_profile_tasks',
                                     'tripleo_states'])
     action_plugins_path = (
         '~/.ansible/plugins/action:'
         '/usr/share/ansible/plugins/action:'
         '/usr/share/ansible/tripleo-plugins/action:'
-        '%s/action_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+        '{}/action_plugins:'
+        '{}/action_plugins'.format(
+            constants.DEFAULT_VALIDATIONS_BASEDIR,
+            constants.DEFAULT_VALIDATIONS_LEGACY_BASEDIR))
     filter_plugins_path = (
         '~/.ansible/plugins/filter:'
         '/usr/share/ansible/plugins/filter:'
         '/usr/share/ansible/tripleo-plugins/filter:'
-        '%s/filter_plugins' % constants.DEFAULT_VALIDATIONS_BASEDIR)
+        '{}/filter_plugins:'
+        '{}/filter_plugins'.format(
+            constants.DEFAULT_VALIDATIONS_BASEDIR,
+            constants.DEFAULT_VALIDATIONS_LEGACY_BASEDIR))
     roles_path = ('%(work_dir)s/roles:'
                   '/root/.ansible/roles:'
                   '/usr/share/ansible/tripleo-roles:'
@@ -80,7 +96,8 @@ def write_default_ansible_cfg(work_dir,
                   '%(ooo_val_path)s/roles:'
                   '%(work_dir)s' % {
                       'work_dir': work_dir,
-                      'ooo_val_path': constants.DEFAULT_VALIDATIONS_BASEDIR
+                      'ooo_val_path':
+                          constants.DEFAULT_VALIDATIONS_LEGACY_BASEDIR
                   })
 
     config = configparser.ConfigParser()
