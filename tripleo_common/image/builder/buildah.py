@@ -21,17 +21,20 @@ import six
 import tenacity
 
 from oslo_concurrency import processutils
+from oslo_config import cfg
 from oslo_log import log as logging
 
 from tripleo_common import constants
 from tripleo_common.image.builder import base
 from tripleo_common.utils import process
 
-LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class BuildahBuilder(base.BaseBuilder):
     """Builder to build container images with Buildah."""
+
+    log = logging.getLogger(__name__ + ".BuildahBuilder")
 
     def __init__(self, work_dir, deps, base='fedora', img_type='binary',
                  tag='latest', namespace='master',
@@ -61,6 +64,9 @@ class BuildahBuilder(base.BaseBuilder):
         :params build_timeout: Timeout. Default to constants.BUILD_TIMEOUT
         :params debug: Enable debug flag. Default to False.
         """
+
+        logging.register_options(CONF)
+        logging.setup(CONF, '')
 
         super(BuildahBuilder, self).__init__()
         if build_timeout is None:
@@ -97,8 +103,8 @@ class BuildahBuilder(base.BaseBuilder):
         """
 
         if container_name not in self.cont_map:
-            LOG.error('Container not found in Kolla '
-                      'deps: %s' % container_name)
+            self.log.error('Container not found in Kolla '
+                           'deps: %s' % container_name)
         return self.cont_map.get(container_name, '')
 
     def _get_destination(self, container_name):
@@ -164,7 +170,8 @@ class BuildahBuilder(base.BaseBuilder):
                          self._get_destination(container_name),
                          container_build_path])
         args = self.buildah_cmd + bud_args
-        print("Building %s image with: %s" % (container_name, ' '.join(args)))
+        self.log.info("Building %s image with: %s" %
+                      (container_name, ' '.join(args)))
         process.execute(
             *args,
             check_exit_code=True,
@@ -190,7 +197,8 @@ class BuildahBuilder(base.BaseBuilder):
         # else than a Docker registry.
         args = self.buildah_cmd + ['push', '--tls-verify=False', destination,
                                    'docker://' + destination]
-        print("Pushing %s image with: %s" % (destination, ' '.join(args)))
+        self.log.info("Pushing %s image with: %s" %
+                      (destination, ' '.join(args)))
         process.execute(*args, run_as_root=False, use_standard_locale=True)
 
     def build_all(self, deps=None):
@@ -207,9 +215,9 @@ class BuildahBuilder(base.BaseBuilder):
             deps = self.deps
 
         container_deps = self._generate_deps(deps=deps, containers=list())
-        LOG.debug("All container deps: {}".format(container_deps))
+        self.log.debug("All container deps: {}".format(container_deps))
         for containers in container_deps:
-            LOG.info("Processing containers: {}".format(containers))
+            self.log.info("Processing containers: {}".format(containers))
             if isinstance(deps, (list,)):
                 self._multi_build(containers=containers)
             else:
@@ -229,7 +237,7 @@ class BuildahBuilder(base.BaseBuilder):
         :returns: list
         """
 
-        LOG.debug("Process deps: {}".format(deps))
+        self.log.debug("Process deps: {}".format(deps))
         if isinstance(deps, (six.string_types,)):
             if prio_list:
                 prio_list.append(deps)
@@ -243,7 +251,7 @@ class BuildahBuilder(base.BaseBuilder):
             else:
                 containers.append(parents)
             for value in deps.values():
-                LOG.debug("Recursing with: {}".format(value))
+                self.log.debug("Recursing with: {}".format(value))
                 self._generate_deps(
                     deps=value,
                     containers=containers
@@ -262,14 +270,14 @@ class BuildahBuilder(base.BaseBuilder):
                 containers.append(dep_list)
 
             for item in dep_rehash_list:
-                LOG.debug("Recursing with: {}".format(item))
+                self.log.debug("Recursing with: {}".format(item))
                 self._generate_deps(
                     deps=item,
                     containers=containers,
                     prio_list=dep_list
                 )
 
-        LOG.debug("Constructed containers: {}".format(containers))
+        self.log.debug("Constructed containers: {}".format(containers))
         return containers
 
     def _multi_build(self, containers):
