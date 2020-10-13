@@ -5,33 +5,31 @@
       - openstack-python3-ussuri-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
-      - tripleo-multinode-container-minimal
-      - tripleo-undercloud-jobs
+      - tripleo-multinode-container-minimal-pipeline
+      - tripleo-undercloud-jobs-pipeline
       - tripleo-build-containers-jobs
-      - tripleo-standalone-scenarios-full
+      - tripleo-standalone-scenarios-pipeline
     check:
       jobs:
         - openstack-tox-linters
         - openstack-tox-py36
         - openstack-tox-py37
-        - tripleo-ci-centos-8-containers-multinode:
+        - tripleo-build-containers-ubi-8:
             dependencies: &deps_unit_lint
               - openstack-tox-linters
               - openstack-tox-py36
               - openstack-tox-py37
-        - tripleo-ci-centos-8-undercloud-containers:
-            dependencies: *deps_unit_lint
-        - tripleo-ci-centos-8-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
-        - tripleo-build-containers-ubi-8:
-            dependencies: *deps_unit_lint
             files:
               - ^container-images/.*$
               - ^tripleo_common/image/builder/.*$
         - tripleo-ci-centos-8-scenario000-multinode-oooq-container-updates:
-            dependencies: *deps_unit_lint
+            vars: &multinode_vars
+              consumer_job: true
+              build_container_images: false
+              remove_tags:
+                - build
+            dependencies: &content-provider-job
+              - tripleo-ci-centos-8-content-provider
             files:
               - workbooks/package_update.yaml
               - workbooks/baremetal.yaml
@@ -41,9 +39,12 @@
               - tripleo_common/image/kolla_builder.py
               - scripts/.*$
         - tripleo-ci-centos-8-scenario001-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
+            dependencies: *content-provider-job
+            vars: &standalone_vars
+              consumer_job: true
+              build_container_images: false
+              remove_tags:
+                - build
             files:
               - ^container-images/tcib/base/collectd.*$
               - ^container-images/tcib/base/os/aodh.*$
@@ -54,32 +55,26 @@
               - ^container-images/tcib/base/qdrouterd.*$
               - ^container-images/tcib/base/rabbitmq.*$
               - ^container-images/tcib/base/redis.*$
-        - tripleo-ci-centos-8-scenario002-standalone:
-            dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario003-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
+            dependencies: *content-provider-job
+            vars: *standalone_vars
             files:
               - ^container-images/tcib/base/os/designate.*$
               - ^container-images/tcib/base/os/mistral.*$
               - ^container-images/tcib/base/os/sahara.*$
         - tripleo-ci-centos-8-scenario004-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
+            dependencies: *content-provider-job
+            vars: *standalone_vars
             files:
               - ^container-images/tcib/base/os/manila.*$
         - tripleo-ci-centos-8-scenario007-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
+            dependencies: *content-provider-job
+            vars: *standalone_vars
             files:
               - ^container-images/tcib/base/os/neutron.*$
         - tripleo-ci-centos-8-scenario010-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
+            dependencies: *content-provider-job
+            vars: *standalone_vars
             files:
               - ^container-images/tcib/base/os/octavia.*$
         - tripleo-buildimage-overcloud-full-centos-8:
@@ -94,12 +89,10 @@
             dependencies: *deps_unit_lint
             files:
               - ^image-yaml/.*$
-        - openstack-tox-lower-constraints
     gate:
       queue: tripleo
       jobs:
         - openstack-tox-linters
-        - openstack-tox-lower-constraints
         - tripleo-buildimage-overcloud-full-centos-8:
             files:
               - ^image-yaml/.*$
