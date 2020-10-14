@@ -618,7 +618,7 @@ workflows:
         concurrency: 1
         action: std.echo output=<% "{}Parameters".format($.role_name) %>
         publish:
-          user_provided_role_specific: <% let(param => task().result) -> $.user_params.items().where( $param.contains($[0]) ).select( $[1] ).flatten() %>
+          user_provided_role_specific: <% let(param => task().result) -> $.user_params.items().where( $param.contains($[0]) and $[1] != null ).select( $[1] ).flatten() %>
 
       is_user_role_specific_input_provided:
         on-success:
