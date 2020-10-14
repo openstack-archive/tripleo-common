@@ -526,6 +526,75 @@ class ProcessTemplatesTest(base.TestCase):
                                              resource_registry, 'overcloud')
         mock_put.assert_not_called()
 
+    @mock.patch.object(template_utils, 'LOG', autospec=True)
+    def test__set_tags_based_on_role_name(self, mock_log):
+        role_data = [
+            {'name': 'CephStorageFoo'},
+            {'name': 'CephStorageBar', 'tags': ['ceph', 'storage']},
+            {'name': 'ObjectStorageFoo'},
+            {'name': 'ObjectStorageBar', 'tags': ['storage']},
+            {'name': 'BlockStorageFoo'},
+            {'name': 'BlockStorageFoo', 'tags': ['storage']},
+            {'name': 'ComputeOvsDpdkFoo'},
+            {'name': 'ComputeOvsDpdkBar', 'tags': ['ovsdpdk']},
+        ]
+        template_utils._set_tags_based_on_role_name(role_data)
+        expected = [
+            {'name': 'CephStorageFoo', 'tags': ['ceph', 'storage']},
+            {'name': 'CephStorageBar', 'tags': ['ceph', 'storage']},
+            {'name': 'ObjectStorageFoo', 'tags': ['storage']},
+            {'name': 'ObjectStorageBar', 'tags': ['storage']},
+            {'name': 'BlockStorageFoo', 'tags': ['storage']},
+            {'name': 'BlockStorageFoo', 'tags': ['storage']},
+            {'name': 'ComputeOvsDpdkFoo', 'tags': ['compute', 'ovsdpdk']},
+            {'name': 'ComputeOvsDpdkBar', 'tags': ['ovsdpdk', 'compute']},
+        ]
+        self.assertEqual(expected, role_data)
+        mock_log.assert_has_calls([
+            mock.call.warning(
+                "DEPRECATED: Role 'CephStorageFoo' without the 'ceph' tag "
+                "detected, the tag was added automatically. Please add the "
+                "'ceph' tag in roles data. The function to automatically "
+                "add tags based on role name will be removed in the next "
+                "release."),
+            mock.call.warning(
+                "DEPRECATED: Role 'CephStorageFoo' without the 'storage' "
+                "tag detected, the tag was added automatically. Please add "
+                "the 'storage' tag in roles data. The function to "
+                "automatically add tags based on role name will be removed in "
+                "the next release."),
+            mock.call.warning(
+                "DEPRECATED: Role 'ObjectStorageFoo' without the 'storage' "
+                "tag detected, the tag was added automatically. Please add "
+                "the 'storage' tag in roles data. The function to "
+                "automatically add tags based on role name will be "
+                "removed in the next release."),
+            mock.call.warning(
+                "DEPRECATED: Role 'BlockStorageFoo' without the 'storage' tag "
+                "detected, the tag was added automatically. Please add "
+                "the 'storage' tag in roles data. The function to "
+                "automatically add tags based on role name will be removed "
+                "in the next release."),
+            mock.call.warning(
+                "DEPRECATED: Role 'ComputeOvsDpdkFoo' without the 'compute' "
+                "tag detected, the tag was added automatically. Please add "
+                "the 'compute' tag in roles data. The function to "
+                "automatically add tags based on role name will be removed in "
+                "the next release."),
+            mock.call.warning(
+                "DEPRECATED: Role 'ComputeOvsDpdkFoo' without the 'ovsdpdk' "
+                "tag detected, the tag was added automatically. Please add "
+                "the 'ovsdpdk' tag in roles data. The function to "
+                "automatically add tags based on role name will be removed in "
+                "the next release."),
+            mock.call.warning(
+                "DEPRECATED: Role 'ComputeOvsDpdkBar' without the 'compute' "
+                "tag detected, the tag was added automatically. Please add "
+                "the 'compute' tag in roles data. The function to "
+                "automatically add tags based on role name will be removed in "
+                "the next release."),
+        ])
+
 
 class UploadTemplatesTest(base.TestCase):
 

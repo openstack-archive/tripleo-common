@@ -136,6 +136,47 @@ def heat_resource_exists(heat, stack, nested_stack_name, resource_name):
         return True
 
 
+def _set_tags_based_on_role_name(role_data):
+    for role in role_data:
+        role['tags'] = role.get('tags', [])
+        role_name = role.get('name', str())
+
+        if ((role_name.startswith('Compute') or role_name.startswith('HciCeph')
+             or role_name.startswith('DistributedCompute'))
+                and 'compute' not in role['tags']):
+            role['tags'].append('compute')
+            LOG.warning("DEPRECATED: Role '%s' without the 'compute' tag "
+                        "detected, the tag was added automatically. Please "
+                        "add the 'compute' tag in roles data. The function to "
+                        "automatically add tags based on role name will be "
+                        "removed in the next release." % role_name)
+        if role_name.startswith('Ceph') and 'ceph' not in role['tags']:
+            role['tags'].append('ceph')
+            LOG.warning("DEPRECATED: Role '%s' without the 'ceph' tag "
+                        "detected, the tag was added automatically. Please "
+                        "add the 'ceph' tag in roles data. The function to "
+                        "automatically add tags based on role name will be "
+                        "removed in the next release." % role_name)
+        if (role_name.startswith('ComputeOvsDpdk')
+                and 'ovsdpdk' not in role['tags']):
+            role['tags'].append('ovsdpdk')
+            LOG.warning("DEPRECATED: Role '%s' without the 'ovsdpdk' tag "
+                        "detected, the tag was added automatically. Please "
+                        "add the 'ovsdpdk' tag in roles data. The function to "
+                        "automatically add tags based on role name will be "
+                        "removed in the next release." % role_name)
+        if ((role_name.startswith('ObjectStorage')
+             or role_name.startswith('BlockStorage')
+             or role_name.startswith('Ceph'))
+                and 'storage' not in role['tags']):
+            role['tags'].append('storage')
+            LOG.warning("DEPRECATED: Role '%s' without the 'storage' tag "
+                        "detected, the tag was added automatically. Please "
+                        "add the 'storage' tag in roles data. The function to "
+                        "automatically add tags based on role name will be "
+                        "removed in the next release." % role_name)
+
+
 def process_custom_roles(swift, heat,
                          container=constants.DEFAULT_CONTAINER_NAME):
     try:
@@ -171,6 +212,10 @@ def process_custom_roles(swift, heat,
                      % (container, six.text_type(ex)))
         LOG.error(error_msg)
         raise RuntimeError(error_msg)
+
+    # TODO(hjensas): In next release remove the function to automatically add
+    # tags based on role name.
+    _set_tags_based_on_role_name(role_data)
 
     role_names = [r.get('name') for r in role_data]
     r_map = {}
