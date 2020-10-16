@@ -132,7 +132,7 @@ def write_default_ansible_cfg(work_dir,
                '~/.ansible/fact_cache')
 
     # Set the pull interval to lower CPU overhead
-    config.set('defaults', 'internal_poll_interval', '0.05')
+    config.set('defaults', 'internal_poll_interval', '0.01')
 
     # Set the interpreter discovery to auto mode.
     config.set('defaults', 'interpreter_python', 'auto')
