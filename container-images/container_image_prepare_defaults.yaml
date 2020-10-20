@@ -25,7 +25,7 @@ parameter_defaults:
 
       # Container image name components for Ceph images.
       # Only used if Ceph is deployed.
-      ceph_namespace: docker.io/ceph
+      ceph_namespace: quay.ceph.io/ceph-ci
       ceph_image: daemon
       ceph_tag: v3.2.14-stable-3.2-luminous-centos-7-x86_64
 
