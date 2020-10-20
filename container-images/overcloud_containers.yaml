@@ -203,7 +203,7 @@ container_images:
   image_source: kolla
 - imagename: docker.io/tripleostein/centos-binary-zaqar-wsgi:current-tripleo
   image_source: kolla
-- imagename: docker.io/ceph/daemon:v4.0.12-stable-4.0-nautilus-centos-7-x86_64
+- imagename: quay.ceph.io/ceph-ci/daemon:v4.0.13-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
 - imagename: docker.io/tripleostein/centos-binary-tempest:current-tripleo
   image_source: kolla

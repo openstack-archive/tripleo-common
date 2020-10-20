@@ -234,9 +234,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self.assertEqual(
             {
                 'namespace': 'docker.io/tripleostein',
-                'ceph_namespace': 'docker.io/ceph',
+                'ceph_namespace': 'quay.ceph.io/ceph-ci',
                 'ceph_image': 'daemon',
-                'ceph_tag': 'v4.0.12-stable-4.0-nautilus-centos-7-x86_64',
+                'ceph_tag': 'v4.0.13-stable-4.0-nautilus-centos-7-x86_64',
                 'name_prefix': 'centos-binary-',
                 'name_suffix': '',
                 'tag': 'current-tripleo',
