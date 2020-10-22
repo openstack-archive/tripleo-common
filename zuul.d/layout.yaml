@@ -6,28 +6,56 @@
       - openstack-python3-train-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
-      - tripleo-multinode-container-minimal
-      - tripleo-undercloud-jobs
+      - tripleo-multinode-container-minimal-pipeline
+      - tripleo-undercloud-jobs-pipeline
       - tripleo-build-containers-jobs
-      - tripleo-standalone-scenarios-full
+      - tripleo-standalone-scenarios-pipeline
     check:
       jobs:
         - openstack-tox-linters
         - openstack-tox-py27
         - openstack-tox-py36
         - openstack-tox-py37
-        - tripleo-ci-centos-8-containers-multinode:
+        - tripleo-ci-centos-8-content-provider:
             dependencies: &deps_unit_lint
               - openstack-tox-linters
               - openstack-tox-py27
               - openstack-tox-py36
               - openstack-tox-py37
+        - tripleo-ci-centos-8-containers-multinode:
+            vars: &multi_consumer_vars
+              consumer_job: true
+              build_container_images: false
+              tags:
+                - undercloud-setup
+                - undercloud-scripts
+                - undercloud-install
+                - undercloud-post-install
+                - tripleo-validations
+                - overcloud-scripts
+                - overcloud-prep-config
+                - overcloud-prep-containers
+                - overcloud-deploy
+                - overcloud-post-deploy
+                - overcloud-validate
+            dependencies: &deps_cprovider
+              - tripleo-ci-centos-8-content-provider
         - tripleo-ci-centos-8-undercloud-containers:
-            dependencies: *deps_unit_lint
+            vars: &undercloud_consumer_vars
+              consumer_job: true
+              tags:
+              - undercloud-setup
+              - undercloud-scripts
+              - undercloud-install
+              - undercloud-validate
+            dependencies: *deps_cprovider
         - tripleo-ci-centos-8-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
+            vars: &sa_consumer_vars
+              consumer_job: true
+              build_container_images: false
+              tags:
+                - standalone
+            dependencies: *deps_cprovider
         - tripleo-build-containers-ubi-8:
             dependencies: *deps_unit_lint
             files:
@@ -36,7 +64,8 @@
         - tripleo-ci-centos-7-scenario000-multinode-oooq-container-upgrades:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario000-multinode-oooq-container-updates-train:
-            dependencies: *deps_unit_lint
+            vars: *multi_consumer_vars
+            dependencies: *deps_cprovider
             files:
               - workbooks/package_update.yaml
               - workbooks/baremetal.yaml
@@ -46,18 +75,19 @@
               - tripleo_common/image/kolla_builder.py
               - scripts/.*$
         - tripleo-ci-centos-8-scenario007-multinode-oooq-container:
-            dependencies: *deps_unit_lint
+            vars: *multi_consumer_vars
+            dependencies: *deps_cprovider
             files:
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
         - tripleo-ci-centos-7-standalone-upgrade:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario001-standalone:
-            dependencies: *deps_unit_lint
+            vars: *sa_consumer_vars
+            dependencies: *deps_cprovider
         - tripleo-ci-centos-8-scenario001-standalone:
-            dependencies: *deps_unit_lint
-            vars:
-              build_container_images: true
+            vars: *sa_consumer_vars
+            dependencies: *deps_cprovider
             files:
               - ^container-images/tcib/base/collectd.*$
               - ^container-images/tcib/base/os/aodh.*$
@@ -70,13 +100,17 @@
               - ^container-images/tcib/base/rabbitmq.*$
               - ^container-images/tcib/base/redis.*$
         - tripleo-ci-centos-8-scenario002-standalone:
-            dependencies: *deps_unit_lint
+            vars: *sa_consumer_vars
+            dependencies: *deps_cprovider
         - tripleo-ci-centos-8-scenario003-standalone:
-            dependencies: *deps_unit_lint
+            vars: *sa_consumer_vars
+            dependencies: *deps_cprovider
         - tripleo-ci-centos-8-scenario004-standalone:
-            dependencies: *deps_unit_lint
+            vars: *sa_consumer_vars
+            dependencies: *deps_cprovider
         - tripleo-ci-centos-8-scenario012-standalone:
-            dependencies: *deps_unit_lint
+            vars: *sa_consumer_vars
+            dependencies: *deps_cprovider
         - tripleo-buildimage-overcloud-full-centos-8:
             dependencies: *deps_unit_lint
             files:
