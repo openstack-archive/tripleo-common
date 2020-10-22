@@ -165,7 +165,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self.assertEqual(
             {
                 'namespace': 'docker.io/tripleoqueens',
-                'ceph_namespace': 'docker.io/ceph',
+                'ceph_namespace': 'quay.ceph.io/ceph-ci',
                 'ceph_image': 'daemon',
                 'ceph_tag': 'v3.2.14-stable-3.2-luminous-centos-7-x86_64',
                 'logging': 'files',
