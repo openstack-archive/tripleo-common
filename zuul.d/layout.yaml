@@ -46,8 +46,6 @@
               - ^container-images/.*$
               - tripleo_common/image/kolla_builder.py
               - scripts/tripleo-deploy-openshift
-        - tripleo-ci-centos-7-standalone-upgrade:
-            dependencies: *deps_unit_lint
         - tripleo-ci-centos-7-scenario001-standalone:
             dependencies: *deps_unit_lint
         - tripleo-ci-centos-7-scenario002-standalone:
