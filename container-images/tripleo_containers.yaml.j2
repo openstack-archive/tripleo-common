@@ -472,6 +472,7 @@ container_images_template:
   - ContainerNeutronMetadataImage
   services:
   - OS::TripleO::Services::NeutronMetadataAgent
+  - OS::TripleO::Services::ComputeNeutronMetadataAgent
 
 - imagename: "{{namespace}}/{{name_prefix}}neutron-openvswitch-agent{{name_suffix}}:{{tag}}"
   image_source: tripleo
