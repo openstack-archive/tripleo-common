@@ -331,7 +331,8 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
     'libseccomp',
     'openssl-perl',
     'openstack-nova-migration',
-    'podman'
+    'podman',
+    'libvirt-admin'
 ] %}
 {% if distro_python_version.startswith('2') %}
 {% set nova_libvirt_packages_append = nova_libvirt_packages_append + ['docker'] %}
