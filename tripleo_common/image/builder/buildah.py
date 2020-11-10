@@ -136,6 +136,11 @@ class BuildahBuilder(base.BaseBuilder):
         if self.push_containers:
             self.push(self._get_destination(container_name))
 
+    @tenacity.retry(  # Retry up to 3 times with 1 second delay
+        reraise=True,
+        wait=1,
+        stop=tenacity.stop_after_attempt(3)
+    )
     def build(self, container_name, container_build_path):
         """Build an image from a given directory.
 
