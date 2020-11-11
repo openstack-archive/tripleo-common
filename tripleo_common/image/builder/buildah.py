@@ -166,7 +166,7 @@ class BuildahBuilder(base.BaseBuilder):
         # TODO(aschultz): drop --format docker when oci format is properly
         # supported by the undercloud registry
         bud_args.extend(['--format', 'docker', '--tls-verify=False',
-                         '--layers', '--logfile', logfile, '-t',
+                         '--logfile', logfile, '-t',
                          self._get_destination(container_name),
                          container_build_path])
         args = self.buildah_cmd + bud_args

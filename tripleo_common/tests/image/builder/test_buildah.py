@@ -111,7 +111,7 @@ class TestBuildahBuilder(base.TestCase):
         container_build_path = WORK_DIR + '/' + 'fedora-base'
         logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
         buildah_cmd_build = ['--log-level debug', 'bud', '--format', 'docker',
-                             '--tls-verify=False', '--layers', '--logfile',
+                             '--tls-verify=False', '--logfile',
                              logfile, '-t', dest, container_build_path]
         args.extend(buildah_cmd_build)
         bb(WORK_DIR, DEPS, debug=True).build('fedora-base',
@@ -131,7 +131,7 @@ class TestBuildahBuilder(base.TestCase):
         container_build_path = WORK_DIR + '/' + 'fedora-base'
         logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
         buildah_cmd_build = ['bud', '--format', 'docker',
-                             '--tls-verify=False', '--layers',
+                             '--tls-verify=False',
                              '--logfile', logfile, '-t', dest,
                              container_build_path]
         args.extend(buildah_cmd_build)
@@ -154,7 +154,7 @@ class TestBuildahBuilder(base.TestCase):
         buildah_cmd_build = ['bud', '--volume', '/etc/pki:/etc/pki',
                              '--volume', '/etc/dir2:/dir2',
                              '--format', 'docker',
-                             '--tls-verify=False', '--layers',
+                             '--tls-verify=False',
                              '--logfile', logfile, '-t', dest,
                              container_build_path]
         args.extend(buildah_cmd_build)
