@@ -1,0 +1,10 @@
+---
+fixes:
+  - |
+    The qemu user on the host gets created using uid/gid 107. Certificates
+    on the host, but also the vhost-user sockets created by ovs use this
+    uid/gid. With the move to TCIB images the default kolla ids were
+    reverted and the previous overwrite dropped. This make e.g. the qemu
+    processes to fail to use the libvirt-vnc bind mounted certificates.
+    This change brings back the previous overwrite of the qemu user
+    uid/gid.
