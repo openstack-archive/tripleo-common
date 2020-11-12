@@ -138,7 +138,7 @@ class BuildahBuilder(base.BaseBuilder):
 
     @tenacity.retry(  # Retry up to 3 times with 1 second delay
         reraise=True,
-        wait=1,
+        wait=tenacity.wait_fixed(1),
         stop=tenacity.stop_after_attempt(3)
     )
     def build(self, container_name, container_build_path):
