@@ -132,9 +132,17 @@ class BuildahBuilder(base.BaseBuilder):
         if container_name in self.excludes:
             return
 
-        self.build(container_name, self._find_container_dir(container_name))
-        if self.push_containers:
-            self.push(self._get_destination(container_name))
+        # NOTE(mwhahaha): Use a try catch block so we can better log issues
+        # as this is called in a multiprocess fashion so the exception
+        # loses some information when it reaches _multi_build
+        try:
+            self.build(container_name,
+                       self._find_container_dir(container_name))
+            if self.push_containers:
+                self.push(self._get_destination(container_name))
+        except Exception as e:
+            self.log.exception(e)
+            raise
 
     @tenacity.retry(  # Retry up to 3 times with 1 second delay
         reraise=True,
