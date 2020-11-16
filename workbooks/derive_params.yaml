@@ -484,7 +484,7 @@ workflows:
       build_feature_dict:
         on-success: filter_features
         publish:
-          feature_dict: <% dict(DPDK => $.dpdk, SRIOV => $.sriov, HOST => $.dpdk or $.sriov), HCI => $.hci) %>
+          feature_dict: <% dict(DPDK => $.dpdk, SRIOV => $.sriov, HOST => ($.dpdk or $.sriov), HCI => $.hci) %>
 
       filter_features:
         publish:
