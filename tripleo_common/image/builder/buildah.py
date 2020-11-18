@@ -94,7 +94,7 @@ class BuildahBuilder(base.BaseBuilder):
         # from userspace, which would be slower.
         self.buildah_cmd = ['sudo', 'buildah']
         if self.debug:
-            self.buildah_cmd.append('--log-level debug')
+            self.buildah_cmd.append('--log-level=debug')
 
     def _find_container_dir(self, container_name):
         """Return the path of the Dockerfile/Containerfile directory.
