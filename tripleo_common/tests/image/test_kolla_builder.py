@@ -451,28 +451,28 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync(self):
         remove_images = [
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-server-opendaylight:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-opendaylight:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-ovn-northd:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary-ovn-'
+             'imagename': 'quay.io/tripleotrain/centos-binary-ovn-'
                           'controller:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary-ovn-'
+             'imagename': 'quay.io/tripleotrain/centos-binary-ovn-'
                           'nb-db-server:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary-ovn-'
+             'imagename': 'quay.io/tripleotrain/centos-binary-ovn-'
                           'sb-db-server:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-metadata-agent-ovn:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             remove_images=remove_images)
@@ -482,25 +482,25 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         # remove neutron-server image reference from tripleo_containers.yaml
         remove_images = [
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-server:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-server-ovn:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-ovn-northd:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary-ovn-'
+             'imagename': 'quay.io/tripleotrain/centos-binary-ovn-'
                           'controller:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary-ovn-'
+             'imagename': 'quay.io/tripleotrain/centos-binary-ovn-'
                           'nb-db-server:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary-ovn-'
+             'imagename': 'quay.io/tripleotrain/centos-binary-ovn-'
                           'sb-db-server:current-tripleo'},
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-metadata-agent-ovn:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='odl', remove_images=remove_images)
@@ -510,13 +510,13 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         # remove neutron-server image reference from tripleo_containers.yaml
         remove_images = [
             {'image_source': 'tripleo',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-server:current-tripleo'},
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-neutron-server-opendaylight:current-tripleo'},
             {'image_source': 'kolla',
-             'imagename': 'docker.io/tripleotrain/centos-binary'
+             'imagename': 'quay.io/tripleotrain/centos-binary'
                           '-opendaylight:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             neutron_driver='ovn', remove_images=remove_images)
@@ -525,19 +525,19 @@ class TestKollaImageBuilderTemplate(base.TestCase):
     def test_container_images_yaml_in_sync_for_rhel(self):
         remove_images = [
             {'image_source': 'tripleo',
-                'imagename': 'docker.io/tripleotrain/centos-binary'
+                'imagename': 'quay.io/tripleotrain/centos-binary'
                              '-neutron-server:current-tripleo'},
             {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleotrain/centos-binary'
+                'imagename': 'quay.io/tripleotrain/centos-binary'
                              '-neutron-server-opendaylight:current-tripleo'},
             {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleotrain/centos-binary'
+                'imagename': 'quay.io/tripleotrain/centos-binary'
                              '-opendaylight:current-tripleo'},
             {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleotrain/centos-binary'
+                'imagename': 'quay.io/tripleotrain/centos-binary'
                              '-fluentd:current-tripleo'},
             {'image_source': 'kolla',
-                'imagename': 'docker.io/tripleotrain/centos-binary'
+                'imagename': 'quay.io/tripleotrain/centos-binary'
                              '-sensu-client:current-tripleo'}]
         self._test_container_images_yaml_in_sync_helper(
             rhel_containers=True, neutron_driver='ovn',
