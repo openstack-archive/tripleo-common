@@ -43,6 +43,7 @@ def execute(*cmd, **kwargs):
     :raises: OSError
     """
 
+    logger = kwargs.pop('logger', LOG)
     use_standard_locale = kwargs.pop('use_standard_locale', False)
     if use_standard_locale:
         env = kwargs.pop('env_variables', os.environ.copy())
@@ -50,9 +51,9 @@ def execute(*cmd, **kwargs):
         kwargs['env_variables'] = env
     log_stdout = kwargs.pop('log_stdout', True)
     result = processutils.execute(*cmd, **kwargs)
-    LOG.debug('Execution completed, command line is "%s"',
-              ' '.join(map(str, cmd)))
+    logger.debug('Execution completed, command line is "%s"',
+                 ' '.join(map(str, cmd)))
     if log_stdout:
-        LOG.debug('Command stdout is: "%s"', result[0])
-    LOG.debug('Command stderr is: "%s"', result[1])
+        logger.debug('Command stdout is: "%s"', result[0])
+    logger.debug('Command stderr is: "%s"', result[1])
     return result
