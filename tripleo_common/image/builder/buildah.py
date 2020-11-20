@@ -67,6 +67,8 @@ class BuildahBuilder(base.BaseBuilder):
         """
 
         logging.register_options(CONF)
+        if debug:
+            CONF.debug = True
         logging.setup(CONF, '')
 
         super(BuildahBuilder, self).__init__()
@@ -212,7 +214,15 @@ class BuildahBuilder(base.BaseBuilder):
                                    'docker://' + destination]
         self.log.info("Pushing %s image with: %s" %
                       (destination, ' '.join(args)))
-        process.execute(*args, run_as_root=False, use_standard_locale=True)
+        if self.debug:
+            # buildah push logs to stderr, since there is no --log* opt
+            # so we'll use the current logging context for that
+            process.execute(*args, log_stdout=True, run_as_root=False,
+                            use_standard_locale=True, logger=self.log,
+                            loglevel=logging.DEBUG)
+        else:
+            process.execute(*args, run_as_root=False,
+                            use_standard_locale=True)
 
     def build_all(self, deps=None):
         """Build all containers.
