@@ -11,6 +11,7 @@ tcib_packages:
   - e2fsprogs
   - genisoimage
   - iscsi-initiator-utils
+  - ndctl
   - nfs-utils
   - nvme-cli
   - openssh-server
