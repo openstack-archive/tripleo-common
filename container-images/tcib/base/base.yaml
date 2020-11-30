@@ -6,6 +6,7 @@ tcib_actions:
     crudini --set /etc/dnf/dnf.conf main exactarch 1 &&
     crudini --set /etc/dnf/dnf.conf main gpgcheck 1 &&
     crudini --set /etc/dnf/dnf.conf main install_weak_deps False &&
+    if [ '{{ tcib_distro }}' == 'centos' ];then crudini --set /etc/dnf/dnf.conf main best False; fi &&
     crudini --set /etc/dnf/dnf.conf main installonly_limit 0 &&
     crudini --set /etc/dnf/dnf.conf main keepcache 0 &&
     crudini --set /etc/dnf/dnf.conf main obsoletes 1 &&
