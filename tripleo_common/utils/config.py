@@ -585,23 +585,25 @@ class Config(object):
 def get_overcloud_config(swift, heat,
                          container=constants.DEFAULT_CONTAINER_NAME,
                          container_config=constants.CONFIG_CONTAINER_NAME,
-                         config_dir=None, config_type=None):
+                         config_dir=None, config_type=None,
+                         preserve_config=False):
     if not config_dir:
         config_dir = tempfile.mkdtemp(prefix='tripleo-',
                                       suffix='-config')
 
-    # Since the config-download directory is now a git repo, first download
-    # the existing config container if it exists so we can reuse the
-    # existing git repo.
-    try:
-        swiftutils.download_container(swift, container_config,
-                                      config_dir)
-        # Delete the existing container before we re-upload, otherwise
-        # files may not be fully overwritten.
-        swiftutils.delete_container(swift, container_config)
-    except swiftexceptions.ClientException as err:
-        if err.http_status != 404:
-            raise
+    if swift:
+        # Since the config-download directory is now a git repo, first download
+        # the existing config container if it exists so we can reuse the
+        # existing git repo.
+        try:
+            swiftutils.download_container(swift, container_config,
+                                          config_dir)
+            # Delete the existing container before we re-upload, otherwise
+            # files may not be fully overwritten.
+            swiftutils.delete_container(swift, container_config)
+        except swiftexceptions.ClientException as err:
+            if err.http_status != 404:
+                raise
 
     # Delete downloaded tarball as it will be recreated later and we don't
     # want to include the old tarball in the new tarball.
@@ -618,19 +620,21 @@ def get_overcloud_config(swift, heat,
                                          preserve_config_dir=True,
                                          commit_message=message)
 
-    with tempfile.NamedTemporaryFile() as tmp_tarball:
-        tarball.create_tarball(config_path, tmp_tarball.name,
-                               excludes=['.tox', '*.pyc', '*.pyo'])
-        tarball.tarball_extract_to_swift_container(
-            swift,
-            tmp_tarball.name,
-            container_config)
-        # Also upload the tarball to the container for use by export later
-        with open(tmp_tarball.name, 'rb') as t:
-            swift.put_object(container_config,
-                             '%s.tar.gz' % container_config, t)
-    if os.path.exists(config_path):
-        shutil.rmtree(config_path)
+    if swift:
+        with tempfile.NamedTemporaryFile() as tmp_tarball:
+            tarball.create_tarball(config_path, tmp_tarball.name,
+                                   excludes=['.tox', '*.pyc', '*.pyo'])
+            tarball.tarball_extract_to_swift_container(
+                swift,
+                tmp_tarball.name,
+                container_config)
+            # Also upload the tarball to the container for use by export later
+            with open(tmp_tarball.name, 'rb') as t:
+                swift.put_object(container_config,
+                                 '%s.tar.gz' % container_config, t)
+    if not preserve_config:
+        if os.path.exists(config_path):
+            shutil.rmtree(config_path)
 
 
 def download_overcloud_config(swift,
