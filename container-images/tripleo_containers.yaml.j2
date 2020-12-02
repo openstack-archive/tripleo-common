@@ -220,6 +220,13 @@ container_images_template:
   services:
   - OS::TripleO::Services::Etcd
 
+- imagename: "{{namespace}}/{{name_prefix}}frr{{name_suffix}}:{{tag}}"
+  image_source: tripleo
+  params:
+  - ContainerFrrImage
+  services:
+  - OS::TripleO::Services::Frr
+
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
