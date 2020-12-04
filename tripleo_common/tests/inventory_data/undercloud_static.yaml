@@ -1,0 +1,17 @@
+Undercloud:
+  hosts:
+    undercloud: {}
+  vars:
+    ansible_connection: local
+    ansible_host: localhost
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_remote_tmp: /tmp/ansible-${USER}
+    auth_url: https://192.168.24.2:13000
+    cacert: null
+    os_auth_token: gAAAAABfyheSpP9F_O2zpn_zMgPANBpl10eMR4QWL3tfBDJYhDEP_iEoPBjP0H0kCfkoDBldnlmkf9LRIWqSRJ1Z6FJOQdMp--DjJE4lpvWk6_swo2NpSt3IGW9Kudc7xNm-WA9R7xBujF4DtZ_WjWw7H_Ue0VfF6eKfo2HLP6Y9VS2IY3m9HZQ
+    plan: null
+    project_name: admin
+    undercloud_service_list: [tripleo_nova_compute, tripleo_heat_engine, tripleo_ironic_conductor,
+      tripleo_swift_container_server, tripleo_swift_object_server, tripleo_mistral_engine]
+    undercloud_swift_url: https://192.168.24.2:13808/v1/AUTH_ad15d77254c94b03b1534a261059cd76
+    username: admin
