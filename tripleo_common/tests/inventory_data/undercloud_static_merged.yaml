@@ -16,6 +16,3 @@ Undercloud:
       tripleo_swift_container_server, tripleo_swift_object_server, tripleo_mistral_engine]
     undercloud_swift_url: https://192.168.24.2:13808/v1/AUTH_ad15d77254c94b03b1534a261059cd76
     username: admin
-overcloud:
-  children:
-    foobar: {}

@@ -108,17 +108,20 @@ class TripleoInventories(object):
         if len(self.stack_to_inv_obj_map) > 1:
             del inventory['Undercloud']['vars']['plan']
 
-        # Ensure there is an overcloud group for backwards compat
+        # sort plans list for consistency
+        inventory['Undercloud']['vars']['plans'].sort()
+
+        # Unless it's an undercloud inventory ensure there is an overcloud
+        # group for backwards compat
         # If we don't have an stack named "overcloud" use the first stack
-        if 'overcloud' not in inventory:
-            first_stack = list(self.stack_to_inv_obj_map.keys())[0]
+        if inventory['Undercloud']['vars']['plans'] and \
+                'overcloud' not in inventory:
+            first_stack = inventory['Undercloud']['vars']['plans'][0]
             if dynamic:
                 inventory['overcloud'] = {'children': [first_stack]}
             else:
                 inventory['overcloud'] = {'children': {first_stack: {}}}
 
-        # sort plans list for consistency
-        inventory['Undercloud']['vars']['plans'].sort()
         return inventory
 
     def list(self, dynamic=True):
