@@ -23,8 +23,12 @@ import tempfile
 import yaml
 
 from heatclient.exc import HTTPNotFound
+import openstack
+
+from tripleo_common import exception
 
 HOST_NETWORK = 'ctlplane'
+DEFAULT_DOMAIN = 'localdomain.'
 
 UNDERCLOUD_CONNECTION_SSH = 'ssh'
 
@@ -82,6 +86,95 @@ class StackOutputs(object):
         except KeyError:
             pass
         return self.outputs.get(key, default)
+
+
+class NeutronData(object):
+    """Neutron inventory data.
+
+    A data object with for inventory generation enriched neutron data.
+    """
+    def __init__(self, networks, subnets, ports):
+        self.networks = networks
+        self.subnets = subnets
+        self.ports = ports
+        self.networks_by_id = self._networks_by_id()
+        self.subnets_by_id = self._subnets_by_id()
+        self.ports_by_role_and_host = self._ports_by_role_and_host()
+
+    def _tags_to_dict(self, tags):
+        tag_dict = dict()
+        for tag in tags:
+            if not tag.startswith('tripleo_'):
+                continue
+            try:
+                key, value = tag.rsplit('=')
+            except ValueError:
+                continue
+            tag_dict.update({key: value})
+
+        return tag_dict
+
+    def _ports_by_role_and_host(self):
+        mandatory_tags = {'tripleo_role', 'tripleo_hostname'}
+
+        ports_by_role_and_host = {}
+        for port in self.ports:
+            tags = self._tags_to_dict(port.tags)
+            # In case of missing required tags, raise an error.
+            # neutron is useless as a inventory source in this case.
+            if not mandatory_tags.issubset(tags):
+                raise exception.MissingMandatoryNeutronResourceTag()
+            hostname = tags['tripleo_hostname']
+            dns_domain = self.networks_by_id[port.network_id]['dns_domain']
+            net_name = self.networks_by_id[port.network_id]['name']
+            ip_address = port.fixed_ips[0].get('ip_address')
+            role_name = tags['tripleo_role']
+
+            role = ports_by_role_and_host.setdefault(role_name, {})
+            host = role.setdefault(hostname, [])
+            host.append(
+                {'name': port.name,
+                 'hostname': hostname,
+                 'dns_domain': dns_domain,
+                 'network_id': port.network_id,
+                 'network_name': net_name,
+                 'fixed_ips': port.fixed_ips,
+                 'ip_address': ip_address,
+                 'tags': self._tags_to_dict(port.tags)}
+            )
+
+        return ports_by_role_and_host
+
+    def _networks_by_id(self):
+        networks_by_id = {}
+        for net in self.networks:
+            networks_by_id.update(
+                {net.id: {'name': net.name,
+                          'subnet_ids': net.subnet_ids,
+                          'mtu': net.mtu,
+                          'dns_domain': net.dns_domain,
+                          'tags': self._tags_to_dict(net.tags)}
+                 }
+            )
+
+        return networks_by_id
+
+    def _subnets_by_id(self):
+        subnets_by_id = {}
+        for subnet in self.subnets:
+            subnets_by_id.update(
+                {subnet.id: {'name': subnet.name,
+                             'network_id': subnet.network_id,
+                             'ip_version': subnet.ip_version,
+                             'gateway_ip': subnet.gateway_ip,
+                             'cidr': subnet.cidr,
+                             'host_routes': subnet.host_routes,
+                             'dns_nameservers': subnet.dns_nameservers,
+                             'tags': self._tags_to_dict(subnet.tags)}
+                 }
+            )
+
+        return subnets_by_id
 
 
 class TripleoInventory(object):
@@ -153,8 +246,6 @@ class TripleoInventory(object):
         try:
             stack = self.hclient.stacks.get(self.plan_name)
         except HTTPNotFound:
-            LOG.warning("Stack not found: %s. Only the undercloud will "
-                        "be added to the inventory.", self.plan_name)
             stack = None
 
         return stack
@@ -302,6 +393,100 @@ class TripleoInventory(object):
                     svc_host_vars.setdefault('ansible_python_interpreter',
                                              self.ansible_python_interpreter)
 
+    def _get_neutron_data(self):
+        if not self.session:
+            LOG.info("Session not set, neutron data will not be used to build "
+                     "the inventory.")
+            return
+
+        try:
+            conn = openstack.connection.Connection(session=self.session)
+            tags_filter = ['tripleo_stack_name={}'.format(self.plan_name)]
+            ports = list(conn.network.ports(tags=tags_filter))
+            if not ports:
+                return None
+
+            networks = [conn.network.find_network(p.network_id)
+                        for p in ports]
+            subnets = []
+            for net in networks:
+                subnets.extend(conn.network.subnets(network_id=net.id))
+
+            data = NeutronData(networks, subnets, ports)
+        except exception.MissingMandatoryNeutronResourceTag:
+            # In case of missing required tags, neutron is useless as an
+            # inventory source, log warning and return None to disable the
+            # neutron source.
+            LOG.warning("Neutron resource without mandatory tags present. "
+                        "Disabling use of neutron as a source for inventory "
+                        "generation.")
+            return None
+        except openstack.connection.exceptions.EndpointNotFound:
+            LOG.warning("Neutron service not installed. Disabling use of "
+                        "neutron as a source for inventory generation.")
+            return None
+
+        return data
+
+    def _add_host_from_neutron_data(self, host, ports, role_networks):
+        for port in ports:
+            net_name = port['network_name']
+
+            # Add network name to tripleo_role_networks variable
+            if net_name not in role_networks:
+                role_networks.append(net_name)
+
+            # Add variable for hostname on network
+            host.setdefault('{}_hostname'.format(net_name), '.'.join(
+                [port['hostname'], port['dns_domain']]))
+
+            # Add variable for IP address on networks
+            host.setdefault('{}_ip'.format(net_name), port['ip_address'])
+
+            if net_name == self.host_network:
+                # Add variable for ansible_host
+                host.setdefault('ansible_host', port['ip_address'])
+
+                # Add variable for canonical hostname
+                dns_domain = port.get('dns_domain')
+                if dns_domain:
+                    canonical_dns_domain = dns_domain.partition('.')[-1]
+                else:
+                    canonical_dns_domain = DEFAULT_DOMAIN
+                host.setdefault('canonical_hostname', '.'.join(
+                    [port['hostname'], canonical_dns_domain]))
+
+    def _inventory_from_neutron_data(self, ret, children, dynamic):
+        if not self.neutron_data:
+            return
+
+        for role_name, ports_by_host in (
+                self.neutron_data.ports_by_role_and_host.items()):
+            role = ret.setdefault(role_name, {})
+            hosts = role.setdefault('hosts', {})
+            role_vars = role.setdefault('vars', {})
+            role_vars.setdefault('tripleo_role_name', role_name)
+            role_vars.setdefault('ansible_ssh_user', self.ansible_ssh_user)
+            role_vars.setdefault('serial', self.serial)
+            role_networks = role_vars.setdefault('tripleo_role_networks', [])
+            for hostname, ports in ports_by_host.items():
+                host = hosts.setdefault(hostname, {})
+                self._add_host_from_neutron_data(host, ports, role_networks)
+
+            role_vars['tripleo_role_networks'] = sorted(role_networks)
+            children.add(role_name)
+            self.hostvars.update(hosts)
+
+            if dynamic:
+                hosts_format = [h for h in hosts.keys()]
+                hosts_format.sort()
+                ret[role_name]['hosts'] = hosts_format
+
+        if children:
+            allovercloud = ret.setdefault('allovercloud', {})
+            allovercloud.setdefault('children',
+                                    self._hosts(sorted(children), dynamic))
+
     def _undercloud_inventory(self, ret, dynamic):
         undercloud = ret.setdefault('Undercloud', {})
         undercloud.setdefault('hosts', self._hosts(['undercloud'], dynamic))
@@ -365,7 +550,15 @@ class TripleoInventory(object):
         self.stack = self._get_stack()
         self.stack_outputs = StackOutputs(self.stack)
 
+        self.neutron_data = self._get_neutron_data()
+
+        if self.stack is None and self.neutron_data is None:
+            LOG.warning("Stack not found: %s. No data found in neither "
+                        "neutron or heat. Only the undercloud will be added "
+                        "to the inventory.", self.plan_name)
+
         self._undercloud_inventory(ret, dynamic)
+        self._inventory_from_neutron_data(ret, children, dynamic)
         self._inventory_from_heat_outputs(ret, children, dynamic)
 
         return ret

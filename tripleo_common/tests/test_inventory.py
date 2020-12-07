@@ -12,18 +12,21 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from collections import OrderedDict
 import fixtures
 import os
 import sys
-from unittest.mock import MagicMock
+from unittest import mock
 
 import yaml
 
 from heatclient.exc import HTTPNotFound
 
+from tripleo_common.inventory import NeutronData
 from tripleo_common.inventory import StackOutputs
 from tripleo_common.inventory import TripleoInventory
 from tripleo_common.tests import base
+from tripleo_common.tests.fake_neutron import fakes as neutron_fakes
 
 
 MOCK_ENABLED_SERVICES = {
@@ -144,14 +147,14 @@ class TestInventory(base.TestCase):
         }
         self.plan_name = 'overcloud'
 
-        self.hclient = MagicMock()
+        self.hclient = mock.MagicMock()
         self.hclient.stacks.environment.return_value = {
             'parameter_defaults': {
                 'AdminPassword': 'theadminpw',
                 'ContainerCli': 'podman'
                 }
             }
-        self.mock_stack = MagicMock()
+        self.mock_stack = mock.MagicMock()
         self.mock_stack.outputs = self.outputs_data['outputs']
         self.hclient.stacks.get.return_value = self.mock_stack
 
@@ -334,10 +337,10 @@ class TestInventory(base.TestCase):
             ]
         }
         plan_name = 'undercloud'
-        hclient = MagicMock()
+        hclient = mock.MagicMock()
         hclient.stacks.environment.return_value = {'parameter_defaults': {
             'AdminPassword': 'theadminpw', 'ContainerCli': 'podman'}}
-        mock_stack = MagicMock()
+        mock_stack = mock.MagicMock()
         mock_stack.outputs = outputs_data['outputs']
         hclient.stacks.get.return_value = mock_stack
 
@@ -736,3 +739,427 @@ class TestInventory(base.TestCase):
         with open(inv_path, 'r') as f:
             loaded_inv = yaml.safe_load(f)
         self.assertEqual(expected, loaded_inv)
+
+    def test__add_host_from_neutron_data(self):
+        neutron_data = NeutronData(networks=neutron_fakes.fake_networks,
+                                   subnets=neutron_fakes.fake_subnets,
+                                   ports=neutron_fakes.compute_0_ports)
+        ret = OrderedDict()
+        role = ret.setdefault('Compute', {})
+        role_vars = role.setdefault('vars', {})
+        role_networks = role_vars.setdefault('tripleo_role_networks', [])
+        hosts = role.setdefault('hosts', {})
+        ports = neutron_data.ports_by_role_and_host['Compute']['cp-0']
+        self.inventory._add_host_from_neutron_data(hosts, ports, role_networks)
+        self.assertEqual(OrderedDict([
+            ('Compute',
+             {'hosts': {
+                 'ansible_host': '192.0.2.20',
+                 'canonical_hostname': 'cp-0.example.com.',
+                 'ctlplane_hostname': 'cp-0.ctlplane.example.com.',
+                 'ctlplane_ip': '192.0.2.20',
+                 'internal_api_hostname': 'cp-0.inernalapi.example.com',
+                 'internal_api_ip': '198.51.100.150'},
+                 'vars': {
+                     'tripleo_role_networks': ['ctlplane', 'internal_api']
+                 }})
+        ]), ret)
+
+    def test__inventory_from_neutron_data(self):
+        ret = OrderedDict()
+        children = set()
+        fake_ports = (neutron_fakes.controller0_ports +
+                      neutron_fakes.controller1_ports +
+                      neutron_fakes.compute_0_ports)
+        self.inventory.neutron_data = NeutronData(
+            networks=neutron_fakes.fake_networks,
+            subnets=neutron_fakes.fake_subnets,
+            ports=fake_ports)
+
+        self.inventory._inventory_from_neutron_data(ret, children, False)
+        self.assertEqual({'Compute', 'Controller'}, children)
+        self.assertEqual(OrderedDict([
+            ('Controller',
+             {'hosts': {
+                 'c-0': {
+                     'ansible_host': '192.0.2.10',
+                     'canonical_hostname': 'c-0.example.com.',
+                     'ctlplane_hostname': 'c-0.ctlplane.example.com.',
+                     'ctlplane_ip': '192.0.2.10',
+                     'internal_api_hostname': 'c-0.inernalapi.example.com',
+                     'internal_api_ip': '198.51.100.140'},
+                 'c-1': {
+                     'ansible_host': '192.0.2.11',
+                     'canonical_hostname': 'c-1.example.com.',
+                     'ctlplane_hostname': 'c-1.ctlplane.example.com.',
+                     'ctlplane_ip': '192.0.2.11',
+                     'internal_api_hostname': 'c-1.inernalapi.example.com',
+                     'internal_api_ip': '198.51.100.141'}},
+                 'vars': {'ansible_ssh_user': 'heat-admin',
+                          'serial': 1,
+                          'tripleo_role_name': 'Controller',
+                          'tripleo_role_networks': ['ctlplane', 'internal_api']
+                          }}),
+            ('Compute',
+             {'hosts': {
+                 'cp-0': {
+                     'ansible_host': '192.0.2.20',
+                     'canonical_hostname': 'cp-0.example.com.',
+                     'ctlplane_hostname': 'cp-0.ctlplane.example.com.',
+                     'ctlplane_ip': '192.0.2.20',
+                     'internal_api_hostname': 'cp-0.inernalapi.example.com',
+                     'internal_api_ip': '198.51.100.150'}},
+                 'vars': {'ansible_ssh_user': 'heat-admin',
+                          'serial': 1,
+                          'tripleo_role_name': 'Compute',
+                          'tripleo_role_networks': ['ctlplane', 'internal_api']
+                          }}),
+            ('allovercloud', {'children': {'Compute': {}, 'Controller': {}}})
+        ]), ret)
+
+    def test__inventory_from_neutron_data_dynamic(self):
+        ret = OrderedDict()
+        children = set()
+        fake_ports = (neutron_fakes.controller0_ports +
+                      neutron_fakes.controller1_ports +
+                      neutron_fakes.compute_0_ports)
+        self.inventory.neutron_data = NeutronData(
+            networks=neutron_fakes.fake_networks,
+            subnets=neutron_fakes.fake_subnets,
+            ports=fake_ports)
+
+        self.inventory._inventory_from_neutron_data(ret, children, True)
+        self.assertEqual({'Compute', 'Controller'}, children)
+        self.assertEqual(OrderedDict([
+            ('Controller', {
+                'hosts': ['c-0', 'c-1'],
+                'vars': {'ansible_ssh_user': 'heat-admin',
+                         'serial': 1,
+                         'tripleo_role_name': 'Controller',
+                         'tripleo_role_networks': ['ctlplane', 'internal_api']
+                         }}),
+            ('Compute', {
+                'hosts': ['cp-0'],
+                'vars': {'ansible_ssh_user': 'heat-admin',
+                         'serial': 1,
+                         'tripleo_role_name': 'Compute',
+                         'tripleo_role_networks': ['ctlplane', 'internal_api']
+                         }}),
+            ('allovercloud', {'children': ['Compute', 'Controller']})]
+        ), ret)
+
+    @mock.patch.object(TripleoInventory, '_get_neutron_data', autospec=True)
+    def test_inventory_list_with_neutron_and_heat(self, mock_get_neutron_data):
+        fake_ports = (neutron_fakes.controller0_ports +
+                      neutron_fakes.controller1_ports +
+                      neutron_fakes.controller2_ports +
+                      neutron_fakes.compute_0_ports +
+                      neutron_fakes.custom_0_ports)
+        mock_get_neutron_data.return_value = NeutronData(
+            networks=neutron_fakes.fake_networks,
+            subnets=neutron_fakes.fake_subnets,
+            ports=fake_ports)
+        inv_list = self.inventory.list(dynamic=False)
+        c_0 = inv_list['Controller']['hosts']['c-0']
+        c_1 = inv_list['Controller']['hosts']['c-1']
+        c_2 = inv_list['Controller']['hosts']['c-2']
+        cp_0 = inv_list['Compute']['hosts']['cp-0']
+        cs_0 = inv_list['CustomRole']['hosts']['cs-0']
+
+        # The setdefault pattern should always put the value discovered first
+        # in the inventory, neutron source run's prior to heat stack source.
+        # Assert IP addresses from neutron fake are used in the
+        # inventory, not the heat stack IPs.
+
+        # Controller
+        self.assertNotEqual(
+            c_0['ctlplane_ip'],
+            self.outputs['RoleNetIpMap']['Controller']['ctlplane'][0])
+        self.assertNotEqual(
+            c_0['ansible_host'],
+            self.outputs['RoleNetIpMap']['Controller']['ctlplane'][0])
+        self.assertNotEqual(
+            c_1['ctlplane_ip'],
+            self.outputs['RoleNetIpMap']['Controller']['ctlplane'][1])
+        self.assertNotEqual(
+            c_1['ansible_host'],
+            self.outputs['RoleNetIpMap']['Controller']['ctlplane'][1])
+        self.assertNotEqual(
+            c_2['ctlplane_ip'],
+            self.outputs['RoleNetIpMap']['Controller']['ctlplane'][2])
+        self.assertNotEqual(
+            c_2['ansible_host'],
+            self.outputs['RoleNetIpMap']['Controller']['ctlplane'][2])
+        # Compute
+        self.assertNotEqual(
+            cp_0['ctlplane_ip'],
+            self.outputs['RoleNetIpMap']['Compute']['ctlplane'][0])
+        self.assertNotEqual(
+            cp_0['ansible_host'],
+            self.outputs['RoleNetIpMap']['Compute']['ctlplane'][0])
+        # CustomRole
+        self.assertNotEqual(
+            cs_0['ctlplane_ip'],
+            self.outputs['RoleNetIpMap']['CustomRole']['ctlplane'][0])
+        self.assertNotEqual(
+            cs_0['ansible_host'],
+            self.outputs['RoleNetIpMap']['CustomRole']['ctlplane'][0])
+
+        # IP's and hostnames are from neutron while deploy_server_id and
+        # bootstrap_server_id, serial etc are from heat.
+        expected = {
+            'Undercloud': {
+                'hosts': {'undercloud': {}},
+                'vars': {'ansible_connection': 'local',
+                         'ansible_host': 'localhost',
+                         'ansible_python_interpreter': sys.executable,
+                         'ansible_remote_tmp': '/tmp/ansible-${USER}',
+                         'auth_url': 'xyz://keystone.local',
+                         'cacert': 'acacert',
+                         'overcloud_admin_password': 'theadminpw',
+                         'overcloud_keystone_url': 'xyz://keystone',
+                         'plan': 'overcloud',
+                         'project_name': 'admin',
+                         'undercloud_service_list': [
+                             'tripleo_nova_compute',
+                             'tripleo_heat_engine',
+                             'tripleo_ironic_conductor',
+                             'tripleo_swift_container_server',
+                             'tripleo_swift_object_server',
+                             'tripleo_mistral_engine'],
+                         'username': 'admin'}},
+            'Controller': {
+                'hosts': {
+                    'c-0': {
+                        'ansible_host': '192.0.2.10',
+                        'canonical_hostname': 'c-0.example.com.',
+                        'ctlplane_hostname': 'c-0.ctlplane.example.com.',
+                        'ctlplane_ip': '192.0.2.10',
+                        'deploy_server_id': 'a',
+                        'internal_api_hostname': 'c-0.inernalapi.example.com',
+                        'internal_api_ip': '198.51.100.140'},
+                    'c-1': {
+                        'ansible_host': '192.0.2.11',
+                        'canonical_hostname': 'c-1.example.com.',
+                        'ctlplane_hostname': 'c-1.ctlplane.example.com.',
+                        'ctlplane_ip': '192.0.2.11',
+                        'deploy_server_id': 'b',
+                        'internal_api_hostname': 'c-1.inernalapi.example.com',
+                        'internal_api_ip': '198.51.100.141'},
+                    'c-2': {
+                        'ansible_host': '192.0.2.12',
+                        'canonical_hostname': 'c-2.example.com.',
+                        'ctlplane_hostname': 'c-2.ctlplane.example.com.',
+                        'ctlplane_ip': '192.0.2.12',
+                        'deploy_server_id': 'c',
+                        'internal_api_hostname': 'c-2.inernalapi.example.com',
+                        'internal_api_ip': '198.51.100.142'}},
+                'vars': {
+                    'ansible_ssh_user': 'heat-admin',
+                    'bootstrap_server_id': 'a',
+                    'serial': 1,
+                    'tripleo_role_name': 'Controller',
+                    'tripleo_role_networks': ['ctlplane', 'internal_api']}
+            },
+            'Compute': {
+                'hosts': {
+                    'cp-0': {
+                        'ansible_host': '192.0.2.20',
+                        'canonical_hostname': 'cp-0.example.com.',
+                        'ctlplane_hostname': 'cp-0.ctlplane.example.com.',
+                        'ctlplane_ip': '192.0.2.20',
+                        'deploy_server_id': 'd',
+                        'internal_api_hostname': 'cp-0.inernalapi.example.com',
+                        'internal_api_ip': '198.51.100.150'}},
+                'vars': {'ansible_ssh_user': 'heat-admin',
+                         'bootstrap_server_id': 'a',
+                         'serial': 1,
+                         'tripleo_role_name': 'Compute',
+                         'tripleo_role_networks': ['ctlplane', 'internal_api']}
+            },
+            'CustomRole': {
+                'hosts': {
+                    'cs-0': {
+                        'ansible_host': '192.0.2.200',
+                        'canonical_hostname': 'cs-0.example.com.',
+                        'ctlplane_hostname': 'cs-0.ctlplane.example.com.',
+                        'ctlplane_ip': '192.0.2.200',
+                        'deploy_server_id': 'e'}},
+                'vars': {'ansible_ssh_user': 'heat-admin',
+                         'bootstrap_server_id': 'a',
+                         'serial': 1,
+                         'tripleo_role_name': 'CustomRole',
+                         'tripleo_role_networks': ['ctlplane']}
+            },
+            'allovercloud': {
+                'children': {'Compute': {},
+                             'Controller': {},
+                             'CustomRole': {}},
+                'vars': {'container_cli': 'podman',
+                         'ctlplane_vip': 'x.x.x.4',
+                         'redis_vip': 'x.x.x.6'}
+            },
+            'overcloud': {'children': {'allovercloud': {}}},
+            'sa': {'children': {'Controller': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'se': {'children': {'Compute': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sd': {'children': {'Compute': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sb': {'children': {'Controller': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sg': {'children': {'CustomRole': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'ceph_client': {'children': {'Compute': {}},
+                            'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sh': {'children': {'CustomRole': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'clients': {'children': {'Compute': {}},
+                        'vars': {'ansible_ssh_user': 'heat-admin'}},
+        }
+        for k in expected:
+            self.assertEqual(expected[k], inv_list[k])
+
+
+class TestNeutronData(base.TestCase):
+    def setUp(self):
+        super(TestNeutronData, self).setUp()
+        fake_ports = (neutron_fakes.controller0_ports +
+                      neutron_fakes.controller1_ports +
+                      neutron_fakes.compute_0_ports)
+        self.neutron_data = NeutronData(networks=neutron_fakes.fake_networks,
+                                        subnets=neutron_fakes.fake_subnets,
+                                        ports=fake_ports)
+
+    def test__tags_to_dict(self):
+        tags = ['tripleo_foo=foo', 'tripleo_bar=bar', 'other_tag']
+        self.assertEqual({'tripleo_foo': 'foo', 'tripleo_bar': 'bar'},
+                         NeutronData._tags_to_dict(self, tags))
+
+    def test__networks_by_id(self):
+        self.assertEqual({
+            'ctlplane_network_id': {
+                'dns_domain': 'ctlplane.example.com.',
+                'mtu': 1500,
+                'name': 'ctlplane',
+                'subnet_ids': ['ctlplane_subnet_id'],
+                'tags': {}},
+            'internal_api_network_id': {
+                'dns_domain': 'inernalapi.example.com',
+                'mtu': 1500,
+                'name': 'internal_api',
+                'subnet_ids': ['internal_api_subnet_id'],
+                'tags': {'tripleo_network_name': 'InternalApi',
+                         'tripleo_vip': 'true'}
+            },
+        }, self.neutron_data.networks_by_id)
+
+    def test__subnets_by_id(self):
+        self.assertEqual({
+            'ctlplane_subnet_id': {
+                'cidr': '192.0.2.0/24',
+                'dns_nameservers': ['192.0.2.253', '192.0.2.254'],
+                'gateway_ip': '192.0.2.1',
+                'host_routes': [],
+                'ip_version': 4,
+                'name': 'ctlplane-subnet',
+                'network_id': 'ctlplane_network_id',
+                'tags': {}
+            },
+            'internal_api_subnet_id': {
+                'cidr': '198.51.100.128/25',
+                'dns_nameservers': [],
+                'gateway_ip': '198.51.100.129',
+                'host_routes': [],
+                'ip_version': 4,
+                'name': 'internal_api_subnet',
+                'network_id': 'internal_api_network_id',
+                'tags': {'tripleo_vlan_id': '20'}
+            },
+        }, self.neutron_data.subnets_by_id)
+
+    def test__ports_by_role_and_host(self):
+        self.assertEqual({
+            'Controller': {
+                'c-0': [
+                    {'dns_domain': 'ctlplane.example.com.',
+                     'fixed_ips': [{'ip_address': '192.0.2.10',
+                                    'subnet_id': 'ctlplane_subnet_id'}],
+                     'hostname': 'c-0',
+                     'ip_address': '192.0.2.10',
+                     'name': 'c-0-ctlplane',
+                     'network_id': 'ctlplane_network_id',
+                     'network_name': 'ctlplane',
+                     'tags': {'tripleo_hostname': 'c-0',
+                              'tripleo_network_name': 'ctlplane',
+                              'tripleo_role': 'Controller',
+                              'tripleo_stack': 'overcloud'}},
+                    {'dns_domain': 'inernalapi.example.com',
+                     'fixed_ips': [{'ip_address': '198.51.100.140',
+                                    'subnet_id': 'internal_api_subnet_id'}],
+                     'hostname': 'c-0',
+                     'ip_address': '198.51.100.140',
+                     'name': 'c-0-internal_api',
+                     'network_id': 'internal_api_network_id',
+                     'network_name': 'internal_api',
+                     'tags': {'tripleo_hostname': 'c-0',
+                              'tripleo_network_name': 'InternalApi',
+                              'tripleo_role': 'Controller',
+                              'tripleo_stack': 'overcloud'}},
+                ],
+                'c-1': [
+                    {'dns_domain': 'ctlplane.example.com.',
+                     'fixed_ips': [{'ip_address': '192.0.2.11',
+                                    'subnet_id': 'ctlplane_subnet_id'}],
+                     'hostname': 'c-1',
+                     'ip_address': '192.0.2.11',
+                     'name': 'c-1-ctlplane',
+                     'network_id': 'ctlplane_network_id',
+                     'network_name': 'ctlplane',
+                     'tags': {'tripleo_hostname': 'c-1',
+                              'tripleo_network_name': 'ctlplane',
+                              'tripleo_role': 'Controller',
+                              'tripleo_stack': 'overcloud'}},
+                    {'dns_domain': 'inernalapi.example.com',
+                     'fixed_ips': [{'ip_address': '198.51.100.141',
+                                    'subnet_id': 'internal_api_subnet_id'}],
+                     'hostname': 'c-1',
+                     'ip_address': '198.51.100.141',
+                     'name': 'c-1-internal_api',
+                     'network_id': 'internal_api_network_id',
+                     'network_name': 'internal_api',
+                     'tags': {'tripleo_hostname': 'c-1',
+                              'tripleo_network_name': 'InternalApi',
+                              'tripleo_role': 'Controller',
+                              'tripleo_stack': 'overcloud'}},
+                ]
+            },
+            'Compute': {
+                'cp-0': [
+                    {'dns_domain': 'ctlplane.example.com.',
+                     'fixed_ips': [{'ip_address': '192.0.2.20',
+                                    'subnet_id': 'ctlplane_subnet_id'}],
+                     'hostname': 'cp-0',
+                     'ip_address': '192.0.2.20',
+                     'name': 'cp-0-ctlplane',
+                     'network_id': 'ctlplane_network_id',
+                     'network_name': 'ctlplane',
+                     'tags': {'tripleo_hostname': 'cp-0',
+                              'tripleo_network_name': 'ctlplane',
+                              'tripleo_role': 'Compute',
+                              'tripleo_stack': 'overcloud'}},
+                    {'dns_domain': 'inernalapi.example.com',
+                     'fixed_ips': [{'ip_address': '198.51.100.150',
+                                    'subnet_id': 'internal_api_subnet_id'}],
+                     'hostname': 'cp-0',
+                     'ip_address': '198.51.100.150',
+                     'name': 'cp-0-internal_api',
+                     'network_id': 'internal_api_network_id',
+                     'network_name': 'internal_api',
+                     'tags': {'tripleo_hostname': 'cp-0',
+                              'tripleo_network_name': 'InternalApi',
+                              'tripleo_role': 'Compute',
+                              'tripleo_stack': 'overcloud'}},
+                ]
+            },
+        }, self.neutron_data.ports_by_role_and_host)
