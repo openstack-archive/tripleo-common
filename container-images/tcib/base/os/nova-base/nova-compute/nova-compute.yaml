@@ -12,6 +12,7 @@ tcib_packages:
   - genisoimage
   - iscsi-initiator-utils
   - ndctl
+  - daxio
   - nfs-utils
   - nvme-cli
   - openssh-server
