@@ -58,7 +58,7 @@ class TripleoInventories(object):
                 inventory['Undercloud']['vars']['plans'] = []
 
             # save the plan for this stack in the plans list
-            plan = inv['Undercloud']['vars']['plan']
+            plan = inv['Undercloud']['vars'].get('plan')
             if plan is not None:
                 inventory['Undercloud']['vars']['plans'].append(plan)
 

@@ -91,6 +91,7 @@ class TripleoInventory(object):
                  host_network=None, ansible_python_interpreter=None,
                  undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL,
                  undercloud_key_file=None, serial=1):
+        self.session = session
         self.hclient = hclient
         self.host_network = host_network or HOST_NETWORK
         self.auth_url = auth_url
@@ -158,162 +159,103 @@ class TripleoInventory(object):
 
         return stack
 
-    def list(self, dynamic=True):
-        ret = OrderedDict({
-            'Undercloud': {
-                'hosts': self._hosts(['undercloud'], dynamic),
-                'vars': {
-                    'ansible_host': 'localhost',
-                    'ansible_python_interpreter': sys.executable,
-                    'ansible_connection': self.undercloud_connection,
-                    # see https://github.com/ansible/ansible/issues/41808
-                    'ansible_remote_tmp': '/tmp/ansible-${USER}',
-                    'auth_url': self.auth_url,
-                    'plan': None,
-                    'project_name': self.project_name,
-                    'username': self.username,
-                },
-            }
-        })
-
-        if self.cacert:
-            ret['Undercloud']['vars']['cacert'] = \
-                self.cacert
-
-        if self.ansible_python_interpreter:
-            ret['Undercloud']['vars']['ansible_python_interpreter'] = \
-                self.ansible_python_interpreter
-
-        if self.undercloud_connection == UNDERCLOUD_CONNECTION_SSH:
-            ret['Undercloud']['vars']['ansible_ssh_user'] = \
-                self.ansible_ssh_user
-            if self.undercloud_key_file:
-                ret['Undercloud']['vars']['ansible_ssh_private_key_file'] = \
-                    self.undercloud_key_file
-
-        ret['Undercloud']['vars']['undercloud_service_list'] = \
-            self.get_undercloud_service_list()
-
-        if dynamic:
-            # Prevent Ansible from repeatedly calling us to get empty host
-            # details
-            ret['_meta'] = {'hostvars': self.hostvars}
-
-        self.stack = self._get_stack()
+    def _inventory_from_heat_outputs(self, ret, children, dynamic):
         if not self.stack:
-            return ret
+            return
 
-        ret['Undercloud']['vars']['plan'] = self.plan_name
-        admin_password = self.get_overcloud_environment().get(
-            'parameter_defaults', {}).get('AdminPassword')
-        if admin_password:
-            ret['Undercloud']['vars']['overcloud_admin_password'] =\
-                admin_password
-
-        self.stack_outputs = StackOutputs(self.stack)
-
-        keystone_url = self.stack_outputs.get('KeystoneURL')
-        if keystone_url:
-            ret['Undercloud']['vars']['overcloud_keystone_url'] = keystone_url
-
-        endpoint_map = self.stack_outputs.get('EndpointMap')
-        if endpoint_map:
-            horizon_endpoint = endpoint_map.get('HorizonPublic', {}).get('uri')
-            if horizon_endpoint:
-                ret['Undercloud']['vars']['overcloud_horizon_url'] =\
-                    horizon_endpoint
-
+        vip_map = self.stack_outputs.get('VipMap', {})
         role_net_ip_map = self.stack_outputs.get('RoleNetIpMap', {})
         role_node_id_map = self.stack_outputs.get('ServerIdData', {})
         networks = set()
         role_net_hostname_map = self.stack_outputs.get(
             'RoleNetHostnameMap', {})
-        children = []
-        for role, hostnames in role_net_hostname_map.items():
-            if hostnames:
-                names = hostnames.get(self.host_network) or []
-                shortnames = [n.split(".%s." % self.host_network)[0].lower()
-                              for n in names]
-                ips = role_net_ip_map[role][self.host_network]
-                if not ips:
-                    raise Exception("No IPs found for %s role on %s network"
-                                    % (role, self.host_network))
-                hosts = {}
-                for idx, name in enumerate(shortnames):
-                    hosts[name] = {}
-                    hosts[name].update({
-                        'ansible_host': ips[idx]})
-                    if 'server_ids' in role_node_id_map:
-                        hosts[name].update({
-                            'deploy_server_id': role_node_id_map[
-                                'server_ids'][role][idx]})
-                    # Add variable for IP on each network
-                    for net in role_net_ip_map[role]:
-                        hosts[name].update({
-                            "%s_ip" % net:
-                                role_net_ip_map[role][net][idx]})
-                    # Add variables for hostname on each network
-                    for net in role_net_hostname_map[role]:
-                        hosts[name].update({
-                            "%s_hostname" % net:
-                                role_net_hostname_map[role][net][idx]})
+        for role_name, hostnames in role_net_hostname_map.items():
+            if not hostnames:
+                continue
 
-                children.append(role)
+            net_ip_map = role_net_ip_map[role_name]
+            ips = net_ip_map[self.host_network]
+            if not ips:
+                raise Exception("No IPs found for %s role on %s network" %
+                                (role_name, self.host_network))
 
-                if not dynamic:
-                    hosts_format = hosts
-                else:
-                    hosts_format = [h for h in hosts.keys()]
-                    hosts_format.sort()
+            net_hostname_map = role_net_hostname_map[role_name]
+            bootstrap_server_id = role_node_id_map.get('bootstrap_server_id')
+            node_id_map = role_node_id_map.get('server_ids')
+            if node_id_map:
+                srv_id_map = node_id_map.get(role_name)
 
-                role_networks = sorted([
-                    str(net) for net in role_net_ip_map[role]
-                ])
-                networks.update(role_networks)
+            role_networks = sorted([str(net) for net in net_ip_map])
+            networks.update(role_networks)
 
-                ret[role] = {
-                    'hosts': hosts_format,
-                    'vars': {
-                        'ansible_ssh_user': self.ansible_ssh_user,
-                        'bootstrap_server_id': role_node_id_map.get(
-                            'bootstrap_server_id'),
-                        'tripleo_role_name': role,
-                        'tripleo_role_networks': role_networks,
-                        'serial': self.serial,
-                    }
+            role = ret.setdefault(role_name, {})
+            hosts = role.setdefault('hosts', {})
+            role_vars = role.setdefault('vars', {})
 
-                }
+            role_vars.setdefault('ansible_ssh_user', self.ansible_ssh_user)
+            role_vars.setdefault('bootstrap_server_id', bootstrap_server_id)
+            role_vars.setdefault('tripleo_role_name', role_name)
+            role_vars.setdefault('tripleo_role_networks', role_networks)
+            role_vars.setdefault('serial', self.serial)
 
-                if self.ansible_python_interpreter:
-                    ret[role]['vars']['ansible_python_interpreter'] = \
-                        self.ansible_python_interpreter
+            if self.ansible_python_interpreter:
+                role_vars.setdefault('ansible_python_interpreter',
+                                     self.ansible_python_interpreter)
 
-                self.hostvars.update(hosts)
+            names = hostnames.get(self.host_network) or []
+            shortnames = [n.split(".%s." % self.host_network)[0].lower()
+                          for n in names]
+
+            for idx, name in enumerate(shortnames):
+                host = hosts.setdefault(name, {})
+                host.setdefault('ansible_host', ips[idx])
+
+                if srv_id_map:
+                    host.setdefault('deploy_server_id', srv_id_map[idx])
+
+                # Add variable for IP on each network
+                for net in net_ip_map:
+                    host.setdefault('{}_ip'.format(net), net_ip_map[net][idx])
+
+                # Add variables for hostname on each network
+                for net in net_hostname_map:
+                    host.setdefault(
+                        '{}_hostname'.format(net), net_hostname_map[net][idx])
+
+            children.add(role_name)
+
+            self.hostvars.update(hosts)
+
+            if dynamic:
+                hosts_format = [h for h in hosts.keys()]
+                hosts_format.sort()
+                ret[role_name]['hosts'] = hosts_format
 
         if children:
-            vip_map = self.stack_outputs.get('VipMap', {})
-            overcloud_vars = {
-                (vip_name + "_vip"): vip for vip_name, vip in vip_map.items()
-                if vip and (vip_name in networks or vip_name == 'redis')
-            }
+            allovercloud = ret.setdefault('allovercloud', {})
+            overcloud_vars = allovercloud.setdefault('vars', {})
 
-            overcloud_vars['container_cli'] = \
-                self.get_overcloud_environment().get(
-                    'parameter_defaults', {}).get('ContainerCli')
+            for vip_name, vip in vip_map.items():
+                if vip and (vip_name in networks or vip_name == 'redis'):
+                    overcloud_vars.setdefault('{}_vip'.format(vip_name), vip)
 
-            ret['allovercloud'] = {
-                'children': self._hosts(sorted(children), dynamic),
-                'vars': overcloud_vars
-            }
+            overcloud_vars.setdefault(
+                'container_cli', self.get_overcloud_environment().get(
+                    'parameter_defaults', {}).get('ContainerCli'))
 
-            ret[self.plan_name] = {
-                'children': self._hosts(['allovercloud'], dynamic)
-            }
+            allovercloud.setdefault('children', self._hosts(sorted(children),
+                                                            dynamic))
+
+            ret.setdefault(
+                self.plan_name, {'children': self._hosts(['allovercloud'],
+                                                         dynamic)})
+
             if self.plan_name != 'overcloud':
-                ret['overcloud'] = {
-                    'children': self._hosts(['allovercloud'], dynamic),
-                    'deprecated': 'Deprecated by allovercloud group in Ussuri'
-                }
+                ret.setdefault('overcloud',
+                               {'children': self._hosts(['allovercloud'],
+                                                        dynamic),
+                                'deprecated': ('Deprecated by allovercloud '
+                                               'group in Ussuri')})
 
         # Associate services with roles
         roles_by_service = self.get_roles_by_service(
@@ -344,16 +286,81 @@ class TripleoInventory(object):
             service_children = [role for role in roles
                                 if ret.get(role) is not None]
             if service_children:
-                svc_host = service.lower()
-                ret[svc_host] = {
-                    'children': self._hosts(service_children, dynamic),
-                    'vars': {
-                        'ansible_ssh_user': self.ansible_ssh_user
-                    }
-                }
+                svc_host = ret.setdefault(service.lower(), {})
+                svc_host_vars = svc_host.setdefault('vars', {})
+                svc_host.setdefault('children', self._hosts(service_children,
+                                                            dynamic))
+                svc_host_vars.setdefault('ansible_ssh_user',
+                                         self.ansible_ssh_user)
                 if self.ansible_python_interpreter:
-                    ret[svc_host]['vars']['ansible_python_interpreter'] = \
-                        self.ansible_python_interpreter
+                    svc_host_vars.setdefault('ansible_python_interpreter',
+                                             self.ansible_python_interpreter)
+
+    def _undercloud_inventory(self, ret, dynamic):
+        undercloud = ret.setdefault('Undercloud', {})
+        undercloud.setdefault('hosts', self._hosts(['undercloud'], dynamic))
+        _vars = undercloud.setdefault('vars', {})
+        _vars.setdefault('ansible_host', 'localhost')
+        _vars.setdefault('ansible_connection', self.undercloud_connection)
+        # see https://github.com/ansible/ansible/issues/41808
+        _vars.setdefault('ansible_remote_tmp', '/tmp/ansible-${USER}')
+        _vars.setdefault('auth_url', self.auth_url)
+        _vars.setdefault('project_name', self.project_name)
+        _vars.setdefault('username', self.username)
+
+        if self.cacert:
+            _vars['cacert'] = self.cacert
+
+        if self.ansible_python_interpreter:
+            _vars.setdefault('ansible_python_interpreter',
+                             self.ansible_python_interpreter)
+        else:
+            _vars.setdefault('ansible_python_interpreter', sys.executable)
+
+        if self.undercloud_connection == UNDERCLOUD_CONNECTION_SSH:
+            _vars.setdefault('ansible_ssh_user', self.ansible_ssh_user)
+            if self.undercloud_key_file:
+                _vars.setdefault('ansible_ssh_private_key_file',
+                                 self.undercloud_key_file)
+
+        _vars.setdefault('undercloud_service_list',
+                         self.get_undercloud_service_list())
+
+        # Remaining variables need the stack to be resolved ...
+        if not self.stack:
+            return
+
+        _vars.setdefault('plan', self.plan_name)
+
+        admin_password = self.get_overcloud_environment().get(
+            'parameter_defaults', {}).get('AdminPassword')
+        if admin_password:
+            _vars.setdefault('overcloud_admin_password', admin_password)
+
+        keystone_url = self.stack_outputs.get('KeystoneURL')
+        if keystone_url:
+            _vars.setdefault('overcloud_keystone_url', keystone_url)
+
+        endpoint_map = self.stack_outputs.get('EndpointMap')
+        if endpoint_map:
+            horizon_endpoint = endpoint_map.get('HorizonPublic', {}).get('uri')
+            if horizon_endpoint:
+                _vars.setdefault('overcloud_horizon_url', horizon_endpoint)
+
+    def list(self, dynamic=True):
+        ret = OrderedDict()
+        if dynamic:
+            # Prevent Ansible from repeatedly calling us to get empty host
+            # details
+            ret.setdefault('_meta', {'hostvars': self.hostvars})
+
+        children = set()
+
+        self.stack = self._get_stack()
+        self.stack_outputs = StackOutputs(self.stack)
+
+        self._undercloud_inventory(ret, dynamic)
+        self._inventory_from_heat_outputs(ret, children, dynamic)
 
         return ret
 
