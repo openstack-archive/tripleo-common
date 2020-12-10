@@ -1,0 +1,33 @@
+{
+    "_meta": {
+        "hostvars": {}
+    },
+    "Undercloud": {
+        "hosts": [
+            "undercloud"
+        ],
+        "vars": {
+            "ansible_host": "localhost",
+            "ansible_python_interpreter": "/usr/bin/python3",
+            "ansible_connection": "local",
+            "ansible_remote_tmp": "/tmp/ansible-${USER}",
+            "auth_url": "https://192.168.24.2:13000",
+            "cacert": null,
+            "os_auth_token": "gAAAAABfyhfVBvn9GwTNPKCgjTLtBAMW4_8JVMUj4n9GTrt8Ns2_YrJiAK9E3E9V0ABixQ2TRICTgZtHGgl4qfIcJMvbbLjH84oL4QxuyQ4LfcNIF7WBcnvoo3qvkCYfTNbzEJChFYiId8W0lyXiTGE80Dhr13PXrHuYDeejs4jShuFGSP_8BeQ",
+            "plan": null,
+            "plans": [],
+            "project_name": "admin",
+            "username": "admin",
+            "undercloud_swift_url": "https://192.168.24.2:13808/v1/AUTH_ad15d77254c94b03b1534a261059cd76",
+            "undercloud_service_list": [
+                "tripleo_nova_compute",
+                "tripleo_heat_engine",
+                "tripleo_ironic_conductor",
+                "tripleo_swift_container_server",
+                "tripleo_swift_object_server",
+                "tripleo_mistral_engine"
+            ]
+        }
+    }
+}
+

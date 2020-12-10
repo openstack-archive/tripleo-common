@@ -42,7 +42,10 @@ class _TestInventoriesBase(base.TestCase):
                 'merged_static.yaml',
                 'single_dynamic.json',
                 'single_static.yaml',
-
+                'undercloud_dynamic.json',
+                'undercloud_static.yaml',
+                'undercloud_dynamic_merged.json',
+                'undercloud_static_merged.yaml',
                 ):
             name = os.path.basename(datafile).split('.')[0]
             path = os.path.join(inventory_dir, datafile)
@@ -144,4 +147,40 @@ class TestInventorySingleDynamic(_TestInventoriesBase):
     def test_list(self):
         actual = self.inventories.list()
         expected = self.inventory_data['single_dynamic']
+        self.assertEqual(expected, actual)
+
+
+class TestInventoryUndercloudStatic(_TestInventoriesBase):
+    def setUp(self):
+        super(TestInventoryUndercloudStatic, self).setUp()
+        mock_inv_undercloud = MagicMock()
+        mock_inv_undercloud.list.return_value = self.inventory_data[
+            'undercloud_static'
+        ]
+        stack_to_inv_obj_map = {
+            'foobar': mock_inv_undercloud
+        }
+        self.inventories = TripleoInventories(stack_to_inv_obj_map)
+
+    def test_list(self):
+        actual = self.inventories.list(dynamic=False)
+        expected = self.inventory_data['undercloud_static_merged']
+        self.assertEqual(expected, actual)
+
+
+class TestInventoryUndercloudDynamic(_TestInventoriesBase):
+    def setUp(self):
+        super(TestInventoryUndercloudDynamic, self).setUp()
+        mock_inv_undercloud = MagicMock()
+        mock_inv_undercloud.list.return_value = self.inventory_data[
+            'undercloud_dynamic'
+        ]
+        stack_to_inv_obj_map = {
+            'foobar': mock_inv_undercloud
+        }
+        self.inventories = TripleoInventories(stack_to_inv_obj_map)
+
+    def test_list(self):
+        actual = self.inventories.list()
+        expected = self.inventory_data['undercloud_dynamic_merged']
         self.assertEqual(expected, actual)
