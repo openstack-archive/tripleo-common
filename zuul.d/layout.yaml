@@ -121,12 +121,10 @@
             dependencies: *deps_unit_lint
             files:
               - ^image-yaml/.*$
-        - openstack-tox-lower-constraints
     gate:
       queue: tripleo
       jobs:
         - openstack-tox-linters
-        - openstack-tox-lower-constraints
         - tripleo-buildimage-overcloud-full-centos-8:
             files:
               - ^image-yaml/.*$
