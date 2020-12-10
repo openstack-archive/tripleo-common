@@ -13,7 +13,7 @@ parameter_defaults:
     # <prefix>/share/tripleo-common/container-images/tripleo_containers.yaml.j2
     set:
       # Container image name components for OpenStack images.
-      namespace: docker.io/tripleou
+      namespace: quay.io/tripleoussuri
       name_prefix: centos-binary-
       name_suffix: ''
       tag: current-tripleo
