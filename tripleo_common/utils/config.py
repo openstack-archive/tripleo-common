@@ -225,6 +225,11 @@ class Config(object):
 
     def render_network_config(self, config_dir):
         role_network_config = self.get_role_network_config_data()
+        if role_network_config is None:
+            raise ValueError(
+                'Old network config templates are possibly used, '
+                'Please convert them before proceeding.')
+
         for role, config in role_network_config.items():
             config_path = os.path.join(config_dir, role, "NetworkConfig")
             # check if it's actual config or heat config_id
