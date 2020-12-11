@@ -24,6 +24,7 @@ import warnings
 import yaml
 
 import jinja2
+from oslo_utils import uuidutils
 from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
@@ -227,6 +228,12 @@ class Config(object):
         network_config = self.get_network_config_data(stack)
         for server, config in network_config.items():
             if server in server_roles:
+                if config is None or not uuidutils.is_uuid_like(config):
+                    # config should be a valid heat resource id
+                    err_msg = ('Invalid network config for role %s. Please '
+                               'check the network config templates used.' %
+                               server_roles[server])
+                    raise ValueError(err_msg)
                 server_deployment_dir = os.path.join(
                     config_dir, server_roles[server], server)
                 self._mkdir(server_deployment_dir)
