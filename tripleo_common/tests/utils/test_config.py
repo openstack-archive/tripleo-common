@@ -880,7 +880,8 @@ class TestConfig(base.TestCase):
         self.config = ooo_config.Config(heat)
         stack = mock.Mock()
         server_roles = dict(Controller='controller')
-        mock_get_network_config_data.return_value = dict(Controller='config')
+        mock_get_network_config_data.return_value = dict(
+            Controller='56f27b7a-7bb8-40bc-bfdb-a46f7f806b88')
         config_dir = '/tmp/tht'
         self.config.render_network_config(stack, config_dir, server_roles)
 
@@ -898,8 +899,9 @@ class TestConfig(base.TestCase):
         self.config = ooo_config.Config(heat)
         stack = mock.Mock()
         server_roles = dict(node1='Controller')
-        mock_get_network_config_data.return_value = dict(node1='config',
-                                                         node2='config')
+        mock_get_network_config_data.return_value = dict(
+            node1='56f27b7a-7bb8-40bc-bfdb-a46f7f806b88',
+            node2='56f27b7a-7bb8-40bc-bfdb-a46f7f806b88')
         config_dir = '/tmp/tht'
         self.config.render_network_config(stack, config_dir, server_roles)
         self.assertEqual(2, mock_open.call_count)
