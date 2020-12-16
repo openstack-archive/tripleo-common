@@ -39,6 +39,7 @@ class TripleoCommonException(Exception):
 
     def __init__(self, **kwargs):
         self.kwargs = kwargs
+        self.msg_fmt = self.message
 
         try:
             self.message = self.msg_fmt % kwargs
