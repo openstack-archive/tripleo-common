@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v3.4.0
     hooks:
       - id: trailing-whitespace
       - id: mixed-line-ending
@@ -12,7 +12,7 @@ repos:
       - id: check-yaml
         files: .*\.(yaml|yml)$
   - repo: https://gitlab.com/pycqa/flake8.git
-    rev: 3.8.1
+    rev: 3.8.4
     hooks:
       - id: flake8
   - repo: https://github.com/openstack-dev/bashate.git
@@ -27,3 +27,7 @@ repos:
         # E040: Syntax error determined using `bash -n` (as many scripts
         #       use jinja templating, this will often fail and the syntax
         #       error will be discovered in execution anyway)
+  - repo: https://github.com/PyCQA/pylint
+    rev: pylint-2.6.0
+    hooks:
+      - id: pylint

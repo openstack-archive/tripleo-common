@@ -490,6 +490,7 @@ class TestBaseImageUploader(base.TestCase):
         super(TestBaseImageUploader, self).setUp()
         self.uploader = image_uploader.BaseImageUploader()
         self.uploader.init_registries_cache()
+        # pylint: disable=no-member
         self.uploader._inspect.retry.sleep = mock.Mock()
         self.requests = self.useFixture(rm_fixture.Fixture())
 
@@ -1288,7 +1289,9 @@ class TestSkopeoImageUploader(base.TestCase):
     def setUp(self):
         super(TestSkopeoImageUploader, self).setUp()
         self.uploader = image_uploader.SkopeoImageUploader()
+        # pylint: disable=no-member
         self.uploader._copy.retry.sleep = mock.Mock()
+        # pylint: disable=no-member
         self.uploader._inspect.retry.sleep = mock.Mock()
 
     @mock.patch('tripleo_common.image.image_uploader.'
@@ -1532,6 +1535,7 @@ class TestSkopeoImageUploader(base.TestCase):
 
 class TestPythonImageUploader(base.TestCase):
 
+    # pylint: disable=no-member
     def setUp(self):
         super(TestPythonImageUploader, self).setUp()
         self.uploader = image_uploader.PythonImageUploader()

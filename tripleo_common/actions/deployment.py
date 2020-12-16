@@ -113,7 +113,7 @@ class OrchestrationDeployAction(base.TripleOAction):
             swift_client.delete_object(container_name, object_name)
             swift_client.delete_container(container_name)
         except Exception as err:
-            LOG.error("Error cleaning up heat deployment resources.", err)
+            LOG.error("Error cleaning up heat deployment resources: %s", err)
 
         error = None
         if not body:
