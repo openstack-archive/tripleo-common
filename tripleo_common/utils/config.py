@@ -34,7 +34,8 @@ from tripleo_common.utils import tarball
 
 LOG = logging.getLogger(__name__)
 
-warnings.filterwarnings('once')
+warnings.filterwarnings('once', category=DeprecationWarning)
+warnings.filterwarnings('once', category=UserWarning)
 
 
 class Config(object):
