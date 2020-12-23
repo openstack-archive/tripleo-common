@@ -5,7 +5,7 @@
 conf=/etc/swift/container-server.conf
 cache=/var/cache/swift/container.recon
 
-if ps -ef | grep --quiet [s]wift-container-server; then
+if ps -e | grep --quiet swift-container-server; then
     if ! crudini --get $conf pipeline:main pipeline | grep -q healthcheck; then
         echo "healthcheck is not available" >&2
         exit 0
@@ -15,6 +15,4 @@ if ps -ef | grep --quiet [s]wift-container-server; then
     bind_host=$(wrap_ipv6 $(get_config_val $conf DEFAULT bind_ip 127.0.0.1))
     bind_port=$(get_config_val $conf DEFAULT bind_port 6001)
     healthcheck_curl http://${bind_host}:${bind_port}/healthcheck
-elif ps -ef | grep --quiet [s]wift-container-replicator; then
-    check_swift_interval container-replicator
 fi
