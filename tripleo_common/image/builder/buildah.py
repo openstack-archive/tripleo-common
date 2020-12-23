@@ -29,12 +29,13 @@ from tripleo_common.image.builder import base
 from tripleo_common.utils import process
 
 CONF = cfg.CONF
+LOG = logging.getLogger(__name__ + ".BuildahBuilder")
 
 
 class BuildahBuilder(base.BaseBuilder):
     """Builder to build container images with Buildah."""
 
-    log = logging.getLogger(__name__ + ".BuildahBuilder")
+    log = LOG
 
     def __init__(self, work_dir, deps, base='fedora', img_type='binary',
                  tag='latest', namespace='master',
@@ -144,10 +145,13 @@ class BuildahBuilder(base.BaseBuilder):
             self.log.exception(e)
             raise
 
-    @tenacity.retry(  # Retry up to 3 times with 1 second delay
+    @tenacity.retry(
+        # Retry up to 5 times: 0, 1, 5, 21, 85
+        # http://exponentialbackoffcalculator.com/
         reraise=True,
-        wait=tenacity.wait_fixed(1),
-        stop=tenacity.stop_after_attempt(3)
+        wait=tenacity.wait_random_exponential(multiplier=4, max=60),
+        stop=tenacity.stop_after_attempt(5),
+        before_sleep=tenacity.after_log(LOG, logging.WARNING)
     )
     def build(self, container_name, container_build_path):
         """Build an image from a given directory.
@@ -190,7 +194,8 @@ class BuildahBuilder(base.BaseBuilder):
     @tenacity.retry(  # Retry up to 10 times with jittered exponential backoff
         reraise=True,
         wait=tenacity.wait_random_exponential(multiplier=1, max=15),
-        stop=tenacity.stop_after_attempt(10)
+        stop=tenacity.stop_after_attempt(10),
+        before_sleep=tenacity.after_log(LOG, logging.WARNING)
     )
     def push(self, destination):
         """Push an image to a container registry.
