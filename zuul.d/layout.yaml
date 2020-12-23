@@ -58,6 +58,11 @@
               tags:
                 - standalone
             dependencies: *deps_cprovider
+        - tripleo-build-containers-ubi-8:
+            dependencies: *deps_unit_lint
+            files:
+              - ^container-images/.*$
+              - ^tripleo_common/image/builder/.*$
         - tripleo-ci-centos-8-scenario000-multinode-oooq-container-updates:
             vars: *multi_consumer_vars
             dependencies: *deps_cprovider
@@ -121,6 +126,7 @@
     gate:
       queue: tripleo
       jobs:
+        - openstack-tox-py37
         - openstack-tox-linters
         - tripleo-cross-tripleoclient-py37
         - tripleo-ci-centos-8-content-provider
@@ -133,3 +139,8 @@
         - tripleo-buildimage-overcloud-hardened-full-centos-8:
             files:
               - ^image-yaml/.*$
+        - tripleo-build-containers-ubi-8:
+            dependencies: *deps_unit_lint
+            files:
+              - ^container-images/.*$
+              - ^tripleo_common/image/builder/.*$
