@@ -15,21 +15,13 @@ fi
 get_user_from_process() {
     process=$1
 
-    # This helps to capture the actual pids running the process
-    pids=$(pgrep -d '|' -f $process)
+    # This helps to capture the actual pid running the process
+    pid=$(pgrep -d ',' -f $process)
 
-    # 'cmd' is added to help in case part of the pid is in another pid from
-    # another process.
-    # $ ps -eo user,pid,cmd
-    # USER         PID CMD
-    # nova           1 dumb-init --single-child -- kolla_start
-    # nova           7 /usr/bin/python2 /usr/bin/nova-conductor
-    # nova          25 /usr/bin/python2 /usr/bin/nova-conductor
-    # nova          26 /usr/bin/python2 /usr/bin/nova-conductor
-    # root        8311 ps -eo user,pid,cmd
-    # The following "ps" command will capture the user from PID 7 which
-    # is safe enough to assert this is the user running the process.
-    ps -eo user,pid,cmd | grep $process | grep -E $pids | awk 'NR==1{print $1}'
+    # Here, we use the embedded `ps' filter capabilities, and remove the
+    # output header. We ensure we get the user for the selected PIDs only.
+    # In order to ensure we don't get multiple lines, we truncate it with `head'
+    ps -h -q${pid} -o user | head -n1
 }
 
 healthcheck_curl () {
@@ -51,19 +43,16 @@ healthcheck_port () {
     shift 1
     args=$@
     puser=$(get_user_from_process $process)
-    ports=${args// /|}
-    pids=$(pgrep -d '|' -f $process)
-    # https://bugs.launchpad.net/tripleo/+bug/1843555
-    # "ss" output is different if run as root vs as the user actually running
-    # the process. So we also verify that the process is connected to the
-    # port by using "sudo -u" to get the right output.
-    # Note: the privileged containers have the correct ss output with root
-    # user; which is why we need to run with both users, as a best effort.
-    # https://bugs.launchpad.net/tripleo/+bug/1860556
-    # do ot use "-q" option for grep, since it returns 141 for some reason with
-    # set -o pipefail.
-    # See https://stackoverflow.com/questions/19120263/why-exit-code-141-with-grep-q
-    (ss -ntuap; sudo -u $puser ss -ntuap) | sort -u | grep -E ":($ports).*,pid=($pids),">/dev/null
+    ports=${args// /,}
+    pids=$(pgrep -d ',' -f $process)
+    # First match exits - usually TCP and "sudo TCP" are enough.
+    # `sudo' is needed, as in some cases even root can get a "permission denied"
+    # on some file descriptors (case for heat_manager for example)
+    # UDP support is needed for octavia manager (UDP:5555).
+    lsof -n -w -P -a -iTCP:${ports} -p${pids} >&3 2>&1 || \
+        sudo -u $puser lsof -n -w -P -a -iTCP:${ports} -p${pids} >&3 2>&1 || \
+        lsof -w -P -a -iUDP:${ports} -p${pids} >&3 2>&1 || \
+        sudo -u $puser lsof -n -w -P -a -iUDP:${ports} -p${pids} >&3 2>&1
 }
 
 healthcheck_listen () {
@@ -71,21 +60,17 @@ healthcheck_listen () {
 
     shift 1
     args=$@
-    ports=${args// /|}
-    pids=$(pgrep -d '|' -f $process)
-    ss -lnp | grep -qE ":($ports).*,pid=($pids),"
+    ports=${args// /,}
+    pids=$(pgrep -d ',' -f $process)
+    lsof -n -w -P -a -p${pids} -iTCP:${ports} -s TCP:LISTEN >&3 2>&1
 }
 
 healthcheck_socket () {
     process=$1
     socket=$2
+    pids=$(pgrep -d ',' -f $process)
 
-    # lsof truncate command name to 15 characters and this behaviour
-    # cannot be disabled
-    if [ ${#process} -gt 15 ] ; then
-        process=${process:0:15}
-    fi
-    lsof -Fc -Ua $socket | grep -q "c$process"
+    lsof -n -Fc -Ua -p${pids} $socket >&3 2>&1
 }
 
 healthcheck_file_modification () {
@@ -132,7 +117,7 @@ get_url_from_vhost () {
 
 check_swift_interval () {
     service=$1
-    if ps -e | grep --quiet swift-$service; then
+    if pgrep -f swift-${service} >&3 2>&1; then
         interval=$(get_config_val $conf $service interval 300)
         last=`grep -o "\"replication_last\": [0-9]*" $cache | cut -f 2 -d " "`
         now=`date +%s`
