@@ -82,7 +82,7 @@ class TestConfig(base.TestCase):
             for role in fake_role:
                 if 'external' in config:
                     continue
-                elif config == 'step_config':
+                if config == 'step_config':
                     expected_calls += [call('/tmp/tht/%s/%s.pp' %
                                             (role, config))]
                 elif config == 'param_config':
@@ -687,7 +687,7 @@ class TestConfig(base.TestCase):
             for role in fake_role:
                 if 'external' in config:
                     continue
-                elif config == 'step_config':
+                if config == 'step_config':
                     expected_calls += [call('/tmp/tht/%s/%s.pp' %
                                             (role, config))]
                 elif config == 'param_config':

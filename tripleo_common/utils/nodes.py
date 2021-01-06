@@ -74,14 +74,14 @@ class DriverInfo(object):
     def convert_key(self, key):
         if key in self._mapping:
             return self._mapping[key]
-        elif key in self._deprecated_mapping:
+        if key in self._deprecated_mapping:
             real = self._deprecated_mapping[key]
             LOG.warning('Key %s is deprecated, please use %s',
                         key, real)
             return real
-        elif key.startswith(self._prefix):
+        if key.startswith(self._prefix):
             return key
-        elif key != 'pm_type' and key.startswith('pm_'):
+        if key != 'pm_type' and key.startswith('pm_'):
             LOG.warning('Key %s is not supported and will not be passed',
                         key)
         else:
@@ -453,7 +453,7 @@ def _get_node_id(node, handler, node_map):
         raise exception.InvalidNode('Several candidates found for the same '
                                     'node data: %s' % candidates,
                                     node=node)
-    elif candidates:
+    if candidates:
         return list(candidates)[0]
 
 
@@ -722,8 +722,7 @@ def generate_hostmap(baremetal_client, compute_client):
 
     if hostmap == {}:
         return None
-    else:
-        return hostmap
+    return hostmap
 
 
 def run_nova_cell_v2_discovery():

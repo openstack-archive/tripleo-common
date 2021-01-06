@@ -144,8 +144,7 @@ class TripleoInventory(object):
         """Static yaml inventories reqire a different hosts format?!"""
         if not dynamic:
             return {x: {} for x in alist}
-        else:
-            return alist
+        return alist
 
     def _get_stack(self):
         if self.plan_name is None:

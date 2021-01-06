@@ -131,9 +131,8 @@ class Config(object):
                     # If no step is defined, it will be executed for all
                     # steps if strict is false
                     return True
-                else:
-                    # We only want the task with the step defined.
-                    return False
+                # We only want the task with the step defined.
+                return False
             if not isinstance(whenexpr, list):
                 whenexpr = [whenexpr]
 
@@ -148,8 +147,7 @@ class Config(object):
             if steps_found:
                 if str(step) in steps_found:
                     return True
-                else:
-                    return False
+                return False
 
             # No step found
             if strict:
@@ -258,7 +256,7 @@ class Config(object):
                 if config in constants.EXTERNAL_TASKS:
                     # external tasks are collected globally, not per-role
                     continue
-                elif config == 'step_config':
+                if config == 'step_config':
                     filepath = os.path.join(role_path, 'step_config.pp')
                     with self._open_file(filepath) as step_config:
                         step_config.write(role[config])

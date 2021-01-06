@@ -501,7 +501,7 @@ class StackParametersTest(base.TestCase):
         def side_effect(args):
             if args == 123:
                 return bm1
-            elif args == 234:
+            if args == 234:
                 raise ironicexceptions.NotFound
 
         baremetal_client = mock.MagicMock()
@@ -520,8 +520,7 @@ class StackParametersTest(base.TestCase):
         def side_effect2(node, *args):
             if node == 9876:
                 return [port1, ]
-            else:
-                raise ironicexceptions.NotFound
+            raise ironicexceptions.NotFound
 
         baremetal_client.port.list = mock.MagicMock(side_effect=side_effect2)
 

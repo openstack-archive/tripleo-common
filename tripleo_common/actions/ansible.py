@@ -256,7 +256,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
         if (isinstance(self._inventory, six.string_types) and
                 os.path.exists(self._inventory)):
             return self._inventory
-        elif not isinstance(self._inventory, six.string_types):
+        if not isinstance(self._inventory, six.string_types):
             self._inventory = yaml.safe_dump(self._inventory)
 
         path = os.path.join(self.work_dir, 'inventory.yaml')
@@ -281,7 +281,7 @@ class AnsiblePlaybookAction(base.TripleOAction):
         if (isinstance(self._playbook, six.string_types) and
                 os.path.exists(self._playbook)):
             return self._playbook
-        elif not isinstance(self._playbook, six.string_types):
+        if not isinstance(self._playbook, six.string_types):
             self._playbook = yaml.safe_dump(self._playbook)
 
         path = os.path.join(self.work_dir, self.playbook_name)
@@ -416,9 +416,8 @@ class AnsiblePlaybookAction(base.TripleOAction):
             if not isinstance(self.extra_env_variables, dict):
                 msg = "extra_env_variables must be a dict"
                 return actions.Result(error=msg)
-            else:
-                for key, value in self.extra_env_variables.items():
-                    self.extra_env_variables[key] = six.text_type(value)
+            for key, value in self.extra_env_variables.items():
+                self.extra_env_variables[key] = six.text_type(value)
 
         if self.gather_facts:
             command.extend(['--gather-facts', self.gather_facts])

@@ -48,10 +48,9 @@ def client(ctx):
 def _determine_verify(ctx):
     if ctx.insecure:
         return False
-    elif ctx.auth_cacert:
+    if ctx.auth_cacert:
         return ctx.auth_cacert
-    else:
-        return True
+    return True
 
 
 def get_session_and_auth(context, **kwargs):
@@ -163,31 +162,31 @@ def _admin_client(trust_id=None):
         cl.management_url = auth_url
 
         return cl
-    else:
-        kwargs = {}
 
-        if trust_id:
-            # Remove project_name and project_id, since we need a trust scoped
-            # auth object
-            kwargs['domain_id'] = None
-            kwargs['domain_name'] = None
-            kwargs['project_name'] = None
-            kwargs['project_domain_name'] = None
-            kwargs['project_id'] = None
-            kwargs['trust_id'] = trust_id
+    kwargs = {}
 
-        auth = loading.load_auth_from_conf_options(
-            CONF,
-            'keystone_authtoken',
-            **kwargs
-        )
-        sess = loading.load_session_from_conf_options(
-            CONF,
-            'keystone',
-            auth=auth
-        )
+    if trust_id:
+        # Remove project_name and project_id, since we need a trust scoped
+        # auth object
+        kwargs['domain_id'] = None
+        kwargs['domain_name'] = None
+        kwargs['project_name'] = None
+        kwargs['project_domain_name'] = None
+        kwargs['project_id'] = None
+        kwargs['trust_id'] = trust_id
 
-        return ks_client.Client(session=sess)
+    auth = loading.load_auth_from_conf_options(
+        CONF,
+        'keystone_authtoken',
+        **kwargs
+    )
+    sess = loading.load_session_from_conf_options(
+        CONF,
+        'keystone',
+        auth=auth
+    )
+
+    return ks_client.Client(session=sess)
 
 
 def client_for_admin():
@@ -252,8 +251,7 @@ def get_endpoint_for_project(ctx, service_name=None, service_type=None,
             " region_name=%s]"
             % (service_name, service_type, region)
         )
-    else:
-        return endpoint
+    return endpoint
 
 
 def obtain_service_catalog(ctx):
