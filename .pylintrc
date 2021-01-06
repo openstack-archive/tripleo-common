@@ -17,8 +17,6 @@ disable =
     import-error,
     inconsistent-return-statements,
     invalid-name,
-    logging-format-interpolation,
-    logging-not-lazy,
     lost-exception,
     missing-class-docstring,
     missing-function-docstring,

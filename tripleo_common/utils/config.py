@@ -179,12 +179,12 @@ class Config(object):
 
     def snapshot_config_dir(self, repo, commit_message):
         if repo.is_dirty(untracked_files=True):
-            self.log.info('Snapshotting {}'.format(repo.working_dir))
+            self.log.info('Snapshotting %s', repo.working_dir)
             # Use repo.git.add directly as repo.index.add defaults to forcing
             # commit of ignored files, which we don't want.
             repo.git.add('.')
             commit = repo.index.commit(commit_message)
-            self.log.info('Created commit {}'.format(commit.hexsha))
+            self.log.info('Created commit %s', commit.hexsha)
         else:
             self.log.info('No changes to commit')
 
@@ -201,8 +201,8 @@ class Config(object):
         # Create config directory
         if os.path.exists(config_dir) and preserve_config_dir is False:
             try:
-                self.log.info("Directory %s already exists, removing"
-                              % config_dir)
+                self.log.info("Directory %s already exists, removing",
+                              config_dir)
                 shutil.rmtree(config_dir)
             except OSError as e:
                 message = 'Failed to remove: %s, error: %s' % (config_dir,
@@ -220,8 +220,8 @@ class Config(object):
         try:
             yaml.safe_load(template_data)
         except (yaml.scanner.ScannerError, yaml.YAMLError) as e:
-            self.log.error("Config for file {} contains invalid yaml, got "
-                           "error {}".format(yaml_file, e))
+            self.log.error("Config for file %s contains invalid yaml, got "
+                           "error %s", yaml_file, e)
             raise e
 
     def render_network_config(self, config_dir):
@@ -422,7 +422,7 @@ class Config(object):
                     []).append(config_dict)
             except KeyError:
                 self.log.warning('Server with id %s is ignored from config '
-                                 '(may be blacklisted)' % server_id)
+                                 '(may be blacklisted)', server_id)
                 # continue the loop as this server_id is probably excluded
                 continue
             except Exception as err:
@@ -562,7 +562,7 @@ class Config(object):
             os.path.join(config_dir, 'deployments.yaml'))
 
         self.log.info("The TripleO configuration has been successfully "
-                      "generated into: %s" % config_dir)
+                      "generated into: %s", config_dir)
         return config_dir
 
     def download_config(self, name, config_dir, config_type=None,
@@ -577,7 +577,7 @@ class Config(object):
         self._mkdir(config_dir)
         git_repo = self.initialize_git_repo(config_dir)
         self.log.info("Generating configuration under the directory: "
-                      "%s" % config_dir)
+                      "%s", config_dir)
         self.write_config(stack, name, config_dir, config_type)
         self.snapshot_config_dir(git_repo, commit_message)
         return config_dir

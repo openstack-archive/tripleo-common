@@ -289,8 +289,8 @@ def get_role_data(swift, container=constants.DEFAULT_CONTAINER_NAME):
             constants.OVERCLOUD_J2_ROLES_NAME)
         role_data = yaml.safe_load(j2_role_file)
     except swiftexceptions.ClientException:
-        LOG.info("No %s file found, not filtering container images by role"
-                 % constants.OVERCLOUD_J2_ROLES_NAME)
+        LOG.info("No %s file found, not filtering container images by role",
+                 constants.OVERCLOUD_J2_ROLES_NAME)
         role_data = None
     return role_data
 
@@ -396,7 +396,7 @@ def generate_passwords(swift, heat, mistral=None,
         env = get_env(swift, container)
     except swiftexceptions.ClientException as err:
         err_msg = ("Error retrieving environment for plan %s: %s" % (
-            container, err))
+            container, err))  # pylint: disable=logging-not-lazy
         LOG.exception(err_msg)
         return RuntimeError(err_msg)
 
@@ -412,7 +412,7 @@ def generate_passwords(swift, heat, mistral=None,
                 param_defaults = stack_env.get('parameter_defaults', {})
                 param_defaults[pw_res] = res.attributes['value']
             except heat_exc.HTTPNotFound:
-                LOG.debug('Heat resouce not found: %s' % pw_res)
+                LOG.debug('Heat resouce not found: %s', pw_res)
                 pass
 
     except heat_exc.HTTPNotFound:

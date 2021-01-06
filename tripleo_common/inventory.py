@@ -154,7 +154,7 @@ class TripleoInventory(object):
             stack = self.hclient.stacks.get(self.plan_name)
         except HTTPNotFound:
             LOG.warning("Stack not found: %s. Only the undercloud will "
-                        "be added to the inventory." % self.plan_name)
+                        "be added to the inventory.", self.plan_name)
             stack = None
 
         return stack

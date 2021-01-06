@@ -85,12 +85,12 @@ def j2_render_and_put(swift, j2_template, j2_data, yaml_f,
 
     try:
         # write the template back to the plan container
-        LOG.info("Writing rendered template %s" % yaml_f)
+        LOG.info("Writing rendered template %s", yaml_f)
         swiftutils.put_object_string(swift, container, yaml_f,
                                      r_template)
     except swiftexceptions.ClientException:
-        error_msg = ("Error storing file %s in container %s"
-                     % (yaml_f, container))
+        error_msg = ("Error storing file %s in container %s",
+                     yaml_f, container)
         LOG.error(error_msg)
         raise RuntimeError(error_msg)
 
@@ -104,11 +104,11 @@ def get_j2_excludes_file(swift, container=constants.DEFAULT_CONTAINER_NAME):
             j2_excl_data = {"name": []}
             LOG.info("j2_excludes.yaml is either empty or there are "
                      "no templates to exclude, defaulting the J2 "
-                     "excludes list to: %s" % j2_excl_data)
+                     "excludes list to: %s", j2_excl_data)
     except swiftexceptions.ClientException:
         j2_excl_data = {"name": []}
         LOG.info("No J2 exclude file found, defaulting "
-                 "the J2 excludes list to: %s" % j2_excl_data)
+                 "the J2 excludes list to: %s", j2_excl_data)
     return j2_excl_data
 
 
@@ -121,18 +121,18 @@ def heat_resource_exists(heat, stack, nested_stack_name, resource_name):
         nested_stack = heat.resources.get(stack.id, nested_stack_name)
     except heat_exc.HTTPNotFound:
         LOG.debug(
-            "Resource does not exist because {} stack does "
-            "not exist".format(nested_stack_name))
+            "Resource does not exist because %s stack does "
+            "not exist", nested_stack_name)
         return False
 
     try:
         heat.resources.get(nested_stack.physical_resource_id,
                            resource_name)
     except heat_exc.HTTPNotFound:
-        LOG.debug("Resource does not exist: {}".format(resource_name))
+        LOG.debug("Resource does not exist: %s", resource_name)
         return False
     else:
-        LOG.debug("Resource exists: {}".format(resource_name))
+        LOG.debug("Resource exists: %s", resource_name)
         return True
 
 
@@ -149,14 +149,14 @@ def _set_tags_based_on_role_name(role_data):
                         "detected, the tag was added automatically. Please "
                         "add the 'compute' tag in roles data. The function to "
                         "automatically add tags based on role name will be "
-                        "removed in the next release." % role_name)
+                        "removed in the next release.", role_name)
         if role_name.startswith('Ceph') and 'ceph' not in role['tags']:
             role['tags'].append('ceph')
             LOG.warning("DEPRECATED: Role '%s' without the 'ceph' tag "
                         "detected, the tag was added automatically. Please "
                         "add the 'ceph' tag in roles data. The function to "
                         "automatically add tags based on role name will be "
-                        "removed in the next release." % role_name)
+                        "removed in the next release.", role_name)
         if (role_name.startswith('ComputeOvsDpdk')
                 and 'ovsdpdk' not in role['tags']):
             role['tags'].append('ovsdpdk')
@@ -164,7 +164,7 @@ def _set_tags_based_on_role_name(role_data):
                         "detected, the tag was added automatically. Please "
                         "add the 'ovsdpdk' tag in roles data. The function to "
                         "automatically add tags based on role name will be "
-                        "removed in the next release." % role_name)
+                        "removed in the next release.", role_name)
         if ((role_name.startswith('ObjectStorage')
              or role_name.startswith('BlockStorage')
              or role_name.startswith('Ceph'))
@@ -174,7 +174,7 @@ def _set_tags_based_on_role_name(role_data):
                         "detected, the tag was added automatically. Please "
                         "add the 'storage' tag in roles data. The function to "
                         "automatically add tags based on role name will be "
-                        "removed in the next release." % role_name)
+                        "removed in the next release.", role_name)
 
 
 def process_custom_roles(swift, heat,
@@ -184,8 +184,8 @@ def process_custom_roles(swift, heat,
             swift, container, constants.OVERCLOUD_J2_ROLES_NAME)
         role_data = yaml.safe_load(j2_role_file)
     except swiftexceptions.ClientException:
-        LOG.info("No %s file found, skipping jinja templating"
-                 % constants.OVERCLOUD_J2_ROLES_NAME)
+        LOG.info("No %s file found, skipping jinja templating",
+                 constants.OVERCLOUD_J2_ROLES_NAME)
         return
 
     try:
@@ -197,8 +197,8 @@ def process_custom_roles(swift, heat,
             network_data = []
     except swiftexceptions.ClientException:
         # Until t-h-t contains network_data.yaml we tolerate a missing file
-        LOG.warning("No %s file found, ignoring"
-                    % constants.OVERCLOUD_J2_ROLES_NAME)
+        LOG.warning("No %s file found, ignoring",
+                    constants.OVERCLOUD_J2_ROLES_NAME)
         network_data = []
 
     j2_excl_data = get_j2_excludes_file(swift, container)
@@ -208,8 +208,8 @@ def process_custom_roles(swift, heat,
         # we j2 render any with the .j2.yaml suffix
         container_files = swift.get_container(container)
     except swiftexceptions.ClientException as ex:
-        error_msg = ("Error listing contents of container %s : %s"
-                     % (container, six.text_type(ex)))
+        error_msg = ("Error listing contents of container %s : %s",
+                     container, six.text_type(ex))
         LOG.error(error_msg)
         raise RuntimeError(error_msg)
 
@@ -245,7 +245,7 @@ def process_custom_roles(swift, heat,
                 LOG.info("Upgrade compatibility enabled for legacy "
                          "network resource Internal.")
         else:
-            LOG.info("skipping %s network: network is disabled." %
+            LOG.info("skipping %s network: network is disabled.",
                      n.get('name'))
 
     plan_utils.cache_delete(swift, container, "tripleo.parameters.get")
@@ -260,13 +260,13 @@ def process_custom_roles(swift, heat,
         # 3. *.j2.yaml - we template with all roles_data,
         #    and create one file common to all roles
         if f.endswith('.role.j2.yaml'):
-            LOG.info("jinja2 rendering role template %s" % f)
+            LOG.info("jinja2 rendering role template %s", f)
             j2_template = swiftutils.get_object_string(swift,
                                                        container, f)
-            LOG.info("jinja2 rendering roles %s" % ","
+            LOG.info("jinja2 rendering roles %s", ","
                      .join(role_names))
             for role in role_names:
-                LOG.info("jinja2 rendering role %s" % role)
+                LOG.info("jinja2 rendering role %s", role)
                 out_f = "-".join(
                     [role.lower(),
                      os.path.basename(f).replace('.role.j2.yaml',
@@ -290,20 +290,20 @@ def process_custom_roles(swift, heat,
                         # Backwards compatibility with templates
                         # that specify {{role}} vs {{role.name}}
                         j2_data = {'role': role, 'networks': network_data}
-                        LOG.debug("role legacy path for role %s" % role)
+                        LOG.debug("role legacy path for role %s", role)
                         j2_render_and_put(swift, j2_template,
                                           j2_data, out_f_path,
                                           container)
                 else:
-                    LOG.info("Skipping rendering of %s, defined in %s" %
-                             (out_f_path, j2_excl_data))
+                    LOG.info("Skipping rendering of %s, defined in %s",
+                             out_f_path, j2_excl_data)
 
         elif (f.endswith('.network.j2.yaml')):
-            LOG.info("jinja2 rendering network template %s" % f)
+            LOG.info("jinja2 rendering network template %s", f)
             j2_template = swiftutils.get_object_string(swift,
                                                        container,
                                                        f)
-            LOG.info("jinja2 rendering networks %s" % ",".join(n_map))
+            LOG.info("jinja2 rendering networks %s", ",".join(n_map))
             for network in n_map:
                 j2_data = {'network': n_map[network]}
                 # Output file names in "<name>.yaml" format
@@ -321,11 +321,11 @@ def process_custom_roles(swift, heat,
                                       j2_data, out_f_path,
                                       container)
                 else:
-                    LOG.info("Skipping rendering of %s, defined in %s" %
-                             (out_f_path, j2_excl_data))
+                    LOG.info("Skipping rendering of %s, defined in %s",
+                             out_f_path, j2_excl_data)
 
         elif f.endswith('.j2.yaml'):
-            LOG.info("jinja2 rendering %s" % f)
+            LOG.info("jinja2 rendering %s", f)
             j2_template = swiftutils.get_object_string(swift,
                                                        container,
                                                        f)
@@ -367,8 +367,7 @@ def prune_unused_services(swift, role_data,
         for service in to_remove:
             try:
                 role.get('ServicesDefault', []).remove(service)
-                LOG.debug('Removing {} from {} role'.format(
-                    service, role_name))
+                LOG.debug('Removing %s from %s role', service, role_name)
             except ValueError:
                 pass
     LOG.debug('Saving updated role data to swift')
@@ -404,13 +403,13 @@ def build_heat_args(swift, heat, container=constants.DEFAULT_CONTAINER_NAME):
 
     template_object = os.path.join(swift.url, container,
                                    template_name)
-    LOG.debug('Template: %s' % template_name)
+    LOG.debug('Template: %s', template_name)
     try:
         template_files, template = plan_utils.get_template_contents(
             swift, template_object)
     except Exception as err:
         error_text = six.text_type(err)
-        LOG.exception("Error occurred while fetching %s" % template_object)
+        LOG.exception("Error occurred while fetching %s", template_object)
 
     temp_env_paths = []
     try:

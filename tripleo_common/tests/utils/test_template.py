@@ -552,47 +552,47 @@ class ProcessTemplatesTest(base.TestCase):
         self.assertEqual(expected, role_data)
         mock_log.assert_has_calls([
             mock.call.warning(
-                "DEPRECATED: Role 'CephStorageFoo' without the 'ceph' tag "
+                "DEPRECATED: Role '%s' without the 'ceph' tag "
                 "detected, the tag was added automatically. Please add the "
                 "'ceph' tag in roles data. The function to automatically "
                 "add tags based on role name will be removed in the next "
-                "release."),
+                "release.", "CephStorageFoo"),
             mock.call.warning(
-                "DEPRECATED: Role 'CephStorageFoo' without the 'storage' "
+                "DEPRECATED: Role '%s' without the 'storage' "
                 "tag detected, the tag was added automatically. Please add "
                 "the 'storage' tag in roles data. The function to "
                 "automatically add tags based on role name will be removed in "
-                "the next release."),
+                "the next release.", "CephStorageFoo"),
             mock.call.warning(
-                "DEPRECATED: Role 'ObjectStorageFoo' without the 'storage' "
+                "DEPRECATED: Role '%s' without the 'storage' "
                 "tag detected, the tag was added automatically. Please add "
                 "the 'storage' tag in roles data. The function to "
                 "automatically add tags based on role name will be "
-                "removed in the next release."),
+                "removed in the next release.", "ObjectStorageFoo"),
             mock.call.warning(
-                "DEPRECATED: Role 'BlockStorageFoo' without the 'storage' tag "
+                "DEPRECATED: Role '%s' without the 'storage' tag "
                 "detected, the tag was added automatically. Please add "
                 "the 'storage' tag in roles data. The function to "
                 "automatically add tags based on role name will be removed "
-                "in the next release."),
+                "in the next release.", "BlockStorageFoo"),
             mock.call.warning(
-                "DEPRECATED: Role 'ComputeOvsDpdkFoo' without the 'compute' "
+                "DEPRECATED: Role '%s' without the 'compute' "
                 "tag detected, the tag was added automatically. Please add "
                 "the 'compute' tag in roles data. The function to "
                 "automatically add tags based on role name will be removed in "
-                "the next release."),
+                "the next release.", "ComputeOvsDpdkFoo"),
             mock.call.warning(
-                "DEPRECATED: Role 'ComputeOvsDpdkFoo' without the 'ovsdpdk' "
+                "DEPRECATED: Role '%s' without the 'ovsdpdk' "
                 "tag detected, the tag was added automatically. Please add "
                 "the 'ovsdpdk' tag in roles data. The function to "
                 "automatically add tags based on role name will be removed in "
-                "the next release."),
+                "the next release.", "ComputeOvsDpdkFoo"),
             mock.call.warning(
-                "DEPRECATED: Role 'ComputeOvsDpdkBar' without the 'compute' "
+                "DEPRECATED: Role '%s' without the 'compute' "
                 "tag detected, the tag was added automatically. Please add "
                 "the 'compute' tag in roles data. The function to "
                 "automatically add tags based on role name will be removed in "
-                "the next release."),
+                "the next release.", "ComputeOvsDpdkBar"),
         ])
 
 
