@@ -27,7 +27,8 @@ import jinja2
 from tripleo_common import constants
 from tripleo_common.utils.safe_import import git
 
-warnings.filterwarnings('once')
+warnings.filterwarnings('once', category=DeprecationWarning)
+warnings.filterwarnings('once', category=UserWarning)
 
 
 class Config(object):
