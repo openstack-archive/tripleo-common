@@ -420,18 +420,18 @@ class ProcessTemplatesActionTest(base.TestCase):
         self.assertTrue({'name': ['puppet/controller-role.yaml']} ==
                         action._get_j2_excludes_file(mock_ctx))
 
-        def return_multiple_files(*args):
+        def return_multiple_files2(*args):
             if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
                 return ['', J2_EXCLUDES_EMPTY_LIST]
-        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files2)
         # Test - J2 exclude file with no template to exlude
         action = templates.ProcessTemplatesAction()
         self.assertTrue({'name': []} == action._get_j2_excludes_file(mock_ctx))
 
-        def return_multiple_files(*args):
+        def return_multiple_files3(*args):
             if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
                 return ['', J2_EXCLUDES_EMPTY_FILE]
-        swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
+        swift.get_object = mock.MagicMock(side_effect=return_multiple_files3)
         # Test - J2 exclude file empty
         action = templates.ProcessTemplatesAction()
         self.assertTrue({'name': []} == action._get_j2_excludes_file(mock_ctx))

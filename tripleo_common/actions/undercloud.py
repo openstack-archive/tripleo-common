@@ -104,7 +104,7 @@ class CreateDatabaseBackup(base.Action):
             return actions.Result(error={"msg": six.text_type(msg)})
         lockfile = open(pid_file, 'w')
         lockfile.write("%s\n" % os.getpid())
-        lockfile.close
+        lockfile.close()
 
         # Backup all databases with nice and ionice just not to create
         # a huge load on undercloud. Output will be redirected to mysqldump

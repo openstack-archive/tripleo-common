@@ -576,7 +576,7 @@ class ImageUploadManager(BaseImageManager):
 
 
 class BaseImageUploader(object):
-
+    lock = None
     mirrors = {}
     insecure_registries = set()
     no_verify_registries = set(NO_VERIFY_REGISTRIES)
@@ -1224,11 +1224,13 @@ class BaseImageUploader(object):
         name = target_image_url.path.split(':')[0][1:]
         export = netloc in cls.export_registries
         if export:
+            # pylint: disable=no-member
             linked_layers = image_export.cross_repo_mount(
                 target_image_url, image_layers, source_layers,
                 uploaded_layers=cls._global_view_proxy())
             # track linked layers globally for future references
             for layer, info in linked_layers.items():
+                # pylint: disable=no-member
                 cls._track_uploaded_layers(
                     layer, known_path=info['known_path'],
                     image_ref=info['ref_image'], scope='local')
@@ -1241,6 +1243,7 @@ class BaseImageUploader(object):
         url = '%s://%s/v2/%s/blobs/uploads/' % (scheme, netloc, name)
 
         for layer in source_layers:
+            # pylint: disable=no-member
             known_path, existing_name = image_utils.uploaded_layers_details(
                 cls._global_view_proxy(), layer, scope='remote')
             if layer not in image_layers and not existing_name:

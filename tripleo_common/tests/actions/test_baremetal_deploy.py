@@ -627,6 +627,7 @@ class TestUndeployInstance(base.TestCase):
     def test_success(self, mock_pr):
         pr = mock_pr.return_value
         action = baremetal_deploy.UndeployInstanceAction('inst1')
+        # pylint: disable=assignment-from-none
         result = action.run(mock.Mock())
         self.assertIsNone(result)
 
@@ -638,6 +639,7 @@ class TestUndeployInstance(base.TestCase):
         pr = mock_pr.return_value
         pr.show_instance.side_effect = RuntimeError('not found')
         action = baremetal_deploy.UndeployInstanceAction('inst1')
+        # pylint: disable=assignment-from-none
         result = action.run(mock.Mock())
         self.assertIsNone(result)
 

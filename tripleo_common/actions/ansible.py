@@ -167,7 +167,7 @@ def write_default_ansible_cfg(work_dir,
         sio_cfg.write(override_ansible_cfg)
         sio_cfg.seek(0)
         if sys.version_info[0] < 3:
-            config.readfp(sio_cfg)
+            config.readfp(sio_cfg)  # pylint: disable=deprecated-method
         else:
             config.read_file(sio_cfg)
         sio_cfg.close()

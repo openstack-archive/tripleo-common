@@ -72,10 +72,10 @@ def rm_container(name):
     if rc != 0:
 
         if 'No such container' in cmd_stderr:
-            log.warn('Container that does not exist cannot be deleted: '
-                     '%s' % name)
+            log.warning('Container that does not exist cannot be deleted: '
+                        '%s', name)
         else:
-            log.error('Error removing container: %s' % name)
+            log.error('Error removing container: %s', name)
             log.error(cmd_stderr)
             raise RuntimeError(cmd_stdout, cmd_stderr, rc)
 

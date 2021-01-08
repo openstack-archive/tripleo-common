@@ -26,6 +26,8 @@ class ProcessLock(base.BaseLock):
     _global_view = _mgr.dict()
 
     def __init__(self):
+        # https://github.com/PyCQA/pylint/issues/3313
+        # pylint: disable=no-member
         self._lock = self._mgr.Lock()
         self._objects = self._mgr.list()
         self._sessions = self._mgr.dict()
