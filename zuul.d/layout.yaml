@@ -61,8 +61,6 @@
             files:
               - ^container-images/.*$
               - ^tripleo_common/image/builder/.*$
-        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-upgrades:
-            dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-scenario000-multinode-oooq-container-updates-train:
             vars: *multi_consumer_vars
             dependencies: *deps_cprovider
