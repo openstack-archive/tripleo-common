@@ -24,7 +24,7 @@ DEFAULT_TARBALL_EXCLUDES = ['.git', '.tox', '*.pyc', '*.pyo']
 def create_tarball(directory, filename, options='-czf',
                    excludes=DEFAULT_TARBALL_EXCLUDES):
     """Create a tarball of a directory."""
-    LOG.debug('Creating tarball of %s at location %s' % (directory, filename))
+    LOG.debug('Creating tarball of %s at location %s', directory, filename)
     cmd = ['/usr/bin/tar', '-C', directory, options, filename]
     for x in excludes:
         cmd.extend(['--exclude', x])
@@ -33,8 +33,8 @@ def create_tarball(directory, filename, options='-czf',
 
 
 def tarball_extract_to_swift_container(object_client, filename, container):
-    LOG.debug('Uploading filename %s to Swift container %s' % (filename,
-                                                               container))
+    LOG.debug('Uploading filename %s to Swift container %s',
+              filename, container)
     with open(filename, 'rb') as f:
         object_client.put_object(
             container=container,
@@ -49,11 +49,11 @@ def extract_tarball(directory, tarball, options='-xf', remove=False):
     """Extracts the tarball contained in the directory."""
     full_path = directory + '/' + tarball
     if not os.path.exists(full_path):
-        LOG.debug('Tarball %s does not exist' % full_path)
+        LOG.debug('Tarball %s does not exist', full_path)
     else:
-        LOG.debug('Extracting tarball %s' % full_path)
+        LOG.debug('Extracting tarball %s', full_path)
         cmd = ['/usr/bin/tar', '-C', directory, options, full_path]
         processutils.execute(*cmd)
         if remove:
-            LOG.debug('Removing tarball %s' % full_path)
+            LOG.debug('Removing tarball %s', full_path)
             os.remove(full_path)

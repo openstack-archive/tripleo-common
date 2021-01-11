@@ -157,8 +157,9 @@ def create_and_upload_tarball(swiftservice,
                         LOG.info(r['object'])
                     elif 'for_object' in r:
                         LOG.info(
-                            '%s segment %s' % (r['for_object'],
-                                               r['segment_index'])
+                            '%s segment %s',
+                            r['for_object'],
+                            r['segment_index']
                             )
                 else:
                     error = r['error']
@@ -169,11 +170,11 @@ def create_and_upload_tarball(swiftservice,
                         )
                     elif r['action'] == "upload_object":
                         LOG.error(
-                            "Failed to upload object %s to container %s: %s" %
-                            (container, r['object'], error)
+                            "Failed to upload object %s to container %s: %s",
+                            container, r['object'], error
                         )
                     else:
-                        LOG.error("%s" % error)
+                        LOG.error("%s", error)
     except SwiftError as e:
         LOG.error(e.value)
 

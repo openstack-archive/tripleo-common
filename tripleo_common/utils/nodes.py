@@ -395,8 +395,9 @@ def register_ironic_node(node, client):
     ironic_node = client.node.create(**create_map)
 
     for port in node.get('ports', []):
-        LOG.debug('Creating Bare Metal port for node: %s, with properties: %s.'
-                  % (ironic_node.uuid, port))
+        LOG.debug(
+            'Creating Bare Metal port for node: %s, with properties: %s.',
+            ironic_node.uuid, port)
         client.port.create(
             address=port.get('address'),
             physical_network=port.get('physical_network', 'ctlplane'),
@@ -527,10 +528,10 @@ def _clean_up_extra_nodes(seen, client, remove=False):
     extra_nodes = all_nodes - {n.uuid for n in seen}
     for node in extra_nodes:
         if remove:
-            LOG.debug('Removing extra registered node %s.' % node)
+            LOG.debug('Removing extra registered node %s.', node)
             remove_func(node)
         else:
-            LOG.debug('Extra registered node %s found.' % node)
+            LOG.debug('Extra registered node %s found.', node)
 
 
 def register_all_nodes(nodes_list, client, remove=False, glance_client=None,
