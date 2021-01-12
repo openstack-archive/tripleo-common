@@ -10,6 +10,7 @@
       - tripleo-undercloud-jobs-pipeline
       - tripleo-build-containers-jobs
       - tripleo-standalone-scenarios-pipeline
+      - tripleo-upgrades-train-pipeline
     check:
       jobs:
         - openstack-tox-linters
