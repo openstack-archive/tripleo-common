@@ -248,8 +248,6 @@ def process_custom_roles(swift, heat,
             LOG.info("skipping %s network: network is disabled.",
                      n.get('name'))
 
-    plan_utils.cache_delete(swift, container, "tripleo.parameters.get")
-
     for f in [f.get('name') for f in container_files[1]]:
         # We do three templating passes here:
         # 1. *.role.j2.yaml - we template just the role name

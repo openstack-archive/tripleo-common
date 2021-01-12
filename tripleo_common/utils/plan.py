@@ -22,7 +22,6 @@ import requests
 import sys
 import tempfile
 import yaml
-import zlib
 
 from heatclient.common import template_utils
 from heatclient import exc as heat_exc
@@ -186,66 +185,6 @@ def build_env_paths(swift, container, plan_env):
     return env_paths, temp_env_paths
 
 
-def format_cache_key(plan_name, key_name):
-    return "__cache_{}_{}".format(plan_name, key_name)
-
-
-def cache_get(swift, plan_name, key):
-    """Retrieves the stored objects
-
-    Returns None if there are any issues or no objects found
-
-    """
-
-    try:
-        headers, body = swift.get_object(
-            constants.TRIPLEO_CACHE_CONTAINER,
-            format_cache_key(plan_name, key)
-        )
-        result = json.loads(zlib.decompress(body).decode())
-        return result
-    except swiftexceptions.ClientException:
-        # cache does not exist, ignore
-        pass
-    except ValueError:
-        # the stored json is invalid. Deleting
-        cache_delete(swift, plan_name, key)
-    return None
-
-
-def cache_set(swift, plan_name, key, contents):
-    """Stores an object
-
-    Allows the storage of jsonable objects except for None
-    Storing None equals to a cache delete.
-
-    """
-
-    if contents is None:
-        cache_delete(swift, plan_name, key)
-        return
-
-    try:
-        swift.head_container(constants.TRIPLEO_CACHE_CONTAINER)
-    except swiftexceptions.ClientException:
-        swift.put_container(constants.TRIPLEO_CACHE_CONTAINER)
-
-    swift.put_object(
-        constants.TRIPLEO_CACHE_CONTAINER,
-        format_cache_key(plan_name, key),
-        zlib.compress(json.dumps(contents).encode()))
-
-
-def cache_delete(swift, plan_name, key):
-    try:
-        swift.delete_object(
-            constants.TRIPLEO_CACHE_CONTAINER,
-            format_cache_key(plan_name, key))
-    except swiftexceptions.ClientException:
-        # cache or container does not exist. Ignore
-        pass
-
-
 def create_plan_container(swift, plan_name):
     if not pattern_validator(constants.PLAN_NAME_PATTERN, plan_name):
         message = ("The plan name must "
@@ -276,7 +215,6 @@ def update_plan_environment(swift, environments,
             if found:
                 env['environments'].remove({'path': k})
 
-    cache_delete(swift, container, "tripleo.parameters.get")
     put_env(swift, env)
     return env
 
@@ -476,7 +414,6 @@ def generate_passwords(swift, heat, mistral=None,
         LOG.exception(err_msg)
         raise RuntimeError(err_msg)
 
-    cache_delete(swift, container, "tripleo.parameters.get")
     return env['passwords']
 
 
@@ -509,7 +446,6 @@ def update_plan_rotate_fernet_keys(swift,
         LOG.exception(err_msg)
         raise RuntimeError(err_msg)
 
-    cache_delete(swift, container, "tripleo.parameters.get")
     return keys_map
 
 
