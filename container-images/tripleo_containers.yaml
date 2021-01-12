@@ -187,3 +187,5 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-rsyslog:current-tripleo
   image_source: tripleo
+- imagename: quay.io/tripleomaster/openstack-unbound:current-tripleo
+  image_source: tripleo
