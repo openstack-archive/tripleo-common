@@ -1,4 +1,5 @@
 tcib_actions:
+- run: if [ "$(uname -m)" == "x86_64" ]; then dnf -y install {{ tcib_packages['x86_64'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 # this need to happen after installing nova-compute because the distgit does usermod to add libvirt/qemu groups
 - run: bash /usr/local/bin/uid_gid_manage nova
@@ -12,7 +13,6 @@ tcib_packages:
   - genisoimage
   - iscsi-initiator-utils
   - ndctl
-  - daxio
   - nfs-utils
   - nvme-cli
   - openssh-server
@@ -26,4 +26,6 @@ tcib_packages:
   - sysfsutils
   - targetcli
   - xfsprogs
+  x86_64:
+  - daxio
 tcib_user: nova
