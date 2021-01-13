@@ -44,16 +44,16 @@ disk_images:
     # So we just override the extension instead
     imageext: initramfs
     elements:
-      - ironic-agent
+      - ironic-python-agent-ramdisk
       - ironic-agent-multipath
       - dynamic-login
       - element-manifest
       - network-gateway
       - enable-packages-install
       - override-pip-and-virtualenv
-    packages:
-      - python3-hardware-detect
+      - extra-hardware
     options:
       - "--min-tmpfs=7"
     environment:
+      DIB_EPEL_DISABLED: '1'
       DIB_PYTHON_VERSION: '3'
