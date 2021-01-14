@@ -117,8 +117,8 @@ class DibImageBuilder(ImageBuilder):
 
         log_file = '%s.log' % image_path
 
-        self.logger.info('Running %s' % cmd)
-        self.logger.info('Logging output to %s' % log_file)
+        self.logger.info('Running %s', cmd)
+        self.logger.info('Logging output to %s', log_file)
         process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)

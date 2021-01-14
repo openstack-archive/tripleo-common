@@ -55,7 +55,7 @@ class BaseImageManager(object):
                     data = yaml.safe_load(cf.read()).get(section)
                     if not data:
                         return None
-                    self.logger.debug('%s JSON: %s' % (section, str(data)))
+                    self.logger.debug('%s JSON: %s', (section, str(data)))
                 for item in data:
                     image_name = item.get('imagename')
                     if image_name is None:
@@ -65,7 +65,7 @@ class BaseImageManager(object):
 
                     if self.images is not None and \
                             image_name not in self.images:
-                        self.logger.debug('Image %s ignored' % image_name)
+                        self.logger.debug('Image %s ignored', image_name)
                         continue
 
                     existing_image = config_data.get(image_name)
@@ -84,11 +84,11 @@ class BaseImageManager(object):
 
                     config_data[image_name] = existing_image
             else:
-                self.logger.error('No config file exists at: %s' % config_file)
+                self.logger.error('No config file exists at: %s', config_file)
                 raise IOError('No config file exists at: %s' % config_file)
         return [x for x in config_data.values()]
 
     def json_output(self):
-        self.logger.info('Using config files: %s' % self.config_files)
+        self.logger.info('Using config files: %s', self.config_files)
         disk_images = self.load_config_files(self.DISK_IMAGES)
         print(json.dumps(disk_images))

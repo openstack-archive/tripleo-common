@@ -44,7 +44,7 @@ class ImageBuildManager(BaseImageManager):
     def build(self):
         """Start the build process"""
 
-        self.logger.info('Using config files: %s' % self.config_files)
+        self.logger.info('Using config files: %s', self.config_files)
 
         disk_images = self.load_config_files(self.DISK_IMAGES)
 
@@ -59,13 +59,13 @@ class ImageBuildManager(BaseImageManager):
             node_dist = image.get('distro')
             if node_dist is None:
                 raise ImageSpecificationException('distro is required')
-            self.logger.info('imagename: %s' % image_name)
+            self.logger.info('imagename: %s', image_name)
             image_extension = image.get('imageext', image_type)
             image_path = os.path.join(self.output_directory, image_name)
             if self.skip:
-                self.logger.info('looking for image at path: %s' % image_path)
+                self.logger.info('looking for image at path: %s', image_path)
                 if os.path.exists('%s.%s' % (image_path, image_extension)):
-                    self.logger.info('Image file exists for image name: %s' %
+                    self.logger.info('Image file exists for image name: %s',
                                      image_name)
                     self.logger.info('Skipping image build')
                     continue
