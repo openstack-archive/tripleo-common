@@ -137,14 +137,6 @@ PASSWORD_PARAMETER_NAMES = (
     'SwiftPassword',
     'ZaqarPassword',
 )
-# List of legacy resource names from overcloud.yaml
-LEGACY_HEAT_PASSWORD_RESOURCE_NAMES = (
-    'HeatAuthEncryptionKey',
-    'HorizonSecret',
-    'MysqlRootPassword',
-    'PcsdPassword',
-    'RabbitCookie',
-)
 
 # List of passwords that should not be rotated by default using the
 # GeneratePasswordAction because they require some special handling

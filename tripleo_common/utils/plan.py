@@ -312,14 +312,13 @@ def update_plan_environment_with_image_parameters(
     return env
 
 
-def generate_passwords(swift, heat, mistral=None,
+def generate_passwords(swift=None, heat=None, mistral=None,
                        container=constants.DEFAULT_CONTAINER_NAME,
                        rotate_passwords=False, rotate_pw_list=None):
     """Generates passwords needed for Overcloud deployment
 
-    This method generates passwords and ensures they are stored in the
-    plan environment. By default, this method respects previously
-    generated passwords and adds new passwords as necessary.
+    This method generates passwords. By default, this method respects
+    previously generated passwords and in stack environment.
 
     If rotate_passwords is set to True, then passwords will be replaced as
     follows:
@@ -328,31 +327,14 @@ def generate_passwords(swift, heat, mistral=None,
     - otherwise, all passwords not in the DO_NOT_ROTATE list (as they require
       special handling, like KEKs and Fernet keys) will be replaced.
     """
+    if heat is None:
+        raise RuntimeError('Should provide orchestration client to fetch'
+                           'stack environment')
     if rotate_pw_list is None:
         rotate_pw_list = []
     try:
-        env = get_env(swift, container)
-    except swiftexceptions.ClientException as err:
-        err_msg = ("Error retrieving environment for plan %s: %s" % (
-            container, err))  # pylint: disable=logging-not-lazy
-        LOG.exception(err_msg)
-        return RuntimeError(err_msg)
-
-    try:
         stack_env = heat.stacks.environment(
             stack_id=container)
-
-        # legacy heat resource names from overcloud.yaml
-        # We don't modify these to avoid changing defaults
-        for pw_res in constants.LEGACY_HEAT_PASSWORD_RESOURCE_NAMES:
-            try:
-                res = heat.resources.get(container, pw_res)
-                param_defaults = stack_env.get('parameter_defaults', {})
-                param_defaults[pw_res] = res.attributes['value']
-            except heat_exc.HTTPNotFound:
-                LOG.debug('Heat resouce not found: %s', pw_res)
-                pass
-
     except heat_exc.HTTPNotFound:
         stack_env = None
 
@@ -370,52 +352,25 @@ def generate_passwords(swift, heat, mistral=None,
 
     passwords = password_utils.generate_passwords(
         stack_env=stack_env,
-        rotate_passwords=rotate_passwords
-    )
-
-    # if passwords don't yet exist in plan environment
-    if 'passwords' not in env:
-        env['passwords'] = {}
+        rotate_passwords=rotate_passwords,
+        rotate_pw_list=rotate_pw_list)
 
     # NOTE(ansmith): if rabbit password previously generated and
     # stored, facilitate upgrade and use for oslo messaging in plan env
-    if 'RabbitPassword' in env['passwords']:
+    if 'RabbitPassword' in passwords:
         for i in ('RpcPassword', 'NotifyPassword'):
-            if i not in env['passwords']:
-                env['passwords'][i] = env['passwords']['RabbitPassword']
+            if i not in passwords:
+                passwords[i] = passwords['RabbitPassword']
 
     # NOTE(owalsh): placement previously used NovaPassword
     # Default to the same password for PlacementPassword if it is an
     # upgrade (i.e NovaPassword is set) so we do not need to update the
     # password in keystone
-    if not placement_extracted and 'NovaPassword' in env['passwords']:
+    if not placement_extracted and 'NovaPassword' in passwords:
         LOG.debug('Setting PlacementPassword to NovaPassword')
-        env['passwords']['PlacementPassword'] = \
-            env['passwords']['NovaPassword']
+        passwords['PlacementPassword'] = passwords['NovaPassword']
 
-    # ensure all generated passwords are present in plan env,
-    # but respect any values previously generated and stored
-    for name, password in passwords.items():
-        if name not in env['passwords']:
-            env['passwords'][name] = password
-
-    if rotate_passwords:
-        if len(rotate_pw_list) > 0:
-            for name in rotate_pw_list:
-                env['passwords'][name] = passwords[name]
-        else:
-            for name, password in passwords.items():
-                if name not in constants.DO_NOT_ROTATE_LIST:
-                    env['passwords'][name] = password
-
-    try:
-        put_env(swift, env)
-    except swiftexceptions.ClientException as err:
-        err_msg = "Error uploading to container: %s" % err
-        LOG.exception(err_msg)
-        raise RuntimeError(err_msg)
-
-    return env['passwords']
+    return passwords
 
 
 def update_plan_rotate_fernet_keys(swift,

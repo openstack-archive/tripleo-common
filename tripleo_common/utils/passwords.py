@@ -35,7 +35,8 @@ LOG = logging.getLogger(__name__)
 
 
 def generate_passwords(stack_env=None,
-                       rotate_passwords=False):
+                       rotate_passwords=False,
+                       rotate_pw_list=None):
     """Create the passwords needed for deploying OpenStack via t-h-t.
 
     This will create the set of passwords required by the undercloud and
@@ -44,12 +45,13 @@ def generate_passwords(stack_env=None,
     """
 
     passwords = {}
-
     for name in constants.PASSWORD_PARAMETER_NAMES:
-        # Support users upgrading from Mitaka or otherwise creating a plan for
-        # a Heat stack that already exists.
-        if (stack_env and name in stack_env.get('parameter_defaults', {}) and
-                not rotate_passwords):
+        no_rotate = (not rotate_passwords or (
+            rotate_pw_list and name not in rotate_pw_list)
+            or name in constants.DO_NOT_ROTATE_LIST)
+        if no_rotate and (
+            stack_env and name in stack_env.get(
+                'parameter_defaults', {})):
             passwords[name] = stack_env['parameter_defaults'][name]
         elif name in ('CephClientKey', 'CephManilaClientKey', 'CephRgwKey'):
             # CephX keys aren't random strings

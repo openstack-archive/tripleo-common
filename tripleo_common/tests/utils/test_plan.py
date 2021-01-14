@@ -17,9 +17,7 @@ import json
 import os
 import sys
 from unittest import mock
-
 import yaml
-
 import six
 from swiftclient import exceptions as swiftexceptions
 
@@ -501,15 +499,6 @@ class PlanTest(base.TestCase):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
 
-        swift = mock.MagicMock(url="http://test.com")
-        mock_env = yaml.safe_dump({
-            'name': 'overcast',
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-        }, default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
-
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {}
@@ -519,22 +508,13 @@ class PlanTest(base.TestCase):
             'endpoint_map': {
                 'PlacementPublic': {}
             },
-            'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
-
-        result = plan_utils.generate_passwords(swift, mock_orchestration)
+        result = plan_utils.generate_passwords(None, mock_orchestration)
 
         for password_param_name in constants.PASSWORD_PARAMETER_NAMES:
             self.assertTrue(password_param_name in result,
                             "%s is not in %s" % (password_param_name, result))
-
-            if password_param_name in \
-                    constants.LEGACY_HEAT_PASSWORD_RESOURCE_NAMES:
-                self.assertEqual(result[password_param_name], 'existing_value')
-            else:
-                self.assertNotEqual(result[password_param_name],
-                                    'existing_value')
 
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
@@ -552,30 +532,19 @@ class PlanTest(base.TestCase):
         mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
                                                '/tmp/bar': {'content': 'Bar'}}
 
-        swift = mock.MagicMock(url="http://test.com")
-        mock_env = yaml.safe_dump({
-            'name': constants.DEFAULT_CONTAINER_NAME,
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-            'passwords': _EXISTING_PASSWORDS.copy()
-        }, default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
-
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
-            'parameter_defaults': {}
+            'parameter_defaults': _EXISTING_PASSWORDS.copy()
         }
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
             'endpoint_map': {
                 'PlacementPublic': {}
             },
-            'value': None
         }
         mock_orchestration.resources.get.return_value = mock_resource
 
-        result = plan_utils.generate_passwords(swift, mock_orchestration)
+        result = plan_utils.generate_passwords(None, mock_orchestration)
 
         # ensure old passwords used and no new generation
         self.assertEqual(_EXISTING_PASSWORDS, result)
@@ -599,29 +568,16 @@ class PlanTest(base.TestCase):
 
         passwords = _EXISTING_PASSWORDS.copy()
 
-        swift = mock.MagicMock(url="http://test.com")
-        mock_env = yaml.safe_dump({
-            'name': constants.DEFAULT_CONTAINER_NAME,
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-            'passwords': passwords
-        }, default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
-
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
-            'parameter_defaults': {}
+            'parameter_defaults': passwords
         }
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
-            'endpoint_map': None,
-            'value': None
+            'endpoint_map': {},
         }
         mock_orchestration.resources.get.return_value = mock_resource
-
-        result = plan_utils.generate_passwords(swift, mock_orchestration)
-
+        result = plan_utils.generate_passwords(None, mock_orchestration)
         self.assertEqual(
             passwords['NovaPassword'],
             result['PlacementPassword']
@@ -642,20 +598,9 @@ class PlanTest(base.TestCase):
                                                 'private_key': 'Bar'}
         mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
                                                '/tmp/bar': {'content': 'Bar'}}
-
-        swift = mock.MagicMock(url="http://test.com")
-        mock_env = yaml.safe_dump({
-            'name': constants.DEFAULT_CONTAINER_NAME,
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-            'passwords': _EXISTING_PASSWORDS.copy()
-        }, default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
-
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
-            'parameter_defaults': {}
+            'parameter_defaults': _EXISTING_PASSWORDS.copy()
         }
 
         mock_resource = mock.MagicMock()
@@ -663,11 +608,10 @@ class PlanTest(base.TestCase):
             'endpoint_map': {
                 'PlacementPublic': {}
             },
-            'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
 
-        result = plan_utils.generate_passwords(swift, mock_orchestration,
+        result = plan_utils.generate_passwords(None, mock_orchestration,
                                                rotate_passwords=True)
 
         # ensure passwords in the DO_NOT_ROTATE_LIST are not modified
@@ -697,19 +641,9 @@ class PlanTest(base.TestCase):
         mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
                                                '/tmp/bar': {'content': 'Bar'}}
 
-        swift = mock.MagicMock(url="http://test.com")
-        mock_env = yaml.safe_dump({
-            'name': constants.DEFAULT_CONTAINER_NAME,
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-            'passwords': _EXISTING_PASSWORDS.copy()
-        }, default_flow_style=False)
-        swift.get_object.return_value = ({}, mock_env)
-
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
-            'parameter_defaults': {}
+            'parameter_defaults': _EXISTING_PASSWORDS.copy()
         }
 
         mock_resource = mock.MagicMock()
@@ -717,10 +651,8 @@ class PlanTest(base.TestCase):
             'endpoint_map': {
                 'PlacementPublic': {}
             },
-            'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
-
         rotate_list = [
             'MistralPassword',
             'BarbicanPassword',
@@ -731,7 +663,7 @@ class PlanTest(base.TestCase):
             'MysqlRootPassword'
         ]
 
-        result = plan_utils.generate_passwords(swift, mock_orchestration,
+        result = plan_utils.generate_passwords(None, mock_orchestration,
                                                rotate_passwords=True,
                                                rotate_pw_list=rotate_list)
 
@@ -760,24 +692,11 @@ class PlanTest(base.TestCase):
                                                '/tmp/bar': {'content': 'Bar'}}
 
         existing_passwords = _EXISTING_PASSWORDS.copy()
-        existing_passwords.pop("AdminPassword")
-
-        swift = mock.MagicMock(url="http://test.com")
-        mock_env = yaml.safe_dump({
-            'name': constants.DEFAULT_CONTAINER_NAME,
-            'temp_environment': 'temp_environment',
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}],
-            'passwords': existing_passwords.copy()
-        }, default_flow_style=False)
-
-        swift.get_object.return_value = ({}, mock_env)
+        existing_passwords["AdminPassword"] = 'ExistingPasswordInHeat'
 
         mock_orchestration = mock.MagicMock()
         mock_orchestration.stacks.environment.return_value = {
-            'parameter_defaults': {
-                'AdminPassword': 'ExistingPasswordInHeat',
-            }
+            'parameter_defaults': existing_passwords
         }
 
         mock_resource = mock.MagicMock()
@@ -785,14 +704,10 @@ class PlanTest(base.TestCase):
             'endpoint_map': {
                 'PlacementPublic': {}
             },
-            'value': 'existing_value'
         }
         mock_orchestration.resources.get.return_value = mock_resource
 
-        result = plan_utils.generate_passwords(swift, mock_orchestration)
-
-        existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
-        # ensure old passwords used and no new generation
+        result = plan_utils.generate_passwords(None, mock_orchestration)
         self.assertEqual(existing_passwords, result)
 
     @mock.patch("tripleo_common.utils.plan.get_role_data")
