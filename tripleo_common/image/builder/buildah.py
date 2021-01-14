@@ -177,6 +177,9 @@ class BuildahBuilder(base.BaseBuilder):
         bud_args = ['bud']
         for v in self.volumes:
             bud_args.extend(['--volume', v])
+        if self.debug:
+            # TODO(bogdando): add --log-rusage for newer buildah
+            bud_args.extend(['--loglevel=3'])
         # TODO(aschultz): drop --format docker when oci format is properly
         # supported by the undercloud registry
         bud_args.extend(['--format', 'docker', '--tls-verify=False',
