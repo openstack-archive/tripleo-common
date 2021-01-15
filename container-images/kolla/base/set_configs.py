@@ -135,7 +135,7 @@ class ConfigFile(object):
         if not self.optional and not sources:
             raise MissingRequiredSource('%s file is not found' % self.source)
         # skip when there is no sources and optional
-        elif self.optional and not sources:
+        if self.optional and not sources:
             return
 
         for source in sources:
@@ -216,7 +216,7 @@ class ConfigFile(object):
 
         if not sources and not self.optional:
             raise MissingRequiredSource('%s file is not found' % self.source)
-        elif self.optional and not sources:
+        if self.optional and not sources:
             return
 
         for source in sources:
@@ -261,9 +261,8 @@ def validate_source(data):
             if data.get('optional'):
                 LOG.info("%s does not exist, but is not required", source)
                 return False
-            else:
-                raise MissingRequiredSource(
-                    "The source to copy does not exist: %s" % source)
+            raise MissingRequiredSource(
+                "The source to copy does not exist: %s" % source)
 
     return True
 
@@ -395,10 +394,9 @@ def execute_config_strategy(config):
             raise ImmutableConfig(
                 "The config strategy prevents copying new configs",
                 exit_code=0)
-        else:
-            copy_config(config)
-            handle_permissions(config)
-            os.mknod('/configured')
+        copy_config(config)
+        handle_permissions(config)
+        os.mknod('/configured')
     else:
         raise InvalidConfig('KOLLA_CONFIG_STRATEGY is not set properly')
 

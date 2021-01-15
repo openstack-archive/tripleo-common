@@ -844,15 +844,14 @@ class BaseImageUploader(object):
         if netloc in cls.mirrors:
             mirror = cls.mirrors[netloc]
             return '%sv2%s' % (mirror, path)
+        if (cls.is_insecure_registry(registry_host=netloc) and
+                netloc not in cls.no_verify_registries):
+            scheme = 'http'
         else:
-            if (cls.is_insecure_registry(registry_host=netloc) and
-                    netloc not in cls.no_verify_registries):
-                scheme = 'http'
-            else:
-                scheme = 'https'
-            if netloc == 'docker.io':
-                netloc = 'registry-1.docker.io'
-            return '%s://%s/v2%s' % (scheme, netloc, path)
+            scheme = 'https'
+        if netloc == 'docker.io':
+            netloc = 'registry-1.docker.io'
+        return '%s://%s/v2%s' % (scheme, netloc, path)
 
     @classmethod
     def _image_tag_from_url(cls, image_url):
@@ -908,8 +907,7 @@ class BaseImageUploader(object):
             if e.response.status_code in (403, 404):
                 raise ImageNotFoundException('Not found image: %s' %
                                              image_url.geturl())
-            else:
-                raise
+            raise
 
         manifest_str = cls._get_response_text(manifest_r)
 
@@ -1546,8 +1544,7 @@ class PythonImageUploader(BaseImageUploader):
                 consolidated_view = cls.uploaded_layers.copy()
                 consolidated_view.update(cls.lock._global_view)
                 return consolidated_view
-            else:
-                return cls.uploaded_layers
+            return cls.uploaded_layers
 
     @classmethod
     def _track_uploaded_layers(cls, layer, known_path=None, image_ref=None,
@@ -1796,8 +1793,7 @@ class PythonImageUploader(BaseImageUploader):
             if e.response.status_code in (501, 403, 404, 405):
                 cls.export_registries.add(image_url.netloc)
                 return True
-            else:
-                raise
+            raise
         cls.push_registries.add(image_url.netloc)
         return False
 
@@ -1833,8 +1829,7 @@ class PythonImageUploader(BaseImageUploader):
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in (403, 404):
                 raise ImageNotFoundException('Not found image: %s' % url)
-            else:
-                raise
+            raise
         return cls._get_response_text(r)
 
     def _collect_manifests_layers(self, image_url, session,
@@ -2179,8 +2174,7 @@ class PythonImageUploader(BaseImageUploader):
             if e.response.status_code == 400:
                 LOG.error(cls._get_response_text(r))
                 raise ImageUploaderException('Pushing manifest failed')
-            else:
-                raise
+            raise
 
     @classmethod
     @tenacity.retry(  # Retry up to 5 times with jittered exponential backoff
@@ -2246,15 +2240,13 @@ class PythonImageUploader(BaseImageUploader):
                           (image, x['digest'], known_path))
                 layer_found = x
                 break
-            else:
-                parts['digest'] = x['digest']
-                blob_url = cls._build_url(
-                    target_url, CALL_BLOB % parts)
-                if session.head(blob_url, timeout=30).status_code == 200:
-                    LOG.debug('[%s] Layer already exists: %s' %
-                              (image, x['digest']))
-                    layer_found = x
-                    break
+            parts['digest'] = x['digest']
+            blob_url = cls._build_url(target_url, CALL_BLOB % parts)
+            if session.head(blob_url, timeout=30).status_code == 200:
+                LOG.debug('[%s] Layer already exists: %s' %
+                          (image, x['digest']))
+                layer_found = x
+                break
         if layer_found:
             layer['digest'] = layer_found['digest']
             if 'size' in layer_found:
@@ -2645,11 +2637,10 @@ class PythonImageUploader(BaseImageUploader):
             # workers will scale from 2 to 8 based on the cpu count // 2
             workers = min(max(2, processutils.get_worker_count() // 2), 8)
             return futures.ThreadPoolExecutor(max_workers=workers)
-        else:
-            # there really isn't an improvement with > 4 workers due to the
-            # container layer overlaps. The higher the workers, the more
-            # RAM required which can lead to OOMs. It's best to limit to 4
-            return futures.ProcessPoolExecutor(max_workers=4)
+        # there really isn't an improvement with > 4 workers due to the
+        # container layer overlaps. The higher the workers, the more
+        # RAM required which can lead to OOMs. It's best to limit to 4
+        return futures.ProcessPoolExecutor(max_workers=4)
 
     def run_tasks(self):
         if not self.upload_tasks:

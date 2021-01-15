@@ -60,7 +60,7 @@ class TestConfigureBootAction(base.TestCase):
         def mock_find(name, disk_format):
             if name == 'bm-deploy-kernel':
                 return mock.MagicMock(id='k_id')
-            elif name == 'bm-deploy-ramdisk':
+            if name == 'bm-deploy-ramdisk':
                 return mock.MagicMock(id='r_id')
         self.glance.images.find = mock_find
         self.context = mock.MagicMock()

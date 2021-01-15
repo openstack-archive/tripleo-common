@@ -42,14 +42,12 @@ class TestCapabilitiesFilter(base.TestCase):
         def mock_host_get(key):
             if key == 'node':
                 return 'compute-0'
-            else:
-                self.fail('Unexpected key requested by filter')
+            self.fail('Unexpected key requested by filter')
 
         def mock_spec_get(key):
             if key == 'capabilities:node':
                 return ['compute-0']
-            else:
-                self.fail('Unexpected key requested by filter')
+            self.fail('Unexpected key requested by filter')
 
         instance = capabilities_filter.TripleOCapabilitiesFilter()
         host_state = mock.Mock()

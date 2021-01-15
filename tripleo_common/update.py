@@ -41,10 +41,9 @@ def search_stack(stack_data, key_name):
         for k, v in iteritems(stack_data):
             if k == key_name:
                 return v
-            else:
-                result = search_stack(v, key_name)
-                if result:
-                    return result
+            result = search_stack(v, key_name)
+            if result:
+                return result
 
 
 def get_exclusive_neutron_driver(drivers):

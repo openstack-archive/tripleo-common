@@ -440,8 +440,7 @@ class GetCandidateNodes(base.TripleOAction):
         if isinstance(self.ip_addresses, six.string_types):
             return [str(ip) for ip in
                     netaddr.IPNetwork(self.ip_addresses).iter_hosts()]
-        else:
-            return self.ip_addresses
+        return self.ip_addresses
 
     def run(self, context):
         existing = self._existing_ips()

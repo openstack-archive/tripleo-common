@@ -65,6 +65,5 @@ def _check_image(glanceclient, name, disk_format, image_type):
 
     if image:
         return image.id
-    else:
-        raise ValueError("%s image %s not found in Glance" % (image_type,
-                                                              name))
+    raise ValueError("%s image %s not found in Glance" % (image_type,
+                                                          name))

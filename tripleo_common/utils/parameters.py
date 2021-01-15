@@ -115,14 +115,12 @@ def get_profile_of_flavor(flavor_name, compute_client):
         profile = flavor.get_keys().get('capabilities:profile', '')
         if profile:
             return profile
-        else:
-            raise exception.DeriveParamsError(
-                'Unable to determine profile for flavor (flavor name: '
-                '%s)' % flavor_name)
-    else:
         raise exception.DeriveParamsError(
-            'Unable to determine flavor for flavor name: '
-            '%s' % flavor_name)
+            'Unable to determine profile for flavor (flavor name: '
+            '%s)' % flavor_name)
+    raise exception.DeriveParamsError(
+        'Unable to determine flavor for flavor name: '
+        '%s' % flavor_name)
 
 
 def convert_docker_params(stack_env=None):

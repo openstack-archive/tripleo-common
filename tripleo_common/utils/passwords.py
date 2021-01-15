@@ -134,11 +134,11 @@ def get_snmpd_readonly_user_password(pw_file=None):
 
     if not os.path.exists(pw_file):
         return passlib.pwd.genword(length=24)
-    else:
-        with open(pw_file) as f:
-            passwords = yaml.safe_load(f.read())
 
-        return passwords['parameter_defaults']['SnmpdReadonlyUserPassword']
+    with open(pw_file) as f:
+        passwords = yaml.safe_load(f.read())
+
+    return passwords['parameter_defaults']['SnmpdReadonlyUserPassword']
 
 
 def create_keystone_credential():

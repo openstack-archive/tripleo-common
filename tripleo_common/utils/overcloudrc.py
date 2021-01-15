@@ -50,8 +50,7 @@ def get_endpoint(key, stack):
     endpoint_map = get_endpoint_map(stack)
     if endpoint_map:
         return endpoint_map[key]['host']
-    else:
-        return get_service_ips(stack).get(key + 'Vip')
+    return get_service_ips(stack).get(key + 'Vip')
 
 
 def get_overcloud_endpoint(stack):

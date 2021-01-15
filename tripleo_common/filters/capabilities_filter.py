@@ -41,7 +41,6 @@ class TripleOCapabilitiesFilter(filters.BaseHostFilter):
             LOG.debug('Node tagged %s matches requested node %s', host_node,
                       instance_node[0])
             return True
-        else:
-            LOG.debug('Node tagged %s does not match requested node %s',
-                      host_node, instance_node[0])
-            return False
+        LOG.debug('Node tagged %s does not match requested node %s',
+                  host_node, instance_node[0])
+        return False

@@ -112,8 +112,7 @@ class J2SwiftLoaderTest(base.TestCase):
         def return_multiple_files(*args):
             if args[1] == 'bar/foo.yaml':
                 return ['', 'I am foo']
-            else:
-                raise swiftexceptions.ClientException('not found')
+            raise swiftexceptions.ClientException('not found')
         swift = mock.MagicMock()
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
         return swift
@@ -219,9 +218,9 @@ class ProcessTemplatesTest(base.TestCase):
                 return ['', snippet_content]
             if args[1] == constants.OVERCLOUD_J2_EXCLUDES:
                 return ['', J2_EXCLUDES]
-            elif args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
+            if args[1] == constants.OVERCLOUD_J2_ROLES_NAME:
                 return ['', role_data or ROLE_DATA_YAML]
-            elif args[1] == constants.OVERCLOUD_J2_NETWORKS_NAME:
+            if args[1] == constants.OVERCLOUD_J2_NETWORKS_NAME:
                 return ['', NETWORK_DATA_YAML]
 
         def return_container_files(*args):
