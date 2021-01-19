@@ -20,19 +20,7 @@
               - openstack-tox-pep8
               - openstack-tox-py36
               - openstack-tox-py37
-        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
-            dependencies: *deps_unit_lint
-            files:
-              - workbooks/package_update.yaml
-              - workbooks/baremetal.yaml
-              - ^container-images/.*$
-              - tripleo_common/actions/deployment.py
-              - tripleo_common/actions/container_images.py
-              - tripleo_common/image/kolla_builder.py
-              - scripts/.*$
-        - openstack-tox-lower-constraints
     gate:
       queue: tripleo
       jobs:
         - openstack-tox-pep8
-        - openstack-tox-lower-constraints
