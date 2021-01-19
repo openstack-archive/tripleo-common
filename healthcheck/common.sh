@@ -9,6 +9,7 @@ else
 fi
 : ${HEALTHCHECK_CURL_MAX_TIME:=10}
 : ${HEALTHCHECK_CURL_USER_AGENT:=curl-healthcheck}
+: ${HEALTHCHECK_CURL_PY_USER_AGENT:=pyrequests-healthcheck}
 : ${HEALTHCHECK_CURL_WRITE_OUT:='\n%{http_code} %{remote_ip}:%{remote_port} %{time_total} seconds\n'}
 : ${HEALTHCHECK_CURL_OUTPUT:='/dev/null'}
 
@@ -30,11 +31,19 @@ healthcheck_curl () {
         return 1
     fi
     export NSS_SDB_USE_CACHE=no
-    curl -g -k -q -s -S --fail -o "${HEALTHCHECK_CURL_OUTPUT}" \
+    if [ -n "${HEALTHCHECK_CURL_PY+x}" ] || [ -n "${no_proxy+x}" ] || [ -n "${NO_PROXY+x}" ]; then
+        ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/http-healthcheck.py \
+        --max-time "${HEALTHCHECK_CURL_MAX_TIME}" \
+        --user-agent "${HEALTHCHECK_CURL_PY_USER_AGENT}" \
+        --write-out "${HEALTHCHECK_CURL_WRITE_OUT}" \
+        "$@" || return 1
+    else
+        curl -g -k -q -s -S --fail -o "${HEALTHCHECK_CURL_OUTPUT}" \
         --max-time "${HEALTHCHECK_CURL_MAX_TIME}" \
         --user-agent "${HEALTHCHECK_CURL_USER_AGENT}" \
         --write-out "${HEALTHCHECK_CURL_WRITE_OUT}" \
         "$@" || return 1
+    fi
 }
 
 healthcheck_port () {
