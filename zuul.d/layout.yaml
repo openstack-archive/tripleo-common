@@ -10,10 +10,6 @@
       - release-notes-jobs
     check:
       jobs:
-        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
-            voting: true
-            files:
-              - ^container-images/.*$
         - tripleo-ci-centos-7-scenario001-multinode-oooq-container:
             files:
               - workbooks/ceph-ansible.yaml
@@ -33,11 +29,3 @@
               - ^container-images/.*$
         - openstack-tox-cover:
             voting: false
-
-    gate:
-      queue: tripleo
-      jobs:
-        - tripleo-ci-centos-7-scenario000-multinode-oooq-container-updates:
-            voting: true
-            files:
-              - ^container-images/.*$
