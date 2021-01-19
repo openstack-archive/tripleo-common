@@ -606,13 +606,15 @@ def generate_tripleo_ansible_inventory(heat, auth_url,
                                        ansible_python_interpreter=None,
                                        ansible_ssh_user='tripleo-admin',
                                        undercloud_key_file=None,
-                                       ssh_network='ctlplane'):
+                                       ssh_network='ctlplane',
+                                       session=None):
     if not work_dir:
         work_dir = tempfile.mkdtemp(prefix='tripleo-ansible')
 
     inventory_path = os.path.join(
         work_dir, 'tripleo-ansible-inventory.yaml')
     inv = TripleoInventory(
+        session=session,
         hclient=heat,
         auth_url=auth_url,
         username=username,
