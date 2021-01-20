@@ -26,9 +26,7 @@ from tripleo_common.utils import nodes
 
 class StackParametersTest(base.TestCase):
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
-    def test_reset_parameter(self, mock_cache):
+    def test_reset_parameter(self):
         swift = mock.MagicMock(url="http://test.com")
         mock_env = yaml.safe_dump({
             'name': constants.DEFAULT_CONTAINER_NAME,
@@ -52,20 +50,13 @@ class StackParametersTest(base.TestCase):
             constants.PLAN_ENVIRONMENT,
             mock_env_reset
         )
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get"
-        )
 
     @mock.patch('uuid.uuid4')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.'
                 'get_template_contents')
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_set')
-    def test_update_parameters(self, mock_cache,
+    def test_update_parameters(self,
                                mock_get_template_contents,
                                mock_env_files,
                                mock_uuid):
@@ -165,21 +156,13 @@ class StackParametersTest(base.TestCase):
             template={'heat_template_version': '2016-04-30'},
         )
 
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get",
-            expected_value
-        )
         self.assertEqual(result, expected_value)
 
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.'
                 'get_template_contents')
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_set')
-    def test_update_parameter_new_key(self, mock_cache,
+    def test_update_parameter_new_key(self,
                                       mock_get_template_contents,
                                       mock_env_files):
 
@@ -253,22 +236,13 @@ class StackParametersTest(base.TestCase):
             template={'heat_template_version': '2016-04-30'},
         )
 
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get",
-            {'environment_parameters': None, 'heat_resource_tree': {}}
-        )
-
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.'
                 'get_template_contents')
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_set')
     @mock.patch('tripleo_common.utils.parameters.set_count_and_flavor_params')
     def test_update_role_parameter(self, mock_set_count_and_flavor,
-                                   mock_cache, mock_get_template_contents,
+                                   mock_get_template_contents,
                                    mock_env_files):
 
         mock_env_files.return_value = ({}, {})
@@ -340,27 +314,13 @@ class StackParametersTest(base.TestCase):
             template={'heat_template_version': '2016-04-30'},
         )
 
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcast",
-            "tripleo.parameters.get",
-            {'environment_parameters': None, 'heat_resource_tree': {}}
-        )
-
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_set')
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_get')
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
     @mock.patch('heatclient.common.template_utils.get_template_contents')
     def test_empty_resource_tree(self,
                                  mock_get_template_contents,
-                                 mock_process_multiple_environments_and_files,
-                                 mock_cache_get,
-                                 mock_cache_set):
+                                 mock_process_multiple_environments_and_files):
 
-        mock_cache_get.return_value = None
         swift = mock.MagicMock(url="http://test.com")
         mock_env = yaml.safe_dump({
             'temp_environment': 'temp_environment',
@@ -395,10 +355,6 @@ class StackParametersTest(base.TestCase):
         )
         self.assertEqual(result, expected_value)
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_set')
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_get')
     @mock.patch('uuid.uuid4', side_effect=['1', '2'])
     @mock.patch('heatclient.common.template_utils.'
                 'process_multiple_environments_and_files')
@@ -406,11 +362,8 @@ class StackParametersTest(base.TestCase):
     def test_valid_resource_tree(self,
                                  mock_get_template_contents,
                                  mock_process_multiple_environments_and_files,
-                                 mock_uuid,
-                                 mock_cache_get,
-                                 mock_cache_set):
+                                 mock_uuid):
 
-        mock_cache_get.return_value = None
         swift = mock.MagicMock(url="http://test.com")
         mock_env = yaml.safe_dump({
             'temp_environment': 'temp_environment',

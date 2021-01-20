@@ -31,12 +31,6 @@ LOG = logging.getLogger(__name__)
 
 def get_flattened_parameters(swift, heat,
                              container=constants.DEFAULT_CONTAINER_NAME):
-    cached = plan_utils.cache_get(
-        swift, container, "tripleo.parameters.get")
-
-    if cached is not None:
-        return cached
-
     processed_data = template_utils.process_templates(
         swift, heat, container=container
     )
@@ -52,9 +46,6 @@ def get_flattened_parameters(swift, heat,
 
     processed_data = stack_utils.validate_stack_and_flatten_parameters(
         heat, processed_data, env)
-
-    plan_utils.cache_set(swift, container,
-                         "tripleo.parameters.get", processed_data)
 
     return processed_data
 
@@ -93,8 +84,6 @@ def update_parameters(swift, heat, parameters,
         processed_data = stack_utils.validate_stack_and_flatten_parameters(
             heat, processed_data, env)
 
-        plan_utils.cache_set(swift, container,
-                             "tripleo.parameters.get", processed_data)
     except heat_exc.HTTPException as err:
         LOG.debug("Validation failed rebuilding saved env")
 
@@ -128,7 +117,6 @@ def reset_parameters(swift, container=constants.DEFAULT_CONTAINER_NAME,
         LOG.exception(err_msg)
         raise RuntimeError(err_msg)
 
-    plan_utils.cache_delete(swift, container, "tripleo.parameters.get")
     return env
 
 

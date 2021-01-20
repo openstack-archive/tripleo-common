@@ -43,8 +43,6 @@ class ScaleDownActionTest(base.TestCase):
         super(ScaleDownActionTest, self).setUp()
         self.image = collections.namedtuple('image', ['id'])
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('heatclient.common.template_utils.'
@@ -53,7 +51,7 @@ class ScaleDownActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run(self, mock_get_object_client,
                  mock_get_template_contents, mock_env_files,
-                 mock_get_heat_client, mock_cache):
+                 mock_get_heat_client):
 
         mock_env_files.return_value = ({}, {})
         heatclient = mock.MagicMock()
@@ -149,12 +147,6 @@ class ScaleDownActionTest(base.TestCase):
         self.assertEqual(kwargs['existing'], True)
         self.assertEqual(kwargs['files'], {})
 
-        mock_cache.assert_called_with(
-            swift,
-            "stack",
-            "tripleo.parameters.get"
-        )
-
         self.assertEqual(None, result)
 
     @mock.patch('tripleo_common.actions.scale.ScaleDownAction.'
@@ -205,8 +197,6 @@ class ScaleDownActionTest(base.TestCase):
 
         self.assertEqual(actions.Result(error='Update error'), result)
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
                 'get_orchestration_client')
     @mock.patch('heatclient.common.template_utils.'
@@ -215,7 +205,7 @@ class ScaleDownActionTest(base.TestCase):
     @mock.patch('tripleo_common.actions.base.TripleOAction.get_object_client')
     def test_run_with_hostmatch(self, mock_get_object_client,
                                 mock_get_template_contents, mock_env_files,
-                                mock_get_heat_client, mock_cache):
+                                mock_get_heat_client):
 
         mock_env_files.return_value = ({}, {})
         heatclient = mock.MagicMock()
@@ -312,11 +302,5 @@ class ScaleDownActionTest(base.TestCase):
         self.assertEqual(kwargs['environment'], env)
         self.assertEqual(kwargs['existing'], True)
         self.assertEqual(kwargs['files'], {})
-
-        mock_cache.assert_called_with(
-            swift,
-            "stack",
-            "tripleo.parameters.get"
-        )
 
         self.assertEqual(None, result)

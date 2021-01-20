@@ -17,7 +17,6 @@ import json
 import os
 import sys
 from unittest import mock
-import zlib
 
 import yaml
 
@@ -416,111 +415,6 @@ class PlanTest(base.TestCase):
         for path in temp_env_paths:
             os.remove(path)
 
-    def test_format_cache_key(self):
-        container = "TestContainer"
-        key = "testkey"
-        cache_key = "__cache_TestContainer_testkey"
-
-        self.assertEqual(
-            plan_utils.format_cache_key(container, key),
-            cache_key
-        )
-
-    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
-    @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_set(self, mock_conn, mock_keystone):
-        mock_swift = mock.Mock()
-        mock_conn.return_value = mock_swift
-
-        cache_container = "__cache__"
-        container = "TestContainer"
-        key = "testkey"
-        cache_key = "__cache_TestContainer_testkey"
-        compressed_json = zlib.compress("{\"foo\": 1}".encode())
-
-        plan_utils.cache_set(mock_swift, container, key, {"foo": 1})
-        mock_swift.put_object.assert_called_once_with(
-            cache_container,
-            cache_key,
-            compressed_json
-        )
-        mock_swift.delete_object.assert_not_called()
-
-    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
-    @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_set_none(self, mock_conn, mock_keystone):
-        mock_swift = mock.Mock()
-        mock_conn.return_value = mock_swift
-
-        cache_container = "__cache__"
-        container = "TestContainer"
-        key = "testkey"
-        cache_key = "__cache_TestContainer_testkey"
-
-        plan_utils.cache_set(mock_swift, container, key, None)
-        mock_swift.put_object.assert_not_called()
-        mock_swift.delete_object.called_once_with(
-            cache_container,
-            cache_key
-        )
-
-    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
-    @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_get_filled(self, mock_conn, mock_keystone):
-        mock_swift = mock.Mock()
-        mock_conn.return_value = mock_swift
-
-        container = "TestContainer"
-        key = "testkey"
-        compressed_json = zlib.compress("{\"foo\": 1}".encode())
-        # test if cache has something in it
-        mock_swift.get_object.return_value = ([], compressed_json)
-        result = plan_utils.cache_get(mock_swift, container, key)
-        self.assertEqual(result, {"foo": 1})
-
-    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
-    @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_empty(self, mock_conn, mock_keystone):
-        mock_swift = mock.Mock()
-        mock_conn.return_value = mock_swift
-
-        cache_container = "__cache__"
-        container = "TestContainer"
-        key = "testkey"
-        cache_key = "__cache_TestContainer_testkey"
-
-        mock_swift.get_object.side_effect = swiftexceptions.ClientException(
-            "Foo"
-        )
-        result = plan_utils.cache_get(mock_swift, container, key)
-        self.assertFalse(result)
-
-        # delete cache if we have a value
-        plan_utils.cache_delete(mock_swift, container, key)
-        mock_swift.delete_object.assert_called_once_with(
-            cache_container,
-            cache_key
-        )
-
-    @mock.patch("tripleo_common.utils.keystone.get_session_and_auth")
-    @mock.patch("tripleo_common.actions.base.swift_client.Connection")
-    def test_cache_delete(self, mock_conn, mock_keystone):
-        mock_swift = mock.Mock()
-        mock_conn.return_value = mock_swift
-
-        cache_container = "__cache__"
-        container = "TestContainer"
-        key = "testkey"
-        cache_key = "__cache_TestContainer_testkey"
-        mock_swift.delete_object.side_effect = swiftexceptions.ClientException(
-            "Foo"
-        )
-        plan_utils.cache_delete(mock_swift, container, key)
-        mock_swift.delete_object.assert_called_once_with(
-            cache_container,
-            cache_key
-        )
-
     def test_get_next_index(self):
         keys_map = {
             password_utils.KEYSTONE_FERNET_REPO + '0': {
@@ -601,12 +495,9 @@ class PlanTest(base.TestCase):
         keys_map = plan_utils.purge_excess_keys(max_keys, keys_map)
         self.assertEqual(2, len(keys_map))
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.utils.passwords.'
                 'get_snmpd_readonly_user_password')
-    def test_generate_password(self, mock_get_snmpd_readonly_user_password,
-                               mock_cache):
+    def test_generate_password(self, mock_get_snmpd_readonly_user_password):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
 
@@ -645,14 +536,6 @@ class PlanTest(base.TestCase):
                 self.assertNotEqual(result[password_param_name],
                                     'existing_value')
 
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get"
-        )
-
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -661,8 +544,7 @@ class PlanTest(base.TestCase):
                 'get_snmpd_readonly_user_password')
     def test_run_passwords_exist(self, mock_get_snmpd_readonly_user_password,
                                  mock_fernet_keys_setup,
-                                 mock_create_ssh_keypair,
-                                 mock_cache):
+                                 mock_create_ssh_keypair):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
@@ -697,14 +579,7 @@ class PlanTest(base.TestCase):
 
         # ensure old passwords used and no new generation
         self.assertEqual(_EXISTING_PASSWORDS, result)
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get"
-        )
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -714,8 +589,7 @@ class PlanTest(base.TestCase):
     def test_placement_passwords_upgrade(self,
                                          mock_get_snmpd_readonly_user_password,
                                          mock_fernet_keys_setup,
-                                         mock_create_ssh_keypair,
-                                         mock_cache):
+                                         mock_create_ssh_keypair):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
@@ -753,8 +627,6 @@ class PlanTest(base.TestCase):
             result['PlacementPassword']
         )
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -763,8 +635,7 @@ class PlanTest(base.TestCase):
                 'get_snmpd_readonly_user_password')
     def test_run_rotate_no_rotate_list(
         self, mock_get_snmpd_readonly_user_password,
-        mock_fernet_keys_setup, mock_create_ssh_keypair,
-        mock_cache):
+        mock_fernet_keys_setup, mock_create_ssh_keypair):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
@@ -809,14 +680,7 @@ class PlanTest(base.TestCase):
 
         # ensure new passwords have been generated
         self.assertNotEqual(_EXISTING_PASSWORDS, result)
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get"
-        )
 
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -825,8 +689,7 @@ class PlanTest(base.TestCase):
                 'get_snmpd_readonly_user_password')
     def test_run_rotate_with_rotate_list(
         self, mock_get_snmpd_readonly_user_password,
-        mock_fernet_keys_setup, mock_create_ssh_keypair,
-        mock_cache):
+        mock_fernet_keys_setup, mock_create_ssh_keypair):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
@@ -880,14 +743,6 @@ class PlanTest(base.TestCase):
             else:
                 self.assertEqual(_EXISTING_PASSWORDS[name], result[name])
 
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get"
-        )
-
-    @mock.patch('tripleo_common.utils.plan.'
-                'cache_delete')
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
     @mock.patch('tripleo_common.utils.passwords.'
@@ -896,8 +751,7 @@ class PlanTest(base.TestCase):
                 'get_snmpd_readonly_user_password')
     def test_passwords_exist_in_heat(
         self, mock_get_snmpd_readonly_user_password,
-        mock_fernet_keys_setup, mock_create_ssh_keypair,
-        mock_cache):
+        mock_fernet_keys_setup, mock_create_ssh_keypair):
 
         mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
         mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
@@ -940,11 +794,6 @@ class PlanTest(base.TestCase):
         existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
         # ensure old passwords used and no new generation
         self.assertEqual(existing_passwords, result)
-        mock_cache.assert_called_once_with(
-            swift,
-            "overcloud",
-            "tripleo.parameters.get"
-        )
 
     @mock.patch("tripleo_common.utils.plan.get_role_data")
     @mock.patch("tripleo_common.utils.plan."
