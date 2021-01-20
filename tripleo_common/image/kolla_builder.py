@@ -549,7 +549,7 @@ class KollaImageBuilder(base.BaseImageManager):
             raise subprocess.CalledProcessError(process.returncode, cmd, err)
 
         if template_only:
-            self.logger.info('Running %s' % ' '.join(cmd_deps))
+            self.logger.info('Running %s', ' '.join(cmd_deps))
             env = os.environ.copy()
             process = subprocess.Popen(cmd_deps, env=env,
                                        stdout=subprocess.PIPE,
