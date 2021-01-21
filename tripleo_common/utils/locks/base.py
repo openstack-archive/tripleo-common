@@ -15,10 +15,13 @@
 
 class BaseLock(object):
     def get_lock(self):
+        # pylint: disable=no-member
         return self._lock
 
     def objects(self):
+        # pylint: disable=no-member
         return self._objects
 
     def sessions(self):
+        # pylint: disable=no-member
         return self._sessions
