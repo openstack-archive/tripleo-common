@@ -185,8 +185,6 @@ container_images:
   image_source: prom
 - imagename: quay.io/app-sre/grafana:6.7.4
   image_source: grafana
-- imagename: quay.io/tripleomaster/openstack-tempest:current-tripleo
-  image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-rsyslog:current-tripleo
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-unbound:current-tripleo

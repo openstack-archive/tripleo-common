@@ -792,13 +792,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::CephGrafana
 
-- imagename: "{{namespace}}/{{name_prefix}}tempest{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-  params:
-  - ContainerTempestImage
-  services:
-  - OS::TripleO::Services::Tempest
-
 - imagename: "{{namespace}}/{{name_prefix}}rsyslog{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
