@@ -323,7 +323,6 @@ class TestInventory(base.TestCase):
                     'auth_url': 'xyz://keystone.local',
                     'cacert': 'acacert',
                     'project_name': 'admin',
-                    'plan': None,
                     'undercloud_service_list': [
                         'tripleo_nova_compute',
                         'tripleo_heat_engine',
