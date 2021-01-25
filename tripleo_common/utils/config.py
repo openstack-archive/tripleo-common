@@ -436,6 +436,9 @@ class Config(object):
                 raise Exception(err_msg)
 
             role = self.get_role_from_server_id(stack, server_id)
+            server_pre_network = server_deployment_names.setdefault(
+                server_names[server_id], {}).setdefault(
+                'pre_network', [])
             server_pre_deployments = server_deployment_names.setdefault(
                 server_names[server_id], {}).setdefault(
                 'pre_deployments', [])
@@ -453,6 +456,9 @@ class Config(object):
                     'PostConfig' in deployment.physical_resource_id:
                 if deployment_name not in server_post_deployments:
                     server_post_deployments.append(deployment_name)
+            elif 'PreNetworkConfig' in deployment.physical_resource_id:
+                if deployment_name not in server_pre_network:
+                    server_pre_network.append(deployment_name)
             else:
                 if deployment_name not in server_pre_deployments:
                     server_pre_deployments.append(deployment_name)
@@ -545,6 +551,8 @@ class Config(object):
                     role_host_vars[role][server],
                     default_flow_style=False) if role_host_vars else None)
 
+            pre_network = server_deployment_names.get(
+                server, {}).get('pre_network', [])
             pre_deployments = server_deployment_names.get(
                 server, {}).get('pre_deployments', [])
             post_deployments = server_deployment_names.get(
@@ -553,6 +561,7 @@ class Config(object):
             with open(host_var_server_path, 'w') as f:
                 template_data = host_var_server_template.render(
                     role=role,
+                    pre_network=pre_network,
                     pre_deployments=pre_deployments,
                     post_deployments=post_deployments,
                     ansible_host_vars=ansible_host_vars)

@@ -1,3 +1,9 @@
+pre_network_{{ role }}: {% if not pre_network %} [] {% endif %}
+
+{% for deployment in pre_network %}
+  - {{ deployment }}
+{% endfor %}
+
 pre_deployments_{{ role }}: {% if not pre_deployments %} [] {% endif %}
 
 {% for deployment in pre_deployments %}
