@@ -294,16 +294,17 @@ class GeneratePasswordsAction(base.TripleOAction):
         except heat_exc.HTTPNotFound:
             stack_env = None
 
+        placement_extracted = False
         try:
             # We can't rely on the existence of PlacementPassword to
             # determine if placement extraction has occured as it was added
             # in stein while the service extraction was delayed to train.
             # Inspect the endpoint map instead.
             endpoint_res = heat.resources.get(self.container, 'EndpointMap')
-            endpoints = endpoint_res.attributes.get('endpoint_map', {})
-            placement_extracted = 'PlacementPublic' in endpoints
+            endpoints = endpoint_res.attributes.get('endpoint_map', None)
+            placement_extracted = endpoints and 'PlacementPublic' in endpoints
         except heat_exc.HTTPNotFound:
-            placement_extracted = False
+            pass
 
         passwords = password_utils.generate_passwords(
             mistralclient=mistral,
