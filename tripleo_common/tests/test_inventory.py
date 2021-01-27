@@ -1161,6 +1161,97 @@ class TestInventory(base.TestCase):
         for k in expected:
             self.assertEqual(expected[k], inv_list[k])
 
+    def test__extend_inventory(self):
+        dynamic = False
+        existing_inventory = OrderedDict()
+        existing_inventory.update({
+            'RoleA': {
+                'hosts': {
+                    'host0': {
+                        'existing': 'existing_value'
+                    }
+                },
+                'vars': {
+                    'existing': 'existing_value'
+                },
+            }
+        })
+        extend_data = {
+            'RoleA': {
+                'hosts': {
+                    'host0': {
+                        'new': 'new_value',
+                        'existing': 'not_overwritten',
+                    }
+                },
+                'vars': {
+                    'new': 'new_var_is_added',
+                    'existing': 'not_overwritten',
+                },
+            }
+        }
+        expected_inventory = OrderedDict([(
+            'RoleA', {
+                'hosts': {
+                    'host0': {
+                        'existing': 'existing_value',
+                        'new': 'new_value'
+                    }
+                },
+                'vars': {
+                    'existing': 'existing_value',
+                    'new': 'new_var_is_added'
+                }
+            }
+        )])
+
+        self.inventory._extend_inventory(existing_inventory, dynamic,
+                                         data=extend_data)
+        self.assertEqual(expected_inventory, existing_inventory)
+
+    def test__extend_inventory_dynamic(self):
+        dynamic = True
+        existing_inventory = OrderedDict()
+        existing_inventory.update({
+            'RoleA': {
+                'hosts': {
+                    'host0': {
+                        'existing': 'existing_value'
+                    }
+                },
+                'vars': {
+                    'existing': 'existing_value'
+                },
+            }
+        })
+        extend_data = {
+            'RoleA': {
+                'hosts': {
+                    'host0': {
+                        'new': 'new_value',
+                        'existing': 'not_overwritten',
+                    }
+                },
+                'vars': {
+                    'new': 'new_var_is_added',
+                    'existing': 'not_overwritten',
+                },
+            }
+        }
+        expected_inventory = OrderedDict([(
+            'RoleA', {
+                'hosts': ['host0'],
+                'vars':
+                    {'existing': 'existing_value',
+                     'new': 'new_var_is_added'}})])
+
+        self.inventory._extend_inventory(existing_inventory, dynamic,
+                                         data=extend_data)
+        self.assertEqual(expected_inventory, existing_inventory)
+        self.assertEqual(
+            {'host0': {'existing': 'existing_value',
+                       'new': 'new_value'}}, self.inventory.hostvars)
+
 
 class TestNeutronData(base.TestCase):
     def setUp(self):

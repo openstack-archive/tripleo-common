@@ -238,7 +238,7 @@ class TripleoInventory(object):
                  cacert=None, username=None, ansible_ssh_user=None,
                  host_network=None, ansible_python_interpreter=None,
                  undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL,
-                 undercloud_key_file=None, serial=1):
+                 undercloud_key_file=None, serial=1, work_dir=None):
         self.session = session
         self.hclient = hclient
         self.host_network = host_network or HOST_NETWORK
@@ -253,6 +253,7 @@ class TripleoInventory(object):
         self.hostvars = {}
         self.undercloud_connection = undercloud_connection
         self.serial = serial
+        self.work_dir = work_dir
 
     @staticmethod
     def get_roles_by_service(enabled_services):
@@ -578,6 +579,52 @@ class TripleoInventory(object):
             allovercloud.setdefault('children',
                                     self._hosts(sorted(children), dynamic))
 
+    def _extend_inventory(self, ret, dynamic, data=None):
+        if not data:
+            return
+
+        for role_name, role_values in data.items():
+            inventory_role = ret.get(role_name)
+            if not inventory_role:
+                continue
+            inventory_hosts = inventory_role.get('hosts', {})
+            inventory_vars = inventory_role.get('vars', {})
+
+            config_file_hosts = role_values.get('hosts', {})
+            config_file_vars = role_values.get('vars', {})
+
+            for k, v in config_file_vars.items():
+                inventory_vars.setdefault(k, v)
+
+            for config_file_host, host_values in config_file_hosts.items():
+                inventory_host = inventory_hosts.get(config_file_host, {})
+                if not inventory_host:
+                    continue
+
+                for k, v in host_values.items():
+                    inventory_host.setdefault(k, v)
+
+            self.hostvars.update(inventory_hosts)
+            if dynamic:
+                hosts_format = [h for h in inventory_hosts.keys()]
+                hosts_format.sort()
+                ret[role_name]['hosts'] = hosts_format
+
+    def _get_data_from_config_file(self):
+        if not self.plan_name:
+            return
+        if not self.work_dir:
+            return
+
+        data_file_path = os.path.join(self.work_dir,
+                                      constants.INVENTORY_NETWORK_CONFIG_FILE)
+        if not os.path.isfile(data_file_path):
+            return
+        with open(data_file_path, 'r') as f:
+            data = yaml.safe_load(f.read())
+
+        return data
+
     def _undercloud_inventory(self, ret, dynamic):
         undercloud = ret.setdefault('Undercloud', {})
         undercloud.setdefault('hosts', self._hosts(['undercloud'], dynamic))
@@ -651,6 +698,8 @@ class TripleoInventory(object):
         self._undercloud_inventory(ret, dynamic)
         self._inventory_from_neutron_data(ret, children, dynamic)
         self._inventory_from_heat_outputs(ret, children, dynamic)
+        self._extend_inventory(ret, dynamic,
+                               data=self._get_data_from_config_file())
 
         return ret
 
@@ -700,6 +749,9 @@ def generate_tripleo_ansible_inventory(heat, auth_url,
                                        ssh_network='ctlplane',
                                        session=None):
     if not work_dir:
+        work_dir = os.path.join(os.path.expanduser('~'),
+                                'overcloud-deploy-{}'.format(plan))
+    if not os.path.isdir(work_dir):
         work_dir = tempfile.mkdtemp(prefix='tripleo-ansible')
 
     inventory_path = os.path.join(
@@ -715,7 +767,8 @@ def generate_tripleo_ansible_inventory(heat, auth_url,
         undercloud_key_file=undercloud_key_file,
         ansible_python_interpreter=ansible_python_interpreter,
         plan_name=plan,
-        host_network=ssh_network)
+        host_network=ssh_network,
+        work_dir=work_dir)
 
     inv.write_static_inventory(inventory_path)
     return inventory_path

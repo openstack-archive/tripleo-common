@@ -226,3 +226,5 @@ PER_STEP_TASKS = {
     'update_tasks': _PER_STEP_TASK_STRICTNESS,
     'post_update_tasks': [False, False, False, False]
 }
+
+INVENTORY_NETWORK_CONFIG_FILE = 'inventory-network-config.yaml'
