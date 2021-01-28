@@ -195,6 +195,10 @@ def process_custom_roles(swift, heat,
         # Allow no networks defined in network_data
         if network_data is None:
             network_data = []
+        # Set internal network index key for each network, network resources
+        # are created with a tag tripleo_net_idx
+        for idx, _ in enumerate(network_data):
+            network_data[idx].update({'idx': idx})
     except swiftexceptions.ClientException:
         # Until t-h-t contains network_data.yaml we tolerate a missing file
         LOG.warning("No %s file found, ignoring"
