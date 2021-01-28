@@ -286,6 +286,7 @@ workflows:
           tags: <% $.get('tags') %>
           skip_tags: <% $.get('skip_tags') %>
           limit_hosts: <% $.get('limit_hosts') %>
+          forks: <% $.get('forks') %>
         publish-on-error:
           message: <% task().result %>
         on-success: set_deployment_success
@@ -380,6 +381,7 @@ workflows:
       - tags: ""
       - skip_tags: ""
       - limit_hosts: ""
+      - forks: 100
 
     tags:
       - tripleo-common-managed
@@ -526,6 +528,7 @@ workflows:
           command_timeout: <% $.config_download_timeout %>
           execution_id: <% execution().id %>
           limit_hosts: <% ($.nodes_names or $.limit_hosts) or false %>
+          forks: <% $.forks %>
           skip_tags: <% $.skip_tags %>
           tags: <% $.tags %>
         publish:
