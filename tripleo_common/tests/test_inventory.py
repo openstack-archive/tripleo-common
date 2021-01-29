@@ -309,6 +309,79 @@ class TestInventory(base.TestCase):
         for k in expected:
             self.assertEqual(expected[k], inv_list[k])
 
+    def test_inventory_list_undercloud_installer(self):
+        outputs_data = {
+            'outputs': [
+                {'output_key': 'EnabledServices',
+                 'output_value': {'Undercloud': ['sa', 'sb']}},
+                {'output_key': 'KeystoneURL',
+                 'output_value': 'xyz://keystone'},
+                {'output_key': 'ServerIdData',
+                 'output_value': {'server_ids': {'Undercloud': ['a']},
+                                  'bootstrap_server_id': 'a'}},
+                {'output_key': 'RoleNetHostnameMap',
+                 'output_value': {'Undercloud': {
+                     'ctlplane': ['uc0.ctlplane.localdomain'],
+                     'external': ['uc0.external.localdomain'],
+                     'canonical': ['uc0.lab.example.com']}}},
+                {'output_key': 'RoleNetIpMap',
+                 'output_value': {'Undercloud': {'ctlplane': ['x.x.x.1'],
+                                                 'external': ['x.x.x.1']}}},
+                {'output_key': 'VipMap',
+                 'output_value': {'ctlplane': 'x.x.x.4', 'redis': 'x.x.x.6'}},
+                {'output_key': 'RoleData',
+                 'output_value': {'Undercloud': {'config_settings': 'foo1'}}}
+            ]
+        }
+        plan_name = 'undercloud'
+        hclient = MagicMock()
+        hclient.stacks.environment.return_value = {'parameter_defaults': {
+            'AdminPassword': 'theadminpw', 'ContainerCli': 'podman'}}
+        mock_stack = MagicMock()
+        mock_stack.outputs = outputs_data['outputs']
+        hclient.stacks.get.return_value = mock_stack
+
+        outputs = StackOutputs(mock_stack)
+        inventory = TripleoInventory(
+            hclient=hclient,
+            plan_name=plan_name,
+            auth_url='xyz://keystone.local',
+            cacert='acacert',
+            project_name='admin',
+            username='admin',
+            ansible_ssh_user='heat-admin')
+        inventory.stack_outputs = outputs
+        expected = {
+            'Undercloud': {
+                'hosts': {
+                    'uc0': {
+                        'ansible_host': 'x.x.x.1',
+                        'canonical_hostname': 'uc0.lab.example.com',
+                        'ctlplane_hostname': 'uc0.ctlplane.localdomain',
+                        'ctlplane_ip': 'x.x.x.1',
+                        'deploy_server_id': 'a',
+                        'external_hostname': 'uc0.external.localdomain',
+                        'external_ip': 'x.x.x.1'}},
+                'vars': {
+                    'ansible_ssh_user': 'heat-admin',
+                    'bootstrap_server_id': 'a',
+                    'serial': 1,
+                    'tripleo_role_name': 'Undercloud',
+                    'tripleo_role_networks': ['ctlplane', 'external']}},
+            'allovercloud': {
+                'children': {'Undercloud': {}},
+                'vars': {'container_cli': 'podman',
+                         'ctlplane_vip': 'x.x.x.4',
+                         'redis_vip': 'x.x.x.6'}},
+            'sb': {'children': {'Undercloud': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}},
+            'sa': {'children': {'Undercloud': {}},
+                   'vars': {'ansible_ssh_user': 'heat-admin'}}
+            }
+        inv_list = inventory.list(dynamic=False)
+        for k in expected:
+            self.assertEqual(expected[k], inv_list[k])
+
     def test_inventory_list_undercloud_only(self):
         self.inventory.plan_name = None
         self.inventory.undercloud_connection = 'local'

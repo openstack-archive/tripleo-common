@@ -188,7 +188,13 @@ class TripleoInventory(object):
             role_networks = sorted([str(net) for net in net_ip_map])
             networks.update(role_networks)
 
-            role = ret.setdefault(role_name, {})
+            # Undercloud role in the stack should overwrite, not append.
+            # See bug: https://bugs.launchpad.net/tripleo/+bug/1913551
+            if role_name == 'Undercloud':
+                role = ret[role_name] = {}
+            else:
+                role = ret.setdefault(role_name, {})
+
             hosts = role.setdefault('hosts', {})
             role_vars = role.setdefault('vars', {})
 
