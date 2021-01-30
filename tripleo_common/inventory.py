@@ -148,6 +148,8 @@ class TripleoInventory(object):
             return alist
 
     def _get_stack(self):
+        if self.plan_name is None:
+            return None
         try:
             stack = self.hclient.stacks.get(self.plan_name)
         except HTTPNotFound:
@@ -168,7 +170,7 @@ class TripleoInventory(object):
                     # see https://github.com/ansible/ansible/issues/41808
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
                     'auth_url': self.auth_url,
-                    'plan': self.plan_name,
+                    'plan': None,
                     'project_name': self.project_name,
                     'username': self.username,
                 },
@@ -193,12 +195,6 @@ class TripleoInventory(object):
         ret['Undercloud']['vars']['undercloud_service_list'] = \
             self.get_undercloud_service_list()
 
-        admin_password = self.get_overcloud_environment().get(
-            'parameter_defaults', {}).get('AdminPassword')
-        if admin_password:
-            ret['Undercloud']['vars']['overcloud_admin_password'] =\
-                admin_password
-
         if dynamic:
             # Prevent Ansible from repeatedly calling us to get empty host
             # details
@@ -207,6 +203,14 @@ class TripleoInventory(object):
         self.stack = self._get_stack()
         if not self.stack:
             return ret
+
+        ret['Undercloud']['vars']['plan'] = self.plan_name
+        admin_password = self.get_overcloud_environment().get(
+            'parameter_defaults', {}).get('AdminPassword')
+        if admin_password:
+            ret['Undercloud']['vars']['overcloud_admin_password'] =\
+                admin_password
+
         self.stack_outputs = StackOutputs(self.stack)
 
         keystone_url = self.stack_outputs.get('KeystoneURL')
