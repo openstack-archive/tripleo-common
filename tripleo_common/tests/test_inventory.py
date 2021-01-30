@@ -248,6 +248,38 @@ class TestInventory(base.TestCase):
         for k in expected:
             self.assertEqual(expected[k], inv_list[k])
 
+    def test_inventory_list_undercloud_only(self):
+        self.inventory.plan_name = None
+        self.inventory.undercloud_connection = 'local'
+        expected = {
+            'Undercloud': {
+                'hosts': ['undercloud'],
+                'vars': {
+                    'ansible_connection': 'local',
+                    'ansible_host': 'localhost',
+                    'ansible_python_interpreter': sys.executable,
+                    'ansible_remote_tmp': '/tmp/ansible-${USER}',
+                    'auth_url': 'xyz://keystone.local',
+                    'cacert': 'acacert',
+                    'os_auth_token': 'atoken',
+                    'project_name': 'admin',
+                    'plan': None,
+                    'undercloud_service_list': [
+                        'tripleo_nova_compute',
+                        'tripleo_heat_engine',
+                        'tripleo_ironic_conductor',
+                        'tripleo_swift_container_server',
+                        'tripleo_swift_object_server',
+                        'tripleo_mistral_engine'
+                        ],
+                    'undercloud_swift_url': 'anendpoint',
+                    'username': 'admin'
+                }
+            },
+            '_meta': {'hostvars': {}},
+        }
+        self.assertEqual(expected, self.inventory.list())
+
     def test_ansible_ssh_user(self):
         self._try_alternative_args(
             ansible_ssh_user='my-custom-admin',
