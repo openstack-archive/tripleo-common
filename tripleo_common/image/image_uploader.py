@@ -313,7 +313,8 @@ class RegistrySessionHelper(object):
             if data and data.get('issued_at'):
                 token_time = dt_parse(data.get('issued_at'))
                 now = datetime.now(tzlocal())
-                if (now - token_time).seconds < data.get('expires_in'):
+                expires_in = data.get('expires_in')
+                if not expires_in or (now - token_time).seconds < expires_in:
                     return data['token']
         return None
 
