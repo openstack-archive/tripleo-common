@@ -1,177 +1,177 @@
 container_images:
-- imagename: docker.io/tripleou/centos-binary-aodh-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-aodh-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-aodh-evaluator:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-aodh-evaluator:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-aodh-listener:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-aodh-listener:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-aodh-notifier:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-aodh-notifier:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-barbican-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-barbican-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-barbican-keystone-listener:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-barbican-keystone-listener:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-barbican-worker:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-barbican-worker:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ceilometer-central:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ceilometer-central:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ceilometer-compute:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ceilometer-compute:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ceilometer-notification:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ceilometer-notification:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ceilometer-ipmi:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ceilometer-ipmi:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-cinder-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-cinder-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-cinder-backup:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-cinder-backup:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-cinder-scheduler:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-cinder-scheduler:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-cinder-volume:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-cinder-volume:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-collectd:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-collectd:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-cron:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-cron:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-designate-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-designate-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-designate-backend-bind9:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-designate-backend-bind9:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-designate-central:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-designate-central:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-designate-mdns:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-designate-mdns:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-designate-producer:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-designate-producer:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-designate-sink:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-designate-sink:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-designate-worker:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-designate-worker:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-etcd:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-etcd:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-glance-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-glance-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-gnocchi-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-gnocchi-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-gnocchi-metricd:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-gnocchi-metricd:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-gnocchi-statsd:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-gnocchi-statsd:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-haproxy:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-haproxy:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-heat-all:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-heat-all:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-heat-api-cfn:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-heat-api-cfn:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-heat-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-heat-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-heat-engine:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-heat-engine:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-horizon:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-horizon:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ironic-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ironic-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ironic-conductor:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ironic-conductor:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ironic-inspector:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ironic-inspector:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ironic-pxe:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ironic-pxe:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ironic-neutron-agent:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ironic-neutron-agent:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-iscsid:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-iscsid:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-keepalived:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-keepalived:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-keystone:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-keystone:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-manila-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-manila-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-manila-scheduler:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-manila-scheduler:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-manila-share:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-manila-share:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-mariadb:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-mariadb:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-memcached:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-memcached:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-mistral-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-mistral-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-mistral-engine:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-mistral-engine:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-mistral-executor:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-mistral-executor:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-mistral-event-engine:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-mistral-event-engine:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-multipathd:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-multipathd:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-dhcp-agent:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-dhcp-agent:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-l3-agent:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-l3-agent:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-metadata-agent:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-metadata-agent:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-openvswitch-agent:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-openvswitch-agent:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-sriov-agent:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-sriov-agent:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-mlnx-agent:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-mlnx-agent:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-server:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-server:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-neutron-metadata-agent-ovn:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-neutron-metadata-agent-ovn:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-nova-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-nova-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-nova-compute-ironic:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-nova-compute-ironic:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-nova-compute:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-nova-compute:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-nova-conductor:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-nova-conductor:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-nova-libvirt:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-nova-libvirt:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-nova-novncproxy:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-nova-novncproxy:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-nova-scheduler:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-nova-scheduler:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-novajoin-notifier:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-novajoin-notifier:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-novajoin-server:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-novajoin-server:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-octavia-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-octavia-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-octavia-health-manager:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-octavia-health-manager:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-octavia-housekeeping:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-octavia-housekeeping:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-octavia-worker:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-octavia-worker:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ovn-controller:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ovn-controller:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ovn-nb-db-server:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ovn-nb-db-server:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ovn-northd:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ovn-northd:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-ovn-sb-db-server:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-ovn-sb-db-server:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-placement-api:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-placement-api:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-qdrouterd:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-qdrouterd:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-rabbitmq:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-rabbitmq:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-redis:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-redis:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-swift-account:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-swift-account:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-swift-container:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-swift-container:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-swift-object:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-swift-object:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-swift-proxy-server:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-swift-proxy-server:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-zaqar-wsgi:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-zaqar-wsgi:current-tripleo
   image_source: tripleo
 - imagename: quay.ceph.io/ceph-ci/daemon:v4.0.13-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
@@ -183,7 +183,7 @@ container_images:
   image_source: prom
 - imagename: quay.io/app-sre/grafana:5.4.3
   image_source: grafana
-- imagename: docker.io/tripleou/centos-binary-tempest:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-tempest:current-tripleo
   image_source: tripleo
-- imagename: docker.io/tripleou/centos-binary-rsyslog:current-tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-rsyslog:current-tripleo
   image_source: tripleo
