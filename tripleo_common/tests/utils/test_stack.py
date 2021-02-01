@@ -63,25 +63,6 @@ class DeployStackTest(base.TestCase):
 
         stack.deploy_stack(swift, heat, 'overcloud')
 
-        # verify parameters are as expected
-        expected_defaults = {'DeployIdentifier': 1473366264,
-                             'StackAction': 'CREATE',
-                             'random_existing_data': 'a_value'}
-
-        mock_env_updated = yaml.safe_dump({
-            'name': 'overcloud',
-            'temp_environment': 'temp_environment',
-            'parameter_defaults': expected_defaults,
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}]
-        }, default_flow_style=False)
-
-        swift.put_object.assert_called_once_with(
-            'overcloud',
-            constants.PLAN_ENVIRONMENT,
-            mock_env_updated
-        )
-
         heat.stacks.create.assert_called_once_with(
             environment={},
             files={},
@@ -133,23 +114,6 @@ class DeployStackTest(base.TestCase):
 
         stack.deploy_stack(swift, heat,
                            'overcloud', skip_deploy_identifier=True)
-
-        # verify parameters are as expected
-        mock_env_updated = yaml.safe_dump({
-            'name': constants.DEFAULT_CONTAINER_NAME,
-            'temp_environment': 'temp_environment',
-            'parameter_defaults': {'StackAction': 'CREATE',
-                                   'DeployIdentifier': '',
-                                   'random_existing_data': 'a_value'},
-            'template': 'template',
-            'environments': [{u'path': u'environments/test.yaml'}]
-        }, default_flow_style=False)
-
-        swift.put_object.assert_called_once_with(
-            constants.DEFAULT_CONTAINER_NAME,
-            constants.PLAN_ENVIRONMENT,
-            mock_env_updated
-        )
 
         heat.stacks.create.assert_called_once_with(
             environment={},
