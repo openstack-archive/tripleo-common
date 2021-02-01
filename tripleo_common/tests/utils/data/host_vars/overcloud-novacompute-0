@@ -1,3 +1,5 @@
+pre_network_Compute:  []
+
 pre_deployments_Compute:
   - ComputeHostEntryDeployment
   - NetworkDeployment
