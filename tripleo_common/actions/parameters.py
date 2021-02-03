@@ -378,6 +378,13 @@ class GenerateFencingParametersAction(base.TripleOAction):
 
             # Build up fencing parameters based on which Ironic driver this
             # node is using
+            try:
+                # Deprecated classic drivers (pxe_ipmitool, etc)
+                driver_proto = node['pm_type'].split('_')[1]
+            except IndexError:
+                # New-style hardware types (ipmi, etc)
+                driver_proto = node['pm_type']
+
             if hostmap and node["pm_type"] == "pxe_ssh":
                 # Ironic fencing driver
                 node_data["agent"] = "fence_ironic"
@@ -404,8 +411,7 @@ class GenerateFencingParametersAction(base.TripleOAction):
                         hostmap[mac_addr]["compute_name"]
                 if self.delay:
                     params["delay"] = self.delay
-            elif (node['pm_type'] == 'ipmi' or node["pm_type"].split('_')[1] in
-                  ("ipmitool", "ilo", "drac")):
+            elif driver_proto in {'ipmi', 'ipmitool', 'drac', 'idrac', 'ilo'}:
                 # IPMI fencing driver
                 node_data["agent"] = "fence_ipmilan"
                 params["ipaddr"] = node["pm_addr"]
