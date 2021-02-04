@@ -1,0 +1,8 @@
+tcib_actions:
+- run: bash /usr/local/bin/uid_gid_manage frrvty frr
+- run: dnf install -y {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: mkdir -p /var/lock/subsys && chown "frr:" /var/lock/subsys
+tcib_packages:
+  common:
+  - frr
+tcib_user: frr

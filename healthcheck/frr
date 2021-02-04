@@ -1,0 +1,10 @@
+#!/bin/bash
+
+. ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
+
+if ps -e | grep watchfrr; then
+    exit 0
+else
+    echo "No watch frr running"
+    exit 1
+fi
