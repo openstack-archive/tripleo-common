@@ -741,7 +741,7 @@ class PlanTest(base.TestCase):
         }
         mock_resource = mock.MagicMock()
         mock_resource.attributes = {
-            'endpoint_map': {},
+            'endpoint_map': None,
             'value': None
         }
         mock_orchestration.resources.get.return_value = mock_resource
