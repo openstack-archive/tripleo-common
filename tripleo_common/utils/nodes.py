@@ -1,4 +1,5 @@
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2021 Dell Inc. or its subsidiaries.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -265,6 +266,51 @@ class iBootDriverInfo(PrefixedDriverInfo):
         return result
 
 
+class iDRACDriverInfo(DriverInfo):
+    def __init__(self):
+        super(iDRACDriverInfo, self).__init__(
+            'drac', mapping={},
+            hardware_type='idrac',
+        )
+        self._drac_driverinfo = PrefixedDriverInfo('drac', has_port=True,
+                                                   hardware_type='idrac')
+        self._redfish_driverinfo = RedfishDriverInfo()
+
+    def convert_key(self, key):
+        for driver_info in [self._drac_driverinfo, self._redfish_driverinfo]:
+            new_key = driver_info.convert_key(key)
+            if new_key:
+                return new_key
+
+    def convert(self, fields):
+        """Convert fields from instackenv.json format to ironic names."""
+        result = self.DEFAULTS.copy()
+        for key, value in fields.items():
+            for driver_info in [self._drac_driverinfo,
+                                self._redfish_driverinfo]:
+                new_key = driver_info.convert_key(key)
+                if new_key is not None:
+                    if (key == 'pm_addr' and
+                       driver_info is self._drac_driverinfo):
+                        new_value = self._build_drac_address(value)
+                    else:
+                        new_value = value
+                    result[new_key] = new_value
+        return result
+
+    def _build_drac_address(self, value):
+        value = re.sub(r'https?://', '', value, count=1, flags=re.I)
+        result = value.split(':')[0]
+        return result.rstrip('/')
+
+    def unique_id_from_fields(self, fields):
+        fields['pm_addr'] = self._build_drac_address(fields['pm_addr'])
+        return self._drac_driverinfo.unique_id_from_fields(fields)
+
+    def unique_id_from_node(self, node):
+        return self._drac_driverinfo.unique_id_from_node(node)
+
+
 DRIVER_INFO = {
     # production drivers
     r'^(ipmi|.*_ipmitool)$': PrefixedDriverInfo('ipmi', has_port=True,
@@ -272,8 +318,9 @@ DRIVER_INFO = {
                                                 hardware_type='ipmi',
                                                 mandatory_fields=['pm_addr']
                                                 ),
-    r'^(idrac|.*_drac)$': PrefixedDriverInfo('drac', has_port=True,
-                                             hardware_type='idrac'),
+    r'^.*_drac$': PrefixedDriverInfo('drac', has_port=True,
+                                     hardware_type='idrac'),
+    r'^idrac$': iDRACDriverInfo(),
     r'^(ilo|.*_ilo)$': PrefixedDriverInfo('ilo', has_port=True,
                                           hardware_type='ilo'),
     r'^(irmc|.*_irmc)$': PrefixedDriverInfo('irmc', has_port=True,
