@@ -1,4 +1,5 @@
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2021 Dell Inc. or its subsidiaries.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -225,6 +226,88 @@ class iBootDriverInfoTest(base.TestCase):
                                       'iboot_port': 42})
         self.assertEqual('localhost:42',
                          self.driver_info.unique_id_from_node(node))
+
+
+class iDRACDriverInfoTest(base.TestCase):
+    def setUp(self):
+        super(iDRACDriverInfoTest, self).setUp()
+        self.driver_info = nodes.iDRACDriverInfo()
+
+    def test_convert_key(self):
+        keys = {'pm_addr': 'drac_address',
+                'pm_user': 'drac_username',
+                'pm_password': 'drac_password',
+                'pm_port': 'drac_port',
+                'pm_system_id': 'redfish_system_id',
+                'redfish_verify_ca': 'redfish_verify_ca'
+                }
+        for key, expected in keys.items():
+            self.assertEqual(expected, self.driver_info.convert_key(key))
+
+        self.assertIsNone(self.driver_info.convert_key('unknown'))
+
+    def test_convert(self):
+        for address in ['foo.bar',
+                        'http://foo.bar/',
+                        'https://foo.bar/',
+                        'https://foo.bar:8080/']:
+            fields = {'pm_addr': address,
+                      'pm_user': 'test',
+                      'pm_password': 'random',
+                      'redfish_system_id': '/redfish/v1/Systems/1',
+                      'pm_port': 6230}
+            result = self.driver_info.convert(fields)
+            self.assertEqual({'drac_password': 'random',
+                              'drac_address': 'foo.bar',
+                              'drac_username': 'test',
+                              'redfish_password': 'random',
+                              'redfish_address': address,
+                              'redfish_username': 'test',
+                              'redfish_system_id': '/redfish/v1/Systems/1',
+                              'drac_port': 6230}, result)
+
+    def test_unique_id_from_fields(self):
+        mock_drac = mock.Mock(
+            wraps=self.driver_info._drac_driverinfo.unique_id_from_fields)
+        self.driver_info._drac_driverinfo.unique_id_from_fields = mock_drac
+        mock_redfish = mock.Mock(
+            wraps=self.driver_info._redfish_driverinfo.unique_id_from_fields)
+        self.driver_info._redfish_driverinfo.unique_id_from_fields = (
+            mock_redfish)
+
+        fields = {'pm_addr': 'foo.bar',
+                  'pm_user': 'test',
+                  'pm_password': 'random',
+                  'pm_port': 6230}
+        self.assertEqual('foo.bar:6230',
+                         self.driver_info.unique_id_from_fields(fields))
+
+        mock_drac.assert_called_once_with(fields)
+        mock_redfish.assert_not_called()
+
+    def test_unique_id_from_fields_with_https(self):
+        fields = {'pm_addr': 'https://foo.bar:8080/',
+                  'pm_user': 'test',
+                  'pm_password': 'random',
+                  'pm_port': 6230}
+        self.assertEqual('foo.bar:6230',
+                         self.driver_info.unique_id_from_fields(fields))
+
+    def test_unique_id_from_node(self):
+        mock_drac = mock.Mock(
+            wraps=self.driver_info._drac_driverinfo.unique_id_from_node)
+        self.driver_info._drac_driverinfo.unique_id_from_node = mock_drac
+        mock_redfish = mock.Mock(
+            wraps=self.driver_info._redfish_driverinfo.unique_id_from_node)
+        self.driver_info._redfish_driverinfo.unique_id_from_node = mock_redfish
+
+        node = mock.Mock(driver_info={'drac_address': 'foo.bar',
+                                      'drac_port': 6230})
+        self.assertEqual('foo.bar:6230',
+                         self.driver_info.unique_id_from_node(node))
+
+        mock_drac.assert_called_once_with(node)
+        mock_redfish.assert_not_called()
 
 
 class FindNodeHandlerTest(base.TestCase):
@@ -876,6 +959,7 @@ class NodesTest(base.TestCase):
                            "capabilities": "num_nics:6"}
         node = self._get_node()
         node['pm_type'] = 'idrac'
+        node['pm_system_id'] = '/redfish/v1/Systems/1'
         node['pm_port'] = '6230'
         client = mock.MagicMock()
         nodes.register_ironic_node(node, client=client)
@@ -883,7 +967,11 @@ class NodesTest(base.TestCase):
             driver='idrac', name='node1', properties=node_properties,
             resource_class='baremetal',
             driver_info={'drac_password': 'random', 'drac_address': 'foo.bar',
-                         'drac_username': 'test', 'drac_port': '6230'})
+                         'drac_username': 'test', 'redfish_password': 'random',
+                         'redfish_address': 'foo.bar',
+                         'redfish_username': 'test',
+                         'redfish_system_id': '/redfish/v1/Systems/1',
+                         'drac_port': '6230'})
 
     def test_register_ironic_node_ilo(self):
         node_properties = {"cpus": "1",
