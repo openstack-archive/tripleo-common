@@ -55,6 +55,10 @@ gpgcheck=0' >> /etc/yum.repos.d/opendaylight.repo
 
 {% set base_centos_binary_packages_remove = ['scsi-target-utils'] %}
 
+{% if distro_python_version.startswith('2') %}
+{% set base_centos_binary_packages_remove = base_centos_binary_packages_remove + ['python-pip'] %}
+{% endif %}
+
 # This installs the puppet dependency in the base container and includes helper scripts
 # Rsync is required for docker-puppet.py to move the generated config to /var/lib/config-data
 # Cron is required by multiple services
