@@ -130,6 +130,9 @@ def write_default_ansible_cfg(work_dir,
     config.set('defaults', 'fact_caching', 'jsonfile')
     config.set('defaults', 'fact_caching_connection',
                '~/.ansible/fact_cache')
+    # NOTE(mwhahaha): only gather the bare minimum facts because this has
+    # direct impact on how fast ansible can go.
+    config.set('defaults', 'gather_subset', '!all,min')
 
     # Set the pull interval to lower CPU overhead
     config.set('defaults', 'internal_poll_interval', '0.01')
