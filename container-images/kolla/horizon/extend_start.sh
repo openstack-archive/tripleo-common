@@ -5,6 +5,7 @@ set -o errexit
 FORCE_GENERATE="${FORCE_GENERATE}"
 HASH_PATH=/var/lib/kolla/.settings.md5sum.txt
 MANAGE_PY="/usr/bin/python3 /usr/bin/manage.py"
+SITE_PACKAGES="/usr/lib/python${KOLLA_DISTRO_PYTHON_VERSION:-3}/site-packages"
 
 if [[ -f /etc/openstack-dashboard/custom_local_settings ]]; then
     CUSTOM_SETTINGS_FILE="${SITE_PACKAGES}/openstack_dashboard/local/custom_local_settings.py"
