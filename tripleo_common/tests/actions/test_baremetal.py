@@ -387,66 +387,6 @@ class TestConfigureRootDeviceAction(base.TestCase):
         self.assertEqual(self.ironic.node.update.call_count, 0)
 
 
-class TestCellV2DiscoverHostsAction(base.TestCase):
-
-    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
-    def test_run(self, mock_command):
-        action = baremetal.CellV2DiscoverHostsAction()
-        action.run(mock.MagicMock())
-        mock_command.assert_called_once()
-
-    @mock.patch('tripleo_common.utils.nodes.run_nova_cell_v2_discovery')
-    def test_failure(self, mock_command):
-        mock_command.side_effect = processutils.ProcessExecutionError(
-            exit_code=1,
-            stdout='captured stdout',
-            stderr='captured stderr',
-            cmd='command'
-        )
-        action = baremetal.CellV2DiscoverHostsAction()
-        result = action.run(mock.MagicMock())
-        self.assertTrue(result.is_error())
-        mock_command.assert_called_once()
-
-
-class TestGetProfileAction(base.TestCase):
-
-    def test_run(self):
-        mock_ctx = mock.MagicMock()
-        node = {
-            'uuid': 'abcd1',
-            'properties': {
-                'capabilities': 'profile:compute'
-            }
-        }
-        action = baremetal.GetProfileAction(node=node)
-        result = action.run(mock_ctx)
-        expected_result = {
-            'uuid': 'abcd1',
-            'profile': 'compute'
-        }
-        self.assertEqual(expected_result, result)
-
-
-class TestGetNodeHintAction(base.TestCase):
-
-    def test_run(self):
-        mock_ctx = mock.MagicMock()
-        node = {
-            'uuid': 'abcd1',
-            'properties': {
-                'capabilities': 'profile:compute,node:compute-0'
-            }
-        }
-        action = baremetal.GetNodeHintAction(node=node)
-        result = action.run(mock_ctx)
-        expected_result = {
-            'uuid': 'abcd1',
-            'hint': 'compute-0'
-        }
-        self.assertEqual(expected_result, result)
-
-
 @mock.patch.object(baremetal.socket, 'gethostbyname', lambda x: x)
 class TestGetCandidateNodes(base.TestCase):
     def setUp(self):
