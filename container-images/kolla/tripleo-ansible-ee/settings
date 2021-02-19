@@ -1,0 +1,26 @@
+# If no output is detected from ansible in this number of seconds the execution will
+# be terminated.
+idle_timeout: ${RUNNER_IDLE_TIMEOUT:-600}
+# The maximum amount of time to allow the job to run for, exceeding this and the
+# execution will be terminated.
+job_timeout: ${RUNNER_JOB_TIMEOUT:-3600}
+
+# Number of seconds for the internal pexpect command to wait to block on
+# input before continuing.
+pexpect_timeout: ${RUNNER_PEXPECT_TIMEOUT:-10}
+# Use poll() function for communication with child processes instead of select().
+# select() is used when the value is set to False. select() has a known limitation of
+# using only up to 1024 file descriptors.
+pexpect_use_poll: ${RUNNER_PEXPECT_USE_POLL:-True}
+
+# Allow output from ansible to not be streamed to the stdout or stderr files inside
+# of the artifacts directory.
+suppress_output_file: ${RUNNER_SUPPRESS_OUTPUT_FILE:-False}
+# Allow output from ansible to not be printed to the screen.
+suppress_ansible_output: ${RUNNER_SUPPRESS_ANSIBLE_OUTPUT:-False}
+
+# The directory relative to artifacts where jsonfile fact caching will be stored.
+# Defaults to fact_cache. This is ignored if fact_cache_type is different than jsonfile.
+fact_cache: ${RUNNER_FACT_CACHE:-'fact_cache'}
+# The type of fact cache to use. Defaults to jsonfile.
+fact_cache_type: ${RUNNER_FACT_CACHE_TYPE:-'jsonfile'}
