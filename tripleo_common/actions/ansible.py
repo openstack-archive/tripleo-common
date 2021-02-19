@@ -132,6 +132,8 @@ def write_default_ansible_cfg(work_dir,
     # NOTE(mwhahaha): only gather the bare minimum facts because this has
     # direct impact on how fast ansible can go.
     config.set('defaults', 'gather_subset', '!all,min')
+    # NOTE(mwhahaha): this significantly affects performation per ansible#73654
+    config.set('defaults', 'inject_facts_as_vars', 'false')
 
     # Set the pull interval to lower CPU overhead
     config.set('defaults', 'internal_poll_interval', '0.05')
