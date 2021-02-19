@@ -18,7 +18,6 @@ Contents:
    tripleo-mistral
    contributing
    uploads
-   reference/index
 
 Indices and tables
 ==================
