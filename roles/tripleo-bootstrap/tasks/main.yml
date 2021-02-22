@@ -11,16 +11,17 @@
     rpm -q {{ item }}
   with_items: "{{ packages_bootstrap }}"
 
-- name: Populate service facts
-  service_facts:
+- name: Check NetworkManager status
+  shell: systemctl is-active NetworkManager.service || systemctl is-enabled NetworkManager.service
+  failed_when: false
+  become: true
+  register: network_manager_enabled
 
 - name: Stop NetworkManager from updating resolv.conf
   become: true
   when:
-    - ansible_os_family | lower == 'redhat'
-    - ansible_distribution_major_version | int >= 7
-    - "'NetworkManager.service' in ansible_facts.services"
-    - ansible_facts.services['NetworkManager.service']['status'] == 'enabled'
+    - network_manager_enabled.rc is defined
+    - network_manager_enabled.rc == 0
   block:
     - name: Set 'dns=none' in /etc/NetworkManager/NetworkManager.conf
       ini_file:
