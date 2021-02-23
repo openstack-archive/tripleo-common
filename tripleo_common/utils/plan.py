@@ -312,7 +312,7 @@ def update_plan_environment_with_image_parameters(
     return env
 
 
-def generate_passwords(swift=None, heat=None, mistral=None,
+def generate_passwords(swift=None, heat=None,
                        container=constants.DEFAULT_CONTAINER_NAME,
                        rotate_passwords=False, rotate_pw_list=None):
     """Generates passwords needed for Overcloud deployment
