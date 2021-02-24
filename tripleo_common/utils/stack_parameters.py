@@ -126,9 +126,8 @@ def update_role_parameters(swift, heat, ironic, nova, role,
     return update_parameters(swift, heat, parameters, container)
 
 
-def generate_fencing_parameters(ironic, compute, nodes_json, delay,
+def generate_fencing_parameters(nodes_json, delay,
                                 ipmi_level, ipmi_cipher, ipmi_lanplus):
-    hostmap = nodes.generate_hostmap(ironic, compute)
     fence_params = {"EnableFencing": True, "FencingConfig": {}}
     devices = []
     nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
@@ -141,11 +140,6 @@ def generate_fencing_parameters(ironic, compute, nodes_json, delay,
             # capture it if it's present
             mac_addr = node['ports'][0]['address'].lower()
             node_data["host_mac"] = mac_addr
-
-            # If the MAC isn't in the hostmap, this node hasn't been
-            # provisioned, so no fencing parameters are necessary
-            if hostmap and mac_addr not in hostmap:
-                continue
 
         # Build up fencing parameters based on which Ironic driver this
         # node is using
@@ -168,9 +162,6 @@ def generate_fencing_parameters(ironic, compute, nodes_json, delay,
             params["ipaddr"] = node["pm_addr"]
             params["passwd"] = node["pm_password"]
             params["login"] = node["pm_user"]
-            if hostmap:
-                params["pcmk_host_list"] = \
-                    hostmap[mac_addr]["compute_name"]
             if "pm_port" in node:
                 params["ipport"] = node["pm_port"]
             if "redfish_verify_ca" in node:
@@ -193,9 +184,6 @@ def generate_fencing_parameters(ironic, compute, nodes_json, delay,
             params["port"] = node["pm_vm_name"]
             params["ssl"] = 1
             params["ssl_insecure"] = 1
-            if hostmap:
-                params["pcmk_host_list"] = \
-                    hostmap[mac_addr]["compute_name"]
             if delay:
                 params["delay"] = delay
         else:

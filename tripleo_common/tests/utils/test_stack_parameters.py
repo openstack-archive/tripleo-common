@@ -567,15 +567,11 @@ class StackParametersTest(base.TestCase):
         }
         ]
 
-        ironic = mock.MagicMock()
-        compute = mock.MagicMock()
-
         result = stack_parameters.generate_fencing_parameters(
-            ironic, compute, test_envjson,
-            28, 5, 0, True)['parameter_defaults']
+            test_envjson, 28, 5, 0, True)['parameter_defaults']
 
         self.assertTrue(result["EnableFencing"])
-        self.assertEqual(len(result["FencingConfig"]["devices"]), 4)
+        self.assertEqual(len(result["FencingConfig"]["devices"]), 5)
         self.assertEqual(result["FencingConfig"]["devices"][0], {
                          "agent": "fence_ipmilan",
                          "host_mac": "00:11:22:33:44:55",
@@ -587,7 +583,6 @@ class StackParametersTest(base.TestCase):
                              "privlvl": 5,
                              "login": "control-0-admin",
                              "passwd": "control-0-password",
-                             "pcmk_host_list": "compute_name_0"
                              }
                          })
         self.assertEqual(result["FencingConfig"]["devices"][1], {
@@ -600,7 +595,6 @@ class StackParametersTest(base.TestCase):
                              "privlvl": 5,
                              "login": "control-1-admin",
                              "passwd": "control-1-password",
-                             "pcmk_host_list": "compute_name_1"
                              }
                          })
         self.assertEqual(result["FencingConfig"]["devices"][2], {
@@ -615,7 +609,6 @@ class StackParametersTest(base.TestCase):
                              "passwd": "calvin",
                              "systems_uri": "/redfish/v1/Systems/5678",
                              "ssl_insecure": "true",
-                             "pcmk_host_list": "compute_name_4"
                              }
                          })
         self.assertEqual(result["FencingConfig"]["devices"][3], {
@@ -629,7 +622,6 @@ class StackParametersTest(base.TestCase):
                              "port": "control-3",
                              "ssl": 1,
                              "ssl_insecure": 1,
-                             "pcmk_host_list": "compute_name_5"
                              }
                          })
 
