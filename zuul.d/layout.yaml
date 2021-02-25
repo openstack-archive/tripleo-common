@@ -8,6 +8,7 @@
       - tripleo-multinode-container-minimal-pipeline
       - tripleo-undercloud-jobs-pipeline
       - tripleo-build-containers-jobs
+      - tripleo-buildimage-jobs
       - tripleo-standalone-scenarios-pipeline
       - tripleo-upgrades-master-pipeline
     vars:
@@ -114,16 +115,12 @@
               - ^container-images/tcib/base/os/octavia.*$
         - tripleo-buildimage-overcloud-full-centos-8:
             dependencies: *deps_unit_lint
-            files:
-              - ^image-yaml/.*$
         - tripleo-buildimage-ironic-python-agent-centos-8:
             dependencies: *deps_unit_lint
-            files:
-              - ^image-yaml/.*$
         - tripleo-buildimage-overcloud-hardened-full-centos-8:
             dependencies: *deps_unit_lint
-            files:
-              - ^image-yaml/.*$
+
+
     gate:
       queue: tripleo
       jobs:
@@ -131,15 +128,6 @@
         - openstack-tox-linters
         - tripleo-cross-tripleoclient-py37
         - tripleo-ci-centos-8-content-provider
-        - tripleo-buildimage-overcloud-full-centos-8:
-            files:
-              - ^image-yaml/.*$
-        - tripleo-buildimage-ironic-python-agent-centos-8:
-            files:
-              - ^image-yaml/.*$
-        - tripleo-buildimage-overcloud-hardened-full-centos-8:
-            files:
-              - ^image-yaml/.*$
         - tripleo-build-containers-ubi-8:
             dependencies: *deps_unit_lint
             files:
