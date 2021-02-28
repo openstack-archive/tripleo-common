@@ -1344,8 +1344,8 @@ class TestSkopeoImageUploader(base.TestCase):
                 'SkopeoImageUploader._copy')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._image_exists')
-    @mock.patch('tripleo_common.actions.'
-                'ansible.AnsiblePlaybookAction', autospec=True)
+    @mock.patch('tripleo_common.utils.'
+                'ansible.run_ansible_playbook', autospec=True)
     def test_modify_upload_image(self, mock_ansible, mock_exists, mock_copy,
                                  mock_inspect, mock_auth):
         mock_exists.return_value = False
@@ -1432,8 +1432,8 @@ class TestSkopeoImageUploader(base.TestCase):
                 'SkopeoImageUploader._copy')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._image_exists')
-    @mock.patch('tripleo_common.actions.'
-                'ansible.AnsiblePlaybookAction', autospec=True)
+    @mock.patch('tripleo_common.utils.'
+                'ansible.run_ansible_playbook', autospec=True)
     def test_modify_image_failed(self, mock_ansible, mock_exists, mock_copy,
                                  mock_inspect, mock_auth):
         mock_exists.return_value = False
@@ -1445,7 +1445,7 @@ class TestSkopeoImageUploader(base.TestCase):
         push_destination = 'localhost:8787'
         error = processutils.ProcessExecutionError(
             '', 'ouch', -1, 'ansible-playbook')
-        mock_ansible.return_value.run.side_effect = error
+        mock_ansible.side_effect = error
 
         self.assertRaises(
             ImageUploaderException,
@@ -1464,8 +1464,8 @@ class TestSkopeoImageUploader(base.TestCase):
                 'BaseImageUploader.authenticate')
     @mock.patch('tripleo_common.image.image_uploader.'
                 'BaseImageUploader._inspect')
-    @mock.patch('tripleo_common.actions.'
-                'ansible.AnsiblePlaybookAction', autospec=True)
+    @mock.patch('tripleo_common.utils.'
+                'ansible.run_ansible_playbook', autospec=True)
     def test_modify_image_existing(self, mock_ansible, mock_inspect,
                                    mock_auth):
         mock_inspect.return_value = {'Digest': 'a'}

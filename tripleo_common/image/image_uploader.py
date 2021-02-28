@@ -37,7 +37,7 @@ from dateutil.parser import parse as dt_parse
 from dateutil.tz import tzlocal
 from oslo_concurrency import processutils
 from oslo_log import log as logging
-from tripleo_common.actions import ansible
+from tripleo_common.utils import ansible
 from tripleo_common.image.base import BaseImageManager
 from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageRateLimitedException
@@ -658,7 +658,7 @@ class BaseImageUploader(object):
             log_f = os.path.join('/var/log', log_name)
         try:
             LOG.info('Ansible action starting')
-            ansible.AnsiblePlaybookAction(
+            ansible.run_ansible_playbook(
                 playbook=playbook,
                 work_dir=work_dir,
                 verbosity=1,
@@ -668,7 +668,7 @@ class BaseImageUploader(object):
                     "stdout_callback=tripleo_dense\n"
                     "log_path=%s\n" % log_f
                 )
-            ).run(None)
+            )
         except processutils.ProcessExecutionError as e:
             LOG.error(
                 '%s\n'

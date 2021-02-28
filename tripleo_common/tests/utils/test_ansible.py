@@ -15,26 +15,23 @@
 
 import json
 import os
-import random
 from six.moves import configparser
 import shutil
-import string
 import sys
 import tempfile
 from unittest import mock
 
 from oslo_concurrency import processutils
 
-from tripleo_common.actions import ansible
+from tripleo_common.utils import ansible
 from tripleo_common.tests import base
 
 
-class AnsiblePlaybookActionTest(base.TestCase):
+class AnsiblePlaybookTest(base.TestCase):
 
     def setUp(self):
-        super(AnsiblePlaybookActionTest, self).setUp()
+        super(AnsiblePlaybookTest, self).setUp()
 
-        self.playbook = "myplaybook"
         self.limit_hosts = None
         self.remote_user = 'fido'
         self.become = True
@@ -43,33 +40,34 @@ class AnsiblePlaybookActionTest(base.TestCase):
         self.verbosity = 2
         self.ctx = mock.MagicMock()
         self.max_message_size = 1024
+        self.work_dir = tempfile.mkdtemp('tripleo-ansible')
+        self.playbook = os.path.join(self.work_dir, "playbook.yaml")
 
-    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch('tempfile.mkdtemp')
+    @mock.patch("tripleo_common.utils.ansible.write_default_ansible_cfg")
     @mock.patch("oslo_concurrency.processutils.execute")
-    def test_run(self, mock_execute, mock_write_cfg):
+    def test_run(self, mock_execute, mock_write_cfg, mock_work_dir):
 
         mock_execute.return_value = ('', '')
-
-        action = ansible.AnsiblePlaybookAction(
+        mock_work_dir.return_value = self.work_dir
+        ansible_config_path = os.path.join(self.work_dir,
+                                           'ansible.cfg')
+        mock_write_cfg.return_value = ansible_config_path
+        ansible.run_ansible_playbook(
             playbook=self.playbook, limit_hosts=self.limit_hosts,
             remote_user=self.remote_user, become=self.become,
             become_user=self.become_user, extra_vars=self.extra_vars,
-            verbosity=self.verbosity, config_download_args=['--check',
-                                                            '--diff'])
-        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
-        mock_write_cfg.return_value = ansible_config_path
+            verbosity=self.verbosity)
 
-        action.run(self.ctx)
-
-        mock_write_cfg.assert_called_once_with(action.work_dir,
+        mock_write_cfg.assert_called_once_with(self.work_dir,
                                                self.remote_user,
                                                ssh_private_key=None,
                                                override_ansible_cfg=None)
 
-        pb = os.path.join(action.work_dir, 'playbook.yaml')
+        pb = os.path.join(self.work_dir, 'playbook.yaml')
         env = {
-            'HOME': action.work_dir,
-            'ANSIBLE_LOCAL_TEMP': action.work_dir,
+            'HOME': self.work_dir,
+            'ANSIBLE_LOCAL_TEMP': self.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST':
                 'tripleo_dense,tripleo_profile_tasks,tripleo_states',
@@ -82,36 +80,36 @@ class AnsiblePlaybookActionTest(base.TestCase):
             ansible_playbook_cmd, '-v', pb, '--become',
             '--become-user',
             self.become_user, '--extra-vars', json.dumps(self.extra_vars),
-            '--check', '--diff', env_variables=env, cwd=action.work_dir,
+            env_variables=env, cwd=self.work_dir,
             log_errors=processutils.LogErrors.ALL)
 
-    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch('tempfile.mkdtemp')
+    @mock.patch("tripleo_common.utils.ansible.write_default_ansible_cfg")
     @mock.patch("oslo_concurrency.processutils.execute")
-    def test_run_with_limit(self, mock_execute, mock_write_cfg):
+    def test_run_with_limit(self, mock_execute, mock_write_cfg, mock_work_dir):
 
         mock_execute.return_value = ('', '')
+        mock_work_dir.return_value = self.work_dir
+        ansible_config_path = os.path.join(self.work_dir,
+                                           'ansible.cfg')
+        mock_write_cfg.return_value = ansible_config_path
 
-        action = ansible.AnsiblePlaybookAction(
+        ansible.run_ansible_playbook(
             playbook=self.playbook, limit_hosts=['compute35'],
             blacklisted_hostnames=['compute21'],
             remote_user=self.remote_user, become=self.become,
             become_user=self.become_user, extra_vars=self.extra_vars,
-            verbosity=self.verbosity, config_download_args=['--check',
-                                                            '--diff'])
-        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
-        mock_write_cfg.return_value = ansible_config_path
+            verbosity=self.verbosity)
 
-        action.run(self.ctx)
-
-        mock_write_cfg.assert_called_once_with(action.work_dir,
+        mock_write_cfg.assert_called_once_with(self.work_dir,
                                                self.remote_user,
                                                ssh_private_key=None,
                                                override_ansible_cfg=None)
 
-        pb = os.path.join(action.work_dir, 'playbook.yaml')
+        pb = os.path.join(self.work_dir, 'playbook.yaml')
         env = {
-            'HOME': action.work_dir,
-            'ANSIBLE_LOCAL_TEMP': action.work_dir,
+            'HOME': self.work_dir,
+            'ANSIBLE_LOCAL_TEMP': self.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
             'ANSIBLE_CALLBACK_WHITELIST':
                 'tripleo_dense,tripleo_profile_tasks,tripleo_states',
@@ -124,149 +122,53 @@ class AnsiblePlaybookActionTest(base.TestCase):
             ansible_playbook_cmd, '-v', pb, '--limit', "['compute35']",
             '--become', '--become-user',
             self.become_user, '--extra-vars', json.dumps(self.extra_vars),
-            '--check', '--diff', env_variables=env, cwd=action.work_dir,
+            env_variables=env, cwd=self.work_dir,
             log_errors=processutils.LogErrors.ALL)
 
-    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
-    @mock.patch("oslo_concurrency.processutils.execute")
-    def test_run_with_blacklist(self, mock_execute, mock_write_cfg):
-
-        mock_execute.return_value = ('', '')
-
-        action = ansible.AnsiblePlaybookAction(
-            playbook=self.playbook, limit_hosts=None,
-            blacklisted_hostnames=['compute21'],
-            remote_user=self.remote_user, become=self.become,
-            become_user=self.become_user, extra_vars=self.extra_vars,
-            verbosity=self.verbosity, config_download_args=['--check',
-                                                            '--diff'])
-        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
-        mock_write_cfg.return_value = ansible_config_path
-
-        action.run(self.ctx)
-
-        mock_write_cfg.assert_called_once_with(action.work_dir,
-                                               self.remote_user,
-                                               ssh_private_key=None,
-                                               override_ansible_cfg=None)
-
-        pb = os.path.join(action.work_dir, 'playbook.yaml')
-        env = {
-            'HOME': action.work_dir,
-            'ANSIBLE_LOCAL_TEMP': action.work_dir,
-            'ANSIBLE_CONFIG': ansible_config_path,
-            'ANSIBLE_CALLBACK_WHITELIST':
-                'tripleo_dense,tripleo_profile_tasks,tripleo_states',
-            'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
-            'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
-        }
-        python_version = sys.version_info.major
-        ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
-        mock_execute.assert_called_once_with(
-            ansible_playbook_cmd, '-v', pb, '--limit', '!compute21',
-            '--become', '--become-user', self.become_user, '--extra-vars',
-            json.dumps(self.extra_vars), '--check', '--diff',
-            env_variables=env, cwd=action.work_dir,
-            log_errors=processutils.LogErrors.ALL)
-
-    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
-    @mock.patch("oslo_concurrency.processutils.execute")
-    def test_post_message(self, mock_execute, mock_write_cfg):
-
-        action = ansible.AnsiblePlaybookAction(
-            playbook=self.playbook, limit_hosts=self.limit_hosts,
-            remote_user=self.remote_user, become=self.become,
-            become_user=self.become_user, extra_vars=self.extra_vars,
-            verbosity=self.verbosity,
-            max_message_size=self.max_message_size)
-        ansible_config_path = os.path.join(action.work_dir, 'ansible.cfg')
-        mock_write_cfg.return_value = ansible_config_path
-
-        message_size = int(self.max_message_size * 0.5)
-
-        # Message equal to max_message_size
-        queue = mock.Mock()
-        message = ''.join([string.ascii_letters[int(random.random() * 26)]
-                          for x in range(1024)])
-        action.post_message(queue, message)
-        self.assertEqual(queue.post.call_count, 2)
-        self.assertEqual(
-            queue.post.call_args_list[0],
-            mock.call(action.format_message(message[:message_size])))
-        self.assertEqual(
-            queue.post.call_args_list[1],
-            mock.call(action.format_message(message[message_size:])))
-
-        # Message less than max_message_size
-        queue = mock.Mock()
-        message = ''.join([string.ascii_letters[int(random.random() * 26)]
-                           for x in range(512)])
-        action.post_message(queue, message)
-        self.assertEqual(queue.post.call_count, 1)
-        self.assertEqual(
-            queue.post.call_args_list[0],
-            mock.call(action.format_message(message)))
-
-        # Message double max_message_size
-        queue = mock.Mock()
-        message = ''.join([string.ascii_letters[int(random.random() * 26)]
-                           for x in range(2048)])
-        action.post_message(queue, message)
-        self.assertEqual(queue.post.call_count, 4)
-        self.assertEqual(
-            queue.post.call_args_list[0],
-            mock.call(action.format_message(message[:message_size])))
-        self.assertEqual(
-            queue.post.call_args_list[1],
-            mock.call(action.format_message(
-                      message[message_size:message_size * 2])))
-        self.assertEqual(
-            queue.post.call_args_list[2],
-            mock.call(action.format_message(
-                      message[message_size * 2:message_size * 3])))
-        self.assertEqual(
-            queue.post.call_args_list[3],
-            mock.call(action.format_message(
-                      message[message_size * 3:2048])))
-
+    @mock.patch('tempfile.mkdtemp')
     @mock.patch("shutil.rmtree")
-    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch("tripleo_common.utils.ansible.write_default_ansible_cfg")
     @mock.patch("oslo_concurrency.processutils.execute")
-    def test_work_dir_cleanup(self, mock_execute, mock_write_cfg, mock_rmtree):
+    def test_work_dir_cleanup(self, mock_execute, mock_write_cfg,
+                              mock_rmtree, mock_work_dir):
 
         mock_execute.return_value = ('', '')
-
-        action = ansible.AnsiblePlaybookAction(
-            playbook=self.playbook, limit_hosts=self.limit_hosts,
-            remote_user=self.remote_user, become=self.become,
-            become_user=self.become_user, extra_vars=self.extra_vars,
-            verbosity=0)
+        mock_work_dir.return_value = self.work_dir
+        ansible_config_path = os.path.join(self.work_dir,
+                                           'ansible.cfg')
+        mock_write_cfg.return_value = ansible_config_path
 
         try:
-            action.run(self.ctx)
-            mock_rmtree.assert_called_once_with(action.work_dir)
+            ansible.run_ansible_playbook(
+                playbook=self.playbook, limit_hosts=self.limit_hosts,
+                remote_user=self.remote_user, become=self.become,
+                become_user=self.become_user, extra_vars=self.extra_vars,
+                verbosity=0)
+            mock_rmtree.assert_called_once_with(self.work_dir)
         finally:
             # Since we mocked the delete we need to manually cleanup.
-            shutil.rmtree(action.work_dir)
+            shutil.rmtree(self.work_dir)
 
     @mock.patch("shutil.rmtree")
-    @mock.patch("tripleo_common.actions.ansible.write_default_ansible_cfg")
+    @mock.patch("tripleo_common.utils.ansible.write_default_ansible_cfg")
     @mock.patch("oslo_concurrency.processutils.execute")
     def test_work_dir_no_cleanup(self, mock_execute, mock_write_cfg,
                                  mock_rmtree):
 
         mock_execute.return_value = ('', '')
 
-        # Specity a work_dir, this should not be deleted automatically.
+        # Specity a self.work_dir, this should not be deleted automatically.
         work_dir = tempfile.mkdtemp()
+        ansible_config_path = os.path.join(work_dir,
+                                           'ansible.cfg')
+        mock_write_cfg.return_value = ansible_config_path
+
         try:
-            action = ansible.AnsiblePlaybookAction(
+            ansible.run_ansible_playbook(
                 playbook=self.playbook, limit_hosts=self.limit_hosts,
                 remote_user=self.remote_user, become=self.become,
                 become_user=self.become_user, extra_vars=self.extra_vars,
                 verbosity=self.verbosity, work_dir=work_dir)
-
-            action.run(self.ctx)
 
             # verify the rmtree is not called
             mock_rmtree.assert_not_called()
@@ -342,7 +244,7 @@ class CopyConfigFileTest(base.TestCase):
             override_ansible_cfg = ""
 
             resulting_ansible_config = ansible.write_default_ansible_cfg(
-                work_dir, None, None, None, base_ansible_cfg=ansible_cfg_path,
+                work_dir, None, None, base_ansible_cfg=ansible_cfg_path,
                 override_ansible_cfg=override_ansible_cfg)
 
             ansible_cfg = configparser.ConfigParser()
