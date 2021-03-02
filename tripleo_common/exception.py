@@ -130,3 +130,7 @@ class GroupOsApplyConfigException(Exception):
             "Deployment %s with group:os-apply-config not supported with "
             "config-download." % self.deployment_name)
         super(GroupOsApplyConfigException, self).__init__(message)
+
+
+class MissingMandatoryNeutronResourceTag(Exception):
+    """Missing mandatory neutron resource tag"""
