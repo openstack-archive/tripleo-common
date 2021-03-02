@@ -51,7 +51,8 @@ def init_prepare_defaults(defaults_file):
     # Handle CentOS8 since we shipped train with py2 support, we need
     # to still support it while handling the namespace switch for
     # CentOS8 but only for the defaults
-    if (CONTAINER_IMAGES_DEFAULTS['namespace'] == 'docker.io/tripleotrain'
+    if ((CONTAINER_IMAGES_DEFAULTS['namespace'] == 'docker.io/tripleotrain'
+         or CONTAINER_IMAGES_DEFAULTS['namespace'] == 'quay.io/tripleotrain')
             and sys.version_info.major > 2):
         CONTAINER_IMAGES_DEFAULTS['namespace'] += 'centos8'
 
