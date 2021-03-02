@@ -327,28 +327,30 @@ def generate_passwords(swift=None, heat=None,
     - otherwise, all passwords not in the DO_NOT_ROTATE list (as they require
       special handling, like KEKs and Fernet keys) will be replaced.
     """
-    if heat is None:
-        raise RuntimeError('Should provide orchestration client to fetch'
-                           'stack environment')
     if rotate_pw_list is None:
         rotate_pw_list = []
-    try:
-        stack_env = heat.stacks.environment(
-            stack_id=container)
-    except heat_exc.HTTPNotFound:
-        stack_env = None
 
-    placement_extracted = False
-    try:
-        # We can't rely on the existence of PlacementPassword to
-        # determine if placement extraction has occured as it was added
-        # in stein while the service extraction was delayed to train.
-        # Inspect the endpoint map instead.
-        endpoint_res = heat.resources.get(container, 'EndpointMap')
-        endpoints = endpoint_res.attributes.get('endpoint_map', None)
-        placement_extracted = endpoints and 'PlacementPublic' in endpoints
-    except heat_exc.HTTPNotFound:
-        pass
+    if heat is None:
+        stack_env = None
+        placement_extracted = False
+    else:
+        try:
+            stack_env = heat.stacks.environment(
+                stack_id=container)
+        except heat_exc.HTTPNotFound:
+            stack_env = None
+
+        placement_extracted = False
+        try:
+            # We can't rely on the existence of PlacementPassword to
+            # determine if placement extraction has occured as it was added
+            # in stein while the service extraction was delayed to train.
+            # Inspect the endpoint map instead.
+            endpoint_res = heat.resources.get(container, 'EndpointMap')
+            endpoints = endpoint_res.attributes.get('endpoint_map', None)
+            placement_extracted = endpoints and 'PlacementPublic' in endpoints
+        except heat_exc.HTTPNotFound:
+            pass
 
     passwords = password_utils.generate_passwords(
         stack_env=stack_env,
