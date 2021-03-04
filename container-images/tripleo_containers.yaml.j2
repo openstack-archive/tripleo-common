@@ -806,3 +806,11 @@ container_images_template:
   - OS::TripleO::Services::Rsyslog
   - OS::TripleO::Services::SwiftProxy
   - OS::TripleO::Services::SwiftStorage
+
+- imagename: "{{namespace}}/{{name_prefix}}unbound{{name_suffix}}:{{tag}}"
+  image_source: tripleo
+  params:
+  - ContainerUnboundImage
+  - ContainerUnboundConfigImage
+  services:
+  - OS::TripleO::Services::Unbound
