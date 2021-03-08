@@ -14,12 +14,10 @@
 # under the License.
 
 from six import iteritems
-import yaml
 
 from heatclient.common import template_utils
 
 from tripleo_common import constants
-from tripleo_common.utils import swift as swiftutils
 
 
 def add_breakpoints_cleanup_into_env(env):
@@ -75,23 +73,8 @@ def check_neutron_mechanism_drivers(env, stack, plan_client, container):
     if configured_drivers:
         new_driver = get_exclusive_neutron_driver(configured_drivers)
     else:
-        try:
-            # TODO(beagles): we need to look for a better way to
-            # get the current template default value. This is fragile
-            # with respect to changing filenames, etc.
-            ml2_tmpl = swiftutils.get_object_string(
-                plan_client,
-                container,
-                'puppet/services/neutron-plugin-ml2.yaml')
-            ml2_def = yaml.safe_load(ml2_tmpl)
-            default_drivers = ml2_def.get(
-                'parameters', {}).get(driver_key, {}).get('default')
-            new_driver = get_exclusive_neutron_driver(default_drivers)
-        except Exception:
-            # NOTE: we restructured t-h-t in stein, if this happens we
-            # assume neutron-plugin-ml2.yaml has been moved and
-            # thus set the most recent default (OVN)
-            new_driver = 'ovn'
+        # thus set the most recent default (OVN)
+        new_driver = 'ovn'
     if current_driver and new_driver and current_driver != new_driver:
         msg = ("Unable to switch from {} to {} neutron "
                "mechanism drivers on upgrade. Please consult the "
