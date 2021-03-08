@@ -230,15 +230,7 @@ def preview_stack_and_network_configs(heat, processed_data,
         'stack_name': container_temp,
     }
     preview_data = heat.stacks.preview(**fields)
-
-    try:
-        stack = heat.stacks.get(container_temp)
-    except heat_exc.HTTPNotFound:
-        msg = "Error retrieving stack: %s" % container_temp
-        LOG.exception(msg)
-        raise RuntimeError(msg)
-
-    return get_network_config(preview_data, stack.stack_name, role_name)
+    return get_network_config(preview_data, container_temp, role_name)
 
 
 def get_network_config(preview_data, stack_name, role_name):
