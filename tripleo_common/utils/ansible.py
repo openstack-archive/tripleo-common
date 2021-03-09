@@ -17,6 +17,7 @@ import json
 import logging
 import multiprocessing
 import os
+from pathlib import Path
 import shutil
 import six
 from six.moves import configparser
@@ -115,6 +116,11 @@ def write_default_ansible_cfg(work_dir,
         new_path = (log_path + '-' +
                     datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
         os.rename(log_path, new_path)
+
+    # Create the log file, and set some rights on it in order to prevent
+    # unwanted accesse
+    Path(log_path).touch()
+    os.chmod(log_path, 0o640)
 
     config.set('defaults', 'forks', str(min(
         multiprocessing.cpu_count() * 4, 100)))
