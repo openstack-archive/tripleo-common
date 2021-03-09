@@ -353,20 +353,12 @@ class NodesTest(base.TestCase):
                            "cpu_arch": "amd64",
                            "capabilities": "num_nics:6"}
         ironic = mock.MagicMock()
-        glance = mock.MagicMock()
-        image = collections.namedtuple('image', ['id'])
-        glance.images.find.side_effect = (image('kernel-123'),
-                                          image('ramdisk-999'))
         nodes.register_all_nodes(node_list, client=ironic,
-                                 glance_client=glance, kernel_name='bm-kernel',
+                                 kernel_name='bm-kernel',
                                  ramdisk_name='bm-ramdisk')
         pxe_node_driver_info = {"ipmi_address": "foo.bar",
                                 "ipmi_username": "test",
-                                "ipmi_password": "random",
-                                "deploy_kernel": "kernel-123",
-                                "deploy_ramdisk": "ramdisk-999",
-                                "rescue_kernel": "kernel-123",
-                                "rescue_ramdisk": "ramdisk-999"}
+                                "ipmi_password": "random"}
         pxe_node = mock.call(driver="ipmi",
                              name='node1',
                              driver_info=pxe_node_driver_info,
