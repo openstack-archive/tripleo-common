@@ -964,6 +964,7 @@ class GeneratePasswordsActionTest(base.TestCase):
 
         existing_passwords = _EXISTING_PASSWORDS.copy()
         existing_passwords.pop("AdminPassword")
+        existing_passwords.pop("PcsdPassword")
 
         mock_ctx = mock.MagicMock()
         swift = mock.MagicMock(url="http://test.com")
@@ -982,6 +983,7 @@ class GeneratePasswordsActionTest(base.TestCase):
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {
                 'AdminPassword': 'ExistingPasswordInHeat',
+                'PcsdPassword': 'MyPassword',
             }
         }
         mock_resource = mock.MagicMock()
@@ -998,6 +1000,7 @@ class GeneratePasswordsActionTest(base.TestCase):
         result = action.run(mock_ctx)
 
         existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
+        existing_passwords["PcsdPassword"] = "MyPassword"
         # ensure old passwords used and no new generation
         self.assertEqual(existing_passwords, result)
         mock_cache.assert_called_once_with(
