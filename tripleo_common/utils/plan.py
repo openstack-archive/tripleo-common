@@ -408,9 +408,10 @@ def generate_passwords(swift, heat, mistral=None,
         # We don't modify these to avoid changing defaults
         for pw_res in constants.LEGACY_HEAT_PASSWORD_RESOURCE_NAMES:
             try:
-                res = heat.resources.get(container, pw_res)
                 param_defaults = stack_env.get('parameter_defaults', {})
-                param_defaults[pw_res] = res.attributes['value']
+                if pw_res not in param_defaults:
+                    res = heat.resources.get(container, pw_res)
+                    param_defaults[pw_res] = res.attributes['value']
             except heat_exc.HTTPNotFound:
                 LOG.debug('Heat resouce not found: %s' % pw_res)
                 pass
