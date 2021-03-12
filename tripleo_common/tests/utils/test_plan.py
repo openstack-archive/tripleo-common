@@ -907,6 +907,7 @@ class PlanTest(base.TestCase):
 
         existing_passwords = _EXISTING_PASSWORDS.copy()
         existing_passwords.pop("AdminPassword")
+        existing_passwords.pop("PcsdPassword")
 
         swift = mock.MagicMock(url="http://test.com")
         mock_env = yaml.safe_dump({
@@ -923,6 +924,7 @@ class PlanTest(base.TestCase):
         mock_orchestration.stacks.environment.return_value = {
             'parameter_defaults': {
                 'AdminPassword': 'ExistingPasswordInHeat',
+                'PcsdPassword': 'MyPassword'
             }
         }
 
@@ -938,6 +940,7 @@ class PlanTest(base.TestCase):
         result = plan_utils.generate_passwords(swift, mock_orchestration)
 
         existing_passwords["AdminPassword"] = "ExistingPasswordInHeat"
+        existing_passwords["PcsdPassword"] = "MyPassword"
         # ensure old passwords used and no new generation
         self.assertEqual(existing_passwords, result)
         mock_cache.assert_called_once_with(
