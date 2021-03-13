@@ -914,122 +914,23 @@ class OvercloudConfigTest(base.TestCase):
     def setUp(self,):
         super(OvercloudConfigTest, self).setUp()
         self.plan = 'overcloud'
-        self.delete_after = 3600
         self.config_container = 'config-overcloud'
 
-        # setup swift
-        self.template_files = (
-            'some-name.yaml',
-            'some-other-name.yaml',
-            'yet-some-other-name.yaml',
-            'finally-another-name.yaml'
-        )
-        self.swift = mock.MagicMock()
-        self.swift.get_container.return_value = (
-            {'x-container-meta-usage-tripleo': 'plan'}, [
-                {
-                    'name': tf,
-                    'last_modified': '2018-11-05'
-                } for tf in self.template_files
-            ]
-        )
-        self.swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
-
-    @mock.patch('tripleo_common.utils.swift.delete_container')
-    @mock.patch('tripleo_common.utils.swift.download_container')
     @mock.patch('tripleo_common.utils.config.Config.download_config')
-    @mock.patch('tripleo_common.utils.tarball.create_tarball')
-    def test_get_overcloud_config(self, mock_create_tarball,
-                                  mock_config,
-                                  mock_swift_download,
-                                  mock_swift_delete):
+    def test_get_overcloud_config(self, mock_config):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = mock.MagicMock(
             stack_name='stack', id='stack_id')
         mock_config.return_value = '/tmp/fake-path'
 
         ooo_config.get_overcloud_config(
-            self.swift, heat,
+            None, heat,
             self.plan,
             self.config_container,
             '/tmp/fake-path')
-
-        mock_swift_download.assert_called_once_with(self.swift,
-                                                    self.config_container,
-                                                    '/tmp/fake-path')
-        mock_swift_delete.assert_called_once_with(self.swift,
-                                                  self.config_container)
-        self.assertEqual(2, self.swift.put_object.call_count)
-        self.assertEqual(mock.call(
-            'config-overcloud', 'config-overcloud.tar.gz',
-            self.swift.put_object.call_args_list[1][0][2]),  # closed file call
-            self.swift.put_object.call_args_list[1])
-        mock_create_tarball.assert_called_once()
-        self.assertEqual(dict(excludes=['.tox', '*.pyc', '*.pyo']),
-                         mock_create_tarball.call_args[1])
-
-    @mock.patch('tripleo_common.utils.config.os.unlink')
-    @mock.patch('tripleo_common.utils.config.os.path.exists')
-    @mock.patch('tripleo_common.utils.config.os.symlink')
-    @mock.patch('tripleo_common.utils.swift.download_container')
-    @mock.patch('tempfile.mkdtemp')
-    def test_download_config(self, mock_mkdtemp,
-                             mock_swiftutils,
-                             mock_os_symlink,
-                             mock_os_path_exists,
-                             mock_os_unlink):
-        mock_mkdtemp.return_value = '/tmp/tripleo-foo-config'
-        ooo_config.download_overcloud_config(self.swift,
-                                             self.config_container)
-        mock_swiftutils.assert_called_once_with(self.swift,
-                                                self.config_container,
-                                                '/tmp/tripleo-foo-config')
-
-    @mock.patch('tripleo_common.utils.config.os.path.exists')
-    @mock.patch('tripleo_common.utils.config.os.symlink')
-    @mock.patch('tripleo_common.utils.swift.download_container')
-    @mock.patch('tempfile.mkdtemp')
-    def test_download_create_latest_symlink(
-            self, mock_mkdtemp,
-            mock_swiftutils,
-            mock_os_symlink,
-            mock_os_path_exists):
-        mock_mkdtemp.return_value = '/var/lib/mistral/uuid'
-        mock_os_path_exists.return_value = False
-        ooo_config.download_overcloud_config(self.swift,
-                                             self.config_container)
-        mock_swiftutils.assert_called_once_with(self.swift,
-                                                self.config_container,
-                                                mock_mkdtemp())
-        mock_os_symlink.assert_called_once_with(
-            '/var/lib/mistral/uuid',
-            os.path.join(os.path.dirname('/var/lib/mistral/uuid'),
-                         'config-download-latest'))
-
-    @mock.patch('tripleo_common.utils.config.os.unlink')
-    @mock.patch('tripleo_common.utils.config.os.path.exists')
-    @mock.patch('tripleo_common.utils.config.os.symlink')
-    @mock.patch('tripleo_common.utils.swift.download_container')
-    @mock.patch('tempfile.mkdtemp')
-    def test_download_update_latest_symlink(
-            self, mock_mkdtemp,
-            mock_swiftutils,
-            mock_os_symlink,
-            mock_os_path_exists,
-            mock_os_unlink):
-        mock_mkdtemp.return_value = '/var/lib/mistral/uuid'
-        mock_os_path_exists.return_value = True
-        ooo_config.download_overcloud_config(self.swift,
-                                             self.config_container)
-        mock_swiftutils.assert_called_once_with(self.swift,
-                                                self.config_container,
-                                                mock_mkdtemp())
-        mock_os_symlink.assert_called_once_with(
-            '/var/lib/mistral/uuid',
-            os.path.join(os.path.dirname('/var/lib/mistral/uuid'),
-                         'config-download-latest'))
-        mock_os_unlink.assert_called_once_with(
-            '/var/lib/mistral/config-download-latest')
+        mock_config.assert_called_once_with('overcloud', '/tmp/fake-path',
+                                            None, commit_message=mock.ANY,
+                                            preserve_config_dir=True)
 
     @patch.object(ooo_config.Config, '_open_file')
     def test_overcloud_config__write_tasks_per_step(self, mock_open_file):
