@@ -18,12 +18,14 @@ gcc-c++           [platform:rpm]
 git               [platform:rpm]
 libffi-devel      [platform:rpm]
 openssl-devel     [platform:rpm]
-python-devel      [platform:rpm]
-python2-dnf       [platform:fedora]
+python-devel      [(platform:rpm platform:base-py2)]
+python2-dnf       [(platform:rpm platform:base-py2)]
 
 # For SELinux
-libselinux-python  [platform:rpm]
-libsemanage-python [platform:redhat]
+libselinux-python  [(platform:rpm platform:base-py2)]
+python3-libselinux  [(platform:rpm platform:base-py3)]
+libsemanage-python [(platform:rpm platform:base-py2)]
+python3-libsemanage-python [(platform:rpm platform:base-py3)]
 
 # Required for compressing collected log files in CI
 gzip
