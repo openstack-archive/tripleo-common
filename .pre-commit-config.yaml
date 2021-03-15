@@ -12,7 +12,7 @@ repos:
       - id: check-yaml
         files: .*\.(yaml|yml)$
   - repo: https://gitlab.com/pycqa/flake8.git
-    rev: 3.8.4
+    rev: 3.9.0
     hooks:
       - id: flake8
   - repo: https://github.com/openstack-dev/bashate.git
@@ -28,6 +28,6 @@ repos:
         #       use jinja templating, this will often fail and the syntax
         #       error will be discovered in execution anyway)
   - repo: https://github.com/PyCQA/pylint
-    rev: pylint-2.6.0
+    rev: pylint-2.7.2
     hooks:
       - id: pylint

@@ -354,31 +354,31 @@ class BuildahBuilder(base.BaseBuilder):
                         exception=job._exception
                     )
                 )
-        else:
-            if exceptions:
-                raise RuntimeError(
-                    '\nThe following errors were detected during '
-                    'container build(s):\n{exceptions}'.format(
-                        exceptions='\n'.join(exceptions)
-                    )
+
+        if exceptions:
+            raise RuntimeError(
+                '\nThe following errors were detected during '
+                'container build(s):\n{exceptions}'.format(
+                    exceptions='\n'.join(exceptions)
                 )
+            )
 
-            if not_done:
-                error_msg = (
-                    'The following jobs were incomplete: {}'.format(
-                        [future_to_build[job] for job in not_done]
-                    )
+        if not_done:
+            error_msg = (
+                'The following jobs were incomplete: {}'.format(
+                    [future_to_build[job] for job in not_done]
                 )
+            )
 
-                jobs_with_exceptions = [{
-                    'container': future_to_build[job],
-                    'exception': job._exception}
-                    for job in not_done if job._exception]
-                if jobs_with_exceptions:
-                    for job_with_exception in jobs_with_exceptions:
-                        error_msg = error_msg + os.linesep + (
-                            "%(container)s raised the following "
-                            "exception: %(exception)s" %
-                            job_with_exception)
+            jobs_with_exceptions = [{
+                'container': future_to_build[job],
+                'exception': job._exception}
+                for job in not_done if job._exception]
+            if jobs_with_exceptions:
+                for job_with_exception in jobs_with_exceptions:
+                    error_msg = error_msg + os.linesep + (
+                        "%(container)s raised the following "
+                        "exception: %(exception)s" %
+                        job_with_exception)
 
-                raise SystemError(error_msg)
+            raise SystemError(error_msg)

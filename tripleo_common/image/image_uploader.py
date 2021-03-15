@@ -1980,8 +1980,6 @@ class PythonImageUploader(BaseImageUploader):
             LOG.error('[%s] Failed processing layer for the target '
                       'image %s' % (layer, target_url.geturl()))
             raise
-        except Exception:
-            raise
         else:
             if layer_val and known_path:
                 image_ref = target_url.path.split(':')[0][1:]
@@ -2342,8 +2340,6 @@ class PythonImageUploader(BaseImageUploader):
                 layer['digest'], forget=True, scope='remote')
             LOG.error('[%s] Failed processing layer for the target '
                       'image %s' % (layer['digest'], target_url.geturl()))
-            raise
-        except Exception:
             raise
         else:
             if layer_val and known_path:
