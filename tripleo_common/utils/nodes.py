@@ -22,7 +22,6 @@ import six
 from ironicclient import exceptions as ironicexceptions
 from oslo_concurrency import processutils
 from tripleo_common import exception
-from tripleo_common.utils import glance
 
 LOG = logging.getLogger(__name__)
 
@@ -550,18 +549,8 @@ def register_all_nodes(nodes_list, client, remove=False, glance_client=None,
     LOG.debug('Registering all nodes.')
     node_map = _populate_node_mapping(client)
 
-    glance_ids = {'kernel': None, 'ramdisk': None}
-    if kernel_name and ramdisk_name:
-        glance_ids = glance.create_or_find_kernel_and_ramdisk(
-            glance_client, kernel_name, ramdisk_name)
-
     seen = []
     for node in nodes_list:
-        if glance_ids['kernel'] and 'kernel_id' not in node:
-            node['kernel_id'] = glance_ids['kernel']
-        if glance_ids['ramdisk'] and 'ramdisk_id' not in node:
-            node['ramdisk_id'] = glance_ids['ramdisk']
-
         node = _update_or_register_ironic_node(node, node_map, client=client)
         seen.append(node)
 
