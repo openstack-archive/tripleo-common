@@ -14,223 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 import os
-import re
-import requests
 import sys
-import tempfile
-import yaml
 
-from heatclient.common import template_utils
 from heatclient import exc as heat_exc
-import six
-from swiftclient import exceptions as swiftexceptions
 
 from tripleo_common import constants
 from tripleo_common.image import kolla_builder
 from tripleo_common.utils import passwords as password_utils
-from tripleo_common.utils import swift as swiftutils
 
 LOG = logging.getLogger(__name__)
-
-LOG = logging.getLogger(__name__)
-
-
-def update_in_env(swift, env, key, value='', delete_key=False):
-    """Update plan environment."""
-    if delete_key:
-        try:
-            del env[key]
-        except KeyError:
-            pass
-    else:
-        try:
-            env[key].update(value)
-        except (KeyError, AttributeError):
-            env[key] = value
-
-    put_env(swift, env)
-    return env
-
-
-def get_env(swift, name):
-    """Get plan environment from Swift and convert it to a dictionary."""
-    env = yaml.safe_load(
-        swiftutils.get_object_string(swift, name, constants.PLAN_ENVIRONMENT)
-    )
-
-    # Ensure the name is correct, as it will be used to update the
-    # container later
-    if env.get('name') != name:
-        env['name'] = name
-
-    return env
-
-
-def put_env(swift, env):
-    """Convert given environment to yaml and upload it to Swift."""
-    swiftutils.put_object_string(
-        swift,
-        env['name'],
-        constants.PLAN_ENVIRONMENT,
-        yaml.safe_dump(env, default_flow_style=False)
-    )
-
-
-def get_user_env(swift, container_name):
-    """Get user environment from Swift convert it to a dictionary."""
-    return yaml.safe_load(
-        swiftutils.get_object_string(swift, container_name,
-                                     constants.USER_ENVIRONMENT))
-
-
-def put_user_env(swift, container_name, env):
-    """Convert given user environment to yaml and upload it to Swift."""
-    swiftutils.put_object_string(
-        swift,
-        container_name,
-        constants.USER_ENVIRONMENT,
-        yaml.safe_dump(env, default_flow_style=False)
-    )
-
-
-def write_json_temp_file(data):
-    """Writes the provided data to a json file and return the filename"""
-    with tempfile.NamedTemporaryFile(delete=False, mode='wb') as temp_file:
-        temp_file.write(json.dumps(data).encode('utf-8'))
-    return temp_file.name
-
-
-def object_request(method, url, token):
-    """Fetch an object with the provided token"""
-    response = requests.request(
-        method, url, headers={'X-Auth-Token': token})
-    response.raise_for_status()
-    return response.content
-
-
-def process_environments_and_files(swift, env_paths):
-    """Wrap process_multiple_environments_and_files with swift object fetch"""
-    def _env_path_is_object(env_path):
-        return env_path.startswith(swift.url)
-
-    # XXX this should belong in heatclient, but for the time being and backport
-    # purposes, let's do that here for now.
-    _cache = {}
-
-    def _object_request(method, url, token=swift.token):
-        if url not in _cache:
-            _cache[url] = object_request(method, url, token)
-        return _cache[url]
-
-    return template_utils.process_multiple_environments_and_files(
-        env_paths=env_paths,
-        env_path_is_object=_env_path_is_object,
-        object_request=_object_request)
-
-
-def get_template_contents(swift, template_object):
-    """Wrap get_template_contents with swift object fetch"""
-    def _object_request(method, url, token=swift.token):
-        return object_request(method, url, token)
-
-    return template_utils.get_template_contents(
-        template_object=template_object,
-        object_request=_object_request)
-
-
-def build_env_paths(swift, container, plan_env):
-    environments = plan_env.get('environments', [])
-    env_paths = []
-    temp_env_paths = []
-
-    for env in environments:
-        if env.get('path'):
-            env_paths.append(os.path.join(swift.url, container, env['path']))
-        elif env.get('data'):
-            env_file = write_json_temp_file(env['data'])
-            temp_env_paths.append(env_file)
-
-    # create a dict to hold all user set params and merge
-    # them in the appropriate order
-    merged_params = {}
-    # merge generated passwords into params first
-    passwords = plan_env.get('passwords', {})
-    merged_params.update(passwords)
-
-    # derived parameters are merged before 'parameter defaults'
-    # so that user-specified values can override the derived values.
-    derived_params = plan_env.get('derived_parameters', {})
-    merged_params.update(derived_params)
-
-    # handle user set parameter values next in case a user has set
-    # a new value for a password parameter
-    params = plan_env.get('parameter_defaults', {})
-    merged_params = template_utils.deep_update(merged_params, params)
-
-    if merged_params:
-        env_temp_file = write_json_temp_file(
-            {'parameter_defaults': merged_params})
-        temp_env_paths.append(env_temp_file)
-
-    registry = plan_env.get('resource_registry', {})
-    if registry:
-        env_temp_file = write_json_temp_file(
-            {'resource_registry': registry})
-        temp_env_paths.append(env_temp_file)
-
-    env_paths.extend(temp_env_paths)
-    return env_paths, temp_env_paths
-
-
-def create_plan_container(swift, plan_name):
-    if not pattern_validator(constants.PLAN_NAME_PATTERN, plan_name):
-        message = ("The plan name must "
-                   "only contain letters, numbers or dashes")
-        raise RuntimeError(message)
-
-    # checks to see if a container with that name exists
-    if plan_name in [container["name"] for container in
-                     swift.get_account()[1]]:
-        message = ("A container with the name %s already "
-                   "exists.") % plan_name
-        raise RuntimeError(message)
-    default_container_headers = {constants.TRIPLEO_META_USAGE_KEY: 'plan'}
-    swift.put_container(plan_name, headers=default_container_headers)
-
-
-def update_plan_environment(swift, environments,
-                            container=constants.DEFAULT_CONTAINER_NAME):
-    env = get_env(swift, container)
-    for k, v in environments.items():
-        found = False
-        if {'path': k} in env['environments']:
-            found = True
-        if v:
-            if not found:
-                env['environments'].append({'path': k})
-        else:
-            if found:
-                env['environments'].remove({'path': k})
-
-    put_env(swift, env)
-    return env
-
-
-def get_role_data(swift, container=constants.DEFAULT_CONTAINER_NAME):
-    try:
-        j2_role_file = swiftutils.get_object_string(
-            swift,
-            container,
-            constants.OVERCLOUD_J2_ROLES_NAME)
-        role_data = yaml.safe_load(j2_role_file)
-    except swiftexceptions.ClientException:
-        LOG.info("No %s file found, not filtering container images by role",
-                 constants.OVERCLOUD_J2_ROLES_NAME)
-        role_data = None
-    return role_data
 
 
 def default_image_params():
@@ -251,65 +45,6 @@ def default_image_params():
             for p in entry.pop('params'):
                 params[p] = imagename
     return params
-
-
-def update_plan_environment_with_image_parameters(
-    swift, container=constants.DEFAULT_CONTAINER_NAME,
-    with_roledata=True):
-    try:
-        # ensure every image parameter has a default value, even if prepare
-        # didn't return it
-        params = default_image_params()
-
-        if with_roledata:
-            plan_env = get_env(swift, container)
-            env_paths, temp_env_paths = build_env_paths(
-                swift, container, plan_env)
-            env_files, env = process_environments_and_files(
-                swift, env_paths)
-
-            role_data = get_role_data(swift)
-            image_params = kolla_builder.container_images_prepare_multi(
-                env, role_data, dry_run=True)
-            if image_params:
-                params.update(image_params)
-
-    except Exception as err:
-        LOG.exception("Error occurred while updating plan files.")
-        raise RuntimeError(six.text_type(err))
-    finally:
-        # cleanup any local temp files
-        if with_roledata:
-            for f in temp_env_paths:
-                os.remove(f)
-
-    try:
-        swiftutils.put_object_string(
-            swift,
-            container,
-            constants.CONTAINER_DEFAULTS_ENVIRONMENT,
-            yaml.safe_dump(
-                {'parameter_defaults': params},
-                default_flow_style=False
-            )
-        )
-    except swiftexceptions.ClientException as err:
-        err_msg = ("Error updating %s for plan %s: %s" % (
-            constants.CONTAINER_DEFAULTS_ENVIRONMENT, container, err))
-        LOG.exception(err_msg)
-        raise RuntimeError(err_msg)
-
-    environments = {constants.CONTAINER_DEFAULTS_ENVIRONMENT: True}
-
-    try:
-        env = update_plan_environment(swift, environments,
-                                      container=container)
-    except swiftexceptions.ClientException as err:
-        err_msg = ("Error updating environment for plan %s: %s" % (
-            container, err))
-        LOG.exception(err_msg)
-        raise RuntimeError(err_msg)
-    return env
 
 
 def generate_passwords(swift=None, heat=None,
@@ -373,36 +108,22 @@ def generate_passwords(swift=None, heat=None,
     return passwords
 
 
-def update_plan_rotate_fernet_keys(swift,
-                                   container=constants.DEFAULT_CONTAINER_NAME):
+def rotate_fernet_keys(heat,
+                       container=constants.DEFAULT_CONTAINER_NAME):
     try:
-        env = get_env(swift, container)
-    except swiftexceptions.ClientException as err:
-        err_msg = ("Error retrieving environment for plan %s: %s" % (
-            container, err))
-        LOG.exception(err_msg)
-        raise RuntimeError(err_msg)
+        stack_env = heat.stacks.environment(
+            stack_id=container)
+    except heat_exc.HTTPNotFound:
+        stack_env = None
 
-    parameter_defaults = env.get('parameter_defaults', {})
-    passwords = get_overriden_passwords(env.get(
-        'passwords', {}), parameter_defaults)
+    parameter_defaults = stack_env.get('parameter_defaults', {})
+    passwords = get_overriden_passwords({}, parameter_defaults)
 
     next_index = get_next_index(passwords['KeystoneFernetKeys'])
     keys_map = rotate_keys(passwords['KeystoneFernetKeys'],
                            next_index)
     max_keys = get_max_keys_value(parameter_defaults)
-    keys_map = purge_excess_keys(max_keys, keys_map)
-
-    env['passwords']['KeystoneFernetKeys'] = keys_map
-
-    try:
-        put_env(swift, env)
-    except swiftexceptions.ClientException as err:
-        err_msg = "Error uploading to container: %s" % err
-        LOG.exception(err_msg)
-        raise RuntimeError(err_msg)
-
-    return keys_map
+    return purge_excess_keys(max_keys, keys_map)
 
 
 def get_overriden_passwords(env_passwords, parameter_defaults):
@@ -454,10 +175,3 @@ def purge_excess_keys(max_keys, keys_map):
     for key_path in key_paths[1:keys_to_be_purged + 1]:
         del keys_map[key_path]
     return keys_map
-
-
-def pattern_validator(pattern, value):
-    LOG.debug('Validating %s with pattern %s', value, pattern)
-    if not re.match(pattern, value):
-        return False
-    return True
