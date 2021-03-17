@@ -49,7 +49,8 @@ def default_image_params():
 
 def generate_passwords(swift=None, heat=None,
                        container=constants.DEFAULT_CONTAINER_NAME,
-                       rotate_passwords=False, rotate_pw_list=None):
+                       rotate_passwords=False, rotate_pw_list=None,
+                       passwords_env=None):
     """Generates passwords needed for Overcloud deployment
 
     This method generates passwords. By default, this method respects
@@ -65,9 +66,12 @@ def generate_passwords(swift=None, heat=None,
     if rotate_pw_list is None:
         rotate_pw_list = []
 
-    if heat is None:
+    if passwords_env:
+        stack_env = passwords_env
+        placement_extracted = True
+    elif heat is None:
         stack_env = None
-        placement_extracted = False
+        placement_extracted = True
     else:
         try:
             stack_env = heat.stacks.environment(
