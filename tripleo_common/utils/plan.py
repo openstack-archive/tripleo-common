@@ -114,7 +114,8 @@ def rotate_fernet_keys(heat,
         stack_env = heat.stacks.environment(
             stack_id=container)
     except heat_exc.HTTPNotFound:
-        stack_env = None
+        raise RuntimeError('Can not rotate fernet keys without an'
+                           'existing stack %s.' % container)
 
     parameter_defaults = stack_env.get('parameter_defaults', {})
     passwords = get_overriden_passwords({}, parameter_defaults)
