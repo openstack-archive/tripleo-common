@@ -187,3 +187,5 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleoussuri/centos-binary-rsyslog:current-tripleo
   image_source: tripleo
+- imagename: quay.io/tripleoussuri/centos-binary-unbound:current-tripleo
+  image_source: tripleo
