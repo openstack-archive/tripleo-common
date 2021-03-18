@@ -14,7 +14,7 @@
 # under the License.
 
 #
-# Script to upload directory tarball of puppet modules to a swift container.
+# Script to upload directory tarball of puppet modules to a artifact container.
 #
 set -eu
 set -o pipefail
@@ -34,14 +34,14 @@ function show_options {
     echo "Options:"
     echo "    -h, --help                  -- print this help."
     echo "    -d <directory>              -- Puppet modules directory. Required."
-    echo "    -c <container>              -- Swift container to use."
+    echo "    -c <container>              -- Artifact container to use."
     echo "      Default: overcloud-artifacts"
     echo "    --environment <env>         -- Generate this heat <env>"
     echo "      Default: $HOME/.tripleo/environments/puppet-modules-url.yaml"
     echo "    --seconds <seconds>         -- Number of seconds for temp URL."
     echo "      Default: 31536000 (one year)"
     echo
-    echo "Upload a directory tarball of puppet modules to a swift container"
+    echo "Upload a directory tarball of puppet modules to a artifact container"
     echo "and generate a heat environment file containing the required"
     echo "DeployArtifactURLs parameter so that it is used for TripleO deployment."
     echo
@@ -79,7 +79,7 @@ done
 modules_directory=${MODULES_DIRECTORY%/}
 modules_directory=${modules_directory#/}
 
-: ${CONTAINER_NAME:?No swift --container was specified}
+: ${CONTAINER_NAME:?No artifact --container was specified}
 
 echo "Creating tarball..."
 PUPPET_MODULES_TMP=$(mktemp -d -t 'puppet-modules-XXXXXXX')
@@ -87,7 +87,7 @@ tar --transform "s|${modules_directory}|etc/puppet/modules|" \
     -czf "$PUPPET_MODULES_TMP/puppet-modules.tar.gz" $MODULES_DIRECTORY
 echo "Tarball created."
 
-upload-swift-artifacts -f "$PUPPET_MODULES_TMP/puppet-modules.tar.gz" \
-                       -c "$CONTAINER_NAME" \
-                       --environment "$ENVIRONMENT_FILE" \
-                       --seconds "$SECONDS"
+upload-artifacts -f "$PUPPET_MODULES_TMP/puppet-modules.tar.gz" \
+                 -c "$CONTAINER_NAME" \
+                 --environment "$ENVIRONMENT_FILE" \
+                 --seconds "$SECONDS"

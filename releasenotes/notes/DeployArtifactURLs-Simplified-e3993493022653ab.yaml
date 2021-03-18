@@ -1,0 +1,9 @@
+---
+deprecations:
+  - The DeployArtifactURL(s) server is no longer makes any use of Swift when
+    using built-in scripts to upload artifacts. The old
+    `upload-swift-artifacts` file is now a symlink pointed to the updated
+    `upload-artifacts` script. While the file has changed, the API remains the
+    same. The symlink will ensure that legacy automation remains functional
+    while moving over to the new script. The symlink will be removed in a
+    future release.
