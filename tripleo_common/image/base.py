@@ -55,7 +55,7 @@ class BaseImageManager(object):
                     data = yaml.safe_load(cf.read()).get(section)
                     if not data:
                         return None
-                    self.logger.debug('%s JSON: %s', (section, str(data)))
+                    self.logger.debug('%s JSON: %s', section, str(data))
                 for item in data:
                     image_name = item.get('imagename')
                     if image_name is None:

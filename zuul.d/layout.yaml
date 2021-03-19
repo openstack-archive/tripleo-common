@@ -19,6 +19,7 @@
         - openstack-tox-py36
         - openstack-tox-py37
         - openstack-tox-py38
+        - openstack-tox-py39
         - tripleo-cross-tripleoclient-py37
         - tripleo-ci-centos-8-content-provider:
             dependencies: &deps_unit_lint
@@ -26,6 +27,7 @@
               - openstack-tox-py36
               - openstack-tox-py37
               - openstack-tox-py38
+              - openstack-tox-py39
         - tripleo-buildimage-overcloud-full-centos-8:
             dependencies: *deps_unit_lint
         - tripleo-buildimage-ironic-python-agent-centos-8:
