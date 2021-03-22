@@ -113,6 +113,7 @@ container_images_template:
   - OS::TripleO::Services::CinderBackup
   - OS::TripleO::Services::CinderScheduler
   - OS::TripleO::Services::CinderVolume
+  - OS::TripleO::Services::CinderVolumeEdge
   - OS::TripleO::Services::UndercloudCinderApi
   - OS::TripleO::Services::UndercloudCinderScheduler
   - OS::TripleO::Services::UndercloudCinderVolume
@@ -139,6 +140,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::BlockStorageCinderVolume
   - OS::TripleO::Services::CinderVolume
+  - OS::TripleO::Services::CinderVolumeEdge
   - OS::TripleO::Services::UndercloudCinderVolume
 
 - imagename: "{{namespace}}/{{name_prefix}}collectd{{name_suffix}}:{{tag}}"
