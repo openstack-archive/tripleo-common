@@ -183,7 +183,7 @@ container_images:
   image_source: prom
 - imagename: quay.io/prometheus/node-exporter:v0.17.0
   image_source: prom
-- imagename: quay.io/app-sre/grafana:6.7.4
+- imagename: quay.io/tripleo/grafana:6.7.4
   image_source: grafana
 - imagename: quay.io/tripleomaster/openstack-rsyslog:current-tripleo
   image_source: tripleo

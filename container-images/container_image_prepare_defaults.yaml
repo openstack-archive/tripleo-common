@@ -42,6 +42,6 @@ parameter_defaults:
       ceph_node_exporter_image: node-exporter
       ceph_node_exporter_tag: v0.17.0
 
-      ceph_grafana_namespace: quay.io/app-sre
+      ceph_grafana_namespace: quay.io/tripleo
       ceph_grafana_image: grafana
       ceph_grafana_tag: 6.7.4
