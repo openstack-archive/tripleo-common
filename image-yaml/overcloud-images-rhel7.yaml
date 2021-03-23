@@ -3,6 +3,8 @@ disk_images:
     imagename: overcloud-full
     type: qcow2
     distro: rhel7
+    elements:
+      - dhcp-all-interfaces
     environment:
       FS_TYPE: xfs
     options:

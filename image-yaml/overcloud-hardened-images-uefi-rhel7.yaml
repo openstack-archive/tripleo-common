@@ -3,6 +3,8 @@ disk_images:
     imagename: overcloud-hardened-uefi-full
     type: qcow2
     distro: rhel
+    elements:
+      - dhcp-all-interfaces
     environment:
       DIB_RELEASE: '7'
 

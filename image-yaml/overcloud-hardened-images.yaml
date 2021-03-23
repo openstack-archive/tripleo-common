@@ -3,7 +3,6 @@ disk_images:
     imagename: overcloud-hardened-full
     type: qcow2
     elements:
-      - dhcp-all-interfaces
       - openvswitch
       - overcloud-agent
       - overcloud-base
