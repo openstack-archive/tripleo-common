@@ -203,7 +203,7 @@ container_images:
   image_source: prom
 - imagename: quay.io/prometheus/node-exporter:v0.17.0
   image_source: prom
-- imagename: quay.io/app-sre/grafana:5.2.4
+- imagename: quay.io/tripleo/grafana:5.2.4
   image_source: grafana
 - imagename: quay.io/tripleotrain/centos-binary-tempest:current-tripleo
   image_source: kolla
