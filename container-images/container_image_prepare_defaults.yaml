@@ -30,18 +30,18 @@ parameter_defaults:
       ceph_image: daemon
       ceph_tag: v5.0.7-stable-5.0-octopus-centos-8-x86_64
 
-      ceph_prometheus_namespace: quay.io/prometheus
+      ceph_prometheus_namespace: quay.ceph.io/prometheus
       ceph_prometheus_image: prometheus
       ceph_prometheus_tag: v2.7.2
 
-      ceph_alertmanager_namespace: quay.io/prometheus
+      ceph_alertmanager_namespace: quay.ceph.io/prometheus
       ceph_alertmanager_image: alertmanager
       ceph_alertmanager_tag: v0.16.2
 
-      ceph_node_exporter_namespace: quay.io/prometheus
+      ceph_node_exporter_namespace: quay.ceph.io/prometheus
       ceph_node_exporter_image: node-exporter
       ceph_node_exporter_tag: v0.17.0
 
-      ceph_grafana_namespace: quay.io/tripleo
+      ceph_grafana_namespace: quay.ceph.io/app-sre
       ceph_grafana_image: grafana
       ceph_grafana_tag: 6.7.4
