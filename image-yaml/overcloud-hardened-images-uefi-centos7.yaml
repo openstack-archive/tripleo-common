@@ -4,6 +4,7 @@ disk_images:
     type: qcow2
     distro: centos7
     elements:
+      - dhcp-all-interfaces
       - selinux-permissive
     packages:
       - yum-plugin-priorities

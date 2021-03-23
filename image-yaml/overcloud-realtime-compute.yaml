@@ -4,7 +4,6 @@ disk_images:
     type: qcow2
     elements:
       - baremetal
-      - dhcp-all-interfaces
       - openvswitch
       - overcloud-agent
       - overcloud-compute
