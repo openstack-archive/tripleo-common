@@ -175,13 +175,13 @@ container_images:
   image_source: tripleo
 - imagename: quay.ceph.io/ceph-ci/daemon:v4.0.13-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
-- imagename: quay.io/prometheus/prometheus:v2.7.2
+- imagename: quay.ceph.io/prometheus/prometheus:v2.7.2
   image_source: prom
-- imagename: quay.io/prometheus/alertmanager:v0.16.2
+- imagename: quay.ceph.io/prometheus/alertmanager:v0.16.2
   image_source: prom
-- imagename: quay.io/prometheus/node-exporter:v0.17.0
+- imagename: quay.ceph.io/prometheus/node-exporter:v0.17.0
   image_source: prom
-- imagename: quay.io/tripleo/grafana:5.4.3
+- imagename: quay.ceph.io/app-sre/grafana:5.4.3
   image_source: grafana
 - imagename: quay.io/tripleoussuri/centos-binary-tempest:current-tripleo
   image_source: tripleo
