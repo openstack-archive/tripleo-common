@@ -127,7 +127,7 @@ class NeutronData(object):
         return tag_dict
 
     def _ports_by_role_and_host(self):
-        mandatory_tags = {'tripleo_role', 'tripleo_hostname'}
+        mandatory_tags = {'tripleo_role'}
 
         ports_by_role_and_host = {}
         for port in self.ports:
@@ -137,7 +137,7 @@ class NeutronData(object):
             if not mandatory_tags.issubset(tags):
                 raise exception.MissingMandatoryNeutronResourceTag()
 
-            hostname = tags['tripleo_hostname']
+            hostname = port.dns_name
             network_id = port.network_id
             network = self.networks_by_id[network_id]
             fixed_ips = port.fixed_ips[0]
