@@ -203,6 +203,8 @@ TRIPLEO_NETWORK_CONFIG_RESOURCE = 'NetworkConfig'
 
 HOST_NETWORK = 'ctlplane'
 
+DEFAULT_VLAN_ID = "1"
+
 # The key is different in RoleConfig than in RoleData, so we need both so they
 # are correctly found.
 EXTERNAL_TASKS = ['external_deploy_tasks', 'external_deploy_steps_tasks']

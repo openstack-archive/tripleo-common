@@ -16,6 +16,7 @@
 # under the License.
 
 from collections import OrderedDict
+import copy
 import logging
 import os
 import sys
@@ -26,6 +27,7 @@ from heatclient.exc import HTTPNotFound
 import openstack
 
 from tripleo_common import exception
+import tripleo_common.constants as constants
 
 HOST_NETWORK = 'ctlplane'
 DEFAULT_DOMAIN = 'localdomain.'
@@ -93,10 +95,11 @@ class NeutronData(object):
 
     A data object with for inventory generation enriched neutron data.
     """
-    def __init__(self, networks, subnets, ports):
+    def __init__(self, networks, subnets, ports, host_network=None):
         self.networks = networks
         self.subnets = subnets
         self.ports = ports
+        self.host_network = host_network or HOST_NETWORK
         self.networks_by_id = self._networks_by_id()
         self.subnets_by_id = self._subnets_by_id()
         self.ports_by_role_and_host = self._ports_by_role_and_host()
@@ -110,6 +113,15 @@ class NeutronData(object):
                 key, value = tag.rsplit('=')
             except ValueError:
                 continue
+
+            # Make booleans type bool
+            value = True if value in {'True', 'true', True} else value
+            value = False if value in {'False', 'false', False} else value
+
+            # Convert network index value to integer
+            if key == 'tripleo_net_idx':
+                value = int(value)
+
             tag_dict.update({key: value})
 
         return tag_dict
@@ -124,10 +136,33 @@ class NeutronData(object):
             # neutron is useless as a inventory source in this case.
             if not mandatory_tags.issubset(tags):
                 raise exception.MissingMandatoryNeutronResourceTag()
+
             hostname = tags['tripleo_hostname']
-            dns_domain = self.networks_by_id[port.network_id]['dns_domain']
-            net_name = self.networks_by_id[port.network_id]['name']
-            ip_address = port.fixed_ips[0].get('ip_address')
+            network_id = port.network_id
+            network = self.networks_by_id[network_id]
+            fixed_ips = port.fixed_ips[0]
+            subnet_id = fixed_ips.get('subnet_id')
+            subnet = self.subnets_by_id[subnet_id]
+
+            # "TripleO" cidr is the number of bits in the network mask
+            cidr = subnet['cidr'].split('/')[1]
+            dns_domain = network['dns_domain']
+            dns_nameservers = subnet['dns_nameservers']
+            mtu = network['mtu']
+            net_name = network['name']
+            ip_address = fixed_ips.get('ip_address')
+            gateway_ip = subnet['gateway_ip']
+            # Need deepcopy here so that adding default entry does not end
+            # up in the subnet object and leak to other nodes with a different
+            # default route network.
+            host_routes = copy.deepcopy(subnet['host_routes'])
+            # If this is the default route network, add a default route using
+            # gateway_ip to the host_routes unless it's already present
+            if tags.get('tripleo_default_route'):
+                host_routes.append({'default': True, 'nexthop': gateway_ip})
+
+            vlan_id = subnet['tags'].get('tripleo_vlan_id',
+                                         constants.DEFAULT_VLAN_ID)
             role_name = tags['tripleo_role']
 
             role = ports_by_role_and_host.setdefault(role_name, {})
@@ -136,24 +171,44 @@ class NeutronData(object):
                 {'name': port.name,
                  'hostname': hostname,
                  'dns_domain': dns_domain,
-                 'network_id': port.network_id,
+                 'network_id': network_id,
                  'network_name': net_name,
                  'fixed_ips': port.fixed_ips,
+                 'subnet_id': subnet_id,
                  'ip_address': ip_address,
-                 'tags': self._tags_to_dict(port.tags)}
+                 'mtu': mtu,
+                 'cidr': cidr,
+                 'gateway_ip': gateway_ip,
+                 'dns_nameservers': dns_nameservers,
+                 'host_routes': host_routes,
+                 'vlan_id': vlan_id,
+                 'tags': tags}
             )
 
         return ports_by_role_and_host
 
     def _networks_by_id(self):
+        mandatory_tags = {'tripleo_network_name'}
         networks_by_id = {}
         for net in self.networks:
+            tags = self._tags_to_dict(net.tags)
+            # In case of missing required tags, raise an error.
+            # neutron is useless as a inventory source in this case.
+            if (net.name != self.host_network and
+                    not mandatory_tags.issubset(tags)):
+                raise exception.MissingMandatoryNeutronResourceTag()
+
+            if net.name != self.host_network:
+                name_upper = tags['tripleo_network_name']
+            else:
+                name_upper = self.host_network
             networks_by_id.update(
                 {net.id: {'name': net.name,
+                          'name_upper': name_upper,
                           'subnet_ids': net.subnet_ids,
                           'mtu': net.mtu,
                           'dns_domain': net.dns_domain,
-                          'tags': self._tags_to_dict(net.tags)}
+                          'tags': tags}
                  }
             )
 
@@ -428,13 +483,22 @@ class TripleoInventory(object):
 
         return data
 
-    def _add_host_from_neutron_data(self, host, ports, role_networks):
+    def _add_host_from_neutron_data(self, host, ports, role_networks,
+                                    role_vars):
         for port in ports:
             net_name = port['network_name']
 
             # Add network name to tripleo_role_networks variable
             if net_name not in role_networks:
                 role_networks.append(net_name)
+
+            # Append to role_vars if not already present
+            net_config_keys = {'cidr', 'dns_nameservers', 'gateway_ip',
+                               'host_routes', 'vlan_id'}
+            for key in net_config_keys:
+                var = '{}_{}'.format(net_name, key)
+                if var not in role_vars:
+                    role_vars.setdefault(var, port[key])
 
             # Add variable for hostname on network
             host.setdefault('{}_hostname'.format(net_name), '.'.join(
@@ -459,9 +523,21 @@ class TripleoInventory(object):
     def _inventory_from_neutron_data(self, ret, children, dynamic):
         if not self.neutron_data:
             return
+        ports_by_role_and_host = self.neutron_data.ports_by_role_and_host
+        networks_by_id = self.neutron_data.networks_by_id
 
-        for role_name, ports_by_host in (
-                self.neutron_data.ports_by_role_and_host.items()):
+        netname_by_idx = {
+            net['tags'].get('tripleo_net_idx'):
+                net['tags'].get('tripleo_network_name')
+            for _, net in networks_by_id.items()
+            if net['name'] != self.host_network}
+        networks_all = [netname_by_idx[idx] for idx in sorted(netname_by_idx)]
+        networks_lower = {net['name_upper']: net['name']
+                          for _, net in networks_by_id.items()}
+        networks_upper = {net['name']: net['name_upper']
+                          for _, net in networks_by_id.items()}
+
+        for role_name, ports_by_host in ports_by_role_and_host.items():
             role = ret.setdefault(role_name, {})
             hosts = role.setdefault('hosts', {})
             role_vars = role.setdefault('vars', {})
@@ -471,9 +547,24 @@ class TripleoInventory(object):
             role_networks = role_vars.setdefault('tripleo_role_networks', [])
             for hostname, ports in ports_by_host.items():
                 host = hosts.setdefault(hostname, {})
-                self._add_host_from_neutron_data(host, ports, role_networks)
+                self._add_host_from_neutron_data(host, ports, role_networks,
+                                                 role_vars)
 
-            role_vars['tripleo_role_networks'] = sorted(role_networks)
+            # The nic config templates use ctlplane_subnet_cidr, not
+            # ctlplane_cidr. Handle the special case.
+            role_vars.setdefault(self.host_network + '_subnet_cidr',
+                                 role_vars[self.host_network + '_cidr'])
+            role_vars.setdefault('tripleo_role_networks',
+                                 sorted(role_networks))
+            role_vars.setdefault(
+                'role_networks',
+                [networks_upper[net] for net in role_networks])
+            role_vars.setdefault('networks_all', networks_all)
+            role_vars.setdefault('networks_lower', networks_lower)
+
+            for _, net in networks_by_id.items():
+                role_vars.setdefault(net['name'] + '_mtu', net['mtu'])
+
             children.add(role_name)
             self.hostvars.update(hosts)
 

@@ -28,9 +28,11 @@ internal_api_network = stubs.FakeNeutronNetwork(
     name='internal_api',
     id='internal_api_network_id',
     mtu=1500,
-    dns_domain='inernalapi.example.com',
+    dns_domain='internalapi.example.com',
     subnet_ids=['internal_api_subnet_id'],
-    tags=['tripleo_vip=true', 'tripleo_network_name=InternalApi'],
+    tags=['tripleo_net_idx=0',
+          'tripleo_vip=true',
+          'tripleo_network_name=InternalApi'],
 )
 
 ctlplane_subnet = stubs.FakeNeutronSubnet(
@@ -69,7 +71,8 @@ controller0_ports = [
                           tags=['tripleo_hostname=c-0',
                                 'tripleo_network_name=ctlplane',
                                 'tripleo_role=Controller',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=True'],
                           ),
     stubs.FakeNeutronPort(name='c-0-internal_api',
                           id='controller_0_internal_api_id',
@@ -79,7 +82,8 @@ controller0_ports = [
                           tags=['tripleo_hostname=c-0',
                                 'tripleo_network_name=InternalApi',
                                 'tripleo_role=Controller',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=False'],
                           ),
 ]
 
@@ -92,7 +96,8 @@ controller1_ports = [
                           tags=['tripleo_hostname=c-1',
                                 'tripleo_network_name=ctlplane',
                                 'tripleo_role=Controller',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=True'],
                           ),
     stubs.FakeNeutronPort(name='c-1-internal_api',
                           id='controller_1_internal_api_id',
@@ -102,7 +107,8 @@ controller1_ports = [
                           tags=['tripleo_hostname=c-1',
                                 'tripleo_network_name=InternalApi',
                                 'tripleo_role=Controller',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=False'],
                           ),
 ]
 
@@ -115,7 +121,8 @@ controller2_ports = [
                           tags=['tripleo_hostname=c-2',
                                 'tripleo_network_name=ctlplane',
                                 'tripleo_role=Controller',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=True'],
                           ),
     stubs.FakeNeutronPort(name='c-2-internal_api',
                           id='controller_2_internal_api_id',
@@ -125,7 +132,8 @@ controller2_ports = [
                           tags=['tripleo_hostname=c-2',
                                 'tripleo_network_name=InternalApi',
                                 'tripleo_role=Controller',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=False'],
                           ),
 ]
 
@@ -138,7 +146,8 @@ compute_0_ports = [
                           tags=['tripleo_hostname=cp-0',
                                 'tripleo_network_name=ctlplane',
                                 'tripleo_role=Compute',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=True'],
                           ),
     stubs.FakeNeutronPort(name='cp-0-internal_api',
                           id='compute_0_internal_api_id',
@@ -148,7 +157,8 @@ compute_0_ports = [
                           tags=['tripleo_hostname=cp-0',
                                 'tripleo_network_name=InternalApi',
                                 'tripleo_role=Compute',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=False'],
                           ),
 
 ]
@@ -162,6 +172,7 @@ custom_0_ports = [
                           tags=['tripleo_hostname=cs-0',
                                 'tripleo_network_name=ctlplane',
                                 'tripleo_role=CustomRole',
-                                'tripleo_stack=overcloud'],
+                                'tripleo_stack=overcloud',
+                                'tripleo_default_route=True'],
                           ),
 ]
