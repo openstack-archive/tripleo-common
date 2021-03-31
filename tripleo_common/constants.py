@@ -159,6 +159,7 @@ DO_NOT_ROTATE_LIST = (
     'CephClusterFSID',
     'CephManilaClientKey',
     'CephRgwKey',
+    'HeatAuthEncryptionKey',
 )
 
 PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
