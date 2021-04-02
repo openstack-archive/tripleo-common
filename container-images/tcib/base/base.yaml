@@ -30,7 +30,7 @@ tcib_actions:
 - run: sed -ri '/^(passwd:|group:)/ s/systemd//g' /etc/nsswitch.conf
 - run: dnf install -y {{ tcib_packages['common'] | join(' ') }}
 - run: mkdir -p /openstack
-- run: dnf update -y && dnf clean all && rm -rf /var/cache/dnf
+- run: dnf update --excludepkgs redhat-release -y && dnf clean all && rm -rf /var/cache/dnf
 tcib_cmd: kolla_start
 tcib_entrypoint: dumb-init --single-child --
 tcib_envs:
