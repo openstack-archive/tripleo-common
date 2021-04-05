@@ -209,3 +209,5 @@ container_images:
   image_source: prom
 - imagename: quay.ceph.io/app-sre/grafana:5.4.3
   image_source: grafana
+- imagename: quay.io/tripleotrain/centos-binary-unbound:current-tripleo
+  image_source: tripleo

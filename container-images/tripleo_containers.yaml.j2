@@ -1007,3 +1007,11 @@ container_images_template:
   services:
   - OS::TripleO::Services::NovaConductor
 {% endif %}
+
+- imagename: "{{namespace}}/{{name_prefix}}unbound{{name_suffix}}:{{tag}}"
+  image_source: tripleo
+  params:
+  - ContainerUnboundImage
+  - ContainerUnboundConfigImage
+  services:
+  - OS::TripleO::Services::Unbound
