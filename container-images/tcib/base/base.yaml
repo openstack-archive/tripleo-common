@@ -59,8 +59,8 @@ tcib_packages:
   modules:
   - disable: container-tools:rhel8
   - disable: virt:rhel
-  - enable: container-tools:{{ tcib_rhel_modules['container-tools'] | default('2.0') }}
+  - enable: container-tools:{{ tcib_rhel_modules['container-tools'] | default('3.0') }}
   - enable: mariadb:{{ tcib_rhel_modules['mariadb'] | default('10.3') }}
-  - enable: virt:{{ tcib_rhel_modules['virt'] | default('8.2') }}
+  - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
   - enable: redis:{{ tcib_rhel_modules['redis'] | default('5') }}
 tcib_stopsignal: SIGTERM
