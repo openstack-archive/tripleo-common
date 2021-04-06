@@ -50,18 +50,36 @@ healthcheck_port () {
     process=$1
 
     shift 1
-    args=$@
+    ports=""
     puser=$(get_user_from_process $process)
-    ports=${args// /,}
-    pids=$(pgrep -d ',' -f $process)
-    # First match exits - usually TCP and "sudo TCP" are enough.
-    # `sudo' is needed, as in some cases even root can get a "permission denied"
-    # on some file descriptors (case for heat_manager for example)
-    # UDP support is needed for octavia manager (UDP:5555).
-    lsof -n -w -P -a -iTCP:${ports} -p${pids} >&3 2>&1 || \
-        sudo -u $puser lsof -n -w -P -a -iTCP:${ports} -p${pids} >&3 2>&1 || \
-        lsof -w -P -a -iUDP:${ports} -p${pids} >&3 2>&1 || \
-        sudo -u $puser lsof -n -w -P -a -iUDP:${ports} -p${pids} >&3 2>&1
+    # First convert port to hex value. We need to 0-pad it in order to get the
+    # right format (4 chars).
+    for p in $@; do
+        ports="${ports}|$(printf '%0.4x' $p)"
+    done
+    # Format the string - will be ":(hex1|hex2|...)"
+    ports=":(${ports:1})"
+    # Parse the files. We need to extract only one value (socket inode) based on the matching port. Let's check local and target for establised connection.
+    # Line example:
+    # 534: DE0D10AC:1628 DE0D10AC:8B7C 01 00000000:00000000 02:000000D3 00000000 42439        0 574360 2 0000000000000000 20 4 0 10 -1
+    #              |             |                                                                |
+    #      $2 local connection   |                                                            $10 Socket inode
+    #                   $3 Connection target
+    # Using the main /proc/net/{tcp,udp} allow to take only the connections existing in the current container. If we were using /proc/PID/net/{tcp,udp}, we
+    # would get all the connections existing in the same network namespace as the PID. Since we're using network=host, that would show *everything*.
+    # the "join" method is weird, and fails if the array is empty.
+    # Note: join comes from gawk's /usr/share/awk/join.awk and has some weird parameters.
+    sockets=$(awk -i join -v m=${ports} '{IGNORECASE=1; if ($2 ~ m || $3 ~ m) {output[counter++] = $10} } END{if (length(output)>0) {print join(output, 0, length(output)-1, "|")}}' /proc/net/{tcp,udp})
+
+    # If no socket, just fail early
+    test -z $sockets && exit 1
+    match=0
+    for pid in $(pgrep -f $process); do
+        # Here, we check if a socket is actually associated to the process PIDs
+        match=$(( $match+$(sudo -u $puser find /proc/$pid/fd/ -ilname "socket*" -printf "%l\n" 2>/dev/null | grep -c -E "(${sockets})") ))
+        test $match -gt 0 && exit 0 # exit as soon as we get a match
+    done
+    exit 1 # no early exit, meaning failure.
 }
 
 healthcheck_listen () {
