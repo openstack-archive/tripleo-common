@@ -122,6 +122,8 @@ def set_neutron_driver(pd, mapping_args):
     :param pd: Parameter defaults from the environment
     :param mapping_args: Dict to set neutron_driver value on
     """
+    if mapping_args.get('neutron_driver'):
+        return
     if not pd or 'NeutronMechanismDrivers' not in pd:
         # we should set default neutron driver
         mapping_args['neutron_driver'] = 'ovn'
