@@ -189,3 +189,5 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-unbound:current-tripleo
   image_source: tripleo
+- imagename: quay.ceph.io/ceph-ci/daemon:v5.0.7-stable-5.0-octopus-centos-8-x86_64
+  image_source: ceph
