@@ -388,17 +388,6 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         for image in remove_images:
             container_images.remove(image)
 
-        # todo(fultonj): remove kluge of this aspect of the test
-        # added extra ceph image only for side effect of having
-        # both ceph containers in content provider for transition
-        # https://bugs.launchpad.net/tripleo/+bug/1923529
-        extra_tag = 'v5.0.7-stable-5.0-octopus-centos-8-x86_64'
-        extra = {
-            'imagename': 'quay.ceph.io/ceph-ci/daemon:' + extra_tag,
-            'image_source': 'ceph'
-        }
-        result.append(extra)
-
         self.assertSequenceEqual(container_images, result)
 
     def test_container_images_yaml_in_sync(self):
