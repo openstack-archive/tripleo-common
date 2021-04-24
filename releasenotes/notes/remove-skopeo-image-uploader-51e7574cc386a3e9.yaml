@@ -1,0 +1,5 @@
+---
+other:
+  - |
+    Removed skopeo based container image uploader. This has been deprecated
+    since stein and does not work with our current registry implementation.
