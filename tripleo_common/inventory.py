@@ -24,6 +24,7 @@ import tempfile
 import yaml
 
 from heatclient.exc import HTTPNotFound
+import keystoneauth1
 import openstack
 
 from tripleo_common import exception
@@ -275,7 +276,8 @@ class TripleoInventory(object):
         try:
             environment = self.hclient.stacks.environment(self.plan_name)
             return environment
-        except HTTPNotFound:
+        except (HTTPNotFound,
+                keystoneauth1.exceptions.catalog.EndpointNotFound):
             return {}
 
     UNDERCLOUD_SERVICES = [
@@ -301,7 +303,8 @@ class TripleoInventory(object):
             return None
         try:
             stack = self.hclient.stacks.get(self.plan_name)
-        except HTTPNotFound:
+        except (HTTPNotFound,
+                keystoneauth1.exceptions.catalog.EndpointNotFound):
             stack = None
 
         return stack
@@ -477,7 +480,8 @@ class TripleoInventory(object):
                         "Disabling use of neutron as a source for inventory "
                         "generation.")
             return None
-        except openstack.connection.exceptions.EndpointNotFound:
+        except (openstack.connection.exceptions.EndpointNotFound,
+                keystoneauth1.exceptions.catalog.EndpointNotFound):
             LOG.warning("Neutron service not installed. Disabling use of "
                         "neutron as a source for inventory generation.")
             return None
