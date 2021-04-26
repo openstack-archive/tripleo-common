@@ -93,15 +93,6 @@ cell1_kernel:
     cell1_Compute: {}
   vars:
     ansible_ssh_user: heat-admin
-keepalived:
-  children:
-    cell1_keepalived: {}
-    overcloud_keepalived: {}
-cell1_keepalived:
-  children:
-    cell1_CellController: {}
-  vars:
-    ansible_ssh_user: heat-admin
 mysql:
   children:
     cell1_mysql: {}
@@ -515,11 +506,6 @@ keystone_admin_api:
   children:
     overcloud_keystone_admin_api: {}
 overcloud_keystone_admin_api:
-  children:
-    overcloud_Controller: {}
-  vars:
-    ansible_ssh_user: heat-admin
-overcloud_keepalived:
   children:
     overcloud_Controller: {}
   vars:

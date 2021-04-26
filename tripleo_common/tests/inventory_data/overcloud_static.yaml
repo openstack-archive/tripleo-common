@@ -131,10 +131,6 @@ keystone_admin_api:
   children:
     Controller: {}
   vars: {ansible_ssh_user: heat-admin}
-keepalived:
-  children:
-    Controller: {}
-  vars: {ansible_ssh_user: heat-admin}
 certmonger_user:
   children:
     Compute: {}

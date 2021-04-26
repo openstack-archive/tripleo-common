@@ -254,14 +254,6 @@
             "ansible_ssh_user": "heat-admin"
         }
     },
-    "keepalived": {
-        "children": [
-            "Controller"
-        ],
-        "vars": {
-            "ansible_ssh_user": "heat-admin"
-        }
-    },
     "kernel": {
         "children": [
             "Compute",
