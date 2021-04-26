@@ -70,10 +70,6 @@ kernel:
     CellController: {}
     Compute: {}
   vars: {ansible_ssh_user: heat-admin}
-keepalived:
-  children:
-    CellController: {}
-  vars: {ansible_ssh_user: heat-admin}
 mysql:
   children:
     CellController: {}
