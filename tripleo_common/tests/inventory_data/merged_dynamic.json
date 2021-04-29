@@ -263,14 +263,6 @@
           "ansible_ssh_user": "heat-admin"
         }
     },
-    "cell1_keepalived": {
-        "children": [
-            "cell1_CellController"
-        ],
-        "vars": {
-          "ansible_ssh_user": "heat-admin"
-        }
-    },
     "cell1_kernel": {
         "children": [
             "cell1_CellController",
@@ -527,12 +519,6 @@
         "children": [
             "cell1_iscsid",
             "overcloud_iscsid"
-        ]
-    },
-    "keepalived": {
-        "children": [
-            "cell1_keepalived",
-            "overcloud_keepalived"
         ]
     },
     "kernel": {
@@ -839,14 +825,6 @@
     "overcloud_iscsid": {
         "children": [
             "overcloud_Compute",
-            "overcloud_Controller"
-        ],
-        "vars": {
-          "ansible_ssh_user": "heat-admin"
-        }
-    },
-    "overcloud_keepalived": {
-        "children": [
             "overcloud_Controller"
         ],
         "vars": {

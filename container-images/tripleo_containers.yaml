@@ -83,8 +83,6 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-iscsid:current-tripleo
   image_source: tripleo
-- imagename: quay.io/tripleomaster/openstack-keepalived:current-tripleo
-  image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-keystone:current-tripleo
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-manila-api:current-tripleo
