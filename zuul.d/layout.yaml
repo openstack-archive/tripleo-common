@@ -34,6 +34,8 @@
             dependencies: *deps_unit_lint
         - tripleo-buildimage-overcloud-hardened-full-centos-8:
             dependencies: *deps_unit_lint
+        - tripleo-buildimage-overcloud-hardened-uefi-full-centos-8:
+            dependencies: *deps_unit_lint
 
 
     gate:
