@@ -6,3 +6,5 @@ disk_images:
     release: 8
     elements:
       - interface-names
+    packages:
+      - rhosp-release
