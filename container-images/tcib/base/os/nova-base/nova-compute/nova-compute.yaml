@@ -26,7 +26,6 @@ tcib_packages:
   - python3-libguestfs
   - python3-oslo-vmware
   - python3-rtslib
-  - sysfsutils
   - swtpm
   - swtpm-tools
   - targetcli
@@ -34,5 +33,6 @@ tcib_packages:
   x86_64:
   - daxio
   el8:
+  - sysfsutils
   - trousers
 tcib_user: nova
