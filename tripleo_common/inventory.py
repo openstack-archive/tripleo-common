@@ -196,6 +196,10 @@ class NeutronData(object):
         mandatory_tags = {'tripleo_network_name'}
         networks_by_id = {}
         for net in self.networks:
+            # Don't include the OVN Bridge MAC address net
+            if net.name == constants.OVN_MAC_ADDR_NET_NAME:
+                continue
+
             tags = self._tags_to_dict(net.tags)
             # In case of missing required tags, raise an error.
             # neutron is useless as a inventory source in this case.
