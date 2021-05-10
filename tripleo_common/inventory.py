@@ -132,11 +132,15 @@ class NeutronData(object):
 
         ports_by_role_and_host = {}
         for port in self.ports:
+            # Ignore ports in networks we ignore, i.e the OVN Bridge MAC net
+            if port.network_id not in self.networks_by_id:
+                continue
+
             tags = self._tags_to_dict(port.tags)
-            # In case of missing required tags, raise an error.
-            # neutron is useless as a inventory source in this case.
+            # In case of missing required tag, this is not a node port and
+            # should be ignored.
             if not mandatory_tags.issubset(tags):
-                raise exception.MissingMandatoryNeutronResourceTag()
+                continue
 
             hostname = port.dns_name
             network_id = port.network_id
