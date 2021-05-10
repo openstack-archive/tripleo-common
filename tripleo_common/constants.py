@@ -229,3 +229,7 @@ PER_STEP_TASKS = {
 }
 
 INVENTORY_NETWORK_CONFIG_FILE = 'inventory-network-config.yaml'
+
+# Hard coded name in:
+#   tripleo_ansible/ansible_plugins/modules/tripleo_ovn_mac_addresses.py
+OVN_MAC_ADDR_NET_NAME = 'ovn_mac_addr_net'
