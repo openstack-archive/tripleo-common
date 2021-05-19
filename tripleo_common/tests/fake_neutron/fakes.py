@@ -28,7 +28,7 @@ internal_api_network = stubs.FakeNeutronNetwork(
     name='internal_api',
     id='internal_api_network_id',
     mtu=1500,
-    dns_domain='internalapi.example.com',
+    dns_domain='internalapi.example.com.',
     subnet_ids=['internal_api_subnet_id'],
     tags=['tripleo_net_idx=0',
           'tripleo_vip=true',

@@ -756,8 +756,8 @@ class TestInventory(base.TestCase):
             ('Compute',
              {'hosts': {
                  'ansible_host': '192.0.2.20',
-                 'canonical_hostname': 'cp-0.example.com.',
-                 'ctlplane_hostname': 'cp-0.ctlplane.example.com.',
+                 'canonical_hostname': 'cp-0.example.com',
+                 'ctlplane_hostname': 'cp-0.ctlplane.example.com',
                  'ctlplane_ip': '192.0.2.20',
                  'internal_api_hostname': 'cp-0.internalapi.example.com',
                  'internal_api_ip': '198.51.100.150'},
@@ -796,15 +796,15 @@ class TestInventory(base.TestCase):
              {'hosts': {
                  'c-0': {
                      'ansible_host': '192.0.2.10',
-                     'canonical_hostname': 'c-0.example.com.',
-                     'ctlplane_hostname': 'c-0.ctlplane.example.com.',
+                     'canonical_hostname': 'c-0.example.com',
+                     'ctlplane_hostname': 'c-0.ctlplane.example.com',
                      'ctlplane_ip': '192.0.2.10',
                      'internal_api_hostname': 'c-0.internalapi.example.com',
                      'internal_api_ip': '198.51.100.140'},
                  'c-1': {
                      'ansible_host': '192.0.2.11',
-                     'canonical_hostname': 'c-1.example.com.',
-                     'ctlplane_hostname': 'c-1.ctlplane.example.com.',
+                     'canonical_hostname': 'c-1.example.com',
+                     'ctlplane_hostname': 'c-1.ctlplane.example.com',
                      'ctlplane_ip': '192.0.2.11',
                      'internal_api_hostname': 'c-1.internalapi.example.com',
                      'internal_api_ip': '198.51.100.141'}},
@@ -836,8 +836,8 @@ class TestInventory(base.TestCase):
              {'hosts': {
                  'cp-0': {
                      'ansible_host': '192.0.2.20',
-                     'canonical_hostname': 'cp-0.example.com.',
-                     'ctlplane_hostname': 'cp-0.ctlplane.example.com.',
+                     'canonical_hostname': 'cp-0.example.com',
+                     'ctlplane_hostname': 'cp-0.ctlplane.example.com',
                      'ctlplane_ip': '192.0.2.20',
                      'internal_api_hostname': 'cp-0.internalapi.example.com',
                      'internal_api_ip': '198.51.100.150'}},
@@ -1021,24 +1021,24 @@ class TestInventory(base.TestCase):
                 'hosts': {
                     'c-0': {
                         'ansible_host': '192.0.2.10',
-                        'canonical_hostname': 'c-0.example.com.',
-                        'ctlplane_hostname': 'c-0.ctlplane.example.com.',
+                        'canonical_hostname': 'c-0.example.com',
+                        'ctlplane_hostname': 'c-0.ctlplane.example.com',
                         'ctlplane_ip': '192.0.2.10',
                         'deploy_server_id': 'a',
                         'internal_api_hostname': 'c-0.internalapi.example.com',
                         'internal_api_ip': '198.51.100.140'},
                     'c-1': {
                         'ansible_host': '192.0.2.11',
-                        'canonical_hostname': 'c-1.example.com.',
-                        'ctlplane_hostname': 'c-1.ctlplane.example.com.',
+                        'canonical_hostname': 'c-1.example.com',
+                        'ctlplane_hostname': 'c-1.ctlplane.example.com',
                         'ctlplane_ip': '192.0.2.11',
                         'deploy_server_id': 'b',
                         'internal_api_hostname': 'c-1.internalapi.example.com',
                         'internal_api_ip': '198.51.100.141'},
                     'c-2': {
                         'ansible_host': '192.0.2.12',
-                        'canonical_hostname': 'c-2.example.com.',
-                        'ctlplane_hostname': 'c-2.ctlplane.example.com.',
+                        'canonical_hostname': 'c-2.example.com',
+                        'ctlplane_hostname': 'c-2.ctlplane.example.com',
                         'ctlplane_ip': '192.0.2.12',
                         'deploy_server_id': 'c',
                         'internal_api_hostname': 'c-2.internalapi.example.com',
@@ -1072,8 +1072,8 @@ class TestInventory(base.TestCase):
                 'hosts': {
                     'cp-0': {
                         'ansible_host': '192.0.2.20',
-                        'canonical_hostname': 'cp-0.example.com.',
-                        'ctlplane_hostname': 'cp-0.ctlplane.example.com.',
+                        'canonical_hostname': 'cp-0.example.com',
+                        'ctlplane_hostname': 'cp-0.ctlplane.example.com',
                         'ctlplane_ip': '192.0.2.20',
                         'deploy_server_id': 'd',
                         'internal_api_hostname':
@@ -1108,8 +1108,8 @@ class TestInventory(base.TestCase):
                 'hosts': {
                     'cs-0': {
                         'ansible_host': '192.0.2.200',
-                        'canonical_hostname': 'cs-0.example.com.',
-                        'ctlplane_hostname': 'cs-0.ctlplane.example.com.',
+                        'canonical_hostname': 'cs-0.example.com',
+                        'ctlplane_hostname': 'cs-0.ctlplane.example.com',
                         'ctlplane_ip': '192.0.2.200',
                         'deploy_server_id': 'e'}},
                 'vars': {'ansible_ssh_user': 'heat-admin',
@@ -1278,7 +1278,7 @@ class TestNeutronData(base.TestCase):
                 'subnet_ids': ['ctlplane_subnet_id'],
                 'tags': {}},
             'internal_api_network_id': {
-                'dns_domain': 'internalapi.example.com',
+                'dns_domain': 'internalapi.example.com.',
                 'mtu': 1500,
                 'name': 'internal_api',
                 'name_upper': 'InternalApi',
@@ -1328,7 +1328,7 @@ class TestNeutronData(base.TestCase):
         cmp_0 = cmp_role['cp-0']
         self.assertEqual(
             [{'cidr': '24',
-              'dns_domain': 'ctlplane.example.com.',
+              'dns_domain': 'ctlplane.example.com',
               'dns_nameservers': ['192.0.2.253', '192.0.2.254'],
               'fixed_ips': [{'ip_address': '192.0.2.10',
                              'subnet_id': 'ctlplane_subnet_id'}],
@@ -1369,7 +1369,7 @@ class TestNeutronData(base.TestCase):
         )
         self.assertEqual(
             [{'cidr': '24',
-              'dns_domain': 'ctlplane.example.com.',
+              'dns_domain': 'ctlplane.example.com',
               'dns_nameservers': ['192.0.2.253', '192.0.2.254'],
               'fixed_ips': [{'ip_address': '192.0.2.11',
                              'subnet_id': 'ctlplane_subnet_id'}],
@@ -1410,7 +1410,7 @@ class TestNeutronData(base.TestCase):
         )
         self.assertEqual(
             [{'cidr': '24',
-              'dns_domain': 'ctlplane.example.com.',
+              'dns_domain': 'ctlplane.example.com',
               'dns_nameservers': ['192.0.2.253', '192.0.2.254'],
               'fixed_ips': [{'ip_address': '192.0.2.20',
                              'subnet_id': 'ctlplane_subnet_id'}],
