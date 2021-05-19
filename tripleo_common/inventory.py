@@ -143,6 +143,11 @@ class NeutronData(object):
                 raise exception.MissingMandatoryNeutronResourceTag()
 
             hostname = port.dns_name
+            # Strip the final fqdn dot of the hostname
+            # See: https://bugs.launchpad.net/tripleo/+bug/1928869
+            if hostname.endswith('.'):
+                hostname = hostname[:-1]
+
             network_id = port.network_id
             network = self.networks_by_id[network_id]
             fixed_ips = port.fixed_ips[0]
@@ -152,6 +157,11 @@ class NeutronData(object):
             # "TripleO" cidr is the number of bits in the network mask
             cidr = subnet['cidr'].split('/')[1]
             dns_domain = network['dns_domain']
+            # Strip the final fqdn dot of the dnsname
+            # See: https://bugs.launchpad.net/tripleo/+bug/1928869
+            if dns_domain.endswith('.'):
+                dns_domain = dns_domain[:-1]
+
             dns_nameservers = subnet['dns_nameservers']
             mtu = network['mtu']
             net_name = network['name']
