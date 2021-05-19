@@ -137,10 +137,10 @@ class NeutronData(object):
                 continue
 
             tags = self._tags_to_dict(port.tags)
-            # In case of missing required tag, this is not a node port and
-            # should be ignored.
+            # In case of missing required tags, raise an error.
+            # neutron is useless as a inventory source in this case.
             if not mandatory_tags.issubset(tags):
-                continue
+                raise exception.MissingMandatoryNeutronResourceTag()
 
             hostname = port.dns_name
             network_id = port.network_id
