@@ -15,7 +15,6 @@ Contents:
    installation
    usage
    images
-   tripleo-mistral
    contributing
    uploads
 
