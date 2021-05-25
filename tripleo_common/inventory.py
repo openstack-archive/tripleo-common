@@ -129,6 +129,7 @@ class NeutronData(object):
 
     def _ports_by_role_and_host(self):
         mandatory_tags = {'tripleo_role'}
+        ignore_tags = {'tripleo_vip_net', 'tripleo_service_vip'}
 
         ports_by_role_and_host = {}
         for port in self.ports:
@@ -137,6 +138,10 @@ class NeutronData(object):
                 continue
 
             tags = self._tags_to_dict(port.tags)
+            # Ignore non host ports by looking for the tags
+            if ignore_tags.intersection(tags):
+                continue
+
             # In case of missing required tags, raise an error.
             # neutron is useless as a inventory source in this case.
             if not mandatory_tags.issubset(tags):
