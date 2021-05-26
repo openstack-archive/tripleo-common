@@ -129,7 +129,6 @@ class NeutronData(object):
 
     def _ports_by_role_and_host(self):
         mandatory_tags = {'tripleo_role'}
-        ignore_tags = {'tripleo_vip_net', 'tripleo_service_vip'}
 
         ports_by_role_and_host = {}
         for port in self.ports:
@@ -138,9 +137,6 @@ class NeutronData(object):
                 continue
 
             tags = self._tags_to_dict(port.tags)
-            # Ignore non host ports by looking for the tags
-            if ignore_tags.intersection(tags):
-                continue
 
             # In case of missing required tags, raise an error.
             # neutron is useless as a inventory source in this case.
@@ -486,6 +482,26 @@ class TripleoInventory(object):
             tags_filter = ['tripleo_stack_name={}'.format(self.plan_name)]
             ports = list(conn.network.ports(tags=tags_filter))
             if not ports:
+                return None
+
+            # Filter tripleo_service_vip and tripleo_vip_net ports
+            ports = [p for p in ports
+                     if not any("tripleo_service_vip" in tag for tag in p.tags)
+                     and not any("tripleo_vip_net" in tag for tag in p.tags)]
+
+            # NOTE(hjensas): ctlplane ports created by THT Heat Server
+            # resources, or nova less without --network-ports/--network-config
+            # enabled, does not have the 'tripleo_stack_name' tag. We
+            # shouldn't use neutron as a source if no ctlplane ports are
+            # tagged with the 'tripleo_stack_name'.
+            # See bug: https://bugs.launchpad.net/tripleo/+bug/1928926
+            found_ctlplane_port = False
+            ctlplane_net = conn.network.find_network(self.host_network)
+            for p in ports:
+                if p.network_id == ctlplane_net.id:
+                    found_ctlplane_port = True
+                    break
+            if not found_ctlplane_port:
                 return None
 
             networks = [conn.network.find_network(p.network_id)
