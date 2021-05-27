@@ -1,7 +1,21 @@
 #!/bin/bash
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 
-listen_addr=$(wrap_ipv6 $(awk 'match($0, /-l +([0-9a-fA-F\.\:]+) /, a) {print a[1]}' /etc/sysconfig/memcached))
+# if memcached has TLS enabled, look for a notls ip entry in the options
+listen_addr=$(awk 'match($0, /notls:([0-9a-fA-F\.\:]+):11211[, ]/, a) {print a[1]}' /etc/sysconfig/memcached)
 
-echo "version" | socat - TCP:$listen_addr:11211 1>/dev/null
+if [ -z "$listen_addr" ]; then
+    # otherwise look for the first ip available among all the possible ones
+    # passed to the -l option
+    listen_addr=$(awk 'match($0, /-l +([0-9a-fA-F\.\:]+)[, ]/, a) {print a[1]}' /etc/sysconfig/memcached)
+    # get the configured memcached port or the default one
+    port=$(awk -F= '$1=="PORT" {gsub(/"/, "",$2); print $2}' /etc/sysconfig/memcached)
+    port=${port:-11211}
+else
+    # with TLS-e, TripleO always exposes the notls IP on port 11211
+    port=11211
+fi
+listen_addr=$(wrap_ipv6 $listen_addr)
+
+echo "version" | socat - TCP:$listen_addr:$port 1>/dev/null
 exit $?
