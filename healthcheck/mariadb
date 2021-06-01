@@ -2,15 +2,26 @@
 
 . ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
 GALERA_XINETD_CONF='/etc/xinetd.d/galera-monitor'
+SOCAT_CONF=/etc/sysconfig/clustercheck
+IS_MYSQL=
 
-# If the mariadb container is running xinetd with galera-monitor then it is a
-# clustercheck container, otherwise a mysql/mariadb one
+# If the mariadb container is running xinetd with galera-monitor or socat then
+# it is a clustercheck container, otherwise a mysql/mariadb one
 if pgrep xinetd &> /dev/null && grep -qe 'disable.*no' $GALERA_XINETD_CONF; then
         PORT=$(awk '/port.*=/{ print $3 }' $GALERA_XINETD_CONF)
         ADDR=$(awk '/bind.*=/{ print $3 }' $GALERA_XINETD_CONF)
+elif pgrep -a socat 2> /dev/null | grep -w clustercheck; then
+        TRIPLEO_SOCAT_BIND=$(sed -nE "s/^TRIPLEO_SOCAT_BIND='?([^']*)'?$/\1/p" $SOCAT_CONF)
+        PORT=$(echo $TRIPLEO_SOCAT_BIND | sed -n -E 's/.*listen:([0-9]*),.*/\1/p')
+        ADDR=$(echo $TRIPLEO_SOCAT_BIND | sed -n -E 's/.*bind="?([^",]*)"?,?.*/\1/p')
+else
+        IS_MYSQL=1
+fi
+
+if [ -n "$IS_MYSQL" ]; then
+        mysql -e 'select 1' || exit 1
+else
         bind_host=${ADDR:-$(hostname)}
         bind_port=${PORT:-9200}
         healthcheck_curl http://${bind_host}:${bind_port}/
-else
-        mysql -e 'select 1' || exit 1
 fi
