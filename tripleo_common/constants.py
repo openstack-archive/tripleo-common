@@ -58,7 +58,6 @@ DEFAULT_TEMPLATES_PATH = '/usr/share/openstack-tripleo-heat-templates/'
 
 #: The path to the base directory of tripleo-validations
 DEFAULT_VALIDATIONS_BASEDIR = "/usr/share/ansible"
-DEFAULT_VALIDATIONS_LEGACY_BASEDIR = "/usr/share/openstack-tripleo-validations"
 
 # The path to the tripleo validations installed on the undercloud
 DEFAULT_VALIDATIONS_PATH = "{}/validation-playbooks/".format(
