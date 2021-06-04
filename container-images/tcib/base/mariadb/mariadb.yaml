@@ -27,6 +27,6 @@ tcib_packages:
   - python3-pynacl
   - resource-agents
   - rsync
+  - socat
   - tar
-  - xinetd
 tcib_user: mysql
