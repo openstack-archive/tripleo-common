@@ -6,7 +6,6 @@ tcib_packages:
   common:
   - ceph-common
   - cyrus-sasl-scram
-  - libcgroup-tools
   - libguestfs
   - libseccomp
   - libvirt-admin
