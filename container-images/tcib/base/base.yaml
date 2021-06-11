@@ -14,17 +14,18 @@ tcib_actions:
     crudini --set /etc/dnf/dnf.conf main skip_missing_names_on_install False &&
     crudini --set /etc/dnf/dnf.conf main tsflags nodocs
 - run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
-- copy: /usr/share/tripleo-common/container-images/kolla/base/uid_gid_manage.sh /usr/local/bin/uid_gid_manage
+- run: dnf install -y openstack-tripleo-common-containers
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/base/uid_gid_manage.sh /usr/local/bin/uid_gid_manage
 - run: chmod 755 /usr/local/bin/uid_gid_manage
 - run: bash /usr/local/bin/uid_gid_manage kolla hugetlbfs libvirt qemu
 - run: touch /usr/local/bin/kolla_extend_start && chmod 755 /usr/local/bin/kolla_extend_start
-- copy: /usr/share/tripleo-common/container-images/kolla/base/set_configs.py /usr/local/bin/kolla_set_configs
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/base/set_configs.py /usr/local/bin/kolla_set_configs
 - run: chmod 755 /usr/local/bin/kolla_set_configs
-- copy: /usr/share/tripleo-common/container-images/kolla/base/start.sh /usr/local/bin/kolla_start
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/base/start.sh /usr/local/bin/kolla_start
 - run: chmod 755 /usr/local/bin/kolla_start
-- copy: /usr/share/tripleo-common/container-images/kolla/base/httpd_setup.sh /usr/local/bin/kolla_httpd_setup
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/base/httpd_setup.sh /usr/local/bin/kolla_httpd_setup
 - run: chmod 755 /usr/local/bin/kolla_httpd_setup
-- copy: /usr/share/tripleo-common/container-images/kolla/base/sudoers /etc/sudoers
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/base/sudoers /etc/sudoers
 - run: chmod 440 /etc/sudoers
 - run: sed -ri '/-session(\s+)optional(\s+)pam_systemd.so/d' /etc/pam.d/system-auth
 - run: sed -ri '/^(passwd:|group:)/ s/systemd//g' /etc/nsswitch.conf
@@ -36,7 +37,6 @@ tcib_entrypoint: dumb-init --single-child --
 tcib_envs:
   LANG: en_US.UTF-8
   container: oci
-tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/base/*'', wantlist=True) }}'
 tcib_labels:
   maintainer: OpenStack TripleO team
   tcib_managed: True
@@ -48,6 +48,7 @@ tcib_packages:
   - glibc-langpack-en
   - iscsi-initiator-utils
   - openstack-selinux
+  - openstack-tripleo-common-containers
   - openstack-tripleo-common-container-base
   - procps-ng
   - python3

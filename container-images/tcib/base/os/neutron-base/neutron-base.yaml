@@ -1,10 +1,9 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage neutron
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- copy: /usr/share/tripleo-common/container-images/kolla/neutron-base/neutron_sudoers /etc/sudoers.d/neutron_sudoers
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/neutron-base/neutron_sudoers /etc/sudoers.d/neutron_sudoers
 - run: chmod 440 /etc/sudoers.d/neutron_sudoers
 # TODO(emilien) add support for tripleo-common being installed from source
-tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/neutron-base/*'', wantlist=True) }}'
 tcib_packages:
   common:
   - iputils
