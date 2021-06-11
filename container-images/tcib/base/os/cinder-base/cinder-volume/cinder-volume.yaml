@@ -1,10 +1,9 @@
 tcib_actions:
 - run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- copy: /usr/share/tripleo-common/container-images/kolla/cinder-volume/extend_start.sh /usr/local/bin/kolla_extend_start
-- copy: /usr/share/tripleo-common/container-images/kolla/cinder-volume/cinder-volume-sudoers /etc/sudoers.d/cinder-volume-sudoers
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/cinder-volume/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/cinder-volume/cinder-volume-sudoers /etc/sudoers.d/cinder-volume-sudoers
 - run: chmod 755 /usr/local/bin/kolla_extend_start && chmod 440 /etc/sudoers.d/cinder-volume-sudoers && mkdir -p /etc/libqb
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-volume /openstack/healthcheck && chmod a+rx /openstack/healthcheck
-tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/cinder-volume/*'', wantlist=True) }}'
 tcib_packages:
   common:
   - pacemaker
