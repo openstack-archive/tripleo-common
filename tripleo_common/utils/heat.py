@@ -50,7 +50,8 @@ class EphemeralHeatClient(object):
         self.environ = os.environ.copy()
         for v in ('OS_USER_DOMAIN_NAME',
                   'OS_PROJECT_DOMAIN_NAME',
-                  'OS_PROJECT_NAME'):
+                  'OS_PROJECT_NAME',
+                  'OS_CLOUD'):
             os.environ.pop(v, None)
 
         os.environ['OS_AUTH_TYPE'] = "none"
