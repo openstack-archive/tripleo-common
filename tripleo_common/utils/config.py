@@ -261,10 +261,6 @@ class Config(object):
                     filepath = os.path.join(role_path, 'param_config.json')
                     with self._open_file(filepath) as param_config:
                         param_config.write(json.dumps(role[config]))
-                elif config == 'ansible_group_vars':
-                    role_config = role[config].copy()
-                    role_config.update(role_group_vars[role_name])
-                    role_group_vars[role_name] = role_config
                 else:
                     # NOTE(emilien): Move this condition to the
                     # upper level once THT is adapted for all tasks to be
