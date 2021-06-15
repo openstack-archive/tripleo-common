@@ -7,15 +7,8 @@ tcib_actions:
 tcib_gather_files: '{{ lookup(''fileglob'', ''/usr/share/tripleo-common/container-images/kolla/cinder-volume/*'', wantlist=True) }}'
 tcib_packages:
   common:
-  - libqb
-  - nfs-utils
-  - nvmetcli
   - pacemaker
   - pacemaker-remote
   - pcs
   - python3-cinderlib
-  - python3-rtslib
-  - resource-agents
-  - sysfsutils
-  - targetcli
 tcib_user: cinder

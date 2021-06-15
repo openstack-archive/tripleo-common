@@ -4,10 +4,7 @@ tcib_actions:
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-backup /openstack/healthcheck && chmod a+rx /openstack/healthcheck
 tcib_packages:
   common:
-  - libqb
-  - nfs-utils
   - pacemaker
   - pacemaker-remote
   - pcs
-  - resource-agents
 tcib_user: cinder

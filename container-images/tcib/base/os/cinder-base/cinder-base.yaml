@@ -4,8 +4,4 @@ tcib_actions:
 tcib_packages:
   common:
   - ceph-common
-  - cryptsetup
-  - lvm2
   - openstack-cinder
-  - python3-automaton
-  - python3-oslo-vmware
