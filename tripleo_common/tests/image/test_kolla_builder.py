@@ -42,20 +42,20 @@ KB_DEFAULT_NAMESPACE = kb.CONTAINER_IMAGES_DEFAULTS['namespace']
 
 
 filedata = six.u("""container_images:
-- imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
+- imagename: docker.io/tripleowallaby/heat-docker-agents-centos:latest
   image_source: kolla
   push_destination: localhost:8787
-- imagename: docker.io/tripleomaster/centos-binary-nova-compute:liberty
+- imagename: docker.io/tripleowallaby/centos-binary-nova-compute:liberty
   image_source: kolla
   uploader: docker
   push_destination: localhost:8787
-- imagename: docker.io/tripleomaster/centos-binary-nova-libvirt:liberty
+- imagename: docker.io/tripleowallaby/centos-binary-nova-libvirt:liberty
   image_source: kolla
   uploader: docker
-- imagename: docker.io/tripleomaster/image-with-missing-tag
+- imagename: docker.io/tripleowallaby/image-with-missing-tag
   image_source: kolla
   push_destination: localhost:8787
-- imagename: docker.io/tripleomaster/skip-build
+- imagename: docker.io/tripleowallaby/skip-build
   image_source: foo
   push_destination: localhost:8787
 """)
@@ -222,7 +222,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         result = builder.container_images_from_template(
             push_destination='localhost:8787',
             name_prefix='centos-binary-',
-            namespace='docker.io/tripleomaster',
+            namespace='docker.io/tripleowallaby',
             tag='liberty'
         )
         # template substitution on the container_images_template section should
@@ -271,7 +271,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         )
 
         expected = {
-            'namespace': '192.0.2.0:5000/tripleomaster',
+            'namespace': '192.0.2.0:5000/tripleowallaby',
             'ceph_namespace': 'quay.ceph.io/ceph-ci',
             'ceph_image': 'ceph-daemon',
             'ceph_tag': 'latest',
@@ -301,7 +301,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         self.assertEqual(
             expected,
             builder.container_images_template_inputs(
-                namespace='192.0.2.0:5000/tripleomaster',
+                namespace='192.0.2.0:5000/tripleowallaby',
                 ceph_namespace='quay.ceph.io/ceph-ci',
                 ceph_image='ceph-daemon',
                 ceph_tag='latest',
