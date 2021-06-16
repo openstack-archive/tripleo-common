@@ -80,8 +80,11 @@ def _create_overcloudrc(stack, no_proxy, admin_password, region_name):
     overcloud_admin_vip = get_endpoint('KeystoneAdmin', stack)
 
     no_proxy_list = no_proxy.split(',')
-    no_proxy_list = map(common_utils.bracket_ipv6,
-                        no_proxy_list + [overcloud_host, overcloud_admin_vip])
+    no_proxy_list.extend([overcloud_host, overcloud_admin_vip])
+    no_proxy_list = map(
+        common_utils.bracket_ipv6,
+        [i for i in no_proxy_list if i]
+    )
 
     # Remove duplicated entries
     no_proxy_list = sorted(list(set(no_proxy_list)))

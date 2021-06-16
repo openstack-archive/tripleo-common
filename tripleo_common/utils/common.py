@@ -23,5 +23,5 @@ def bracket_ipv6(address):
     try:
         socket.inet_pton(socket.AF_INET6, address)
         return "[%s]" % address
-    except socket.error:
+    except (socket.error, TypeError):
         return address
