@@ -146,7 +146,6 @@ class TestInventory(base.TestCase):
             ]
         }
         self.plan_name = 'overcloud'
-
         self.hclient = mock.MagicMock()
         self.hclient.stacks.environment.return_value = {
             'parameter_defaults': {
@@ -157,17 +156,18 @@ class TestInventory(base.TestCase):
         self.mock_stack = mock.MagicMock()
         self.mock_stack.outputs = self.outputs_data['outputs']
         self.hclient.stacks.get.return_value = self.mock_stack
-
         self.outputs = StackOutputs(self.mock_stack)
+        self.connection = mock.MagicMock()
+        patcher = mock.patch('openstack.connect',
+                             return_value=self.connection)
+        patcher.start()
         self.inventory = TripleoInventory(
+            cloud_name='undercloud',
             hclient=self.hclient,
             plan_name=self.plan_name,
-            auth_url='xyz://keystone.local',
-            cacert='acacert',
-            project_name='admin',
-            username='admin',
             ansible_ssh_user='heat-admin')
         self.inventory.stack_outputs = self.outputs
+        self.addCleanup(patcher.stop)
 
     def test_get_roles_by_service(self):
         services = TripleoInventory.get_roles_by_service(MOCK_ENABLED_SERVICES)
@@ -205,8 +205,8 @@ class TestInventory(base.TestCase):
         self.assertEqual(expected, self.outputs['KeystoneURL'])
         # This should also support the get method
         self.assertEqual(expected, self.outputs.get('KeystoneURL'))
-        self.assertTrue(self.hclient.called_once_with('overcloud',
-                                                      'KeystoneURL'))
+        self.assertTrue(self.hclient.called_once_with(
+            'overcloud', 'KeystoneURL'))
 
     def test_no_ips(self):
         for output in self.outputs_data['outputs']:
@@ -290,12 +290,9 @@ class TestInventory(base.TestCase):
                     'ansible_host': 'localhost',
                     'ansible_python_interpreter': sys.executable,
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
-                    'auth_url': 'xyz://keystone.local',
-                    'cacert': 'acacert',
                     'overcloud_keystone_url': 'xyz://keystone',
                     'overcloud_admin_password': 'theadminpw',
                     'plan': 'overcloud',
-                    'project_name': 'admin',
                     'undercloud_service_list': [
                         'tripleo_nova_compute',
                         'tripleo_heat_engine',
@@ -304,7 +301,6 @@ class TestInventory(base.TestCase):
                         'tripleo_swift_object_server',
                         'tripleo_mistral_engine'
                         ],
-                    'username': 'admin'
                     }
                 }
             }
@@ -336,22 +332,19 @@ class TestInventory(base.TestCase):
                  'output_value': {'Undercloud': {'config_settings': 'foo1'}}}
             ]
         }
-        plan_name = 'undercloud'
-        hclient = mock.MagicMock()
-        hclient.stacks.environment.return_value = {'parameter_defaults': {
-            'AdminPassword': 'theadminpw', 'ContainerCli': 'podman'}}
+
+        self.hclient.stacks.environment.return_value = {
+            'parameter_defaults': {
+                'AdminPassword': 'theadminpw', 'ContainerCli': 'podman'}}
         mock_stack = mock.MagicMock()
         mock_stack.outputs = outputs_data['outputs']
-        hclient.stacks.get.return_value = mock_stack
+        self.hclient.stacks.get.return_value = mock_stack
 
         outputs = StackOutputs(mock_stack)
         inventory = TripleoInventory(
-            hclient=hclient,
-            plan_name=plan_name,
-            auth_url='xyz://keystone.local',
-            cacert='acacert',
-            project_name='admin',
-            username='admin',
+            hclient=self.hclient,
+            cloud_name='undercloud',
+            plan_name='overcloud',
             ansible_ssh_user='heat-admin')
         inventory.stack_outputs = outputs
         expected = {
@@ -396,9 +389,6 @@ class TestInventory(base.TestCase):
                     'ansible_host': 'localhost',
                     'ansible_python_interpreter': sys.executable,
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
-                    'auth_url': 'xyz://keystone.local',
-                    'cacert': 'acacert',
-                    'project_name': 'admin',
                     'undercloud_service_list': [
                         'tripleo_nova_compute',
                         'tripleo_heat_engine',
@@ -407,7 +397,6 @@ class TestInventory(base.TestCase):
                         'tripleo_swift_object_server',
                         'tripleo_mistral_engine'
                         ],
-                    'username': 'admin'
                 }
             },
             '_meta': {'hostvars': {}},
@@ -422,11 +411,8 @@ class TestInventory(base.TestCase):
         key_file = '/var/lib/mistral/.ssh/%s-key' % ansible_ssh_user
         self.inventory = TripleoInventory(
             hclient=self.hclient,
+            cloud_name='undercloud',
             plan_name=self.plan_name,
-            auth_url='xyz://keystone.local',
-            project_name='admin',
-            username='admin',
-            cacert='acacert',
             ansible_ssh_user=ansible_ssh_user,
             undercloud_connection=undercloud_connection,
             undercloud_key_file=key_file,
@@ -548,12 +534,9 @@ class TestInventory(base.TestCase):
                     'ansible_host': 'localhost',
                     'ansible_python_interpreter': 'foo',
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
-                    'auth_url': 'xyz://keystone.local',
-                    'cacert': 'acacert',
                     'overcloud_keystone_url': 'xyz://keystone',
                     'overcloud_admin_password': 'theadminpw',
                     'plan': 'overcloud',
-                    'project_name': 'admin',
                     'undercloud_service_list': [
                         'tripleo_nova_compute',
                         'tripleo_heat_engine',
@@ -561,7 +544,6 @@ class TestInventory(base.TestCase):
                         'tripleo_swift_container_server',
                         'tripleo_swift_object_server',
                         'tripleo_mistral_engine'],
-                    'username': 'admin'
                     }
                 }
             }
@@ -594,12 +576,9 @@ class TestInventory(base.TestCase):
                     sys.executable,
                     'ansible_remote_tmp':
                     '/tmp/ansible-${USER}',
-                    'auth_url': 'xyz://keystone.local',
-                    'cacert': 'acacert',
                     'overcloud_admin_password': 'theadminpw',
                     'overcloud_keystone_url': 'xyz://keystone',
                     'plan': 'overcloud',
-                    'project_name': 'admin',
                     'undercloud_service_list': [
                         'tripleo_nova_compute',
                         'tripleo_heat_engine',
@@ -607,7 +586,6 @@ class TestInventory(base.TestCase):
                         'tripleo_swift_container_server',
                         'tripleo_swift_object_server',
                         'tripleo_mistral_engine'],
-                    'username': 'admin'
                 }
             },
             'Controller': {
@@ -1003,20 +981,16 @@ class TestInventory(base.TestCase):
                          'ansible_host': 'localhost',
                          'ansible_python_interpreter': sys.executable,
                          'ansible_remote_tmp': '/tmp/ansible-${USER}',
-                         'auth_url': 'xyz://keystone.local',
-                         'cacert': 'acacert',
                          'overcloud_admin_password': 'theadminpw',
                          'overcloud_keystone_url': 'xyz://keystone',
                          'plan': 'overcloud',
-                         'project_name': 'admin',
                          'undercloud_service_list': [
                              'tripleo_nova_compute',
                              'tripleo_heat_engine',
                              'tripleo_ironic_conductor',
                              'tripleo_swift_container_server',
                              'tripleo_swift_object_server',
-                             'tripleo_mistral_engine'],
-                         'username': 'admin'}},
+                             'tripleo_mistral_engine']}},
             'Controller': {
                 'hosts': {
                     'c-0': {

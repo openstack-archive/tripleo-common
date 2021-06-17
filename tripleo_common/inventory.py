@@ -28,7 +28,7 @@ import keystoneauth1
 import openstack
 
 from tripleo_common import exception
-import tripleo_common.constants as constants
+from tripleo_common import constants
 
 HOST_NETWORK = 'ctlplane'
 DEFAULT_DOMAIN = 'localdomain.'
@@ -253,19 +253,22 @@ class NeutronData(object):
 
 
 class TripleoInventory(object):
-    def __init__(self, session=None, hclient=None,
-                 plan_name=None, auth_url=None, project_name=None,
-                 cacert=None, username=None, ansible_ssh_user=None,
+    def __init__(self, cloud_name=None, session=None,
+                 hclient=None, plan_name=None,
+                 auth_url=None, project_name=None, cacert=None,
+                 username=None, ansible_ssh_user=None,
                  host_network=None, ansible_python_interpreter=None,
                  undercloud_connection=UNDERCLOUD_CONNECTION_LOCAL,
                  undercloud_key_file=None, serial=1, work_dir=None):
-        self.session = session
+
+        self.connection = None
+        if cloud_name:
+            self.connection = openstack.connect(cloud=cloud_name)
+        elif session:
+            self.connection = openstack.connection.Connection(session=session)
+
         self.hclient = hclient
         self.host_network = host_network or HOST_NETWORK
-        self.auth_url = auth_url
-        self.cacert = cacert
-        self.project_name = project_name
-        self.username = username
         self.ansible_ssh_user = ansible_ssh_user
         self.undercloud_key_file = undercloud_key_file
         self.plan_name = plan_name
@@ -472,15 +475,14 @@ class TripleoInventory(object):
                                              self.ansible_python_interpreter)
 
     def _get_neutron_data(self):
-        if not self.session:
+        if not self.connection:
             LOG.info("Session not set, neutron data will not be used to build "
                      "the inventory.")
             return
 
         try:
-            conn = openstack.connection.Connection(session=self.session)
             tags_filter = ['tripleo_stack_name={}'.format(self.plan_name)]
-            ports = list(conn.network.ports(tags=tags_filter))
+            ports = list(self.connection.network.ports(tags=tags_filter))
             if not ports:
                 return None
 
@@ -496,7 +498,8 @@ class TripleoInventory(object):
             # tagged with the 'tripleo_stack_name'.
             # See bug: https://bugs.launchpad.net/tripleo/+bug/1928926
             found_ctlplane_port = False
-            ctlplane_net = conn.network.find_network(self.host_network)
+            ctlplane_net = self.connection.network.find_network(
+                self.host_network)
             for p in ports:
                 if p.network_id == ctlplane_net.id:
                     found_ctlplane_port = True
@@ -504,11 +507,12 @@ class TripleoInventory(object):
             if not found_ctlplane_port:
                 return None
 
-            networks = [conn.network.find_network(p.network_id)
+            networks = [self.connection.network.find_network(p.network_id)
                         for p in ports]
             subnets = []
             for net in networks:
-                subnets.extend(conn.network.subnets(network_id=net.id))
+                subnets.extend(self.connection.network.subnets(
+                    network_id=net.id))
 
             data = NeutronData(networks, subnets, ports)
         except exception.MissingMandatoryNeutronResourceTag:
@@ -676,12 +680,6 @@ class TripleoInventory(object):
         _vars.setdefault('ansible_connection', self.undercloud_connection)
         # see https://github.com/ansible/ansible/issues/41808
         _vars.setdefault('ansible_remote_tmp', '/tmp/ansible-${USER}')
-        _vars.setdefault('auth_url', self.auth_url)
-        _vars.setdefault('project_name', self.project_name)
-        _vars.setdefault('username', self.username)
-
-        if self.cacert:
-            _vars['cacert'] = self.cacert
 
         if self.ansible_python_interpreter:
             _vars.setdefault('ansible_python_interpreter',
@@ -780,9 +778,10 @@ class TripleoInventory(object):
         os.rename(inventory_file.name, inventory_file_path)
 
 
-def generate_tripleo_ansible_inventory(heat, auth_url,
-                                       username,
-                                       project_name,
+def generate_tripleo_ansible_inventory(heat=None,
+                                       auth_url=None,
+                                       username=None,
+                                       project_name=None,
                                        cacert=None,
                                        plan='overcloud',
                                        work_dir=None,
@@ -790,7 +789,8 @@ def generate_tripleo_ansible_inventory(heat, auth_url,
                                        ansible_ssh_user='tripleo-admin',
                                        undercloud_key_file=None,
                                        ssh_network='ctlplane',
-                                       session=None):
+                                       session=None,
+                                       cloud_name='undercloud'):
     if not work_dir:
         work_dir = os.path.join(os.path.expanduser('~'),
                                 'overcloud-deploy-{}'.format(plan))
@@ -800,12 +800,9 @@ def generate_tripleo_ansible_inventory(heat, auth_url,
     inventory_path = os.path.join(
         work_dir, 'tripleo-ansible-inventory.yaml')
     inv = TripleoInventory(
-        session=session,
+        cloud_name=cloud_name,
         hclient=heat,
-        auth_url=auth_url,
-        username=username,
-        project_name=project_name,
-        cacert=cacert,
+        session=session,
         ansible_ssh_user=ansible_ssh_user,
         undercloud_key_file=undercloud_key_file,
         ansible_python_interpreter=ansible_python_interpreter,
