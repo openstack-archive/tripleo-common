@@ -1,0 +1,7 @@
+---
+other:
+  - |
+    The compatibility wrapper for the deprecated field: ``macs`` in nodes JSON
+    *(instackenv.json)* has been removed. The ``macs`` field is no longer
+    supported as it was replaced by ``ports`` in the Stein release.
+

@@ -108,8 +108,8 @@ class StackParametersTest(base.TestCase):
             "pm_user": "control-0-admin",
             "pm_addr": "0.1.2.3",
             "pm_port": "0123",
-            "mac": [
-                "00:11:22:33:44:55"
+            "ports": [
+                {"address": "00:11:22:33:44:55"},
             ]
         }, {
             "name": "control-1",
@@ -118,8 +118,8 @@ class StackParametersTest(base.TestCase):
             "pm_type": "pxe_ipmitool",
             "pm_user": "control-1-admin",
             "pm_addr": "1.2.3.4",
-            "mac": [
-                "11:22:33:44:55:66"
+            "ports": [
+                {"address": "11:22:33:44:55:66"}
             ]
         }, {
             # test node using redfish pm
@@ -131,8 +131,8 @@ class StackParametersTest(base.TestCase):
             "pm_port": "8000",
             "redfish_verify_ca": "false",
             "pm_system_id": "/redfish/v1/Systems/5678",
-            "mac": [
-                "aa:bb:cc:dd:ee:ff"
+            "ports": [
+                {"address": "aa:bb:cc:dd:ee:ff"}
             ]
         }, {
             # This is an extra node on oVirt/RHV
@@ -142,8 +142,8 @@ class StackParametersTest(base.TestCase):
             "pm_user": "admin@internal",
             "pm_addr": "3.4.5.6",
             "pm_vm_name": "control-3",
-            "mac": [
-                "bb:cc:dd:ee:ff:gg"
+            "ports": [
+                {"address": "bb:cc:dd:ee:ff:gg"}
             ]
         }, {
             # This is an extra node that is not in the hostmap, to ensure we
@@ -153,8 +153,8 @@ class StackParametersTest(base.TestCase):
             "pm_type": "ipmi",
             "pm_user": "control-2-admin",
             "pm_addr": "2.3.4.5",
-            "mac": [
-                "22:33:44:55:66:77"
+            "ports": [
+                {"address": "22:33:44:55:66:77"}
             ]
         }
         ]

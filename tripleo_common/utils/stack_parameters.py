@@ -15,7 +15,6 @@
 # limitations under the License.
 import logging
 
-from tripleo_common.utils import nodes
 from tripleo_common.utils import stack as stack_utils
 
 LOG = logging.getLogger(__name__)
@@ -25,7 +24,6 @@ def generate_fencing_parameters(nodes_json, delay,
                                 ipmi_level, ipmi_cipher, ipmi_lanplus):
     fence_params = {"EnableFencing": True, "FencingConfig": {}}
     devices = []
-    nodes_json = nodes.convert_nodes_json_mac_to_ports(nodes_json)
 
     for node in nodes_json:
         node_data = {}

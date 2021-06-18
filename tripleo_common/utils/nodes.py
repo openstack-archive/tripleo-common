@@ -36,20 +36,6 @@ _KNOWN_INTERFACE_FIELDS = [
 CTLPLANE_NETWORK = 'ctlplane'
 
 
-def convert_nodes_json_mac_to_ports(nodes_json):
-    for node in nodes_json:
-        if node.get('mac'):
-            LOG.warning('Key mac is deprecated, please use ports.')
-            for address in node['mac']:
-                try:
-                    node['ports'].append({'address': address})
-                except KeyError:
-                    node['ports'] = [{'address': address}]
-            del node['mac']
-
-    return nodes_json
-
-
 class DriverInfo(object):
     """Class encapsulating field conversion logic."""
     DEFAULTS = {}
@@ -630,6 +616,10 @@ def validate_nodes(nodes_list):
             handler.validate(node)
         except exception.InvalidNode as exc:
             failures.append((index, exc))
+
+        if node.get('macs'):
+            failures.append('The "macs" field is not longer supported. '
+                            'Please use the "ports" field instead.')
 
         for port in node.get('ports', ()):
             if not netutils.is_valid_mac(port['address']):
