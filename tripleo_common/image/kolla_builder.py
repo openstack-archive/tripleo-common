@@ -64,15 +64,26 @@ if os.path.isfile(DEFAULT_PREPARE_FILE):
 LOG = logging.getLogger(__name__ + '.KollaImageBuilder')
 
 
+def _filter_services(service_list, resource_registry):
+    if resource_registry:
+        for service in service_list.copy():
+            env_path = resource_registry.get(service)
+            if env_path == 'OS::Heat::None':
+                service_list.remove(service)
+
+
 def get_enabled_services(environment, roles_data):
-    """Build list of enabled services
+    """Build a map of role name and default enabled services
 
     :param environment: Heat environment for deployment
     :param roles_data: Roles file data used to filter services
     :returns: set of resource types representing enabled services
     """
-    enabled_services = set()
+
+    enabled_services = {}
     parameter_defaults = environment.get('parameter_defaults', {})
+    resource_registry = environment.get('resource_registry', {})
+
     for role in roles_data:
         count = parameter_defaults.get('%sCount' % role['name'],
                                        role.get('CountDefault', 0))
@@ -82,10 +93,16 @@ def get_enabled_services(environment, roles_data):
             raise ValueError('Unable to convert %sCount to an int: %s' %
                              (role['name'], count))
 
+        param = '%sServices' % role['name']
         if count > 0:
-            enabled_services.update(
-                parameter_defaults.get('%sServices' % role['name'],
-                                       role.get('ServicesDefault', [])))
+            if param in parameter_defaults:
+                enabled_services[param] = parameter_defaults[param]
+            else:
+                default_services = role.get('ServicesDefault', [])
+                _filter_services(default_services, resource_registry)
+                enabled_services[param] = default_services
+        else:
+            enabled_services[param] = []
     return enabled_services
 
 
@@ -98,15 +115,19 @@ def build_service_filter(environment, roles_data):
     """
     if not roles_data:
         return None
+
+    filtered_services = set()
     enabled_services = get_enabled_services(environment, roles_data)
     resource_registry = environment.get('resource_registry')
-    if resource_registry:
-        for service in enabled_services.copy():
-            env_path = resource_registry.get(service)
-            if env_path == 'OS::Heat::None':
-                enabled_services.remove(service)
 
-    return enabled_services
+    for role in roles_data:
+        role_services = enabled_services.get(
+            '%sServices' % role['name'], set())
+        # This filtering is probably not required, but filter if the
+        # {{role.name}}Services has services mapped to OS::Heat::None
+        _filter_services(role_services, resource_registry)
+        filtered_services.update(role_services)
+    return filtered_services
 
 
 def set_neutron_driver(pd, mapping_args):
@@ -166,7 +187,8 @@ def container_images_prepare_multi(environment, roles_data, dry_run=False,
     multi_arch = len(pd.get('AdditionalArchitectures', []))
 
     env_params = {}
-    service_filter = build_service_filter(environment, roles_data)
+    service_filter = build_service_filter(
+        environment, roles_data)
 
     for cip_entry in cip:
         mapping_args = cip_entry.get('set', {})
