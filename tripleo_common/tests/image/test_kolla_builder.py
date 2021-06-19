@@ -737,17 +737,18 @@ class TestPrepare(base.TestCase):
 
     def test_get_enabled_services_empty(self):
         self.assertEqual(
-            set([]),
+            {},
             kb.get_enabled_services({}, [])
         )
 
     def test_get_enabled_services_default_count(self):
         self.assertEqual(
-            set([
+            {'ControllerServices': [
                 'OS::TripleO::Services::NeutronApi',
-                'OS::TripleO::Services::NovaApi',
-                'OS::TripleO::Services::NovaCompute'
-            ]),
+                'OS::TripleO::Services::NovaApi'],
+             'ComputeServices': [
+                'OS::TripleO::Services::NovaCompute'],
+             'BlockStorageServices': []},
             kb.get_enabled_services({
                 'parameter_defaults': {}
             }, [
@@ -775,21 +776,17 @@ class TestPrepare(base.TestCase):
 
     def test_get_enabled_services(self):
         self.assertEqual(
-            set([
+            {'ControllerServices': [
                 'OS::TripleO::Services::NeutronApi',
-                'OS::TripleO::Services::NovaApi',
-                'OS::TripleO::Services::NovaCompute',
-                'OS::TripleO::Services::NovaLibvirt'
-            ]),
+                'OS::TripleO::Services::NovaApi'],
+             'ComputeServices': [
+                'OS::TripleO::Services::NovaCompute'],
+             'BlockStorageServices': []},
             kb.get_enabled_services({
                 'parameter_defaults': {
                     'ControllerCount': 1,
                     'ComputeCount': 1,
                     'BlockStorageCount': 0,
-                    'ComputeServices': [
-                        'OS::TripleO::Services::NovaCompute',
-                        'OS::TripleO::Services::NovaLibvirt'
-                    ]
                 }
             }, [
                 {
