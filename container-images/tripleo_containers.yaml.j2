@@ -279,6 +279,10 @@ container_images_template:
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-all{{name_suffix}}:{{tag}}"
   image_source: tripleo
+  params:
+  - ContainerHeatAllImage
+  services:
+  - OS::TripleO::Services::HeatEphemeral
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-api-cfn{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -297,6 +301,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::HeatApi
   - OS::TripleO::Services::HeatEngine
+  - OS::TripleO::Services::HeatEphemeral
 
 - imagename: "{{namespace}}/{{name_prefix}}heat-engine{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -304,6 +309,7 @@ container_images_template:
   - ContainerHeatEngineImage
   services:
   - OS::TripleO::Services::HeatEngine
+  - OS::TripleO::Services::HeatEphemeral
 
 - imagename: "{{namespace}}/{{name_prefix}}horizon{{name_suffix}}:{{tag}}"
   image_source: tripleo
