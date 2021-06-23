@@ -42,3 +42,24 @@ disk_images:
       DIB_IMAGE_SIZE: '40'
       COMPRESS_IMAGE: '1'
       DIB_BLOCK_DEVICE: 'efi'
+  -
+    imagename: ironic-python-agent
+    # This is bogus, but there's no initrd type in diskimage-builder
+    type: qcow2
+    # So we just override the extension instead
+    imageext: initramfs
+    elements:
+      - ironic-python-agent-ramdisk
+      - ironic-agent-multipath
+      - dynamic-login
+      - element-manifest
+      - network-gateway
+      - enable-packages-install
+      - override-pip-and-virtualenv
+      - extra-hardware
+    options:
+      - "--min-tmpfs=7"
+    environment:
+      DIB_EPEL_DISABLED: '1'
+      DIB_PYTHON_VERSION: '3'
+      DIB_DHCP_TIMEOUT: '60'
