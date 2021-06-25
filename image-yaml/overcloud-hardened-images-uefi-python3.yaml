@@ -39,7 +39,7 @@ disk_images:
       DIB_PYTHON_VERSION: '3'
       DIB_MODPROBE_BLACKLIST: 'usb-storage cramfs freevxfs jffs2 hfs hfsplus squashfs udf bluetooth'
       DIB_BOOTLOADER_DEFAULT_CMDLINE: 'nofb nomodeset vga=normal console=tty0 console=ttyS0,115200 audit=1 nousb'
-      DIB_IMAGE_SIZE: '40'
+      DIB_IMAGE_SIZE: '6'
       COMPRESS_IMAGE: '1'
       DIB_BLOCK_DEVICE: 'efi'
   -
