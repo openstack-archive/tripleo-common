@@ -692,9 +692,11 @@ class TestConfig(base.TestCase):
                                             (role, config))]
         mock_open.assert_has_calls(expected_calls, any_order=True)
 
+    @patch.object(ooo_config.os, 'makedirs')
     @patch.object(ooo_config.shutil, 'rmtree')
     @patch.object(ooo_config.os.path, 'exists')
-    def test_create_config_dir(self, mock_os_path_exists, mock_rmtree):
+    def test_create_config_dir(self, mock_os_path_exists, mock_rmtree,
+                               mock_makedirs):
         mock_os_path_exists.get.return_value = True
         heat = mock.MagicMock()
         heat.stacks.get.return_value = fakes.create_tht_stack()
@@ -702,6 +704,16 @@ class TestConfig(base.TestCase):
         self.config.create_config_dir('/tmp/tht', False)
         expected_rmtree_calls = [call('/tmp/tht')]
         mock_rmtree.assert_has_calls(expected_rmtree_calls)
+        expected_makedirs_calls = [
+            call('/tmp/tht', mode=0o700, exist_ok=True),
+            call('/tmp/tht/artifacts', mode=0o700, exist_ok=True),
+            call('/tmp/tht/env', mode=0o700, exist_ok=True),
+            call('/tmp/tht/inventory', mode=0o700, exist_ok=True),
+            call('/tmp/tht/profiling_data', mode=0o700, exist_ok=True),
+            call('/tmp/tht/project', mode=0o700, exist_ok=True),
+            call('/tmp/tht/roles', mode=0o700, exist_ok=True),
+        ]
+        mock_makedirs.assert_has_calls(expected_makedirs_calls)
 
     def test_initialize_git_repo(self):
         heat = mock.MagicMock()
