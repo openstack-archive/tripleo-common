@@ -76,13 +76,13 @@
     - name: List hieradata files for check mode
       find:
         path: /etc/puppet/check-mode/hieradata
-      register: hieradata_files
+      register: check_hieradata_files
       check_mode: no
 
     - name: diff hieradata changes for check mode
       command:
         diff -uN {{ hieradata_item.path | regex_replace('check-mode', '') }} {{ hieradata_item.path }}
-      with_items: "{{ hieradata_files.files }}"
+      with_items: "{{ check_hieradata_files.files }}"
       check_mode: no
       register: diff_results
       changed_when: diff_results.rc == 1
