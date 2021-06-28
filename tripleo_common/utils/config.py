@@ -204,6 +204,22 @@ class Config(object):
                                                                str(e))
                 raise OSError(message)
 
+        os.makedirs(config_dir, mode=0o700, exist_ok=True)
+
+        # Create Runner friendly directory structure
+        # https://ansible-runner.readthedocs.io/en/stable/intro.html#runner-artifacts-directory-hierarchy
+        structure = [
+            'artifacts',
+            'env',
+            'inventory',
+            'profiling_data',
+            'project',
+            'roles',
+        ]
+        for d in structure:
+            os.makedirs(os.path.join(config_dir, d), mode=0o700,
+                        exist_ok=True)
+
     def fetch_config(self, name):
         # Get the stack object
         stack = self.client.stacks.get(name)
