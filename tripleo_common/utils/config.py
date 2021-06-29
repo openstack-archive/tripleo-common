@@ -25,6 +25,7 @@ import yaml
 import jinja2
 
 from tripleo_common import constants
+from tripleo_common import inventory
 from tripleo_common.utils.safe_import import git
 
 LOG = logging.getLogger(__name__)
@@ -219,6 +220,9 @@ class Config(object):
             os.makedirs(os.path.join(config_dir, d), mode=0o700,
                         exist_ok=True)
 
+        os.makedirs(os.path.join(config_dir, 'task_core'), mode=0o700,
+                    exist_ok=True)
+
     def fetch_config(self, name):
         # Get the stack object
         stack = self.client.stacks.get(name)
@@ -255,6 +259,85 @@ class Config(object):
             if str_config:
                 with self._open_file(config_path) as f:
                     f.write(str_config)
+
+    def render_task_core(self, name, config_dir, role_data, server_roles,
+                         role_group_vars, role_config):
+        task_core_data = role_config.get('task_core_data', {})
+
+        # create task core data directories
+        task_core_dir = os.path.join(config_dir, 'task_core')
+        self._mkdir(task_core_dir)
+
+        task_core_services = []
+        task_core_service_path = os.path.join(task_core_dir, 'services')
+        self._mkdir(task_core_service_path)
+
+        task_core_roles_path = os.path.join(task_core_dir, 'roles')
+        self._mkdir(task_core_roles_path)
+
+        # Render task-core deployment services from RoleConfig
+        deploy_svcs = task_core_data.get('deployment_services', {})
+        for svc, svc_data in deploy_svcs.items():
+            svc_path = os.path.join(task_core_service_path, f"{svc}.yaml")
+            with self._open_file(svc_path) as svc_file:
+                if isinstance(svc_data, dict):
+                    yaml.safe_dump(svc_data, svc_file,
+                                   default_flow_style=False)
+                else:
+                    svc_file.write(svc_data)
+
+        # Render task core services from roles
+        for role_name, role in role_data.items():
+            for svc, svc_data in role.get('core_services', {}).items():
+                # add service name for filtering the roles later to aide in
+                # migration
+                task_core_services.append(svc)
+                svc_path = os.path.join(task_core_service_path, f"{svc}.yaml")
+                if os.path.exists(svc_path):
+                    # already processed, just skip
+                    continue
+                svc_data.update({'id': svc, 'type': 'service'})
+                with self._open_file(svc_path) as svc_file:
+                    yaml.safe_dump(svc_data, svc_file,
+                                   default_flow_style=False)
+
+        # Render task-core role for deployer from RoleConfig
+        task_core_deployer_role_file = os.path.join(task_core_roles_path,
+                                                    "deployer.yaml")
+        with self._open_file(task_core_deployer_role_file) as roles_file:
+            deployment_roles = task_core_data.get('deployment_roles', {})
+            yaml.safe_dump(deployment_roles, roles_file,
+                           default_flow_style=False)
+
+        # Render task-core roles file from RoleGroupVars, always include
+        # deployment roles in overcloud role
+        task_core_roles = deployment_roles
+        for role in set(server_roles.values()):
+            # RoleGroupVars has [role]ConfigData merged into it which
+            # contains the enabled services for a role. Only add the services
+            # that have core_services definitions
+            enabled_svcs = role_group_vars[role].get('service_names', [])
+            task_core_roles[role.lower()] = {
+                'services': [svc for svc in enabled_svcs
+                             if svc in task_core_services]
+            }
+        task_core_overcloud_role_file = os.path.join(task_core_roles_path,
+                                                     f"{name}.yaml")
+        with self._open_file(task_core_overcloud_role_file) as roles_file:
+            yaml.safe_dump(task_core_roles, roles_file,
+                           default_flow_style=False)
+
+        task_core_inv_file = os.path.join(task_core_dir,
+                                          "task-core-inventory.yaml")
+        with self._open_file(task_core_inv_file) as inv_file:
+            inv = inventory.task_core_inventory(self.stack_outputs)
+            yaml.safe_dump(inv, inv_file, default_flow_style=False)
+
+        directord_inv_file = os.path.join(task_core_dir,
+                                          "directord-inventory.yaml")
+        with self._open_file(directord_inv_file) as inv_file:
+            inv = inventory.directord_inventory(self.stack_outputs)
+            yaml.safe_dump(inv, inv_file, default_flow_style=False)
 
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
@@ -471,9 +554,9 @@ class Config(object):
 
         # Make sure server_roles is populated b/c it won't be if there are no
         # server deployments.
-        for name, server_id in server_ids.items():
+        for server_name, server_id in server_ids.items():
             server_roles.setdefault(
-                name,
+                server_name,
                 self.get_role_from_server_id(stack, server_id))
 
         env, templates_path = self.get_jinja_env(config_dir)
@@ -546,6 +629,9 @@ class Config(object):
             with open(group_var_role_path, 'w') as group_vars_file:
                 yaml.safe_dump(role_group_vars[role], group_vars_file,
                                default_flow_style=False)
+
+        self.render_task_core(name, config_dir, role_data, server_roles,
+                              role_group_vars, role_config)
 
         # Render host_vars
         for server in server_names.values():

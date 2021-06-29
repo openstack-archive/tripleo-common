@@ -42,6 +42,7 @@ class TestConfig(base.TestCase):
     def setUp(self):
         super(TestConfig, self).setUp()
 
+    @patch.object(ooo_config.Config, 'render_task_core')
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
@@ -52,7 +53,8 @@ class TestConfig(base.TestCase):
                                               mock_open,
                                               mock_mkdir,
                                               mock_copyfile,
-                                              mock_git_init):
+                                              mock_git_init,
+                                              mock_task_core):
         config_type_list = ['config_settings', 'global_config_settings',
                             'logging_sources', 'monitoring_subscriptions',
                             'service_config_settings',
@@ -93,6 +95,7 @@ class TestConfig(base.TestCase):
                                             (role, config))]
         mock_open.assert_has_calls(expected_calls, any_order=True)
 
+    @patch.object(ooo_config.Config, 'render_task_core')
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.shutil, 'copyfile')
     @patch.object(ooo_config.Config, '_mkdir')
@@ -103,7 +106,8 @@ class TestConfig(base.TestCase):
                                               mock_open,
                                               mock_mkdir,
                                               mock_copyfile,
-                                              mock_git_init):
+                                              mock_git_init,
+                                              mock_task_core):
 
         expected_config_type = 'config_settings'
 
@@ -637,6 +641,7 @@ class TestConfig(base.TestCase):
             assert "Skipping deployment" in str(w[-1].message)
             assert "Skipping deployment" in str(w[-2].message)
 
+    @patch.object(ooo_config.Config, 'render_task_core')
     @patch.object(ooo_config.Config, 'initialize_git_repo')
     @patch.object(ooo_config.git, 'Repo')
     @patch.object(ooo_config.shutil, 'copyfile')
@@ -651,7 +656,8 @@ class TestConfig(base.TestCase):
                                                    mock_mkdir,
                                                    mock_copyfile,
                                                    mock_repo,
-                                                   mock_git_init):
+                                                   mock_git_init,
+                                                   mock_task_core):
         config_type_list = ['config_settings', 'global_config_settings',
                             'logging_sources', 'monitoring_subscriptions',
                             'service_config_settings',
