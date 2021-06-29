@@ -500,10 +500,15 @@ class TripleoInventory(object):
             found_ctlplane_port = False
             ctlplane_net = self.connection.network.find_network(
                 self.host_network)
-            for p in ports:
-                if p.network_id == ctlplane_net.id:
-                    found_ctlplane_port = True
-                    break
+            if ctlplane_net:
+                for p in ports:
+                    if p.network_id == ctlplane_net.id:
+                        found_ctlplane_port = True
+                        break
+            else:
+                LOG.warning("Host SSH network %s not found in neutron, not "
+                            "using neutron data for inventory",
+                            self.host_network)
             if not found_ctlplane_port:
                 return None
 
