@@ -28,9 +28,6 @@
                 "tripleo_mistral_engine"
             ]
         }
-    },
-    "overcloud": {
-        "children": ["foobar"]
     }
 }
 
