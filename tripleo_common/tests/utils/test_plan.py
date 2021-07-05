@@ -91,7 +91,6 @@ _EXISTING_PASSWORDS = {
     'IronicPassword': '4hFDgn9ANeVfuqk84pHpD4ksa',
     'RedisPassword': 'xjj3QZDcUQmU6Q7NzWBHRUhGd',
     'SaharaPassword': 'spFvYGezdFwnTk7NPxgYTbUPh',
-    'AdminToken': 'jq6G6HyZtj7dcZEvuyhAfjutM',
     'CinderPassword': 'dcxC3xyUcrmvzfrrxpAd3REcm',
     'CongressPassword': 'DwcKvMqXMuNYYFU4zTCuG4234',
     'GlancePassword': 'VqJYNEdKKsGZtgnHct77XBtrV',
@@ -131,6 +130,7 @@ _EXISTING_PASSWORDS = {
         '/etc/keystone/fernet-keys/0': {'content': 'IAMAVERYSAFEKEY'},
         '/etc/keystone/fernet-keys/1': {'content': 'IALSOAMAVERYSAFEKEY'}
     },
+    'KeystonePassword': 'jq6G6HyZtj7dcZEvuyhAfjutM',
     'CephClusterFSID': u'97c16f44-b62c-11e6-aed3-185e0f73fdc5',
     'Ec2ApiPassword': 'FPvz2WiWxrHVWrmSSvv44bqmr',
     'EtcdInitialClusterToken': 'fcVZXehsSc2KdmFFMKDudxTLKa',
@@ -378,6 +378,44 @@ class PlanTest(base.TestCase):
             passwords['NovaPassword'],
             result['PlacementPassword']
         )
+
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_ssh_keypair')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'create_fernet_keys_repo_structure_and_keys')
+    @mock.patch('tripleo_common.utils.passwords.'
+                'get_snmpd_readonly_user_password')
+    def test_keystone_passwords_upgrade(self,
+                                        mock_get_snmpd_readonly_user_password,
+                                        mock_fernet_keys_setup,
+                                        mock_create_ssh_keypair):
+
+        mock_get_snmpd_readonly_user_password.return_value = "TestPassword"
+        mock_create_ssh_keypair.return_value = {'public_key': 'Foo',
+                                                'private_key': 'Bar'}
+        mock_fernet_keys_setup.return_value = {'/tmp/foo': {'content': 'Foo'},
+                                               '/tmp/bar': {'content': 'Bar'}}
+
+        passwords = _EXISTING_PASSWORDS.copy()
+        keystone_password = passwords['KeystonePassword']
+        passwords['AdminToken'] = keystone_password
+        del passwords['KeystonePassword']
+
+        mock_orchestration = mock.MagicMock()
+        mock_orchestration.stacks.environment.return_value = {
+            'parameter_defaults': passwords
+        }
+        mock_resource = mock.MagicMock()
+        mock_resource.attributes = {
+            'endpoint_map': {},
+        }
+        mock_orchestration.resources.get.return_value = mock_resource
+        result = plan_utils.generate_passwords(None, mock_orchestration)
+        self.assertEqual(
+            keystone_password,
+            result['KeystonePassword']
+        )
+        self.assertNotIn('AdminToken', result)
 
     @mock.patch('tripleo_common.utils.passwords.'
                 'create_ssh_keypair')
