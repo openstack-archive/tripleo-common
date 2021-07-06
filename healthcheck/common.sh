@@ -69,7 +69,7 @@ healthcheck_port () {
     # would get all the connections existing in the same network namespace as the PID. Since we're using network=host, that would show *everything*.
     # the "join" method is weird, and fails if the array is empty.
     # Note: join comes from gawk's /usr/share/awk/join.awk and has some weird parameters.
-    sockets=$(awk -i join -v m=${ports} '{IGNORECASE=1; if ($2 ~ m || $3 ~ m) {output[counter++] = $10} } END{if (length(output)>0) {print join(output, 0, length(output)-1, "|")}}' /proc/net/{tcp,udp})
+    sockets=$(awk -i join -v m=${ports} '{IGNORECASE=1; if ($2 ~ m || $3 ~ m) {output[counter++] = $10} } END{if (length(output)>0) {print join(output, 0, length(output)-1, "|")}}' /proc/net/{tcp,udp,tcp6,udp6})
 
     # If no socket, just fail early
     test -z $sockets && exit 1
