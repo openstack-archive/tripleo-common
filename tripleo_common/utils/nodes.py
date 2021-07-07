@@ -617,9 +617,9 @@ def validate_nodes(nodes_list):
         except exception.InvalidNode as exc:
             failures.append((index, exc))
 
-        if node.get('macs'):
-            failures.append('The "macs" field is not longer supported. '
-                            'Please use the "ports" field instead.')
+        if node.get('mac'):
+            failures.append((index, 'The "mac" field is not longer supported. '
+                                    'Please use the "ports" field instead.'))
 
         for port in node.get('ports', ()):
             if not netutils.is_valid_mac(port['address']):
