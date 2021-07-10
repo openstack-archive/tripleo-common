@@ -53,6 +53,10 @@ def generate_passwords(stack_env=None,
             stack_env and name in stack_env.get(
                 'parameter_defaults', {})):
             passwords[name] = stack_env['parameter_defaults'][name]
+        elif (name == 'KeystonePassword' and stack_env and
+                'AdminToken' in stack_env.get('parameter_defaults', {})):
+            # NOTE(tkajinam): AdminToken was renamed to KeystonePassword
+            passwords[name] = stack_env['parameter_defaults']['AdminToken']
         elif name in ('CephClientKey', 'CephManilaClientKey', 'CephRgwKey'):
             # CephX keys aren't random strings
             passwords[name] = create_cephx_key()

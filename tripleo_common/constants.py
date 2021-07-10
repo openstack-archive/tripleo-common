@@ -76,7 +76,6 @@ BUILD_TIMEOUT = 3600
 #: List of names of parameters that contain passwords
 PASSWORD_PARAMETER_NAMES = (
     'AdminPassword',
-    'AdminToken',
     'AodhPassword',
     'BarbicanPassword',
     'BarbicanSimpleCryptoKek',
@@ -108,6 +107,7 @@ PASSWORD_PARAMETER_NAMES = (
     'KeystoneFernetKey0',
     'KeystoneFernetKey1',
     'KeystoneFernetKeys',
+    'KeystonePassword',
     'ManilaPassword',
     'MistralPassword',
     'MysqlClustercheckPassword',
