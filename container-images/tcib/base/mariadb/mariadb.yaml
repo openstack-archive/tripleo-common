@@ -3,7 +3,7 @@ tcib_actions:
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/mariadb/extend_start.sh /usr/local/bin/kolla_extend_start
 - run: chmod 755 /usr/local/bin/kolla_extend_start
-- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/mariadb/security_reset.expect /usr/local/bin/kolla_security_reset
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/mariadb/security_reset.expect{{ tcib_release is version('8', '==') | ternary('', '.10.5') }} /usr/local/bin/kolla_security_reset
 - run: chmod 755 /usr/local/bin/kolla_security_reset
 - run: rm -rf /var/lib/mysql/* /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/auth_gssapi.cnf
 - run: mkdir -p /etc/libqb

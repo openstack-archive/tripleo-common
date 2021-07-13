@@ -1,6 +1,7 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage collectd
 - run: if [ "{{ tcib_distro }}" == "rhel" ]; then dnf -y install {{ tcib_packages['rhel'] | join(' ') }}; fi
+- run: if [ '{{ tcib_release }}' == '8' ];then dnf -y install {{ tcib_packages['el8'] | join(' ') }}; fi
 - run: if [ "$(uname -m)" == "x86_64" ]; then dnf -y install {{ tcib_packages['x86_64'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: chown -R collectd:collectd /etc/collectd* /var/run/
@@ -20,11 +21,9 @@ tcib_packages:
   - collectd-dbi
   - collectd-disk
   - collectd-dns
-  - collectd-generic-jmx
   - collectd-ipmi
-  - collectd-iptables
-  - collectd-log_logstash
   - collectd-libpod-stats
+  - collectd-log_logstash
   - collectd-mcelog
   - collectd-memcachec
   - collectd-mysql
@@ -33,6 +32,7 @@ tcib_packages:
   - collectd-ovs-events
   - collectd-ovs-stats
   - collectd-ping
+  - collectd-pmu
   - collectd-procevent
   - collectd-python
   - collectd-sensors
@@ -53,6 +53,8 @@ tcib_packages:
   x86_64:
   - collectd-hugepages
   - collectd-pcie-errors
-  - collectd-pmu
   - collectd-rdt
   - collectd-turbostat
+  el8:
+  - collectd-generic-jmx
+  - collectd-iptables
