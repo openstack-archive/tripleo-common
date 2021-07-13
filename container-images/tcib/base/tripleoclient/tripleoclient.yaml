@@ -1,5 +1,6 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage {{ tcib_user }}
+- run: dnf -y install {{ tcib_packages['el' ~ tcib_release] | join(' ') }};
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: openstack complete | tee /etc/bash_completion.d/osc.bash_completion > /dev/null
 - run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/tripleoclient/create_super_user.sh /usr/local/bin/create_super_user.sh
@@ -19,5 +20,8 @@ tcib_packages:
   - xfsprogs
   - python3-osc-placement
   - bash-completion
+  el8:
   - ceph-ansible
+  el9:
+  - cephadm
 tcib_user: cloud-admin

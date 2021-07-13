@@ -27,15 +27,23 @@ tcib_actions:
 - run: chmod 755 /usr/local/bin/kolla_httpd_setup
 - run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/base/sudoers /etc/sudoers
 - run: chmod 440 /etc/sudoers
-- run: sed -ri '/-session(\s+)optional(\s+)pam_systemd.so/d' /etc/pam.d/system-auth
+- run: >-
+    if [ '{{ tcib_release }}' == '8' ];then
+    sed -ri '/-session(\s+)optional(\s+)pam_systemd.so/d' /etc/pam.d/system-auth; fi
 - run: sed -ri '/^(passwd:|group:)/ s/systemd//g' /etc/nsswitch.conf
 - run: dnf install -y {{ tcib_packages['common'] | join(' ') }}
+- run: >-
+    if [ '{{ tcib_release }}' == '9' ];then
+    dnf -y reinstall which &&
+    rpm -e --nodeps tzdata &&
+    dnf -y install tzdata; fi
 - run: mkdir -p /openstack
 - run: >-
-    if [ '{{ tcib_distro }}' == 'centos' ];then dnf download centos*release &&
-    rpm -ivh --nodeps --replacefiles *.rpm &&
-    rm -rf *.rpm &&
-    rpm -e --nodeps redhat-release; fi
+    if [ '{{ tcib_distro }}' == 'centos' ];then dnf -y install dnf-plugins-core &&
+    dnf download centos*release &&
+    rpm -ivh --nodeps --replacepkgs --replacefiles *.rpm &&
+    if [ '{{ tcib_release }}' == '8' ];then rpm -e --nodeps redhat-release; fi &&
+    rm -rf *.rpm; fi
 - run: dnf update --excludepkgs redhat-release -y && dnf clean all && rm -rf /var/cache/dnf
 tcib_cmd: kolla_start
 tcib_entrypoint: dumb-init --single-child --
@@ -62,10 +70,11 @@ tcib_packages:
   - sudo
   - tar
   - util-linux-user
+  - which
   modules:
   - disable: container-tools:rhel8
   - disable: virt:rhel
-  - enable: container-tools:{{ tcib_rhel_modules['container-tools'] | default('3.0') }}
+  - enable: container-tools:{{ tcib_rhel_modules['container-tools'] | default('latest' if tcib_release is version('9', '==') else '3.0') }}
   - enable: mariadb:{{ tcib_rhel_modules['mariadb'] | default('10.3') }}
   - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
   - enable: redis:{{ tcib_rhel_modules['redis'] | default('5') }}

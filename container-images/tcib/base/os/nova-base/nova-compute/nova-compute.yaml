@@ -1,5 +1,6 @@
 tcib_actions:
 - run: if [ "$(uname -m)" == "x86_64" ]; then dnf -y install {{ tcib_packages['x86_64'] | join(' ') }}; fi
+- run: if ['{{ tcib_release }}' == '8' ]; then dnf -y install {{ tcib_packages['el8'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 # this need to happen after installing nova-compute because the distgit does usermod to add libvirt/qemu groups
 - run: bash /usr/local/bin/uid_gid_manage nova
@@ -27,8 +28,9 @@ tcib_packages:
   - swtpm
   - swtpm-tools
   - targetcli
-  - trousers
   - xfsprogs
   x86_64:
   - daxio
+  el8:
+  - trousers
 tcib_user: nova
