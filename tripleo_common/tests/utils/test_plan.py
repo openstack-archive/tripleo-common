@@ -90,9 +90,7 @@ _EXISTING_PASSWORDS = {
     'NovajoinPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
     'IronicPassword': '4hFDgn9ANeVfuqk84pHpD4ksa',
     'RedisPassword': 'xjj3QZDcUQmU6Q7NzWBHRUhGd',
-    'SaharaPassword': 'spFvYGezdFwnTk7NPxgYTbUPh',
     'CinderPassword': 'dcxC3xyUcrmvzfrrxpAd3REcm',
-    'CongressPassword': 'DwcKvMqXMuNYYFU4zTCuG4234',
     'GlancePassword': 'VqJYNEdKKsGZtgnHct77XBtrV',
     'RabbitPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
     'RpcPassword': 'ahuHRXdPMx9rzCdjD9CJJNCgA',
@@ -103,7 +101,6 @@ _EXISTING_PASSWORDS = {
     'HeatStackDomainAdminPassword': 'GgTRyWzKYsxK4mReTJ4CM6sMc',
     'CephRgwKey': b'AQCQXtlXAAAAABAAUKcqUMu6oMjAXMjoUV4/3A==',
     'AodhPassword': '8VZXehsKc2HbmFFMKYuqxTJHn',
-    'PankoPassword': 'cVZXehsSc2KdmFFMKDudxTLKn',
     'OctaviaHeartbeatKey': 'oct-heartbeat-key',
     'OctaviaPassword': 'NMl7j3nKk1VVwMxUZC8Cgw==',
     'OctaviaServerCertsKeyPassphrase': 'aW5zZWN1cmUta2V5LWRvLW5vdC11c2U=',
@@ -132,7 +129,6 @@ _EXISTING_PASSWORDS = {
     },
     'KeystonePassword': 'jq6G6HyZtj7dcZEvuyhAfjutM',
     'CephClusterFSID': u'97c16f44-b62c-11e6-aed3-185e0f73fdc5',
-    'Ec2ApiPassword': 'FPvz2WiWxrHVWrmSSvv44bqmr',
     'EtcdInitialClusterToken': 'fcVZXehsSc2KdmFFMKDudxTLKa',
     'PacemakerRemoteAuthkey':
         'bCfHQx4fX7FqENVBbDfBnKvf6FTH6mPfVdNjfzakEjuF4UbmZJHAxWdheEr6feEyZmtM'
