@@ -8,4 +8,5 @@ tcib_packages:
   - mod_ssl
   - python3-networking-ansible
   - python3-networking-baremetal
+  - python3-mod_wsgi
 tcib_user: neutron
