@@ -3,4 +3,7 @@ tcib_actions:
 tcib_packages:
   common:
   - openstack-designate-api
+  - httpd
+  - mod_ssl
+  - python3-mod_wsgi
 tcib_user: designate
