@@ -12,6 +12,5 @@ tcib_packages:
   - openstack-neutron-ml2
   - openvswitch
   - python3-networking-baremetal
-  - python3-networking-vmware-nsx
   - python3-openvswitch
   - python3-oslo-vmware
