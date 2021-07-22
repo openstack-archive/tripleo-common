@@ -173,7 +173,7 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleovictoria/openstack-zaqar-wsgi:current-tripleo
   image_source: tripleo
-- imagename: quay.ceph.io/ceph-ci/daemon:v4.0.13-stable-4.0-nautilus-centos-7-x86_64
+- imagename: quay.ceph.io/ceph-ci/daemon:v4.0.19-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
 - imagename: quay.ceph.io/prometheus/prometheus:v2.7.2
   image_source: prom
