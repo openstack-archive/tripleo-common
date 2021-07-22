@@ -253,7 +253,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'namespace': 'docker.io/tripleotrain',
                 'ceph_namespace': 'quay.ceph.io/ceph-ci',
                 'ceph_image': 'daemon',
-                'ceph_tag': 'v4.0.13-stable-4.0-nautilus-centos-7-x86_64',
+                'ceph_tag': 'v4.0.19-stable-4.0-nautilus-centos-7-x86_64',
                 'ceph_grafana_namespace': 'quay.ceph.io/app-sre',
                 'ceph_grafana_image': 'grafana',
                 'ceph_grafana_tag': '5.4.3',
