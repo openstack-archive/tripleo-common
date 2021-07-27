@@ -9,6 +9,7 @@ tcib_packages:
   - iputils
   - net-tools
   - openstack-neutron
+  - openstack-neutron-rpc-server
   - openstack-neutron-ml2
   - openvswitch
   - python3-networking-baremetal
