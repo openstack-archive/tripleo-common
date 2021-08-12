@@ -31,6 +31,11 @@ tcib_actions:
 - run: sed -ri '/^(passwd:|group:)/ s/systemd//g' /etc/nsswitch.conf
 - run: dnf install -y {{ tcib_packages['common'] | join(' ') }}
 - run: mkdir -p /openstack
+- run: >-
+    if [ '{{ tcib_distro }}' == 'centos' ];then dnf download centos*release &&
+    rpm -ivh --nodeps --replacefiles *.rpm &&
+    rm -rf *.rpm &&
+    rpm -e --nodeps redhat-release; fi
 - run: dnf update --excludepkgs redhat-release -y && dnf clean all && rm -rf /var/cache/dnf
 tcib_cmd: kolla_start
 tcib_entrypoint: dumb-init --single-child --
