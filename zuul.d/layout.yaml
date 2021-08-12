@@ -10,7 +10,7 @@
       - tripleo-build-containers-jobs
       - tripleo-buildimage-jobs
       - tripleo-standalone-scenarios-pipeline
-      - tripleo-upgrades-victoria-pipeline
+      #- tripleo-upgrades-victoria-pipeline
     vars:
       ensure_global_symlinks: true
     check:
