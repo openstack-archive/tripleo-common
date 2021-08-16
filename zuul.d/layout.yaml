@@ -11,7 +11,7 @@
       - tripleo-build-containers-jobs
       - tripleo-buildimage-jobs
       - tripleo-standalone-scenarios-pipeline
-      # - tripleo-upgrades-train-pipeline
+      - tripleo-upgrades-train-pipeline
     check:
       jobs:
         - openstack-tox-linters
