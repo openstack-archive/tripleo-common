@@ -121,8 +121,9 @@ if [ -n "${ENVIRONMENT_FILE:-}" ]; then
 import os
 import yaml
 key = 'DeployArtifactFILEs'
+files = ($(printf "'%s'," ${FILES[@]}))
 urls = [
-    "/var/lib/tripleo/artifacts/${CONTAINER_NAME}/{}".format(i)
+    "/var/lib/tripleo/artifacts/${CONTAINER_NAME}/{}".format(os.path.basename(i))
     for i in files
 ]
 content = {'parameter_defaults': {key: []}}
