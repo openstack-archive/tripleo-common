@@ -51,7 +51,6 @@ healthcheck_port () {
 
     shift 1
     ports=""
-    puser=$(get_user_from_process $process)
     # First convert port to hex value. We need to 0-pad it in order to get the
     # right format (4 chars).
     for p in $@; do
@@ -76,7 +75,7 @@ healthcheck_port () {
     match=0
     for pid in $(pgrep -f $process); do
         # Here, we check if a socket is actually associated to the process PIDs
-        match=$(( $match+$(sudo -u $puser find /proc/$pid/fd/ -ilname "socket*" -printf "%l\n" 2>/dev/null | grep -c -E "(${sockets})") ))
+        match=$(( $match+$(find /proc/$pid/fd/ -ilname "socket*" -printf "%l\n" 2>/dev/null | grep -c -E "(${sockets})") ))
         test $match -gt 0 && exit 0 # exit as soon as we get a match
     done
     exit 1 # no early exit, meaning failure.
