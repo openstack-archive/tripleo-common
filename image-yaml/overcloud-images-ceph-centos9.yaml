@@ -1,0 +1,9 @@
+disk_images:
+  -
+    imagename: overcloud-ceph
+    type: qcow2
+    distro: centos
+    release: 9
+    elements:
+      - selinux-permissive
+      - interface-names
