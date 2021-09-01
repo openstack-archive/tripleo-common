@@ -150,8 +150,13 @@ workflows:
           container: <% $.container %>
           queue_name: <% $.queue_name %>
         on-complete:
-          - run_validations: <% $.run_validations %>
+          - upload_validations: <% $.run_validations %>
           - container_image_prepare_params: <% not $.run_validations %>
+
+      upload_validations:
+        action: tripleo.validations.upload
+        on-complete:
+          - run_validations: <% $.run_validations %>
 
       run_validations:
         workflow: tripleo.validations.v1.run_groups
