@@ -483,6 +483,9 @@ workflows:
           # in seconds correct.
           max_retries: <% $.timeout / 10 %>
           retry_interval: 10
+        retry:
+          delay: 10
+          count: 10
         publish:
           introspected_node: <% task().result.values().first() %>
           status: <% bool(task().result.values().first().error) and "FAILED" or "SUCCESS" %>
