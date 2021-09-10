@@ -1,0 +1,200 @@
+#!/bin/bash
+# Copyright 2021 Red Hat, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+#
+# Script to upload files to a Artifact container for deployment via
+# TripleO Heat Templates.
+#
+
+set -eu
+set -x
+set -o pipefail
+SCRIPT_NAME=$(basename $0)
+NBD_DEVICE=/dev/nbd0
+if [ ! -a "${NBD_DEVICE}" ]; then
+    modprobe nbd
+fi
+
+# supported LVM devices and mount points for whole-disk overcloud images
+MOUNTS="/dev/mapper/vg-lv_var:/var \
+        /dev/mapper/vg-lv_log:/var/log \
+        /dev/mapper/vg-lv_audit:/var/log/audit \
+        /dev/mapper/vg-lv_home:/home \
+        /dev/mapper/vg-lv_tmp:/tmp \
+        /dev/mapper/vg-lv_srv:/srv"
+REVERSE_MOUNTS=""
+for m in $MOUNTS; do
+    REVERSE_MOUNTS="$m $REVERSE_MOUNTS"
+done
+
+mount_show_options() {
+    echo "Usage: $SCRIPT_NAME"
+    echo
+    echo "Options:"
+    echo "    -h, --help                  -- print this help."
+    echo "    -a <file>                   -- Image file to mount."
+    echo "    -m <directory>              -- Directory to mount image to."
+    echo "    -n <nbd device>             -- NBD device to use."
+    echo "                                   Defaults to /dev/nbd0"
+    echo
+    echo "Mount an overcloud image to a directory"
+    echo
+    exit $1
+}
+
+unmount_show_options() {
+    echo "Usage: $SCRIPT_NAME"
+    echo
+    echo "Options:"
+    echo "    -h, --help                  -- print this help."
+    echo "    -m <directory>              -- Directory to unmount."
+    echo "    -n <nbd device>             -- NBD device to disconnect."
+    echo "                                   Defaults to /dev/nbd0"
+    echo
+    echo "Unmount a mounted overcloud image"
+    echo
+    exit $1
+}
+
+mount_volume () {
+    if [ -b "$1" ]; then
+        if [ ! -d $2 ]; then
+            mkdir $2
+        fi
+        mount $1 $2
+    fi
+}
+
+unmount_volume () {
+    if mountpoint "$1"; then
+        umount $1
+    fi
+}
+
+remove_device () {
+    if [ -b "/dev/mapper/$1" ]; then
+        dmsetup remove $1
+    fi
+}
+
+mount_image() {
+    set -x
+
+    qemu-nbd --connect $NBD_DEVICE $IMAGE_FILE
+
+    # search for the vg volume group, this is automatic in some environments
+    vgscan
+    # refresh for when this script is called with different values of $NBD_DEVICE
+    vgchange --refresh
+
+    # activate new logical volumes, this is automatic in some environments
+    vgchange -ay
+
+    if [ -b "${NBD_DEVICE}p3" ]; then
+        # 3 partitions in the image, so assume the first 2 are boot partitions
+        if [ -b "/dev/mapper/vg-lv_root" ]; then
+            # a whole-disk overcloud with lvm volumes
+            # for example, overcloud-hardened-uefi-full.qcow2
+            mount /dev/mapper/vg-lv_root $MOUNT_DIR
+            for m in $MOUNTS; do
+                device=${m%:*}
+                path=${m#*:}
+                mount_volume $device $MOUNT_DIR$path
+            done
+        else
+            # a whole-disk overcloud with a single root partition
+            # for example, overcloud-hardened-full.qcow2
+            mount ${NBD_DEVICE}p3 $MOUNT_DIR
+        fi
+        # the EFI partition may be the first or second, try both
+        if blkid -t PARTLABEL="ESP" ${NBD_DEVICE}p1 ; then
+            mount ${NBD_DEVICE}p1 $MOUNT_DIR/boot/efi
+        elif blkid -t PARTLABEL="ESP" ${NBD_DEVICE}p2 ; then
+            mount ${NBD_DEVICE}p2 $MOUNT_DIR/boot/efi
+        fi
+    else
+        # a partition image
+        # for example, overcloud-full.qcow2
+        if [ -b "${NBD_DEVICE}p1" ]; then
+            mount ${NBD_DEVICE}p1 $MOUNT_DIR
+        else
+            mount ${NBD_DEVICE} $MOUNT_DIR
+        fi
+    fi
+}
+
+unmount_image() {
+
+    set -x
+
+    if mountpoint "$MOUNT_DIR"; then
+        for m in $REVERSE_MOUNTS; do
+            path=${m#*:}
+            unmount_volume $MOUNT_DIR$path
+        done
+        unmount_volume $MOUNT_DIR/boot/efi
+        unmount_volume $MOUNT_DIR
+    fi
+
+    qemu-nbd --disconnect $NBD_DEVICE
+    vgchange --refresh vg || true
+
+    for m in $REVERSE_MOUNTS; do
+        device=${m%:*}
+        remove_device $device
+    done
+    remove_device vg-lv_root
+}
+
+
+if [ $SCRIPT_NAME == "tripleo-unmount-image" ]; then
+    TEMP=`getopt -o hm:n: -n $SCRIPT_NAME -- "$@"`
+    if [ $? != 0 ]; then
+        echo "Terminating..." >&2
+        exit 1
+    fi
+    eval set -- "$TEMP"
+
+    while true ; do
+        case "$1" in
+            -h|--help) unmount_show_options 0 >&2;;
+            -m) MOUNT_DIR=$2 ; shift 2;;
+            -n) NBD_DEVICE=$2 ; shift 2;;
+            --) shift ; break;;
+            *) echo "Error: unsupported option $1." ; exit 1;;
+        esac
+    done
+    unmount_image
+else
+    TEMP=`getopt -o ha:m:n: -n $SCRIPT_NAME -- "$@"`
+    if [ $? != 0 ]; then
+        echo "Terminating..." >&2
+        exit 1
+    fi
+    eval set -- "$TEMP"
+
+
+    while true ; do
+        case "$1" in
+            -h|--help) mount_show_options 0 >&2;;
+            -a) IMAGE_FILE=$2 ; shift 2;;
+            -m) MOUNT_DIR=$2 ; shift 2;;
+            -n) NBD_DEVICE=$2 ; shift 2;;
+            --) shift ; break;;
+            *) echo "Error: unsupported option $1." ; exit 1;;
+        esac
+    done
+    mount_image
+fi
