@@ -10,7 +10,7 @@ tcib_packages:
   - ceph-common
   - device-mapper-multipath
   - e2fsprogs
-  - genisoimage
+  - xorriso
   - iscsi-initiator-utils
   - ndctl
   - nfs-utils

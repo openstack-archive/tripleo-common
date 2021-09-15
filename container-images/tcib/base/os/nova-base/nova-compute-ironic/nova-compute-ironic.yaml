@@ -5,7 +5,7 @@ tcib_actions:
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-ironic /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
 tcib_packages:
   common:
-  - genisoimage
+  - xorriso
   - nvme-cli
   - openstack-nova-compute
   - python3-novajoin
