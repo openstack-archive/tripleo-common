@@ -75,7 +75,6 @@ CAPABILITIES_DICT = {
 
 _EXISTING_PASSWORDS = {
     'PlacementPassword': 'VFJeqBKbatYhQm9jja67hufft',
-    'MistralPassword': 'VFJeqBKbatYhQm9jja67hufft',
     'BarbicanPassword': 'MGGQBtgKT7FnywvkcdMwE9nhx',
     'BarbicanSimpleCryptoKek': 'dGhpcnR5X3R3b19ieXRlX2tleWJsYWhibGFoYmxhaGg=',
     'AdminPassword': 'jFmY8FTpvtF2e4d4ReXvmUP8k',
@@ -450,7 +449,6 @@ class PlanTest(base.TestCase):
         }
         mock_orchestration.resources.get.return_value = mock_resource
         rotate_list = [
-            'MistralPassword',
             'BarbicanPassword',
             'AdminPassword',
             'CeilometerMeteringSecret',
