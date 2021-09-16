@@ -34,7 +34,6 @@ parameter_defaults:
   OvercloudControlFlavor: yummy
 passwords:
   AdminPassword: aaaa
-  ZaqarPassword: zzzz
 """
 
 USER_ENV_CONTENTS = """
@@ -79,7 +78,6 @@ _EXISTING_PASSWORDS = {
     'BarbicanSimpleCryptoKek': 'dGhpcnR5X3R3b19ieXRlX2tleWJsYWhibGFoYmxhaGg=',
     'AdminPassword': 'jFmY8FTpvtF2e4d4ReXvmUP8k',
     'CeilometerMeteringSecret': 'CbHTGK4md4Cc8P8ZyzTns6wry',
-    'ZaqarPassword': 'bbFgCTFbAH8vf9n3xvZCP8aMR',
     'NovaPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
     'MysqlRootPassword': 'VqJYpEdKks',
     'RabbitCookie': 'BqJYpEdKksAqJYpEdKks',
@@ -452,7 +450,6 @@ class PlanTest(base.TestCase):
             'BarbicanPassword',
             'AdminPassword',
             'CeilometerMeteringSecret',
-            'ZaqarPassword',
             'NovaPassword',
             'MysqlRootPassword'
         ]
