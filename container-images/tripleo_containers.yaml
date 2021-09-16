@@ -95,14 +95,6 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-memcached:current-tripleo
   image_source: tripleo
-- imagename: quay.io/tripleomaster/openstack-mistral-api:current-tripleo
-  image_source: tripleo
-- imagename: quay.io/tripleomaster/openstack-mistral-engine:current-tripleo
-  image_source: tripleo
-- imagename: quay.io/tripleomaster/openstack-mistral-executor:current-tripleo
-  image_source: tripleo
-- imagename: quay.io/tripleomaster/openstack-mistral-event-engine:current-tripleo
-  image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-multipathd:current-tripleo
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-neutron-dhcp-agent:current-tripleo
