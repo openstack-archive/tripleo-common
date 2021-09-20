@@ -1,0 +1,17 @@
+disk_images:
+  -
+    imagename: overcloud-hardened-uefi-full
+    type: qcow2
+    distro: centos
+    release: 9
+    elements:
+      - selinux-permissive
+      - interface-names
+  -
+    imagename: ironic-python-agent
+    type: qcow2
+    distro: centos
+    release: 9
+    elements:
+      - selinux-permissive
+      - interface-names
