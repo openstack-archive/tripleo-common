@@ -129,7 +129,6 @@ PASSWORD_PARAMETER_NAMES = (
     'SnmpdReadonlyUserPassword',
     'SwiftHashSuffix',
     'SwiftPassword',
-    'ZaqarPassword',
 )
 
 # List of passwords that should not be rotated by default using the
