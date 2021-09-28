@@ -22,7 +22,6 @@ import shutil
 import six
 from six.moves import configparser
 from six.moves import cStringIO as StringIO
-import sys
 import tempfile
 import yaml
 
@@ -224,8 +223,7 @@ def run_ansible_playbook(playbook, work_dir=None, **kwargs):
         remove_work_dir = True
 
     playbook = _get_playbook(playbook, work_dir)
-    python_version = sys.version_info.major
-    ansible_playbook_cmd = "ansible-playbook-{}".format(python_version)
+    ansible_playbook_cmd = "ansible-playbook"
     if 1 < verbosity < 6:
         verbosity_option = '-' + ('v' * (verbosity - 1))
         command = [ansible_playbook_cmd, verbosity_option,

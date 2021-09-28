@@ -17,7 +17,6 @@ import json
 import os
 from six.moves import configparser
 import shutil
-import sys
 import tempfile
 from unittest import mock
 
@@ -74,8 +73,7 @@ class AnsiblePlaybookTest(base.TestCase):
             'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
-        python_version = sys.version_info.major
-        ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
+        ansible_playbook_cmd = 'ansible-playbook'
         mock_execute.assert_called_once_with(
             ansible_playbook_cmd, '-v', pb, '--become',
             '--become-user',
@@ -116,8 +114,7 @@ class AnsiblePlaybookTest(base.TestCase):
             'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
         }
-        python_version = sys.version_info.major
-        ansible_playbook_cmd = 'ansible-playbook-{}'.format(python_version)
+        ansible_playbook_cmd = 'ansible-playbook'
         mock_execute.assert_called_once_with(
             ansible_playbook_cmd, '-v', pb, '--limit', "['compute35']",
             '--become', '--become-user',
