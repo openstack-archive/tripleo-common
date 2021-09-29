@@ -19,5 +19,6 @@ tcib_packages:
   - xfsprogs
   - python3-osc-placement
   - bash-completion
+  - ipa-client
   - ceph-ansible
 tcib_user: cloud-admin
