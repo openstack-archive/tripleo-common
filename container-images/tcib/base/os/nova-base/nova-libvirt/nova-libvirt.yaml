@@ -19,6 +19,7 @@ tcib_packages:
   - podman
   - qemu-kvm
   - swtpm
+  - swtpm-tools
   - trousers
   x86_64:
   - edk2-ovmf
