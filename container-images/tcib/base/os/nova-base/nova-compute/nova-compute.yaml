@@ -24,7 +24,10 @@ tcib_packages:
   - python3-oslo-vmware
   - python3-rtslib
   - sysfsutils
+  - swtpm
+  - swtpm-tools
   - targetcli
+  - trousers
   - xfsprogs
   x86_64:
   - daxio

@@ -70,6 +70,7 @@ _SUPPORTED_USERS['rabbitmq']='rabbitmq 42439 42439 /var/lib/rabbitmq kolla'
 _SUPPORTED_USERS['redis']='redis 42460 42460 /run/redis kolla'
 _SUPPORTED_USERS['swift']='swift 42445 42445 /var/lib/swift kolla'
 _SUPPORTED_USERS['tempest']='tempest 42480 42480 /var/lib/tempest kolla'
+_SUPPORTED_USERS['tss']='tss 42485 42485 /var/lib/tpm kolla'
 
 for _USER_TO_CREATE in $_USERS_TO_CREATE; do
     # Initialize computed args
