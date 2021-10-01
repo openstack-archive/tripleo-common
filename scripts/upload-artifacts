@@ -33,8 +33,6 @@ function show_options {
     echo "      Default: overcloud-artifacts"
     echo "    --environment <env>         -- Generate this heat <env>"
     echo "      Default: $HOME/.tripleo/environments/deployment-artifacts.yaml"
-    echo "    --seconds <seconds>         -- Number of seconds for temp URLs."
-    echo "      Default: 31536000 (one year)"
     echo
     echo "Upload a set of files to Artifact and generate a Heat environment"
     echo "file containing the required DeployArtifactURLs parameter(s) "
@@ -68,7 +66,7 @@ function check_file {
 }
 
 
-TEMP=`getopt -o he:f:c:s: -l help,environment:,file:,container:,seconds: -n $SCRIPT_NAME -- "$@"`
+TEMP=`getopt -o he:f:c: -l help,environment:,file:,container: -n $SCRIPT_NAME -- "$@"`
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
     exit 1
@@ -80,9 +78,6 @@ eval set -- "$TEMP"
 ENVIRONMENT_FILE="$HOME/.tripleo/environments/deployment-artifacts.yaml"
 FILES=
 CONTAINER_NAME=overcloud-artifacts
-SECONDS=31536000
-BINDPORT="${BINDPORT:-8080}"
-BINDADDRESS=$(ip addr show dev br-ctlplane | awk -F'\\s|/' '/inet\s/ {print $6}' | head -n 1)
 
 while true ; do
     case "$1" in
@@ -90,7 +85,6 @@ while true ; do
         -e|--environment) ENVIRONMENT_FILE=$2 ; shift 2;;
         -f|--file) FILES+=" $2" ; shift 2;;
         -c|--container) CONTAINER_NAME=$2 ; shift 2;;
-        -s|--seconds) SECONDS=$2 ; shift 2;;
         --) shift ; break;;
         *) echo "Error: unsupported option $1." ; exit 1;;
     esac
