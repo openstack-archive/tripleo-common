@@ -192,9 +192,6 @@ NESTED_DEPTH = 7
 # Resource name for deployment resources when using config download
 TRIPLEO_DEPLOYMENT_RESOURCE = 'TripleODeployment'
 
-# Resource name for network config resources when using config download
-TRIPLEO_NETWORK_CONFIG_RESOURCE = 'NetworkConfig'
-
 HOST_NETWORK = 'ctlplane'
 
 DEFAULT_VLAN_ID = "1"
