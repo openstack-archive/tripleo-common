@@ -11,5 +11,4 @@ tcib_packages:
   - mod_ssl
   - python3-mod_wsgi
   - syslinux-tftpboot
-  - tftp-server
   - dnsmasq
