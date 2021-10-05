@@ -90,7 +90,10 @@ MEDIA_TYPES = (
     MEDIA_MANIFEST_V2,
     MEDIA_MANIFEST_V2_LIST,
     MEDIA_OCI_MANIFEST_V1,
+    MEDIA_OCI_CONFIG_V1,
     MEDIA_OCI_INDEX_V1,
+    MEDIA_OCI_LAYER,
+    MEDIA_OCI_LAYER_COMPRESSED,
     MEDIA_CONFIG,
     MEDIA_BLOB,
     MEDIA_BLOB_COMPRESSED
@@ -100,7 +103,10 @@ MEDIA_TYPES = (
     'application/vnd.docker.distribution.manifest.v2+json',
     'application/vnd.docker.distribution.manifest.list.v2+json',
     'application/vnd.oci.image.manifest.v1+json',
+    'application/vnd.oci.image.config.v1+json',
     'application/vnd.oci.image.index.v1+json',
+    'application/vnd.oci.image.layer.v1.tar',
+    'application/vnd.oci.image.layer.v1.tar+gzip',
     'application/vnd.docker.container.image.v1+json',
     'application/vnd.docker.image.rootfs.diff.tar',
     'application/vnd.docker.image.rootfs.diff.tar.gzip'
@@ -883,7 +889,9 @@ class BaseImageUploader(object):
         manifest_url = cls._build_url(
             image_url, CALL_MANIFEST % parts
         )
-        manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
+        # prefer docker manifest over oci
+        manifest_headers = {'Accept': ", ".join([
+            MEDIA_MANIFEST_V2 + ";q=1", MEDIA_OCI_MANIFEST_V1 + ";q=0.5"])}
 
         try:
             manifest_r = RegistrySessionHelper.get(
@@ -1786,7 +1794,9 @@ class PythonImageUploader(BaseImageUploader):
         if multi_arch:
             manifest_headers = {'Accept': MEDIA_MANIFEST_V2_LIST}
         else:
-            manifest_headers = {'Accept': MEDIA_MANIFEST_V2}
+            # prefer docker manifest over oci
+            manifest_headers = {'Accept': ", ".join([
+                MEDIA_MANIFEST_V2 + ";q=1", MEDIA_OCI_MANIFEST_V1 + ";q=0.5"])}
         try:
             r = RegistrySessionHelper.get(
                 session,
@@ -1811,12 +1821,16 @@ class PythonImageUploader(BaseImageUploader):
         )
         manifests_str.append(manifest_str)
         manifest = json.loads(manifest_str)
+        media_type = manifest.get('mediaType',
+                                  manifest.get('config', {}).get('mediaType'))
         if manifest.get('schemaVersion', 2) == 1:
             layers.extend(reversed([x['blobSum']
                                     for x in manifest['fsLayers']]))
-        elif manifest.get('mediaType') == MEDIA_MANIFEST_V2:
+        elif not media_type or media_type in [MEDIA_MANIFEST_V2,
+                                              MEDIA_OCI_MANIFEST_V1,
+                                              MEDIA_OCI_CONFIG_V1]:
             layers.extend(x['digest'] for x in manifest['layers'])
-        elif manifest.get('mediaType') == MEDIA_MANIFEST_V2_LIST:
+        elif media_type == MEDIA_MANIFEST_V2_LIST:
             image, _, tag = image_url.geturl().rpartition(':')
             for man in manifest.get('manifests', []):
                 # replace image tag with the manifest hash in the list
@@ -2026,7 +2040,14 @@ class PythonImageUploader(BaseImageUploader):
         for source_manifest in source_manifests:
             manifest = json.loads(source_manifest)
             config_str = None
-            if manifest.get('mediaType') == MEDIA_MANIFEST_V2:
+            # NOTE(mwhahaha): mediaType will not be set when it's
+            # schemaVersion 1
+            media_type = manifest.get('mediaType',
+                                      manifest.get('config',
+                                                   {}).get('mediaType'))
+            if media_type in [MEDIA_MANIFEST_V2,
+                              MEDIA_OCI_MANIFEST_V1,
+                              MEDIA_OCI_CONFIG_V1]:
                 config_digest = manifest['config']['digest']
                 LOG.debug('[%s] Uploading config with digest: %s' %
                           (image, config_digest))
@@ -2078,8 +2099,27 @@ class PythonImageUploader(BaseImageUploader):
             # is explicitly OCI because buildah uses OCI by default but we
             # convert the metadata to Docker format in the uploader.
             # See LP#1860585
-            manifest_type = manifest.get('mediaType', False)
-            if not manifest_type or manifest_type == MEDIA_OCI_MANIFEST_V1:
+            manifest_type = manifest.get('mediaType',
+                                         manifest.get('config',
+                                                      {}).get('mediaType'))
+            if manifest_type in [MEDIA_OCI_MANIFEST_V1,
+                                 MEDIA_OCI_CONFIG_V1]:
+                manifest_type = MEDIA_MANIFEST_V2
+                # convert config mediaType to docker.container.image
+                manifest['config']['mediaType'] = MEDIA_CONFIG
+                layers = manifest.get('layers')
+                # convert layer type to docker layer type
+                if layers:
+                    new_layers = []
+                    for layer in layers:
+                        layer_type = layer.get('mediaType')
+                        if layer_type == MEDIA_OCI_LAYER_COMPRESSED:
+                            layer['mediaType'] = MEDIA_BLOB_COMPRESSED
+                        elif layer_type == MEDIA_OCI_LAYER:
+                            layer['mediaType'] = MEDIA_BLOB
+                        new_layers.append(layer)
+                    manifest['layers'] = new_layers
+            elif manifest_type == MEDIA_CONFIG:
                 manifest_type = MEDIA_MANIFEST_V2
             elif manifest_type == MEDIA_OCI_INDEX_V1:
                 manifest_type = MEDIA_MANIFEST_V2_LIST

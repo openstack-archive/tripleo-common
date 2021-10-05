@@ -2087,8 +2087,10 @@ class TestPythonImageUploader(base.TestCase):
             'nova-api/manifests/tripleo-current',
             timeout=30,
             headers={
-                'Accept': 'application/vnd.docker.distribution'
-                          '.manifest.v2+json'
+                'Accept': 'application/'
+                          'vnd.docker.distribution.manifest.v2+json;q=1, '
+                          'application/'
+                          'vnd.oci.image.manifest.v1+json;q=0.5'
             }
         )
 
@@ -2446,13 +2448,12 @@ class TestPythonImageUploader(base.TestCase):
             'config': {
                 'digest': 'sha256:1234',
                 'size': 2,
-                'mediaType': image_uploader.MEDIA_CONFIG
+                'mediaType': image_uploader.MEDIA_OCI_CONFIG_V1
             },
             'layers': [
                 {'digest': 'sha256:aaaa'},
                 {'digest': 'sha256:bbbb'},
             ],
-            'mediaType': image_uploader.MEDIA_OCI_MANIFEST_V1
         })
         expected_manifest = {
             'config': {
