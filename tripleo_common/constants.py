@@ -14,24 +14,6 @@
 # under the License.
 
 
-#: The names of the root template in a standard tripleo-heat-template layout.
-OVERCLOUD_YAML_NAME = "overcloud.yaml"
-
-#: The name of the overcloud root template in jinja2 format.
-OVERCLOUD_J2_NAME = "overcloud.j2.yaml"
-
-#: The name of custom roles data file used when rendering the jinja template.
-OVERCLOUD_J2_ROLES_NAME = "roles_data.yaml"
-
-#: The name of custom roles network data file used when rendering j2 templates.
-OVERCLOUD_J2_NETWORKS_NAME = "network_data.yaml"
-
-#: The name of custom roles excl file used when rendering the jinja template.
-OVERCLOUD_J2_EXCLUDES = "j2_excludes.yaml"
-
-#: The name of the type for resource groups.
-RESOURCE_GROUP_TYPE = 'OS::Heat::ResourceGroup'
-
 #: The resource name used for package updates
 UPDATE_RESOURCE_NAME = 'UpdateDeployment'
 
@@ -44,31 +26,8 @@ DEFAULT_CONTAINER_NAME = 'overcloud'
 #: The default name to use for the config files of the container
 CONFIG_CONTAINER_NAME = 'overcloud-config'
 
-#: The default name to use for the container for validations
-VALIDATIONS_CONTAINER_NAME = 'tripleo-validations'
-
-#: The name of the plan subdirectory that holds custom validations
-CUSTOM_VALIDATIONS_FOLDER = 'custom-validations'
-
-#: The default key to use for updating parameters in plan environment.
-DEFAULT_PLAN_ENV_KEY = 'parameter_defaults'
-
-#: The path to the tripleo heat templates installed on the undercloud
-DEFAULT_TEMPLATES_PATH = '/usr/share/openstack-tripleo-heat-templates/'
-
 #: The path to the base directory of tripleo-validations
 DEFAULT_VALIDATIONS_BASEDIR = "/usr/share/ansible"
-
-# The path to the tripleo validations installed on the undercloud
-DEFAULT_VALIDATIONS_PATH = "{}/validation-playbooks/".format(
-    DEFAULT_VALIDATIONS_BASEDIR)
-
-# The path to the local CA certificate installed on the undercloud
-LOCAL_CACERT_PATH = '/etc/pki/ca-trust/source/anchors/cm-local-ca.pem'
-
-# TRIPLEO_META_USAGE_KEY is inserted into metadata for containers created in
-# Swift via SwiftPlanStorageBackend to identify them from other containers
-TRIPLEO_META_USAGE_KEY = 'x-container-meta-usage-tripleo'
 
 # 60 minutes maximum to build the child layers at the same time.
 BUILD_TIMEOUT = 3600
@@ -151,8 +110,6 @@ DO_NOT_ROTATE_LIST = (
     'HeatAuthEncryptionKey',
 )
 
-PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
-
 # The default version of the Identity API to set in overcloudrc.
 DEFAULT_IDENTITY_API_VERSION = '3'
 
@@ -164,23 +121,6 @@ DEFAULT_IMAGE_API_VERSION = '2'
 
 # The default version of the Volume API to set in overcloudrc.
 DEFAULT_VOLUME_API_VERSION = '3'
-
-# The name of the file which holds the Mistral environment contents for plan
-# import/export
-PLAN_ENVIRONMENT = 'plan-environment.yaml'
-
-# Name of the environment with merged parameters from CLI
-USER_ENVIRONMENT = 'user-environment.yaml'
-
-# The name of the file which holds container image default parameters
-CONTAINER_DEFAULTS_ENVIRONMENT = ('environments/'
-                                  'containers-default-parameters.yaml')
-
-# The name for the swift container to host the cache for tripleo
-TRIPLEO_CACHE_CONTAINER = "__cache__"
-
-API_NETWORK = 'InternalApi'
-LEGACY_API_NETWORK = 'Internal'
 
 # Default nested depth when recursing Heat stacks
 NESTED_DEPTH = 7
