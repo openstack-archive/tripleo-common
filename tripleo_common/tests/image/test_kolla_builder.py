@@ -21,7 +21,6 @@ from unittest import mock
 
 import yaml
 
-from tripleo_common import constants
 from tripleo_common.image import image_uploader
 from tripleo_common.image import kolla_builder as kb
 from tripleo_common.tests import base
@@ -39,7 +38,8 @@ kb.init_prepare_defaults(DEFAULTS_PATH)
 KB_DEFAULT_TAG = kb.CONTAINER_IMAGES_DEFAULTS['tag']
 KB_DEFAULT_PREFIX = kb.CONTAINER_IMAGES_DEFAULTS['name_prefix']
 KB_DEFAULT_NAMESPACE = kb.CONTAINER_IMAGES_DEFAULTS['namespace']
-
+CONTAINER_DEFAULTS_ENVIRONMENT = ('environments/'
+                                  'containers-default-parameters.yaml')
 
 filedata = six.u("""container_images:
 - imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
@@ -481,7 +481,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::NovaLibvirt'],
                 excludes=['libvirt'],
@@ -508,7 +508,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 includes=['libvirt'],
                 mapping_args={
@@ -535,7 +535,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 includes=['libvirt'],
                 excludes=['libvirt'],
@@ -569,7 +569,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::NovaApi'],
                 push_destination='192.0.2.0:8787',
@@ -605,7 +605,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::NovaApi'],
                 push_destination=True,
@@ -631,7 +631,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::CephMon'],
                 mapping_args={
@@ -656,7 +656,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=[
                     'OS::TripleO::Services::NeutronServer'
@@ -689,7 +689,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
-                output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+                output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=[
                     'OS::TripleO::Services::NeutronServer',
@@ -717,7 +717,7 @@ class TestPrepare(base.TestCase):
 
         kb.container_images_prepare(
             template_file=TEMPLATE_PATH,
-            output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+            output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
             output_images_file='container_images.yaml',
             mapping_args={},
             tag_from_label="n-v",
@@ -727,7 +727,7 @@ class TestPrepare(base.TestCase):
 
         kb.container_images_prepare(
             template_file=TEMPLATE_PATH,
-            output_env_file=constants.CONTAINER_DEFAULTS_ENVIRONMENT,
+            output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
             output_images_file='container_images.yaml',
             mapping_args={"tag": "master"},
             tag_from_label="n-v",
