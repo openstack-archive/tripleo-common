@@ -109,7 +109,6 @@ PASSWORD_PARAMETER_NAMES = (
     'KeystoneFernetKey1',
     'KeystoneFernetKeys',
     'ManilaPassword',
-    'MistralPassword',
     'MysqlClustercheckPassword',
     'MysqlRootPassword',
     'NeutronMetadataProxySharedSecret',
@@ -211,8 +210,6 @@ EXTERNAL_TASKS = ['external_deploy_tasks', 'external_deploy_steps_tasks']
 ANSIBLE_ERRORS_FILE = 'ansible-errors.json'
 
 DEPLOYMENT_STATUS_FILE = 'deployment_status.yaml'
-
-MISTRAL_WORK_DIR = '/var/lib/mistral'
 
 EXCLUSIVE_NEUTRON_DRIVERS = ['ovn', 'openvswitch']
 
