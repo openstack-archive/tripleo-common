@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
-
 from keystoneauth1.identity.generic import Token as IdentityToken
 from keystoneauth1 import loading
 from keystoneauth1 import session as ks_session
@@ -220,7 +218,7 @@ def get_endpoint_for_project(ctx, service_name=None, service_type=None,
     endpoint = None
     os_actions_endpoint_type = 'public'
 
-    for endpoints in six.itervalues(service_endpoints):
+    for endpoints in service_endpoints.items():
         for ep in endpoints:
             # is V3 interface?
             if 'interface' in ep:

@@ -13,15 +13,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from datetime import datetime
+from io import StringIO
 import json
 import logging
 import multiprocessing
 import os
 from pathlib import Path
 import shutil
-import six
-from six.moves import configparser
-from six.moves import cStringIO as StringIO
+import configparser
 import tempfile
 import yaml
 
@@ -165,10 +164,10 @@ def _get_inventory(inventory, work_dir):
     if not inventory:
         return None
 
-    if (isinstance(inventory, six.string_types) and
+    if (isinstance(inventory, str) and
             os.path.exists(inventory)):
         return inventory
-    if not isinstance(inventory, six.string_types):
+    if not isinstance(inventory, str):
         inventory = yaml.safe_dump(inventory)
 
     path = os.path.join(work_dir, 'inventory.yaml')
@@ -183,7 +182,7 @@ def _get_ssh_private_key(ssh_private_key, work_dir):
     if not ssh_private_key:
         return None
 
-    if (isinstance(ssh_private_key, six.string_types) and
+    if (isinstance(ssh_private_key, str) and
             os.path.exists(ssh_private_key)):
         os.chmod(ssh_private_key, 0o600)
         return ssh_private_key
@@ -201,10 +200,10 @@ def _get_playbook(playbook, work_dir):
     if not playbook:
         return None
 
-    if (isinstance(playbook, six.string_types) and
+    if (isinstance(playbook, str) and
             os.path.exists(playbook)):
         return playbook
-    if not isinstance(playbook, six.string_types):
+    if not isinstance(playbook, str):
         playbook = yaml.safe_dump(playbook)
 
     path = os.path.join(work_dir, 'playbook.yaml')
@@ -295,7 +294,7 @@ def run_ansible_playbook(playbook, work_dir=None, **kwargs):
             msg = "extra_env_variables must be a dict"
             raise RuntimeError(msg)
         for key, value in extra_env_variables.items():
-            extra_env_variables[key] = six.text_type(value)
+            extra_env_variables[key] = str(value)
 
     try:
         ansible_config_path = write_default_ansible_cfg(
@@ -320,7 +319,7 @@ def run_ansible_playbook(playbook, work_dir=None, **kwargs):
                     'tripleo_dense,tripleo_profile_tasks,tripleo_states',
                 'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
                 'PROFILE_TASKS_TASK_OUTPUT_LIMIT':
-                    six.text_type(profile_tasks_limit),
+                    str(profile_tasks_limit),
             })
 
         if extra_env_variables:

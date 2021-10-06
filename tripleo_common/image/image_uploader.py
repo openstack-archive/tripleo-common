@@ -24,8 +24,7 @@ import requests
 from requests import auth as requests_auth
 from requests.adapters import HTTPAdapter
 import shutil
-import six
-from six.moves.urllib import parse
+from urllib.parse import urlparse
 import socket
 import subprocess
 import tempfile
@@ -282,7 +281,7 @@ class RegistrySessionHelper(object):
                 and request_response.status_code < 400):
             return request_response
         # parse the destination location
-        redir_url = parse.urlparse(request_response.headers['Location'])
+        redir_url = urlparse(request_response.headers['Location'])
         # close the response since we're going to replace it
         request_response.close()
         auth_header = request_session.headers.pop('Authorization', None)
@@ -494,12 +493,12 @@ class ImageUploadManager(BaseImageManager):
             if not isinstance(cred_entry, dict) or len(cred_entry) != 1:
                 raise TypeError('Credentials entry must be '
                                 'a dict with a single item')
-            if not isinstance(registry, six.string_types):
+            if not isinstance(registry, str):
                 raise TypeError('Key must be a registry host string: %s' %
                                 registry)
             username, password = next(iter(cred_entry.items()))
-            if not (isinstance(username, six.string_types) and
-                    isinstance(password, six.string_types)):
+            if not (isinstance(username, str) and
+                    isinstance(password, str)):
                 raise TypeError('Username and password must be strings: %s' %
                                 username)
 
@@ -1051,7 +1050,7 @@ class BaseImageUploader(object):
     def _image_to_url(cls, image):
         if '://' not in image:
             image = 'docker://' + image
-        url = parse.urlparse(image)
+        url = urlparse(image)
         return url
 
     @classmethod
@@ -1410,8 +1409,8 @@ class PythonImageUploader(BaseImageUploader):
         LOG.info('[%s] Starting upload image process' % t.image_name)
 
         source_local = t.source_image.startswith('containers-storage:')
-        target_image_local_url = parse.urlparse('containers-storage:%s' %
-                                                t.target_image)
+        target_image_local_url = urlparse('containers-storage:%s' %
+                                          t.target_image)
         target_username, target_password = self.credentials_for_registry(
             t.target_image_url.netloc)
         try:
@@ -1447,7 +1446,7 @@ class PythonImageUploader(BaseImageUploader):
                             'container.' % t.image_name)
 
             try:
-                source_local_url = parse.urlparse(t.source_image)
+                source_local_url = urlparse(t.source_image)
                 # Copy from local storage to target registry
                 self._copy_local_to_registry(
                     source_local_url,
@@ -1677,7 +1676,7 @@ class PythonImageUploader(BaseImageUploader):
             image, _, tag = image_url.geturl().rpartition(':')
             for man in manifest.get('manifests', []):
                 # replace image tag with the manifest hash in the list
-                man_url = parse.urlparse('%s@%s' % (image, man['digest']))
+                man_url = urlparse('%s@%s' % (image, man['digest']))
                 self._collect_manifests_layers(
                     man_url, session, manifests_str, layers,
                     multi_arch=False
@@ -1808,7 +1807,7 @@ class PythonImageUploader(BaseImageUploader):
         else:
             if layer_val and known_path:
                 image_ref = target_url.path.split(':')[0][1:]
-                uploaded = parse.urlparse(known_path).scheme
+                uploaded = urlparse(known_path).scheme
                 cls._track_uploaded_layers(
                     layer_val, known_path=known_path, image_ref=image_ref,
                     scope=('remote' if uploaded else 'local'))
@@ -2193,7 +2192,7 @@ class PythonImageUploader(BaseImageUploader):
         else:
             if layer_val and known_path:
                 image_ref = target_url.path.split(':')[0][1:]
-                uploaded = parse.urlparse(known_path).scheme
+                uploaded = urlparse(known_path).scheme
                 cls._track_uploaded_layers(
                     layer_val, known_path=known_path, image_ref=image_ref,
                     scope=('remote' if uploaded else 'local'))
@@ -2385,7 +2384,7 @@ class PythonImageUploader(BaseImageUploader):
         config_digest = manifest['config']['digest']
 
         config_id = '=' + base64.b64encode(
-            six.b(config_digest)).decode("utf-8")
+            config_digest.encode()).decode('utf-8')
         config_str = cls._containers_file('overlay-images', image_id,
                                           config_id)
         manifest = cls._get_local_layers_manifest(manifest, config_str)
@@ -2468,7 +2467,7 @@ class PythonImageUploader(BaseImageUploader):
             if not image:
                 continue
             LOG.info('[%s] Removing local copy of image' % image)
-            image_url = parse.urlparse('containers-storage:%s' % image)
+            image_url = urlparse('containers-storage:%s' % image)
             self._delete(image_url)
 
     def _get_executor(self):

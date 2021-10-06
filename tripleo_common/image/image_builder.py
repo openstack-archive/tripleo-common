@@ -18,7 +18,6 @@ import abc
 import logging
 import os
 import shlex
-import six
 import subprocess
 import sys
 
@@ -30,8 +29,7 @@ if sys.version_info[0] < 3:
     open = codecs.open
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ImageBuilder(object):
+class ImageBuilder(object, metaclass=abc.ABCMeta):
     """Base representation of an image building method"""
 
     @staticmethod
