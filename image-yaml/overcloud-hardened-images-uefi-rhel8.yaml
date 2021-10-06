@@ -7,4 +7,5 @@ disk_images:
       DIB_RELEASE: '8'
     elements:
       - interface-names
-
+    packages:
+      - kernel-modules-extra
