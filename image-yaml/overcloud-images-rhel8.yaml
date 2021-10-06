@@ -9,6 +9,7 @@ disk_images:
       - interface-names
     packages:
       - rhosp-release
+      - kernel-modules-extra
     environment:
       FS_TYPE: xfs
     options:
