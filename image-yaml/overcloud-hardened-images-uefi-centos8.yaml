@@ -8,3 +8,5 @@ disk_images:
     elements:
       - selinux-permissive
       - interface-names
+    packages:
+      - kernel-modules-extra
