@@ -709,14 +709,6 @@ container_images_template:
   - OS::TripleO::Services::SwiftRingBuilder
   - OS::TripleO::Services::SwiftStorage
 
-- imagename: "{{namespace}}/{{name_prefix}}zaqar-wsgi{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-  params:
-  - ContainerZaqarConfigImage
-  - ContainerZaqarImage
-  services:
-  - OS::TripleO::Services::Zaqar
-
 - imagename: "{{ceph_namespace}}/{{ceph_image}}:{{ceph_tag}}"
   image_source: ceph
   params:

@@ -17,5 +17,4 @@ tcib_packages:
   - python3-octaviaclient
   - python3-openstackclient
   - python3-swiftclient
-  - python3-zaqarclient
   - python3-pymemcache
