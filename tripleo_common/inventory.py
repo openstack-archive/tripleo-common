@@ -520,6 +520,7 @@ class TripleoInventory(object):
                         "generation.")
             return None
         except (openstack.connection.exceptions.EndpointNotFound,
+                openstack.exceptions.ResourceNotFound,
                 keystoneauth1.exceptions.catalog.EndpointNotFound):
             LOG.warning("Neutron service not installed. Disabling use of "
                         "neutron as a source for inventory generation.")
