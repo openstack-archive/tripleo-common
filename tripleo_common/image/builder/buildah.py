@@ -17,7 +17,6 @@
 from concurrent import futures
 import os
 import pathlib
-import six
 import tenacity
 
 from oslo_concurrency import processutils
@@ -264,7 +263,7 @@ class BuildahBuilder(base.BaseBuilder):
         """
 
         self.log.debug("Process deps: {}".format(deps))
-        if isinstance(deps, (six.string_types,)):
+        if isinstance(deps, str):
             if prio_list:
                 prio_list.append(deps)
             else:
@@ -287,7 +286,7 @@ class BuildahBuilder(base.BaseBuilder):
             dep_list = list()
             dep_rehash_list = list()
             for item in deps:
-                if isinstance(item, (six.string_types,)):
+                if isinstance(item, str):
                     dep_list.append(item)
                 else:
                     dep_rehash_list.append(item)

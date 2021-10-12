@@ -19,8 +19,7 @@ import json
 import os
 import requests
 import shutil
-import six
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 import tempfile
 from unittest import mock
 import zlib
@@ -78,7 +77,7 @@ class TestImageExport(base.TestCase):
         )
 
     def test_export_stream(self):
-        blob_data = six.b('The Blob')
+        blob_data = b'The Blob'
         blob_compressed = zlib.compress(blob_data)
         calc_digest = hashlib.sha256()
         calc_digest.update(blob_compressed)
@@ -114,7 +113,7 @@ class TestImageExport(base.TestCase):
     @mock.patch('tripleo_common.image.image_export.open',
                 side_effect=MemoryError())
     def test_export_stream_memory_error(self, mock_open):
-        blob_data = six.b('The Blob')
+        blob_data = b'The Blob'
         blob_compressed = zlib.compress(blob_data)
         calc_digest = hashlib.sha256()
         calc_digest.update(blob_compressed)
@@ -129,7 +128,7 @@ class TestImageExport(base.TestCase):
                           target_url, layer, layer_stream, verify_digest=False)
 
     def test_export_stream_verify_failed(self):
-        blob_data = six.b('The Blob')
+        blob_data = b'The Blob'
         blob_compressed = zlib.compress(blob_data)
         calc_digest = hashlib.sha256()
         calc_digest.update(blob_compressed)

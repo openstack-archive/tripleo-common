@@ -19,8 +19,7 @@ import json
 import operator
 import requests
 from requests_mock.contrib import fixture as rm_fixture
-import six
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from unittest import mock
 import zlib
 
@@ -32,7 +31,7 @@ from tripleo_common.tests import base
 from tripleo_common.tests.image import fakes
 
 
-filedata = six.u(
+filedata = str(
     """container_images:
     - imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
       push_destination: localhost:8787
@@ -1884,7 +1883,7 @@ class TestPythonImageUploader(base.TestCase):
         source_session = requests.Session()
         target_session = requests.Session()
 
-        blob_data = six.b('The Blob')
+        blob_data = b'The Blob'
         calc_digest = hashlib.sha256()
         calc_digest.update(blob_data)
         blob_digest = 'sha256:' + calc_digest.hexdigest()
@@ -2237,8 +2236,8 @@ class TestPythonImageUploader(base.TestCase):
     def test_copy_registry_to_local(self, mock_popen, mock_environ):
         mock_success = mock.Mock()
         mock_success.communicate.return_value = (
-            six.b('pull complete'),
-            six.b('')
+            b'pull complete',
+            b''
         )
         mock_success.returncode = 0
 
@@ -2274,7 +2273,7 @@ class TestPythonImageUploader(base.TestCase):
         layer = {'digest': 'sha256:aaaa'}
         target_session = requests.Session()
 
-        blob_data = six.b('The Blob')
+        blob_data = b'The Blob'
         calc_digest = hashlib.sha256()
         calc_digest.update(blob_data)
         blob_digest = 'sha256:' + calc_digest.hexdigest()

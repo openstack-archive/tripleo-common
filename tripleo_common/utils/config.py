@@ -18,7 +18,6 @@ import logging
 import os
 import re
 import shutil
-import six
 import tempfile
 import warnings
 import yaml
@@ -136,7 +135,7 @@ class Config(object):
             # Filter out boolean value and remove blanks
             flatten_when = "".join([re.sub(r'\s+', '', x)
                                     for x in whenexpr
-                                    if isinstance(x, six.string_types)])
+                                    if isinstance(x, str)])
             # make \|int optional incase forgotten; use only step digit:
             # ()'s around step|int are also optional
             steps_found = re.findall(r'\(?step(?:\|int)?\)?==(\d+)',
@@ -262,7 +261,7 @@ class Config(object):
         role_data = self.stack_outputs.get('RoleData', {})
         role_group_vars = self.stack_outputs.get('RoleGroupVars', {})
         role_host_vars = self.stack_outputs.get('AnsibleHostVarsMap', {})
-        for role_name, role in six.iteritems(role_data):
+        for role_name, role in role_data.items():
             role_path = os.path.join(config_dir, role_name)
             self._mkdir(role_path)
             for config in config_type or role.keys():
@@ -304,7 +303,7 @@ class Config(object):
                                        default_flow_style=False)
 
         role_config = self.get_role_config()
-        for config_name, config in six.iteritems(role_config):
+        for config_name, config in role_config.items():
 
             # External tasks are in RoleConfig and not defined per role.
             # So we don't use the RoleData to create the per step playbooks.
@@ -512,8 +511,8 @@ class Config(object):
 
                 # If the value is not a string already, pretty print it as a
                 # string so it's rendered in a readable format.
-                if not (isinstance(data, six.text_type) or
-                        isinstance(data, six.string_types)):
+                if not (isinstance(data, str) or
+                        isinstance(data, str)):
                     data = json.dumps(data, indent=2)
 
                 d['config'] = data

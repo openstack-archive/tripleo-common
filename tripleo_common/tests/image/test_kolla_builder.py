@@ -14,7 +14,6 @@
 #
 
 import os
-import six
 import sys
 import tempfile
 from unittest import mock
@@ -41,7 +40,7 @@ KB_DEFAULT_PREFIX = kb.CONTAINER_IMAGES_DEFAULTS['name_prefix']
 KB_DEFAULT_NAMESPACE = kb.CONTAINER_IMAGES_DEFAULTS['namespace']
 
 
-filedata = six.u("""container_images:
+filedata = str("""container_images:
 - imagename: docker.io/tripleomaster/heat-docker-agents-centos:latest
   image_source: kolla
   push_destination: localhost:8787
@@ -60,7 +59,7 @@ filedata = six.u("""container_images:
   push_destination: localhost:8787
 """)
 
-template_filedata = six.u("""
+template_filedata = str("""
 container_images_template:
 - imagename: "{{namespace}}/heat-docker-agents-centos:latest"
   image_source: kolla

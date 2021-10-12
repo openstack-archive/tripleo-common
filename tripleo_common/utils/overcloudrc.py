@@ -13,8 +13,7 @@
 #   under the License.
 
 import logging
-
-from six.moves import urllib
+import urllib
 
 from tripleo_common import constants
 from tripleo_common.utils import common as common_utils

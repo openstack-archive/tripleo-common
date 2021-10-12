@@ -15,11 +15,11 @@
 
 import collections
 import errno
+from functools import wraps
 import hashlib
 import json
 import os
 import requests
-import six
 import shutil
 
 from oslo_log import log as logging
@@ -54,7 +54,7 @@ TYPE_MAP_EXTENSION = '.type-map'
 
 
 def skip_if_exists(f):
-    @six.wraps(f)
+    @wraps(f)
     def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)

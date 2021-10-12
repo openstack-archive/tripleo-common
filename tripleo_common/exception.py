@@ -17,9 +17,6 @@
 import logging
 import sys
 
-import six
-from six import reraise as raise_
-
 from tripleo_common.i18n import _
 
 _FATAL_EXCEPTION_FORMAT_ERRORS = False
@@ -27,7 +24,6 @@ _FATAL_EXCEPTION_FORMAT_ERRORS = False
 LOG = logging.getLogger(__name__)
 
 
-@six.python_2_unicode_compatible
 class TripleoCommonException(Exception):
     """Base Tripleo-Common Exception.
 
@@ -53,7 +49,7 @@ class TripleoCommonException(Exception):
                           {'name': name, 'value': value})  # noqa
 
             if _FATAL_EXCEPTION_FORMAT_ERRORS:
-                raise_(exc_info[0], exc_info[1], exc_info[2])
+                raise Exception(exc_info[0], exc_info[1], exc_info[2])
 
     def __str__(self):
         return self.message

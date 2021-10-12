@@ -13,8 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from six import iteritems
-
 from heatclient.common import template_utils
 
 from tripleo_common import constants
@@ -36,7 +34,7 @@ def search_stack(stack_data, key_name):
             if result:
                 return result
     elif isinstance(stack_data, dict):
-        for k, v in iteritems(stack_data):
+        for k, v in stack_data.items():
             if k == key_name:
                 return v
             result = search_stack(v, key_name)

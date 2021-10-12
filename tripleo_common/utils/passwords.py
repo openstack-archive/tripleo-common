@@ -25,7 +25,6 @@ import time
 import uuid
 
 import passlib.pwd
-import six
 import yaml
 
 from tripleo_common import constants
@@ -64,7 +63,7 @@ def generate_passwords(stack_env=None,
             passwords[name] = create_cephx_key()
         elif name == "CephClusterFSID":
             # The FSID must be a UUID
-            passwords[name] = six.text_type(uuid.uuid4())
+            passwords[name] = str(uuid.uuid4())
         # Since by default passlib.pwd.genword uses all digits and ascii upper
         # & lowercase letters, it provides ~5.95 entropy per character.
         # Make the length of the default authkey 4096 bytes, which should give

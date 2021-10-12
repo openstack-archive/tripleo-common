@@ -18,7 +18,6 @@ import logging
 import re
 
 from oslo_utils import netutils
-import six
 
 from ironicclient import exceptions as ironicexceptions
 from oslo_concurrency import processutils
@@ -417,7 +416,7 @@ def register_ironic_node(node, client):
 
     for field in ('name', 'uuid'):
         if field in node:
-            create_map.update({field: six.text_type(node[field])})
+            create_map.update({field: str(node[field])})
 
     conductor_group = node.get("conductor_group")
     if conductor_group:
@@ -518,7 +517,7 @@ def _update_or_register_ironic_node(node, node_map, client):
 
         patched = {}
         for field, paths in _NON_DRIVER_FIELDS.items():
-            if isinstance(paths, six.string_types):
+            if isinstance(paths, str):
                 paths = [paths]
 
             if field in node:
@@ -679,7 +678,7 @@ def validate_nodes(nodes_list):
 
 def dict_to_capabilities(caps_dict):
     """Convert a dictionary into a string with the capabilities syntax."""
-    if isinstance(caps_dict, six.string_types):
+    if isinstance(caps_dict, str):
         return caps_dict
 
     # NOTE(dtantsur): sort capabilities so that their order does not change
