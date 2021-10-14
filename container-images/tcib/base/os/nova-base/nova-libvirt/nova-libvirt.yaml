@@ -1,5 +1,6 @@
 tcib_actions:
 - run: if [ "$(uname -m)" == "x86_64" ]; then dnf -y install {{ tcib_packages['x86_64'] | join(' ') }}; fi
+- run: if ['{{ tcib_release }}' == '8' ]; then dnf -y install {{ tcib_packages['el8'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-libvirt /openstack/healthcheck && chmod a+rx /openstack/healthcheck
 tcib_packages:
@@ -20,6 +21,7 @@ tcib_packages:
   - qemu-kvm
   - swtpm
   - swtpm-tools
-  - trousers
   x86_64:
   - edk2-ovmf
+  el8:
+  - trousers
