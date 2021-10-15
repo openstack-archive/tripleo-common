@@ -1,13 +1,11 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage {{ tcib_user }}
-- run: if [ '{{ tcib_release }}' == '8' ];then dnf -y install {{ tcib_packages['el8'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/qdrouterd /openstack/healthcheck && chmod a+rx /openstack/healthcheck
 tcib_packages:
   common:
   - cyrus-sasl-lib
   - cyrus-sasl-plain
-  el8:
   - qpid-dispatch-router
   - qpid-dispatch-tools
 tcib_user: qdrouterd
