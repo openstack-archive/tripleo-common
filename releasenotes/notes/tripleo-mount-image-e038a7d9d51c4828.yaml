@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    The scripts `tripleo-mount-image` and `tripleo-unmount-image` will mount
+    the contents of an overcloud image file using qemu-nbd, making it available
+    for chroot, or other read/write image operations. The scripts handle
+    partition image (overcloud-full.qcow2) as well as the whole-disk image
+    (overcloud-hardened-uefi-full.qcow2) with its multiple LVM volume mount
+    points.
