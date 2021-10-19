@@ -8,6 +8,7 @@ disk_images:
       - interface-names
     packages:
       - rhosp-release
+      - kernel-modules-extra
   -
     imagename: ironic-python-agent
     type: qcow2
