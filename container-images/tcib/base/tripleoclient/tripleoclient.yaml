@@ -20,6 +20,7 @@ tcib_packages:
   - xfsprogs
   - python3-osc-placement
   - bash-completion
+  - ipa-client
   el8:
   - ceph-ansible
   el9:
