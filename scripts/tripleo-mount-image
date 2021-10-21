@@ -19,10 +19,11 @@
 #
 
 set -eu
-set -x
 set -o pipefail
 SCRIPT_NAME=$(basename $0)
 NBD_DEVICE=/dev/nbd0
+IMAGE_FILE=""
+MOUNT_DIR=""
 if [ ! -a "${NBD_DEVICE}" ]; then
     modprobe nbd
 fi
@@ -167,7 +168,7 @@ unmount_image() {
 
 
 if [ $SCRIPT_NAME == "tripleo-unmount-image" ]; then
-    TEMP=`getopt -o hm:n: -n $SCRIPT_NAME -- "$@"`
+    TEMP=`getopt -o hm:n: -l help -n $SCRIPT_NAME -- "$@"`
     if [ $? != 0 ]; then
         echo "Terminating..." >&2
         exit 1
@@ -183,9 +184,12 @@ if [ $SCRIPT_NAME == "tripleo-unmount-image" ]; then
             *) echo "Error: unsupported option $1." ; exit 1;;
         esac
     done
+    if [ -z "${MOUNT_DIR}" ]; then
+        unmount_show_options 1
+    fi
     unmount_image
 else
-    TEMP=`getopt -o ha:m:n: -n $SCRIPT_NAME -- "$@"`
+    TEMP=`getopt -o ha:m:n: -l help -n $SCRIPT_NAME -- "$@"`
     if [ $? != 0 ]; then
         echo "Terminating..." >&2
         exit 1
@@ -203,5 +207,8 @@ else
             *) echo "Error: unsupported option $1." ; exit 1;;
         esac
     done
+    if [ -z "${MOUNT_DIR}" ] || [ -z "${IMAGE_FILE}"]; then
+        mount_show_options 1
+    fi
     mount_image
 fi
