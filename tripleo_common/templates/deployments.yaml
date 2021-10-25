@@ -16,24 +16,28 @@
   block:
 
     - name: Create hiera check-mode directory
+      become: true
       file:
         path: /etc/puppet/check-mode/hieradata
         state: directory
       check_mode: no
 
     - name: Create deployed check-mode directory
+      become: true
       file:
         path: /var/lib/heat-config/check-mode
         state: directory
       check_mode: no
 
     - name: Create tripleo-config-download check-mode directory
+      become: true
       file:
         path: /var/lib/heat-config/tripleo-config-download/check-mode
         state: directory
       check_mode: no
 
     - name: "Template deployment file for {{ item }}"
+      become: true
       template:
         src: "{{ tripleo_role_name ~ '/' ~ ansible_facts['hostname'] | lower ~ '/' ~ item }}"
         dest: "/var/lib/heat-config/check-mode/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}.rendered"
@@ -51,6 +55,7 @@
       register: deployment_content
 
     - name: "Remote copy deployment file for {{ item }}"
+      become: true
       copy:
         content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item_only) }} ]"
         dest: "/var/lib/heat-config/check-mode/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
@@ -121,6 +126,7 @@
     - ansible_check_mode|bool
 
 - name: "Template deployment file for {{ item }}"
+  become: true
   template:
     src: "{{ tripleo_role_name ~ '/' ~ ansible_facts['hostname'] | lower ~ '/' ~ item }}"
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}.rendered"
@@ -140,6 +146,7 @@
     - not ansible_check_mode|bool
 
 - name: "Remote copy deployment file for {{ item }}"
+  become: true
   copy:
     content: "[ {{ deployment_content.content | b64decode | from_yaml | json_query(item_only) }} ]"
     dest: "/var/lib/heat-config/tripleo-config-download/{{ item ~ '-' ~ deployment_uuid }}"
