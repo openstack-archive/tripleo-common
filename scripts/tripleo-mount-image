@@ -207,7 +207,7 @@ else
             *) echo "Error: unsupported option $1." ; exit 1;;
         esac
     done
-    if [ -z "${MOUNT_DIR}" ] || [ -z "${IMAGE_FILE}"]; then
+    if [ -z "${MOUNT_DIR}" ] || [ -z "${IMAGE_FILE}" ]; then
         mount_show_options 1
     fi
     mount_image
