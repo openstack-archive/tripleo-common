@@ -13,7 +13,14 @@ tcib_actions:
     crudini --set /etc/dnf/dnf.conf main plugins 1 &&
     crudini --set /etc/dnf/dnf.conf main skip_missing_names_on_install False &&
     crudini --set /etc/dnf/dnf.conf main tsflags nodocs
-- run: if [ '{{ tcib_distro }}' == 'rhel' ]; then {% for item in tcib_packages.modules %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}fi
+- run: >-
+    if [ '{{ tcib_distro }}' == 'rhel' ]; then
+    {%- if "el" ~ tcib_release in tcib_packages.modules %}
+     {% for item in tcib_packages.modules["el" ~ tcib_release] %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}
+    {%- else %}
+      echo "WARNING: No modules defined for el{{ tcib_release}}";
+    {%- endif %}
+    fi
 - run: dnf install -y openstack-tripleo-common-containers
 - run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/base/uid_gid_manage.sh /usr/local/bin/uid_gid_manage
 - run: chmod 755 /usr/local/bin/uid_gid_manage
@@ -72,10 +79,16 @@ tcib_packages:
   - util-linux-user
   - which
   modules:
-  - disable: container-tools:rhel8
-  - disable: virt:rhel
-  - enable: container-tools:{{ tcib_rhel_modules['container-tools'] | default('latest' if tcib_release is version('9', '==') else '3.0') }}
-  - enable: mariadb:{{ tcib_rhel_modules['mariadb'] | default('10.5' if tcib_release is version('9', '==') else '10.3') }}
-  - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
-  - enable: redis:{{ tcib_rhel_modules['redis'] | default('5') }}
+    el8:
+      - disable: container-tools:rhel8
+      - disable: virt:rhel
+      - enable: container-tools:{{ tcib_rhel_modules['container-tools'] | default('3.0') }}
+      - enable: mariadb:{{ tcib_rhel_modules['mariadb'] | default('10.3') }}
+      - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
+      - enable: redis:{{ tcib_rhel_modules['redis'] | default('5') }}
+    el9:
+      - disable: virt:rhel
+      - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
+      - enable: redis:{{ tcib_rhel_modules['redis'] | default('5') }}
+      - enable: mariadb:{{ tcib_rhel_modules['mariadb'] | default('10.5') }}
 tcib_stopsignal: SIGTERM
