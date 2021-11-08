@@ -86,6 +86,7 @@ tcib_packages:
       - enable: mariadb:{{ tcib_rhel_modules['mariadb'] | default('10.3') }}
       - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
       - enable: redis:{{ tcib_rhel_modules['redis'] | default('5') }}
+      - enable: nodejs:{{ tcib_rhel_modules['nodejs'] | default('14') }}
     el9:
       - disable: virt:rhel
       - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
