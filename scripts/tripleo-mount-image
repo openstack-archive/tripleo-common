@@ -156,6 +156,10 @@ unmount_image() {
         unmount_volume $MOUNT_DIR
     fi
 
+    # `--activate n` makes LVs inactive, they must be set
+    # inactive so that the nbd device can be disconnected.
+    # Ref bug: https://bugs.launchpad.net/tripleo/+bug/1950137
+    vgchange --activate n vg || true
     qemu-nbd --disconnect $NBD_DEVICE
     vgchange --refresh vg || true
 
