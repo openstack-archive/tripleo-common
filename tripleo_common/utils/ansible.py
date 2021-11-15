@@ -86,6 +86,12 @@ def write_default_ansible_cfg(work_dir,
     config = configparser.ConfigParser()
     config.read(ansible_config_path)
 
+    # NOTE(dvd): since ansible 2.12, we need to create the sections
+    #            becase the base file is now empty.
+    for section in ['defaults', 'ssh_connection']:
+        if section not in config.sections():
+            config.add_section(section)
+
     config.set('defaults', 'retry_files_enabled', 'False')
     config.set('defaults', 'roles_path', roles_path)
     config.set('defaults', 'library', modules_path)
