@@ -1,4 +1,5 @@
 tcib_actions:
+- run: if [ -f "/etc/yum.repos.d/ubi.repo" ]; then dnf config-manager --set-disabled "ubi*" && dnf clean all && rm -rf /var/cache/dnf; fi
 - run: >-
     dnf install -y crudini &&
     crudini --del /etc/dnf/dnf.conf main override_install_langs &&
