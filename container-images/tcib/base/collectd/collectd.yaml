@@ -24,7 +24,6 @@ tcib_packages:
   - collectd-ipmi
   - collectd-log_logstash
   - collectd-mcelog
-  - collectd-memcachec
   - collectd-mysql
   - collectd-netlink
   - collectd-openldap
