@@ -818,3 +818,60 @@ def generate_tripleo_ansible_inventory(heat=None,
 
     inv.write_static_inventory(inventory_path)
     return inventory_path
+
+
+def task_core_inventory(stack_outputs, host_network=HOST_NETWORK):
+    inv = {
+        'hosts': {}
+    }
+    task_core_data = stack_outputs.get('RoleConfig',
+                                       {}).get('task_core_data', {})
+    deploy_data = task_core_data.get('deployment_host', {})
+    if deploy_data.get('hostname'):
+        inv['hosts'][deploy_data.get('hostname')] = {'role': 'deployer'}
+
+    # overcloud nodes
+    role_net_hostname_map = stack_outputs.get(
+        'RoleNetHostnameMap', {})
+    for role_name, hostnames in role_net_hostname_map.items():
+        if not hostnames:
+            continue
+        names = hostnames.get(host_network) or []
+        shortnames = [n.split(".%s." % host_network)[0].lower()
+                      for n in names]
+        for name in shortnames:
+            if inv['hosts'].get(name):
+                LOG.warning("task-core inventory already contains %s, "
+                            "overriding it", inv['hosts'].get(name))
+            inv['hosts'][name] = {'role': role_name.lower()}
+    return inv
+
+
+def directord_inventory(stack_outputs, host_network=HOST_NETWORK):
+    inv = {
+        'directord_server': {
+            'args': {},
+            'targets': []
+        },
+        'directord_clients': {
+            'args': {},
+            'targets': []
+        }
+    }
+    task_core_data = stack_outputs.get(
+        'RoleConfig', {}).get('task_core_data', {})
+    deploy_data = task_core_data.get('deployment_host', {})
+    server_targets = inv['directord_server']['targets']
+    if deploy_data.get('hostname'):
+        server_targets.append({'host': deploy_data.get('ip')})
+
+    client_targets = inv['directord_clients']['targets']
+    role_net_ip = stack_outputs.get('RoleNetIpMap', {})
+    for role_name in role_net_ip.keys():
+        # get the host network ips (default is ctlplane)
+        ips = role_net_ip[role_name].get(host_network) or []
+        if not ips:
+            continue
+        for ip in ips:
+            client_targets.append({'host': ip})
+    return inv
