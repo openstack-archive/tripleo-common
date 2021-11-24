@@ -6,7 +6,6 @@ tcib_actions:
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/rabbitmq /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
 tcib_packages:
   common:
-  - erlang-hipe
   - hostname
   - libqb
   - pacemaker
