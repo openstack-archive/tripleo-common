@@ -172,6 +172,17 @@ container_images_template:
   - OS::TripleO::Services::DesignateProducer
   - OS::TripleO::Services::DesignateWorker
 
+- imagename: "{{namespace}}/{{name_prefix}}designate-base{{name_suffix}}:{{tag}}"
+  image_source: tripleo
+  params:
+  - ContainerDesignateConfigImage
+  services:
+  - OS::TripleO::Services::DesignateCentral
+  - OS::TripleO::Services::DesignateMDNS
+  - OS::TripleO::Services::DesignateSink
+  - OS::TripleO::Services::DesignateProducer
+  - OS::TripleO::Services::DesignateWorker
+
 - imagename: "{{namespace}}/{{name_prefix}}designate-backend-bind9{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
@@ -210,7 +221,6 @@ container_images_template:
 - imagename: "{{namespace}}/{{name_prefix}}designate-worker{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
-  - ContainerDesignateConfigImage
   - ContainerDesignateWorkerImage
   services:
   - OS::TripleO::Services::DesignateWorker
