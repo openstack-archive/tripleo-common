@@ -22,6 +22,7 @@ tcib_packages:
   - collectd-disk
   - collectd-dns
   - collectd-ipmi
+  - collectd-libpod-stats
   - collectd-log_logstash
   - collectd-mcelog
   - collectd-memcachec
@@ -31,9 +32,11 @@ tcib_packages:
   - collectd-ovs-events
   - collectd-ovs-stats
   - collectd-ping
+  - collectd-pmu
   - collectd-procevent
   - collectd-python
   - collectd-sensors
+  - collectd-sensubility
   - collectd-smart
   - collectd-snmp
   - collectd-snmp-agent
@@ -44,6 +47,7 @@ tcib_packages:
   - collectd-write_kafka
   - collectd-write_prometheus
   - python3-collectd-gnocchi
+  - python3-sqlalchemy-collectd
   rhel:
   - python3-collectd-rabbitmq-monitoring
   x86_64:
@@ -54,7 +58,3 @@ tcib_packages:
   el8:
   - collectd-generic-jmx
   - collectd-iptables
-  - collectd-libpod-stats
-  - python3-sqlalchemy-collectd
-  - collectd-sensubility
-  - collectd-pmu
