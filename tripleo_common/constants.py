@@ -161,6 +161,9 @@ DO_NOT_ROTATE_LIST = (
     'CephManilaClientKey',
     'CephRgwKey',
     'HeatAuthEncryptionKey',
+    'MysqlClustercheckPassword',
+    'PacemakerRemoteAuthkey',
+    'PcsdPassword',
 )
 
 PLAN_NAME_PATTERN = '^[a-zA-Z0-9-]+$'
