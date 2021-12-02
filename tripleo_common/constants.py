@@ -108,6 +108,9 @@ DO_NOT_ROTATE_LIST = (
     'CephManilaClientKey',
     'CephRgwKey',
     'HeatAuthEncryptionKey',
+    'MysqlClustercheckPassword',
+    'PacemakerRemoteAuthkey',
+    'PcsdPassword',
 )
 
 # The default version of the Identity API to set in overcloudrc.
