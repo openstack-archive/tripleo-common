@@ -267,7 +267,6 @@ def export_manifest_config(target_url,
     htaccess_path = os.path.join(manifest_dir_path, '.htaccess')
 
     make_dir(manifest_dir_path)
-    build_catalog()
 
     with open(manifests_htaccess_path, 'w+') as f:
         f.write('AddHandler type-map %s\n' % TYPE_MAP_EXTENSION)
@@ -310,6 +309,7 @@ def export_manifest_config(target_url,
     if manifest_dict:
         write_type_map_file(image, tag, manifest_dict)
     build_tags_list(image)
+    build_catalog()
 
 
 def write_type_map_file(image, tag, manifest_dict):
