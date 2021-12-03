@@ -37,7 +37,8 @@ tcib_actions:
 - run: chmod 440 /etc/sudoers
 - run: >-
     if [ '{{ tcib_release }}' == '8' ];then
-    sed -ri '/-session(\s+)optional(\s+)pam_systemd.so/d' /etc/pam.d/system-auth; fi
+    sed -ri '/-session(\s+)optional(\s+)pam_systemd.so/d' /etc/pam.d/system-auth &&
+    dnf install -y curl; fi
 - run: sed -ri '/^(passwd:|group:)/ s/systemd//g' /etc/nsswitch.conf
 - run: dnf install -y {{ tcib_packages['common'] | join(' ') }}
 - run: >-
@@ -64,7 +65,6 @@ tcib_labels:
 tcib_packages:
   common:
   - ca-certificates
-  - curl
   - dumb-init
   - glibc-langpack-en
   - iscsi-initiator-utils
