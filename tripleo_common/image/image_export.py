@@ -261,16 +261,11 @@ def export_manifest_config(target_url,
 
     manifests_path = os.path.join(
         IMAGE_EXPORT_DIR, 'v2', image, 'manifests')
-    manifests_htaccess_path = os.path.join(manifests_path, '.htaccess')
     manifest_dir_path = os.path.join(manifests_path, manifest_digest)
     manifest_path = os.path.join(manifest_dir_path, 'index.json')
     htaccess_path = os.path.join(manifest_dir_path, '.htaccess')
 
     make_dir(manifest_dir_path)
-
-    with open(manifests_htaccess_path, 'w+') as f:
-        f.write('AddHandler type-map %s\n' % TYPE_MAP_EXTENSION)
-        f.write('MultiviewsMatch Handlers\n')
 
     headers = collections.OrderedDict()
     headers['Content-Type'] = manifest_type
