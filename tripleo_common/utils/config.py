@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import git
 import json
 import logging
 import os
@@ -26,7 +27,6 @@ import jinja2
 
 from tripleo_common import constants
 from tripleo_common import inventory
-from tripleo_common.utils.safe_import import git
 
 LOG = logging.getLogger(__name__)
 
