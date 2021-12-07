@@ -25,7 +25,6 @@ tcib_packages:
   - collectd-libpod-stats
   - collectd-log_logstash
   - collectd-mcelog
-  - collectd-memcachec
   - collectd-mysql
   - collectd-netlink
   - collectd-openldap
