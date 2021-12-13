@@ -28,7 +28,7 @@ parameter_defaults:
       # Only used if Ceph is deployed.
       ceph_namespace: quay.io/ceph
       ceph_image: daemon
-      ceph_tag: v6.0.4-stable-6.0-pacific-centos-8-x86_64
+      ceph_tag: v6.0.6-stable-6.0-pacific-centos-8-x86_64
 
       ceph_prometheus_namespace: quay.ceph.io/prometheus
       ceph_prometheus_image: prometheus
