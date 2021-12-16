@@ -1,12 +1,7 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage {{ tcib_user }}
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: >-
-    if [ -e /usr/share/openstack-tripleo-common-containers/container-images/tcib/base/os/tempest/tempest_sudoers ]; then
-    cp /usr/share/openstack-tripleo-common-containers/container-images/tcib/base/os/tempest/tempest_sudoers /etc/sudoers.d/tempest_sudoers;
-    else
-    sed -e 's/cloud-admin/tempest/' /usr/share/openstack-tripleo-common-containers/container-images/kolla/tripleoclient/tripleoclient_sudoers > /etc/sudoers.d/tempest_sudoers;
-    fi
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/tcib/base/os/tempest/tempest_sudoers /etc/sudoers.d/tempest_sudoers
 - run: chmod 440 /etc/sudoers.d/tempest_sudoers
 
 tcib_packages:
