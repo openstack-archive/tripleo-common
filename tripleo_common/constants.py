@@ -90,6 +90,31 @@ PASSWORD_PARAMETER_NAMES = (
     'SwiftPassword',
 )
 
+DB_PASSWORD_PARAMETER_NAMES = (
+    'AodhPassword',
+    'BarbicanPassword',
+    'CeilometerPassword',
+    'CephGrafanaAdminPassword',
+    'CephDashboardAdminPassword',
+    'CinderPassword',
+    'DesignatePassword',
+    'GlancePassword',
+    'GnocchiPassword',
+    'HeatPassword',
+    'HeatStackDomainAdminPassword',
+    'IronicPassword',
+    'LibvirtTLSPassword',
+    'KeystonePassword',
+    'ManilaPassword',
+    'MysqlClustercheckPassword',
+    'MysqlRootPassword',
+    'NeutronPassword',
+    'NovaPassword',
+    'NovajoinPassword',
+    'OctaviaPassword',
+    'PlacementPassword',
+)
+
 # List of passwords that should not be rotated by default using the
 # GeneratePasswordAction because they require some special handling
 DO_NOT_ROTATE_LIST = (
