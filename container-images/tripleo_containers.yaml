@@ -35,6 +35,8 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-designate-api:current-tripleo
   image_source: tripleo
+- imagename: quay.io/tripleomaster/openstack-designate-base:current-tripleo
+  image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-designate-backend-bind9:current-tripleo
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-designate-central:current-tripleo
