@@ -51,7 +51,7 @@ tcib_actions:
     if [ '{{ tcib_distro }}' == 'centos' ];then dnf -y install dnf-plugins-core &&
     dnf download centos*release &&
     rpm -ivh --nodeps --replacepkgs --replacefiles *.rpm &&
-    if [ '{{ tcib_release }}' == '8' ];then rpm -e --nodeps redhat-release; fi &&
+    if [ -n "$(rpm -qa redhat-release)" ];then rpm -e --nodeps redhat-release; fi &&
     rm -rf *.rpm; fi
 - run: dnf update --excludepkgs redhat-release -y && dnf clean all && rm -rf /var/cache/dnf
 tcib_cmd: kolla_start
