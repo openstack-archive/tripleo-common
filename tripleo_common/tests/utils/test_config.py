@@ -129,7 +129,7 @@ class TestConfig(base.TestCase):
 
     @patch.object(ooo_config.git, 'Repo')
     @mock.patch('os.mkdir')
-    @mock.patch('six.moves.builtins.open')
+    @mock.patch('builtins.open')
     @patch.object(ooo_config.shutil, 'rmtree')
     def test_overcloud_config_wrong_config_type(self, mock_rmtree,
                                                 mock_open, mock_mkdir,
