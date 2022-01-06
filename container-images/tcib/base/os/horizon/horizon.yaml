@@ -16,3 +16,4 @@ tcib_packages:
   - openstack-ironic-ui
   - openstack-manila-ui
   - openstack-octavia-ui
+  - openstack-designate-ui
