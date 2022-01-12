@@ -466,6 +466,13 @@ def _get_node_id(node, handler, node_map):
     for port in node.get('ports', []):
         try:
             candidates.add(node_map['mac'][port['address'].lower()])
+        except AttributeError as e:
+            raise SystemExit(
+                "Node data has an unexpected value for the mac or port"
+                " address, or is missing. If the mac and port address"
+                " is defined, make sure it is approriately quoted."
+                " Error {} -- node {}".format(str(e), node)
+            )
         except KeyError:
             pass
 
