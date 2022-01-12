@@ -12,6 +12,7 @@
 
 import datetime
 import fixtures
+import git
 import os
 from unittest import mock
 from unittest.mock import patch
@@ -26,7 +27,6 @@ from tripleo_common import constants
 from tripleo_common.tests import base
 from tripleo_common.tests.fake_config import fakes
 from tripleo_common.utils import config as ooo_config
-from tripleo_common.utils.safe_import import git
 
 RESOURCES_YAML_CONTENTS = """heat_template_version: 2016-04-08
 resources:
