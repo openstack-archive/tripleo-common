@@ -33,9 +33,10 @@ class BaseImageManager(object):
         'container_images_template'
     )
 
-    def __init__(self, config_files, images=None):
+    def __init__(self, config_files, template_dir=None, images=None):
         self.config_files = config_files
         self.images = images
+        self.template_dir = template_dir
 
     def _extend_or_set_attribute(self, existing_image, image, attribute_name):
         attribute = image.get(attribute_name)
