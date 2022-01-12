@@ -720,47 +720,9 @@ container_images_template:
   - OS::TripleO::Services::SwiftRingBuilder
   - OS::TripleO::Services::SwiftStorage
 
-- imagename: "{{ceph_namespace}}/{{ceph_image}}:{{ceph_tag}}"
-  image_source: ceph
-  params:
-  - ContainerCephDaemonImage
-  services:
-  - OS::TripleO::Services::CephClient
-  - OS::TripleO::Services::CephExternal
-  - OS::TripleO::Services::CephMds
-  - OS::TripleO::Services::CephMgr
-  - OS::TripleO::Services::CephMon
-  - OS::TripleO::Services::CephOSD
-  - OS::TripleO::Services::CephRgw
-  - OS::TripleO::Services::CephRbdMirror
-
-- imagename: "{{ceph_prometheus_namespace}}/{{ceph_prometheus_image}}:{{ceph_prometheus_tag}}"
-  image_source: prom
-  params:
-  - PrometheusContainerImage
-  services:
-  - OS::TripleO::Services::CephGrafana
-
-- imagename: "{{ceph_alertmanager_namespace}}/{{ceph_alertmanager_image}}:{{ceph_alertmanager_tag}}"
-  image_source: prom
-  params:
-  - AlertManagerContainerImage
-  services:
-  - OS::TripleO::Services::CephGrafana
-
-- imagename: "{{ceph_node_exporter_namespace}}/{{ceph_node_exporter_image}}:{{ceph_node_exporter_tag}}"
-  image_source: prom
-  params:
-  - NodeExporterContainerImage
-  services:
-  - OS::TripleO::Services::CephGrafana
-
-- imagename: "{{ceph_grafana_namespace}}/{{ceph_grafana_image}}:{{ceph_grafana_tag}}"
-  image_source: grafana
-  params:
-  - GrafanaContainerImage
-  services:
-  - OS::TripleO::Services::CephGrafana
+{% if ceph_images | default(true) %}
+{% include 'ceph.j2' %}
+{% endif %}
 
 - imagename: "{{namespace}}/{{name_prefix}}rsyslog{{name_suffix}}:{{tag}}"
   image_source: tripleo
@@ -798,3 +760,4 @@ container_images_template:
   - ContainerTripleoClientImage
   services:
   - OS::TripleO::Services::TripleoClient
+

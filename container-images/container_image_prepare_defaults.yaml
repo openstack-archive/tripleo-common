@@ -26,22 +26,32 @@ parameter_defaults:
 
       # Container image name components for Ceph images.
       # Only used if Ceph is deployed.
+
+      # Pass ceph_images: false to avoid pulling the Ceph related images
       ceph_namespace: quay.io/ceph
       ceph_image: daemon
       ceph_tag: v6.0.6-stable-6.0-pacific-centos-8-x86_64
 
-      ceph_prometheus_namespace: quay.ceph.io/prometheus
+      ceph_prometheus_namespace: quay.io/prometheus
       ceph_prometheus_image: prometheus
-      ceph_prometheus_tag: v2.7.2
+      ceph_prometheus_tag: v2.18.1
 
-      ceph_alertmanager_namespace: quay.ceph.io/prometheus
+      ceph_alertmanager_namespace: quay.io/prometheus
       ceph_alertmanager_image: alertmanager
-      ceph_alertmanager_tag: v0.16.2
+      ceph_alertmanager_tag: v0.20.0
 
-      ceph_node_exporter_namespace: quay.ceph.io/prometheus
+      ceph_node_exporter_namespace: quay.io/prometheus
       ceph_node_exporter_image: node-exporter
-      ceph_node_exporter_tag: v0.17.0
+      ceph_node_exporter_tag: v0.18.1
 
-      ceph_grafana_namespace: quay.ceph.io/app-sre
-      ceph_grafana_image: grafana
+      ceph_grafana_namespace: quay.io/ceph
+      ceph_grafana_image: ceph-grafana
       ceph_grafana_tag: 6.7.4
+
+      ceph_haproxy_namespace: quay.io/ceph
+      ceph_haproxy_image: haproxy
+      ceph_haproxy_tag: 2.3
+
+      ceph_keepalived_namespace: quay.io/ceph
+      ceph_keepalived_image: keepalived
+      ceph_keepalived_tag: 2.1.5

@@ -1,0 +1,38 @@
+---
+features:
+  - |
+    Split off Ceph related container images
+
+    This change releases an update on the default tripleo_containers jinja
+    template, splitting off the Ceph related container images.
+    With this new approach pulling the ceph containers is optional, and can
+    be avoided by setting the `ceph_images` boolean to False.
+    e.g., passing something like the following::
+
+
+      parameter_defaults:
+        ContainerImagePrepare:
+        -   push_destination: true
+            set:
+                name_prefix: openstack-
+                name_suffix: ''
+                namespace: quay.io/tripleomaster
+                neutron_driver: ovn
+                rhel_containers: false
+                tag: current-tripleo
+                ceph_images: false
+        ContainerImagePrepareDebug: true
+        ContainerImageRegistryCredentials: {}
+
+    avoid the ceph containers being pulled in the undercloud.
+    To make this possible, a new jinja template processing approach
+    has been introduced, and a template basedir parameter (required
+    by the jinja loader) has been added to the BaseImageManager.
+    Finallym, two more `ceph_` prefixed containers, required to deploy
+    the Ceph Ingress daemon are added, and they are supposed to match
+    the tripleo-heat-templates `OS::TripleO::Services::CephIngress`
+    service.
+    The Ingress daemon doesn't use the Ceph daemon container, hence
+    `tripleo container image prepare` should be executed to pull the
+    new container images/tags in the undercloud as made for the Ceph
+    Dashboard and the regular Ceph image.
