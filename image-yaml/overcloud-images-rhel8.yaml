@@ -5,7 +5,6 @@ disk_images:
     distro: rhel
     release: 8
     elements:
-      - selinux-permissive
       - interface-names
     packages:
       - rhosp-release
