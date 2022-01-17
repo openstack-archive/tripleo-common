@@ -68,7 +68,7 @@ class AnsiblePlaybookTest(base.TestCase):
             'HOME': self.work_dir,
             'ANSIBLE_LOCAL_TEMP': self.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
-            'ANSIBLE_CALLBACK_WHITELIST':
+            'ANSIBLE_CALLBACKS_ENABLED':
                 'tripleo_dense,tripleo_profile_tasks,tripleo_states',
             'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
@@ -109,7 +109,7 @@ class AnsiblePlaybookTest(base.TestCase):
             'HOME': self.work_dir,
             'ANSIBLE_LOCAL_TEMP': self.work_dir,
             'ANSIBLE_CONFIG': ansible_config_path,
-            'ANSIBLE_CALLBACK_WHITELIST':
+            'ANSIBLE_CALLBACKS_ENABLED':
                 'tripleo_dense,tripleo_profile_tasks,tripleo_states',
             'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
             'PROFILE_TASKS_TASK_OUTPUT_LIMIT': '20',
