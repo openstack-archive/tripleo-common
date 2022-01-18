@@ -48,11 +48,9 @@ tcib_actions:
     dnf -y install tzdata; fi
 - run: mkdir -p /openstack
 - run: >-
-    if [ '{{ tcib_distro }}' == 'centos' ];then dnf -y install dnf-plugins-core &&
-    dnf download centos*release &&
-    rpm -ivh --nodeps --replacepkgs --replacefiles *.rpm &&
-    if [ -n "$(rpm -qa redhat-release)" ];then rpm -e --nodeps redhat-release; fi &&
-    rm -rf *.rpm; fi
+    if [ '{{ tcib_distro }}' == 'centos' ];then
+    if [ -n "$(rpm -qa redhat-release)" ];then rpm -e --nodeps redhat-release; fi ;
+    dnf -y install centos-stream-release; fi
 - run: dnf update --excludepkgs redhat-release -y && dnf clean all && rm -rf /var/cache/dnf
 tcib_cmd: kolla_start
 tcib_entrypoint: dumb-init --single-child --
