@@ -15,7 +15,7 @@ tcib_actions:
     crudini --set /etc/dnf/dnf.conf main skip_missing_names_on_install False &&
     crudini --set /etc/dnf/dnf.conf main tsflags nodocs
 - run: >-
-    if [ '{{ tcib_distro }}' == 'rhel' && '{{ tcib_release }}' == '8' ]; then
+    if [ '{{ tcib_distro }}' == 'rhel' ] && [ '{{ tcib_release }}' == '8' ]; then
     {%- if "el" ~ tcib_release in tcib_packages.modules %}
      {% for item in tcib_packages.modules["el" ~ tcib_release] %}{% set key, value = (item.items() | list).0 %}dnf module -y {{ key }} {{ value }}; {% endfor %}
     {%- else %}
