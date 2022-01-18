@@ -321,7 +321,7 @@ def run_ansible_playbook(playbook, work_dir=None, **kwargs):
             env_variables.update({
                 # the whitelist could be collected from multiple
                 # arguments if we find a use case for it
-                'ANSIBLE_CALLBACK_WHITELIST':
+                'ANSIBLE_CALLBACKS_ENABLED':
                     'tripleo_dense,tripleo_profile_tasks,tripleo_states',
                 'ANSIBLE_STDOUT_CALLBACK': 'tripleo_dense',
                 'PROFILE_TASKS_TASK_OUTPUT_LIMIT':
