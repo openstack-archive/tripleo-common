@@ -1,0 +1,18 @@
+disk_images:
+  -
+    imagename: overcloud-hardened-uefi-full
+    type: qcow2
+    distro: rhel
+    release: 9
+    elements:
+      - interface-names
+    packages:
+      - rhosp-release
+  -
+    imagename: ironic-python-agent
+    type: qcow2
+    distro: rhel
+    release: 9
+    elements:
+      - selinux-permissive
+      - interface-names
