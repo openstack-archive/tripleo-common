@@ -200,11 +200,11 @@
 - name: "Output for async deployment {{ item }}"
   debug:
     msg:
-      - stderr: "{{ deployment_async_result.stderr.split('\n') }}"
-      - status_code: "{{ deployment_async_result.rc }}"
+      - stderr: "{{ deployment_async_result.stderr_lines | default(['Timed out']) }}"
+      - status_code: "{{ deployment_async_result.rc | default(-1) }}"
   tags:
     - output
-  failed_when: deployment_async_result.rc != 0
+  failed_when: deployment_async_result.rc | default(-1) != 0
   when: not ansible_check_mode|bool
 
 - name: "Check-mode for Run deployment {{ item }} (changed status indicates deployment would run)"
