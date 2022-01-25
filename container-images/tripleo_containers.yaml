@@ -53,6 +53,8 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleowallaby/openstack-frr:current-tripleo
   image_source: tripleo
+- imagename: quay.io/tripleowallaby/openstack-ovn-bgp-agent:current-tripleo
+  image_source: tripleo
 - imagename: quay.io/tripleowallaby/openstack-glance-api:current-tripleo
   image_source: tripleo
 - imagename: quay.io/tripleowallaby/openstack-gnocchi-api:current-tripleo

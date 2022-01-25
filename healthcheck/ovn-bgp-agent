@@ -1,0 +1,12 @@
+#!/bin/bash
+
+. ${HEALTHCHECK_SCRIPTS:-/usr/share/openstack-tripleo-common/healthcheck}/common.sh
+
+process='ovn-bgp-agent'
+
+if ps -e | grep $process; then
+    exit 0
+else
+    echo "There is no $process process running in the container"
+    exit 1
+fi
