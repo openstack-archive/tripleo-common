@@ -240,6 +240,13 @@ container_images_template:
   services:
   - OS::TripleO::Services::Frr
 
+- imagename: "{{namespace}}/{{name_prefix}}ovn-bgp-agent{{name_suffix}}:{{tag}}"
+  image_source: tripleo
+  params:
+  - ContainerOvnBgpAgentImage
+  services:
+  - OS::TripleO::Services::Frr
+
 - imagename: "{{namespace}}/{{name_prefix}}glance-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
