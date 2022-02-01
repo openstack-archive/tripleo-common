@@ -1,5 +1,4 @@
 tcib_actions:
-- run: if [ "{{ tcib_distro }}" == "rhel" ]; then dnf -y install {{ tcib_packages['rhel'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-conductor /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
 tcib_packages:
@@ -24,7 +23,4 @@ tcib_packages:
   - qemu-img
   - util-linux
   - xfsprogs
-  rhel:
-  - python-ovirt-engine-sdk4
-  - python3dist\(ansible\)
 tcib_user: ironic
