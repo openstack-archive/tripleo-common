@@ -66,7 +66,6 @@ tcib_packages:
   - dumb-init
   - glibc-langpack-en
   - iscsi-initiator-utils
-  - openstack-selinux
   - openstack-tripleo-common-containers
   - openstack-tripleo-common-container-base
   - procps-ng
