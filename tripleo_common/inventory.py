@@ -346,7 +346,16 @@ class TripleoInventory(object):
                 continue
 
             net_ip_map = role_net_ip_map[role_name]
-            ips = net_ip_map[self.host_network]
+            try:
+                ips = net_ip_map[self.host_network]
+            except KeyError:
+                LOG.warning(
+                    "Network key %s not found, check role data for %s",
+                    self.host_network,
+                    role_name
+                )
+                continue
+
             if not ips:
                 raise Exception("No IPs found for %s role on %s network" %
                                 (role_name, self.host_network))
