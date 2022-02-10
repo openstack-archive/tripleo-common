@@ -683,6 +683,11 @@ class TripleoInventory(object):
 
         if self.cacert:
             _vars['cacert'] = self.cacert
+        # We don't want to let UC fail, especially when it comes to
+        # external tasks.
+        # See https://bugs.launchpad.net/tripleo/+bug/1960518 for context
+        _vars.setdefault('any_error_fatal', True)
+        _vars.setdefault('max_fail_percentage', 0)
 
         if self.ansible_python_interpreter:
             _vars.setdefault('ansible_python_interpreter',
