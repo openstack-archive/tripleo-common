@@ -169,7 +169,14 @@ class TripleoInventory(object):
                     'ansible_connection': self.undercloud_connection,
                     # see https://github.com/ansible/ansible/issues/41808
                     'ansible_remote_tmp': '/tmp/ansible-${USER}',
+                    # We don't want to let UC fail, especially when it comes to
+                    # external tasks. Thus setting any_error_fatal and
+                    # max_fail_percentage
+                    # See https://bugs.launchpad.net/tripleo/+bug/1960518 for
+                    # context
+                    'any_error_fatal': True,
                     'auth_url': self.auth_url,
+                    'max_fail_percentage': 0,
                     'plan': None,
                     'project_name': self.project_name,
                     'username': self.username,
