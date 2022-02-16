@@ -15,6 +15,7 @@
 import base64
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.backends import default_backend
 import hashlib
 import hmac
@@ -45,7 +46,13 @@ def generate_passwords(stack_env=None,
     as a dict.
     """
 
+    if not stack_env:
+        stack_env = {}
     passwords = {}
+    db_ed25519 = stack_env.get('parameter_defaults', {}) \
+                          .get('EnableMysqlAuthEd25519', False)
+    if db_ed25519:
+        passwords['EnableMysqlAuthEd25519'] = True
     for name in constants.PASSWORD_PARAMETER_NAMES:
         no_rotate = (not rotate_passwords or (
             rotate_pw_list and name not in rotate_pw_list)
@@ -84,6 +91,17 @@ def generate_passwords(stack_env=None,
             passwords[name] = create_ssh_keypair()
         elif name == 'BarbicanSimpleCryptoKek':
             passwords[name] = create_keystone_credential()
+        elif name in constants.DB_PASSWORD_PARAMETER_NAMES and db_ed25519:
+            # root and clustercheck passwords can't contain a null
+            # byte due to a mariadb limitation in config file
+            # TODO: bytes used as word separators can't be used either
+            # as long as password is used as a shell parameter
+            if name == 'MysqlRootPassword' or \
+               name == 'MysqlClustercheckPassword':
+                skip_bytes = [0, ord(' '), ord('\t'), ord('\n')]
+                passwords[name] = create_ed25519_password(skip_bytes)
+            else:
+                passwords[name] = create_ed25519_password()
         elif name.startswith("MysqlRootPassword"):
             passwords[name] = passlib.pwd.genword(length=10)
         elif name.startswith("RabbitCookie"):
@@ -180,3 +198,16 @@ def create_rndc_key_secret():
         msg=passlib.pwd.genword(length=_MIN_PASSWORD_SIZE).encode('utf-8'),
         digestmod=hashlib.sha256)
     return base64.b64encode(h.digest()).decode('utf-8')
+
+
+def create_ed25519_password(skip_bytes=[]):
+    generate_new_key = True
+    while generate_new_key:
+        private_key = ed25519.Ed25519PrivateKey.generate()
+        private_bytes = private_key.private_bytes(
+            serialization.Encoding.Raw,
+            serialization.PrivateFormat.Raw,
+            serialization.NoEncryption()
+        )
+        generate_new_key = any(x in skip_bytes for x in private_bytes)
+    return base64.b64encode(private_bytes).decode('utf-8')
