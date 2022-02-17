@@ -18,7 +18,6 @@ disk_images:
       - enable-packages-install
       - override-pip-and-virtualenv
       - dracut-regenerate
-      - remove-machine-id
       - remove-resolvconf
       - modprobe
       - overcloud-partition
