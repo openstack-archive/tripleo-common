@@ -85,7 +85,7 @@ unmount_volume () {
 }
 
 remove_device () {
-    if [ -b "/dev/mapper/$1" ]; then
+    if [ -b "$1" ]; then
         dmsetup remove $1
     fi
 }
@@ -110,8 +110,62 @@ mount_image() {
     # activate new logical volumes, this is automatic in some environments
     vgchange -ay
 
-    if [ -b "${NBD_DEVICE}p3" ]; then
-        # 3 partitions in the image, so assume the first 2 are boot partitions
+    root_device=""
+    boot_device=""
+    efi_device=""
+
+    # wait for any sub-devices to appear
+    timeout 5 sh -c "while ! ls ${NBD_DEVICE}p* ; do sleep 1; done" || true
+
+    devices=$(ls -1 ${NBD_DEVICE}p*)
+    device_count=$(echo $devices | wc -w)
+    if [ $device_count == "0" ]; then
+        # if there are no partition devices, assume one root device
+        root_device=${NBD_DEVICE}
+    elif [ $device_count == "1" ]; then
+        # if there is one partition device, assume it is the root device
+        root_device=${devices}
+        devices=""
+    fi
+
+    for device in ${devices}; do
+        lsblk --nodeps -P --output-all $device
+        label=$(lsblk --nodeps --noheadings --output LABEL $device)
+        part_type_name=$(lsblk --nodeps --noheadings --output PARTTYPENAME $device)
+        part_label=$(lsblk --nodeps --noheadings --output PARTLABEL $device)
+
+        if [[ ${part_type_name} == "BIOS boot" ]] || [[ ${part_type_name} == "PowerPC PReP boot" ]]; then
+            # Ignore unmountable partition
+            continue
+        fi
+
+        # look for EFI partition to mount at /boot/efi
+        if [ -z "$efi_device" ]; then
+            if [[ ${part_type_name} == "EFI System" ]]; then
+                efi_device=$device
+                continue
+            fi
+        fi
+
+        # look for partition to mount as /boot, only the RHEL guest image is known
+        # to have this
+        if [ -z "$boot_device" ]; then
+            if [[ ${label} == "boot" ]]; then
+                boot_device=$device
+                continue
+            fi
+        fi
+
+        if [ -z "$root_device" ]; then
+            root_device=$device
+            continue
+        fi
+    done
+
+    if [ -z "$root_device" ]; then
+        echo "ERROR: No root device found to mount"
+        exit 1
+    else
         if [ -b "/dev/mapper/vg-lv_root" ]; then
             # a whole-disk overcloud with lvm volumes
             # for example, overcloud-hardened-uefi-full.qcow2
@@ -122,24 +176,17 @@ mount_image() {
                 mount_volume $device $MOUNT_DIR$path
             done
         else
-            # a whole-disk overcloud with a single root partition
-            # for example, overcloud-hardened-full.qcow2
-            mount ${NBD_DEVICE}p3 $MOUNT_DIR
+            # a simple root partition
+            mount $root_device $MOUNT_DIR
         fi
-        # the EFI partition may be the first or second, try both
-        if blkid -t PARTLABEL="ESP" ${NBD_DEVICE}p1 ; then
-            mount ${NBD_DEVICE}p1 $MOUNT_DIR/boot/efi
-        elif blkid -t PARTLABEL="ESP" ${NBD_DEVICE}p2 ; then
-            mount ${NBD_DEVICE}p2 $MOUNT_DIR/boot/efi
-        fi
-    else
-        # a partition image
-        # for example, overcloud-full.qcow2
-        if [ -b "${NBD_DEVICE}p1" ]; then
-            mount ${NBD_DEVICE}p1 $MOUNT_DIR
-        else
-            mount ${NBD_DEVICE} $MOUNT_DIR
-        fi
+    fi
+    if [ ! -z "$boot_device" ]; then
+        # mount to /boot
+        mount $boot_device $MOUNT_DIR/boot
+    fi
+    if [ ! -z "$efi_device" ]; then
+        # mount to /boot/efi
+        mount $efi_device $MOUNT_DIR/boot/efi
     fi
 }
 
@@ -153,6 +200,7 @@ unmount_image() {
             unmount_volume $MOUNT_DIR$path
         done
         unmount_volume $MOUNT_DIR/boot/efi
+        unmount_volume $MOUNT_DIR/boot
         unmount_volume $MOUNT_DIR
     fi
 
