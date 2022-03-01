@@ -8,9 +8,6 @@ if grep "/httpd " /run_command 2>/dev/null ; then
     protocol=http
     path=
 else
-    bind_host=$(hiera ironic::pxe::tftp_bind_host -c /etc/puppet/hiera.yaml)
-    bind_port=69
-    protocol=tftp
-    path=map-file
+    exit 0
 fi
 healthcheck_curl ${protocol}://${bind_host}:${bind_port}/${path}
