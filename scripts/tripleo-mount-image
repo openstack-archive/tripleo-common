@@ -28,6 +28,12 @@ if [ ! -a "/dev/nbd0" ]; then
     modprobe nbd
 fi
 
+# GPT GUIDs of interest.
+# See https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs
+# also https://systemd.io/BOOT_LOADER_SPECIFICATION/
+GUID_EFI="c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
+GUID_LINUX_BOOT="bc13c2ff-59e6-4262-a352-b275fd6f7172"
+
 # supported LVM devices and mount points for whole-disk overcloud images
 MOUNTS="/dev/mapper/vg-lv_var:/var \
         /dev/mapper/vg-lv_log:/var/log \
@@ -132,18 +138,19 @@ mount_image() {
 
     for device in ${devices}; do
         lsblk --nodeps -P --output-all $device
-        label=$(lsblk --nodeps --noheadings --output LABEL $device)
-        part_type_name=$(lsblk --nodeps --noheadings --output PARTTYPENAME $device)
-        part_label=$(lsblk --nodeps --noheadings --output PARTLABEL $device)
+        fstype=$(lsblk --all --nodeps --noheadings --output FSTYPE $device)
+        label=$(lsblk --all --nodeps --noheadings --output LABEL $device)
+        part_type_name=$(lsblk --all --nodeps --noheadings --output PARTTYPENAME $device || echo "")
+        part_type=$(lsblk --all --nodeps --noheadings --output PARTTYPE $device)
 
-        if [[ ${part_type_name} == "BIOS boot" ]] || [[ ${part_type_name} == "PowerPC PReP boot" ]]; then
-            # Ignore unmountable partition
+        if [ -z "${fstype}" ]; then
+            # Ignore block device with no filesystem type
             continue
         fi
 
         # look for EFI partition to mount at /boot/efi
         if [ -z "$efi_device" ]; then
-            if [[ ${part_type_name} == "EFI System" ]]; then
+            if [[ ${part_type} == ${GUID_EFI} || ${part_type_name} == "EFI System" ]]; then
                 efi_device=$device
                 continue
             fi
@@ -152,7 +159,7 @@ mount_image() {
         # look for partition to mount as /boot, only the RHEL guest image is known
         # to have this
         if [ -z "$boot_device" ]; then
-            if [[ ${label} == "boot" ]]; then
+            if [[ ${part_type} == ${GUID_LINUX_BOOT} || ${label} == "boot" ]]; then
                 boot_device=$device
                 continue
             fi
