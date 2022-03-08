@@ -270,6 +270,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'ceph_keepalived_namespace',
                 'ceph_keepalived_image',
                 'ceph_keepalived_tag',
+                'pushgateway_namespace',
+                'pushgateway_image',
+                'pushgateway_tag',
                 ):
             if key in kb.CONTAINER_IMAGES_DEFAULTS:
                 expected[key] = kb.CONTAINER_IMAGES_DEFAULTS[key]
@@ -309,6 +312,9 @@ class TestKollaImageBuilderTemplate(base.TestCase):
                 'ceph_keepalived_namespace',
                 'ceph_keepalived_image',
                 'ceph_keepalived_tag',
+                'pushgateway_namespace',
+                'pushgateway_image',
+                'pushgateway_tag',
                 ):
             if key in kb.CONTAINER_IMAGES_DEFAULTS:
                 expected[key] = kb.CONTAINER_IMAGES_DEFAULTS[key]
