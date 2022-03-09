@@ -30,7 +30,7 @@ parameter_defaults:
       # Pass ceph_images: false to avoid pulling the Ceph related images
       ceph_namespace: quay.io/ceph
       ceph_image: daemon
-      ceph_tag: v6.0.6-stable-6.0-pacific-centos-8-x86_64
+      ceph_tag: v6.0.7-stable-6.0-pacific-centos-stream8
 
       ceph_prometheus_namespace: quay.io/prometheus
       ceph_prometheus_image: prometheus
