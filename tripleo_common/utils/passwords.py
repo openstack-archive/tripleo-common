@@ -24,6 +24,7 @@ import os
 import struct
 import time
 import uuid
+import urllib.parse
 
 import passlib.pwd
 import yaml
@@ -60,7 +61,11 @@ def generate_passwords(stack_env=None,
         if no_rotate and (
             stack_env and name in stack_env.get(
                 'parameter_defaults', {})):
-            passwords[name] = stack_env['parameter_defaults'][name]
+            current_password = stack_env['parameter_defaults'][name]
+            passwords[name] = current_password
+            if name in constants.DB_PASSWORD_PARAMETER_NAMES and db_ed25519:
+                db_uri = db_uri_from_ed25519_password(current_password)
+                passwords[name + 'Database'] = db_uri
         elif (name == 'KeystonePassword' and stack_env and
                 'AdminToken' in stack_env.get('parameter_defaults', {})):
             # NOTE(tkajinam): AdminToken was renamed to KeystonePassword
@@ -101,7 +106,10 @@ def generate_passwords(stack_env=None,
                 skip_bytes = [0, ord(' '), ord('\t'), ord('\n')]
                 passwords[name] = create_ed25519_password(skip_bytes)
             else:
-                passwords[name] = create_ed25519_password()
+                ed25519_password = create_ed25519_password()
+                db_uri = db_uri_from_ed25519_password(ed25519_password)
+                passwords[name] = ed25519_password
+                passwords[name + 'Database'] = db_uri
         elif name.startswith("MysqlRootPassword"):
             passwords[name] = passlib.pwd.genword(length=10)
         elif name.startswith("RabbitCookie"):
@@ -211,3 +219,12 @@ def create_ed25519_password(skip_bytes=[]):
         )
         generate_new_key = any(x in skip_bytes for x in private_bytes)
     return base64.b64encode(private_bytes).decode('utf-8')
+
+
+def db_uri_from_ed25519_password(b64_password):
+    decoded = base64.b64decode(b64_password).decode("latin-1")
+    # A database URI is unquoted by oslo.db as per RFC 1738,
+    # but we also need to quote '/' because that is a valid
+    # character in ed25519 passwords
+    db_uri = urllib.parse.quote(decoded.encode("utf-8")).replace('/', '%2F')
+    return db_uri
