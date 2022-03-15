@@ -34,15 +34,15 @@ parameter_defaults:
 
       ceph_prometheus_namespace: quay.io/prometheus
       ceph_prometheus_image: prometheus
-      ceph_prometheus_tag: v2.18.1
+      ceph_prometheus_tag: v2.33.4
 
       ceph_alertmanager_namespace: quay.io/prometheus
       ceph_alertmanager_image: alertmanager
-      ceph_alertmanager_tag: v0.20.0
+      ceph_alertmanager_tag: v0.23.0
 
       ceph_node_exporter_namespace: quay.io/prometheus
       ceph_node_exporter_image: node-exporter
-      ceph_node_exporter_tag: v0.18.1
+      ceph_node_exporter_tag: v1.3.1
 
       ceph_grafana_namespace: quay.io/ceph
       ceph_grafana_image: ceph-grafana
@@ -55,3 +55,7 @@ parameter_defaults:
       ceph_keepalived_namespace: quay.io/ceph
       ceph_keepalived_image: keepalived
       ceph_keepalived_tag: 2.1.5
+
+      pushgateway_namespace: quay.io/prometheus
+      pushgateway_image: pushgateway
+      pushgateway_tag: v1.4.2

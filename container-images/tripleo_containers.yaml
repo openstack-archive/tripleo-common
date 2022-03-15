@@ -21,6 +21,8 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-ceilometer-ipmi:current-tripleo
   image_source: tripleo
+- imagename: quay.io/prometheus/pushgateway:v1.4.2
+  image_source: prom
 - imagename: quay.io/tripleomaster/openstack-cinder-api:current-tripleo
   image_source: tripleo
 - imagename: quay.io/tripleomaster/openstack-cinder-backup:current-tripleo
@@ -169,11 +171,13 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/ceph/daemon:v6.0.7-stable-6.0-pacific-centos-stream8
   image_source: ceph
-- imagename: quay.io/prometheus/prometheus:v2.18.1
+- imagename: quay.io/prometheus/prometheus:v2.33.4
   image_source: prom
-- imagename: quay.io/prometheus/alertmanager:v0.20.0
+- imagename: quay.io/prometheus/alertmanager:v0.23.0
   image_source: prom
-- imagename: quay.io/prometheus/node-exporter:v0.18.1
+- imagename: quay.io/prometheus/node-exporter:v1.3.1
+  image_source: prom
+- imagename: quay.io/prometheus/pushgateway:v1.4.2
   image_source: prom
 - imagename: quay.io/ceph/ceph-grafana:6.7.4
   image_source: grafana

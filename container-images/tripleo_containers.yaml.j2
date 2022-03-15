@@ -102,6 +102,13 @@ container_images_template:
   - OS::TripleO::Services::CeilometerAgentIpmi
   - OS::TripleO::Services::UndercloudCeilometerAgentIpmi
 
+- imagename: "{{pushgateway_namespace}}/{{pushgateway_image}}:{{pushgateway_tag}}"
+  image_source: prom
+  params:
+  - ContainerCeilometerPushgatewayImage
+  services:
+  - OS::Tripleo::Services::CeilometerPushgateway
+
 - imagename: "{{namespace}}/{{name_prefix}}cinder-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:
