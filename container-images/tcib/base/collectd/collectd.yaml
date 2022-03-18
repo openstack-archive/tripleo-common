@@ -45,7 +45,6 @@ tcib_packages:
   - collectd-write_http
   - collectd-write_kafka
   - collectd-write_prometheus
-  - python3-collectd-gnocchi
   - python3-sqlalchemy-collectd
   rhel:
   - python3-collectd-rabbitmq-monitoring
