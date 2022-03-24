@@ -375,20 +375,15 @@ def build_tags_list(image):
 def build_catalog():
     catalog_path = os.path.join(IMAGE_EXPORT_DIR, 'v2', '_catalog')
     catalog_entries = []
-    LOG.debug('Rebuilding %s' % catalog_path)
     images_path = os.path.join(IMAGE_EXPORT_DIR, 'v2')
     metadata_set = set(['blobs', 'manifests', 'tags'])
-
-    for namespace in os.listdir(images_path):
-        namespace_path = os.path.join(images_path, namespace)
-        if not os.path.isdir(namespace_path):
-            continue
-        contents_set = set(os.listdir(namespace_path))
-        # handle containers with no namespaces
+    LOG.debug(f'Rebuilding {catalog_path} Based on images_path {images_path}')
+    metadata_set = set(['blobs', 'manifests', 'tags'])
+    for folder, contents_set, files in os.walk(images_path):
         if metadata_set.issubset(contents_set):
-            catalog_entries.append(namespace)
-        for image in list(contents_set - metadata_set):
-            catalog_entries.append('%s/%s' % (namespace, image))
+            image = folder.replace(f'{images_path}/', '')
+            LOG.debug(f'Adding image {image} to catalog')
+            catalog_entries.append(image)
 
     catalog = {'repositories': catalog_entries}
     with open(catalog_path, 'w+b') as f:
