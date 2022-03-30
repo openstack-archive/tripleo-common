@@ -429,11 +429,17 @@ class TripleoInventory(object):
                                                          dynamic)})
 
             if self.plan_name != 'overcloud':
-                ret.setdefault('overcloud',
-                               {'children': self._hosts(['allovercloud'],
-                                                        dynamic),
-                                'deprecated': ('Deprecated by allovercloud '
-                                               'group in Ussuri')})
+                ret.setdefault(
+                    'overcloud',
+                    {
+                        'children': self._hosts(
+                            [
+                                'allovercloud'
+                            ],
+                            dynamic
+                        )
+                    }
+                )
 
         # Associate services with roles
         roles_by_service = self.get_roles_by_service(
