@@ -22,6 +22,7 @@ disk_images:
       - remove-resolvconf
       - openssh
       - disable-nouveau
+      - reset-bls-entries
     packages:
       - python3-psutil
       - python3-debtcollector

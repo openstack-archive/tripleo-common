@@ -24,6 +24,7 @@ disk_images:
       - overcloud-secure
       - openssh
       - disable-nouveau
+      - reset-bls-entries
     packages:
       - kernel-rt
       - python3-psutil
