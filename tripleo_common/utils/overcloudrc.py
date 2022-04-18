@@ -74,12 +74,22 @@ def _create_overcloudrc(stack, no_proxy, admin_password, region_name):
     stack: Heat stack containing the deployed overcloud
     no_proxy: a comma-separated string of hosts that shouldn't be proxied
     """
-    overcloud_endpoint = get_overcloud_endpoint(stack)
-    overcloud_host = urllib.parse.urlparse(overcloud_endpoint).hostname
-    overcloud_admin_vip = get_endpoint('KeystoneAdmin', stack)
+    endpoint = get_overcloud_endpoint(stack)
+    admin_vip = get_endpoint('KeystoneAdmin', stack)
 
+    return _create_overcloudrc_from_outputs(
+        stack.stack_name, endpoint, admin_vip, no_proxy, admin_password,
+        region_name)
+
+
+def _create_overcloudrc_from_outputs(
+        stack_name, endpoint, admin_vip, no_proxy, admin_password,
+        region_name):
+    """Given the stack outputs and proxy settings, create the overcloudrc"""
+
+    host = urllib.parse.urlparse(endpoint).hostname
     no_proxy_list = no_proxy.split(',')
-    no_proxy_list.extend([overcloud_host, overcloud_admin_vip])
+    no_proxy_list.extend([host, admin_vip])
     no_proxy_list = map(
         common_utils.bracket_ipv6,
         [i for i in no_proxy_list if i]
@@ -94,13 +104,13 @@ def _create_overcloudrc(stack, no_proxy, admin_password, region_name):
         'OS_USER_DOMAIN_NAME': 'Default',
         'OS_PROJECT_DOMAIN_NAME': 'Default',
         'OS_NO_CACHE': 'True',
-        'OS_CLOUDNAME': stack.stack_name,
+        'OS_CLOUDNAME': stack_name,
         'no_proxy': ','.join(no_proxy_list),
         'PYTHONWARNINGS': ('ignore:Certificate has no, ignore:A true '
                            'SSLContext object is not available'),
         'OS_AUTH_TYPE': 'password',
         'OS_PASSWORD': admin_password,
-        'OS_AUTH_URL': overcloud_endpoint.replace('/v2.0', ''),
+        'OS_AUTH_URL': endpoint.replace('/v2.0', ''),
         'OS_IDENTITY_API_VERSION': constants.DEFAULT_IDENTITY_API_VERSION,
         'OS_COMPUTE_API_VERSION': constants.DEFAULT_COMPUTE_API_VERSION,
         'OS_IMAGE_API_VERSION': constants.DEFAULT_IMAGE_API_VERSION,
