@@ -9,7 +9,7 @@ disk_images:
       - overcloud-compute
       - puppet-modules
       - stable-interface-names
-      - grub2
+      - bootloader
       - element-manifest
       - dynamic-login
       - iptables
