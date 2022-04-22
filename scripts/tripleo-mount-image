@@ -24,6 +24,7 @@ SCRIPT_NAME=$(basename $0)
 NBD_DEVICE=""
 IMAGE_FILE=""
 MOUNT_DIR=""
+CHROOT=""
 if [ ! -a "/dev/nbd0" ]; then
     modprobe nbd
 fi
@@ -55,6 +56,8 @@ mount_show_options() {
     echo "    -m <directory>              -- Directory to mount image to."
     echo "    -n <nbd device>             -- NBD device to use (example, /dev/nbd0)."
     echo "                                   Defaults to first available"
+    echo "    --chroot                    -- Start a working chroot which is active until exit."
+    echo "                                   Directory will be unmounted on chroot exit"
     echo
     echo "Mount an overcloud image to a directory"
     echo
@@ -94,6 +97,28 @@ remove_device () {
     if [ -b "$1" ]; then
         dmsetup remove $1
     fi
+}
+
+start_chroot () {
+    EACTION="echo Exited chroot, unmounting $MOUNT_DIR ; unmount_image"
+    trap "$EACTION" EXIT
+
+    mount -o bind /dev $MOUNT_DIR/dev/
+    EACTION="umount $MOUNT_DIR/dev/; $EACTION"
+    trap "$EACTION" EXIT
+
+    if [ -a $MOUNT_DIR/etc/resolv.conf ]; then
+        mv $MOUNT_DIR/etc/resolv.conf $MOUNT_DIR/etc/resolv.conf.tmi
+        EACTION="mv $MOUNT_DIR/etc/resolv.conf.tmi $MOUNT_DIR/etc/resolv.conf; $EACTION"
+        trap "$EACTION" EXIT
+    fi
+
+    cp /etc/resolv.conf $MOUNT_DIR/etc/resolv.conf
+    EACTION="rm $MOUNT_DIR/etc/resolv.conf; $EACTION"
+    trap "$EACTION" EXIT
+
+    echo "Starting chroot in $MOUNT_DIR, exit will also unmount"
+    PS1="[\u@chroot \W]\$ " chroot $MOUNT_DIR /bin/bash -l
 }
 
 mount_image() {
@@ -266,7 +291,7 @@ if [ $SCRIPT_NAME == "tripleo-unmount-image" ]; then
     fi
     unmount_image
 else
-    TEMP=`getopt -o ha:m:n: -l help -n $SCRIPT_NAME -- "$@"`
+    TEMP=`getopt -o ha:m:n: -l help,chroot -n $SCRIPT_NAME -- "$@"`
     if [ $? != 0 ]; then
         echo "Terminating..." >&2
         exit 1
@@ -280,11 +305,15 @@ else
             -a) IMAGE_FILE=$2 ; shift 2;;
             -m) MOUNT_DIR=$2 ; shift 2;;
             -n) NBD_DEVICE=$2 ; shift 2;;
+            --chroot) CHROOT=yes ; shift;;
             --) shift ; break;;
             *) echo "Error: unsupported option $1." ; exit 1;;
         esac
     done
-    if [ -z "${MOUNT_DIR}" ] || [ -z "${IMAGE_FILE}" ]; then
+    if [ -z "${MOUNT_DIR}" ]; then
+        MOUNT_DIR=$(mktemp -d)
+    fi
+    if [ -z "${IMAGE_FILE}" ]; then
         mount_show_options 1
     fi
     MOUNT_DIR=$(realpath ${MOUNT_DIR})
@@ -307,4 +336,7 @@ else
         fi
     fi
     mount_image
+    if [ -n $CHROOT ]; then
+        start_chroot
+    fi
 fi
