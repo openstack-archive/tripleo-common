@@ -27,8 +27,3 @@ def kernel_arch():
 def dib_arch():
     """Return the kernel arch or the more appripriate DiB arch."""
     return {'x86_64': 'amd64'}.get(kernel_arch(), kernel_arch())
-
-
-def cirros_arch():
-    """Return the kernel arch or the more appripriate cirros arch."""
-    return {'ppc64le': 'powerpc'}.get(kernel_arch(), kernel_arch())
