@@ -7,7 +7,6 @@
       - release-notes-jobs-python3
       - tripleo-multinode-container-minimal-pipeline
       - tripleo-undercloud-jobs-pipeline
-      - tripleo-build-containers-jobs
       - tripleo-buildimage-jobs
       - tripleo-standalone-scenarios-pipeline
       - tripleo-upgrades-victoria-pipeline
