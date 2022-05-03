@@ -12,7 +12,7 @@ disk_images:
       - overcloud-ceph-storage
       - puppet-modules
       - stable-interface-names
-      - grub2
+      - bootloader
       - element-manifest
       - dynamic-login
       - iptables
