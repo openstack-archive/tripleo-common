@@ -173,15 +173,15 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleovictoria/openstack-zaqar-wsgi:current-tripleo
   image_source: tripleo
-- imagename: quay.ceph.io/ceph-ci/daemon:v4.0.19-stable-4.0-nautilus-centos-7-x86_64
+- imagename: quay.io/ceph/daemon:v4.0.19-stable-4.0-nautilus-centos-7-x86_64
   image_source: ceph
-- imagename: quay.ceph.io/prometheus/prometheus:v2.7.2
+- imagename: quay.io/prometheus/prometheus:v2.7.2
   image_source: prom
-- imagename: quay.ceph.io/prometheus/alertmanager:v0.16.2
+- imagename: quay.io/prometheus/alertmanager:v0.16.2
   image_source: prom
-- imagename: quay.ceph.io/prometheus/node-exporter:v0.17.0
+- imagename: quay.io/prometheus/node-exporter:v0.17.0
   image_source: prom
-- imagename: quay.ceph.io/app-sre/grafana:5.4.3
+- imagename: quay.io/ceph/ceph-grafana:6.7.4
   image_source: grafana
 - imagename: quay.io/tripleovictoria/openstack-tempest:current-tripleo
   image_source: tripleo
