@@ -4,6 +4,7 @@ tcib_actions:
 tcib_packages:
   common:
   - ceph-common
+  - dbus-tools
   - libqb
   - openstack-manila-share
   - pacemaker
