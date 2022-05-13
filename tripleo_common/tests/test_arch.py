@@ -37,9 +37,3 @@ class ArchTestCase(TestCase):
                                   ('ppc64le', 'ppc64le')]:
             with mock.patch('os.uname', return_value=('', '', '', '', _arch)):
                 self.assertEqual(expected, arch.dib_arch())
-
-    def test_cirros_arch(self):
-        for (expected, _arch) in [('x86_64', 'x86_64'),
-                                  ('powerpc', 'ppc64le')]:
-            with mock.patch('os.uname', return_value=('', '', '', '', _arch)):
-                self.assertEqual(expected, arch.cirros_arch())
