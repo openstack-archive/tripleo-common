@@ -382,6 +382,44 @@ URI: sha256:1234abcd/index.json
         for d in deleted:
             self.assertFalse(os.path.exists(d), 'deleted still exists: %s' % d)
 
+    def test_build_catalog(self):
+        prefix = 'docker://localhost:8787/t'
+        url1 = urlparse('%s/nova-api:latest' % prefix)
+        url2 = urlparse('%s/namespace/nova-compute:abc' % prefix)
+        url3 = urlparse('%s/yet/another/namespace/nova-compute:abc' % prefix)
+        expected_list = set([
+            't/namespace/nova-compute',
+            't/yet/another/namespace/nova-compute',
+            't/nova-api'
+        ])
+        manifest = {
+            'schemaVersion': 1,
+            'fsLayers': [
+                {'blobSum': 'sha256:aeb786'},
+                {'blobSum': 'sha256:4dc536'},
+            ],
+            'mediaType': 'application/vnd.docker.'
+                         'distribution.manifest.v2+json',
+        }
+        self._write_test_image(
+            url=url1,
+            manifest=manifest
+        )
+        self._write_test_image(
+            url=url2,
+            manifest=manifest
+        )
+        self._write_test_image(
+            url=url3,
+            manifest=manifest
+        )
+
+        image_export.build_catalog()
+        catalog = os.path.join(image_export.IMAGE_EXPORT_DIR, 'v2', '_catalog')
+        with open(catalog, 'r') as f:
+            data = json.load(f)
+        self.assertTrue(set(data['repositories']) == expected_list)
+
     def test_delete_image(self):
         url1 = urlparse('docker://localhost:8787/t/nova-api:latest')
         url2 = urlparse('docker://localhost:8787/t/nova-api:abc')
