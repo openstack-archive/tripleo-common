@@ -2,7 +2,7 @@
     templates:
       - check-requirements
       - openstack-cover-jobs
-      - openstack-python3-yoga-jobs
+      - openstack-python3-zed-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
       - tripleo-multinode-container-minimal-pipeline
@@ -15,16 +15,10 @@
     check:
       jobs:
         - openstack-tox-linters
-        - openstack-tox-py36
-        - openstack-tox-py37
-        - openstack-tox-py38
-        - openstack-tox-py39
-        - tripleo-cross-tripleoclient-py37
+        - tripleo-cross-tripleoclient-py39
         - tripleo-ci-centos-9-content-provider:
             dependencies: &deps_unit_lint
               - openstack-tox-linters
-              - openstack-tox-py36
-              - openstack-tox-py37
               - openstack-tox-py39
         - tripleo-buildimage-overcloud-full-centos-9:
             dependencies: *deps_unit_lint
@@ -37,6 +31,5 @@
     gate:
       queue: tripleo
       jobs:
-        - openstack-tox-py37
         - openstack-tox-linters
-        - tripleo-cross-tripleoclient-py37
+        - tripleo-cross-tripleoclient-py39
