@@ -8,5 +8,4 @@ tcib_packages:
   - mod_ssl
   - openstack-nova-api
   - python3-mod_wsgi
-  - python3-novajoin
 tcib_user: nova

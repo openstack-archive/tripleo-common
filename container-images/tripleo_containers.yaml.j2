@@ -582,21 +582,6 @@ container_images_template:
   services:
   - OS::TripleO::Services::NovaScheduler
 
-- imagename: "{{namespace}}/{{name_prefix}}novajoin-notifier{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-  params:
-  - ContainerNovajoinNotifierImage
-  services:
-  - OS::TripleO::Services::Novajoin
-
-- imagename: "{{namespace}}/{{name_prefix}}novajoin-server{{name_suffix}}:{{tag}}"
-  image_source: tripleo
-  params:
-  - ContainerNovajoinServerImage
-  - ContainerNovajoinConfigImage
-  services:
-  - OS::TripleO::Services::Novajoin
-
 - imagename: "{{namespace}}/{{name_prefix}}octavia-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
   params:

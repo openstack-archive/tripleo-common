@@ -133,10 +133,6 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomastercentos9/openstack-nova-scheduler:current-tripleo
   image_source: tripleo
-- imagename: quay.io/tripleomastercentos9/openstack-novajoin-notifier:current-tripleo
-  image_source: tripleo
-- imagename: quay.io/tripleomastercentos9/openstack-novajoin-server:current-tripleo
-  image_source: tripleo
 - imagename: quay.io/tripleomastercentos9/openstack-octavia-api:current-tripleo
   image_source: tripleo
 - imagename: quay.io/tripleomastercentos9/openstack-octavia-health-manager:current-tripleo

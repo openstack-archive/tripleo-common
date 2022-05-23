@@ -84,7 +84,6 @@ _EXISTING_PASSWORDS = {
     'HeatAuthEncryptionKey': '9xZXehsKc2HbmFFMKjuqxTJHn',
     'PcsdPassword': 'KjEzeitus8eu751a',
     'HorizonSecret': 'mjEzeitus8eu751B',
-    'NovajoinPassword': '7dZATgVPwD7Ergs9kTTDMCr7F',
     'IronicPassword': '4hFDgn9ANeVfuqk84pHpD4ksa',
     'RedisPassword': 'xjj3QZDcUQmU6Q7NzWBHRUhGd',
     'CinderPassword': 'dcxC3xyUcrmvzfrrxpAd3REcm',

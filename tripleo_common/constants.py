@@ -72,7 +72,6 @@ PASSWORD_PARAMETER_NAMES = (
     'NeutronMetadataProxySharedSecret',
     'NeutronPassword',
     'NovaPassword',
-    'NovajoinPassword',
     'MigrationSshKey',
     'OctaviaServerCertsKeyPassphrase',
     'OctaviaCaKeyPassphrase',
@@ -111,7 +110,6 @@ DB_PASSWORD_PARAMETER_NAMES = (
     'MysqlRootPassword',
     'NeutronPassword',
     'NovaPassword',
-    'NovajoinPassword',
     'OctaviaPassword',
     'PlacementPassword',
 )
