@@ -28,9 +28,9 @@ parameter_defaults:
       # Only used if Ceph is deployed.
 
       # Pass ceph_images: false to avoid pulling the Ceph related images
-      ceph_namespace: quay.io/ceph
+      ceph_namespace: quay.rdoproject.org/tripleomastercentos9
       ceph_image: daemon
-      ceph_tag: v6.0.7-stable-6.0-pacific-centos-stream8
+      ceph_tag: current-ceph
 
       ceph_prometheus_namespace: quay.io/prometheus
       ceph_prometheus_image: prometheus
