@@ -12,3 +12,5 @@ tcib_packages:
   - python3-mod_wsgi
   - syslinux-tftpboot
   - dnsmasq
+  - grub2-efi-x64
+  - shim
