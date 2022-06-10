@@ -18,7 +18,6 @@ tcib_packages:
   - collectd-curl
   - collectd-curl_json
   - collectd-curl_xml
-  - collectd-dbi
   - collectd-disk
   - collectd-dns
   - collectd-ipmi
