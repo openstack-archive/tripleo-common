@@ -1,3 +1,7 @@
+tcib_envs:
+  MALLOC_ARENA_MAX: 1
+  MALLOC_MMAP_THRESHOLD_: 131072
+  MALLOC_TRIM_THRESHOLD_: 262144
 tcib_actions:
 - run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/cinder-volume/extend_start.sh /usr/local/bin/kolla_extend_start
