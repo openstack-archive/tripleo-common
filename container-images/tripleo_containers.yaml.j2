@@ -711,8 +711,7 @@ container_images_template:
   - OS::TripleO::Services::HAproxy
   - OS::TripleO::Services::OctaviaHealthManager
   - OS::TripleO::Services::Rsyslog
-  - OS::TripleO::Services::SwiftProxy
-  - OS::TripleO::Services::SwiftStorage
+  - OS::TripleO::Services::RsyslogSidecar
 
 - imagename: "{{namespace}}/{{name_prefix}}unbound{{name_suffix}}:{{tag}}"
   image_source: tripleo
