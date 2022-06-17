@@ -1,6 +1,9 @@
 tcib_actions:
 - run: bash /usr/local/bin/uid_gid_manage {{ tcib_user }}
 - run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: >-
+    if [ '{{ tcib_distro }}' == 'centos' ] && [ '{{ tcib_release }}' == '9' ]; then
+    dnf -y downgrade pacemaker pacemaker-remote resource-agents; fi
 - run: mkdir /etc/libqb
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/redis /openstack/healthcheck && chmod a+rx /openstack/healthcheck
 tcib_packages:
