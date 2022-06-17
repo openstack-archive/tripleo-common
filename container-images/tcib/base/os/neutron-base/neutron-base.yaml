@@ -14,4 +14,3 @@ tcib_packages:
   - openvswitch
   - python3-networking-baremetal
   - python3-openvswitch
-  - python3-oslo-vmware
