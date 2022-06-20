@@ -9,3 +9,4 @@ tcib_packages:
   common:
   - nmap-ncat
   - openstack-swift
+  - rsync-daemon
