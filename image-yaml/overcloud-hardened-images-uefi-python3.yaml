@@ -25,14 +25,6 @@ disk_images:
       - openssh
       - disable-nouveau
       - reset-bls-entries
-    packages:
-      - python3-psutil
-      - python3-debtcollector
-      - sos
-      - device-mapper-multipath
-      - openstack-heat-agents
-      - os-net-config
-      - jq
     options:
       - "--min-tmpfs=7"
     environment:

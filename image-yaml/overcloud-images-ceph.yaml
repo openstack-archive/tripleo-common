@@ -20,15 +20,6 @@ disk_images:
       - openssh
       - disable-nouveau
       - reset-bls-entries
-    packages:
-      - python3-psutil
-      - python3-debtcollector
-      - sos
-      - device-mapper-multipath
-      - openstack-heat-agents
-      - os-net-config
-      - jq
-      - python3-dbus
     environment:
       FS_TYPE: xfs
       DIB_PYTHON_VERSION: '3'
