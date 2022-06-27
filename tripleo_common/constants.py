@@ -68,6 +68,7 @@ PASSWORD_PARAMETER_NAMES = (
     'KeystonePassword',
     'ManilaPassword',
     'MysqlClustercheckPassword',
+    'MysqlMariabackupPassword',
     'MysqlRootPassword',
     'NeutronMetadataProxySharedSecret',
     'NeutronPassword',
@@ -107,6 +108,7 @@ DB_PASSWORD_PARAMETER_NAMES = (
     'KeystonePassword',
     'ManilaPassword',
     'MysqlClustercheckPassword',
+    'MysqlMariabackupPassword',
     'MysqlRootPassword',
     'NeutronPassword',
     'NovaPassword',
@@ -129,6 +131,7 @@ DO_NOT_ROTATE_LIST = (
     'CephRgwKey',
     'HeatAuthEncryptionKey',
     'MysqlClustercheckPassword',
+    'MysqlMariabackupPassword',
     'PacemakerRemoteAuthkey',
     'PcsdPassword',
 )

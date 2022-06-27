@@ -111,6 +111,7 @@ _EXISTING_PASSWORDS = {
     'SwiftPassword': 'z6EWAVfW7CuxvKdzjWTdrXCeg',
     'HeatPassword': 'bREnsXtMHKTHxt8XW6NXAYr48',
     'MysqlClustercheckPassword': 'jN4RMMWWJ4sycaRwh7UvrAtfX',
+    'MysqlMariabackupPassword': 'w3qjjJDTKajthzuRYVd4X5YVU',
     'CephClientKey': b'AQCQXtlXAAAAABAAKyc+8St8i9onHyu2mPk+vg==',
     'NeutronPassword': 'ZxAjdU2UXCV4GM3WyPKrzAZXD',
     'DesignatePassword': 'wHYj7rftFzHMpJKnGxbjjR9CW',
