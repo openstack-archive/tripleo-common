@@ -58,8 +58,6 @@ class TestPasswords(base.TestCase):
                 uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False),
-                uuidutils.generate_uuid(dashed=False),
-                uuidutils.generate_uuid(dashed=False),
                 uuidutils.generate_uuid(dashed=False)]
 
         # generate_passwords will be called multiple times
@@ -78,12 +76,7 @@ class TestPasswords(base.TestCase):
                 value = password_utils.generate_passwords()
         self.assertIn(value['KeystoneCredential0'], keys)
         self.assertIn(value['KeystoneCredential1'], keys)
-        self.assertIn(value['KeystoneFernetKey0'], keys)
-        self.assertIn(value['KeystoneFernetKey1'], keys)
         self.assertIn(value['BarbicanSimpleCryptoKek'], keys)
-
-        self.assertNotEqual(value['KeystoneFernetKey0'],
-                            value['KeystoneFernetKey1'])
 
         self.assertNotEqual(value['KeystoneCredential0'],
                             value['KeystoneCredential1'])
