@@ -4,7 +4,6 @@ disk_images:
     type: qcow2
     elements:
       - baremetal
-      - overcloud-agent
       - overcloud-base
       - overcloud-ceph-storage
       - puppet-modules

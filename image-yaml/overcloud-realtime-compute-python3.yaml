@@ -5,7 +5,6 @@ disk_images:
     elements:
       - baremetal
       - openvswitch
-      - overcloud-agent
       - overcloud-compute
       - puppet-modules
       - stable-interface-names

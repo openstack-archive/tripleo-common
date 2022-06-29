@@ -4,7 +4,6 @@ disk_images:
     type: qcow2
     elements:
       - openvswitch
-      - overcloud-agent
       - overcloud-base
       - overcloud-controller
       - overcloud-compute
