@@ -496,7 +496,7 @@ class TestBaseImageUploader(base.TestCase):
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        calls = [mock.call('https://192.0.2.0:8787/v2', timeout=30)]
+        calls = [mock.call('https://192.0.2.0:8787', timeout=30)]
         mock_session.assert_has_calls(calls)
         self.assertEqual(mock_session.call_count, 1)
 
@@ -507,8 +507,8 @@ class TestBaseImageUploader(base.TestCase):
             self.uploader.is_insecure_registry('bcert:8787'))
         self.assertTrue(
             self.uploader.is_insecure_registry('bcert:8787'))
-        calls = [mock.call('https://bcert:8787/v2', timeout=30),
-                 mock.call('https://bcert:8787/v2', timeout=30, verify=False)]
+        calls = [mock.call('https://bcert:8787', timeout=30),
+                 mock.call('https://bcert:8787', timeout=30, verify=False)]
         mock_session.assert_has_calls(calls)
         self.assertEqual(mock_session.call_count, 2)
 
@@ -519,7 +519,7 @@ class TestBaseImageUploader(base.TestCase):
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertFalse(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        calls = [mock.call('https://192.0.2.0:8787/v2', timeout=30)]
+        calls = [mock.call('https://192.0.2.0:8787', timeout=30)]
         mock_session.assert_has_calls(calls)
         self.assertEqual(mock_session.call_count, 1)
 
@@ -530,8 +530,8 @@ class TestBaseImageUploader(base.TestCase):
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
         self.assertTrue(
             self.uploader.is_insecure_registry('192.0.2.0:8787'))
-        calls = [mock.call('https://192.0.2.0:8787/v2', timeout=30),
-                 mock.call('https://192.0.2.0:8787/v2', timeout=30,
+        calls = [mock.call('https://192.0.2.0:8787', timeout=30),
+                 mock.call('https://192.0.2.0:8787', timeout=30,
                            verify=False)]
         mock_session.assert_has_calls(calls)
         self.assertEqual(mock_session.call_count, 2)

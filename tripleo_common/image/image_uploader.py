@@ -1201,12 +1201,12 @@ class BaseImageUploader(object):
             return True
         with requests.Session() as s:
             try:
-                s.get('https://%s/v2' % registry_host, timeout=30)
+                s.get('https://%s' % registry_host, timeout=30)
             except requests.exceptions.SSLError:
                 # Might be just a TLS certificate validation issue
                 # Just retry without the verification
                 try:
-                    s.get('https://%s/v2' % registry_host, timeout=30,
+                    s.get('https://%s' % registry_host, timeout=30,
                           verify=False)
                     cls.no_verify_registries.add(registry_host)
                     # Techinically these type of registries are insecure when
