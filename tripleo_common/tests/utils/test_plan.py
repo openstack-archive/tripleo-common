@@ -118,8 +118,6 @@ _EXISTING_PASSWORDS = {
     'DesignateRndcKey': 'hB8XaZRd2Tf00jKsyoXpyw==',
     'KeystoneCredential0': 'ftJNQ_XlDUK7Lgvv1kdWf3SyqVsrvNDgoNV4kJg3yzw=',
     'KeystoneCredential1': 'c4MFq82TQLFLKpiiUjrKkp15dafE2ALcD3jbaIu3rfE=',
-    'KeystoneFernetKey0': 'O8NSPxr4zXBBAoGIj-5aUmtE7-Jk5a4ptVsEhzJ8Vd8=',
-    'KeystoneFernetKey1': 'AueoL37kd6eLjV29AG-Ruxu5szW47osgXx6aPOqtI6I=',
     'KeystoneFernetKeys': {
         '/etc/keystone/fernet-keys/0': {'content': 'IAMAVERYSAFEKEY'},
         '/etc/keystone/fernet-keys/1': {'content': 'IALSOAMAVERYSAFEKEY'}

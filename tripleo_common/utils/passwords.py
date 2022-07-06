@@ -87,8 +87,7 @@ def generate_passwords(stack_env=None,
         # for the overcloud.
         elif name == 'SnmpdReadonlyUserPassword':
             passwords[name] = get_snmpd_readonly_user_password()
-        elif name in ('KeystoneCredential0', 'KeystoneCredential1',
-                      'KeystoneFernetKey0', 'KeystoneFernetKey1'):
+        elif name in ('KeystoneCredential0', 'KeystoneCredential1'):
             passwords[name] = create_keystone_credential()
         elif name == 'KeystoneFernetKeys':
             passwords[name] = create_fernet_keys_repo_structure_and_keys()
