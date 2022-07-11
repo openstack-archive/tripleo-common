@@ -20,6 +20,7 @@ disk_images:
       - realtime-kernel
       - openssh
       - disable-nouveau
+      - reset-bls-entries
     packages:
       - python3-psutil
       - python3-debtcollector
