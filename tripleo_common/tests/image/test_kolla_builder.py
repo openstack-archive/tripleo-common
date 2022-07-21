@@ -34,6 +34,10 @@ TEMPLATE_PATH = os.path.join(os.path.dirname(__file__),
 DEFAULTS_PATH = os.path.join(os.path.dirname(__file__),
                              '..', '..', '..', 'container-images',
                              'container_image_prepare_defaults.yaml')
+
+TEMPLATE_DIR_PATH = os.path.join(os.path.dirname(__file__),
+                                 '..', '..', '..', 'container-images')
+
 kb.init_prepare_defaults(DEFAULTS_PATH)
 KB_DEFAULT_TAG = kb.CONTAINER_IMAGES_DEFAULTS['tag']
 KB_DEFAULT_PREFIX = kb.CONTAINER_IMAGES_DEFAULTS['name_prefix']
@@ -365,7 +369,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
         files_dir = os.path.join(project_dir, 'container-images')
 
         oc_tmpl_file = os.path.join(files_dir, 'tripleo_containers.yaml.j2')
-        tmpl_builder = kb.KollaImageBuilder([oc_tmpl_file])
+        tmpl_builder = kb.KollaImageBuilder([oc_tmpl_file], files_dir)
 
         def ffunc(entry):
             if 'params' in entry:
@@ -379,7 +383,7 @@ class TestKollaImageBuilderTemplate(base.TestCase):
             rhel_containers=rhel_containers)
 
         oc_yaml_file = os.path.join(files_dir, 'tripleo_containers.yaml')
-        yaml_builder = kb.KollaImageBuilder([oc_yaml_file])
+        yaml_builder = kb.KollaImageBuilder([oc_yaml_file], files_dir)
         container_images = yaml_builder.load_config_files(
             yaml_builder.CONTAINER_IMAGES)
 
@@ -462,7 +466,8 @@ class TestPrepare(base.TestCase):
     def test_prepare_noargs(self, mock_insecure):
         self.assertEqual(
             {},
-            kb.container_images_prepare(template_file=TEMPLATE_PATH)
+            kb.container_images_prepare(template_file=TEMPLATE_PATH,
+                                        template_dir=TEMPLATE_DIR_PATH)
         )
 
     @mock.patch('tripleo_common.image.kolla_builder.'
@@ -481,6 +486,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::NovaLibvirt'],
@@ -508,6 +514,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 includes=['libvirt'],
@@ -535,6 +542,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 includes=['libvirt'],
@@ -569,6 +577,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::NovaApi'],
@@ -605,6 +614,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::NovaApi'],
@@ -631,6 +641,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=['OS::TripleO::Services::CephMon'],
@@ -656,6 +667,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=[
@@ -689,6 +701,7 @@ class TestPrepare(base.TestCase):
             }},
             kb.container_images_prepare(
                 template_file=TEMPLATE_PATH,
+                template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
                 service_filter=[
@@ -717,6 +730,7 @@ class TestPrepare(base.TestCase):
 
         kb.container_images_prepare(
             template_file=TEMPLATE_PATH,
+            template_dir=TEMPLATE_DIR_PATH,
             output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
             output_images_file='container_images.yaml',
             mapping_args={},
@@ -727,6 +741,7 @@ class TestPrepare(base.TestCase):
 
         kb.container_images_prepare(
             template_file=TEMPLATE_PATH,
+            template_dir=TEMPLATE_DIR_PATH,
             output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
             output_images_file='container_images.yaml',
             mapping_args={"tag": "master"},
