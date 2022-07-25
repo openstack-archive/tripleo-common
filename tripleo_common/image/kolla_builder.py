@@ -57,12 +57,13 @@ def init_prepare_defaults(defaults_file):
         CONTAINER_IMAGES_DEFAULTS['namespace'] += 'centos8'
 
 
-DEFAULT_TEMPLATE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
-                                     'container-images',
+DEFAULT_TEMPLATE_DIR = os.path.join(sys.prefix, 'share', 'tripleo-common',
+                                    'container-images')
+
+DEFAULT_TEMPLATE_FILE = os.path.join(DEFAULT_TEMPLATE_DIR,
                                      'tripleo_containers.yaml.j2')
 
-DEFAULT_PREPARE_FILE = os.path.join(sys.prefix, 'share', 'tripleo-common',
-                                    'container-images',
+DEFAULT_PREPARE_FILE = os.path.join(DEFAULT_TEMPLATE_DIR,
                                     'container_image_prepare_defaults.yaml')
 
 if os.path.isfile(DEFAULT_PREPARE_FILE):
@@ -256,6 +257,7 @@ def container_images_prepare_defaults():
 
 
 def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
+                             template_dir=DEFAULT_TEMPLATE_DIR,
                              excludes=None, includes=None, service_filter=None,
                              pull_source=None, push_destination=None,
                              mapping_args=None, output_env_file=None,
@@ -268,6 +270,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
     """Perform container image preparation
 
     :param template_file: path to Jinja2 file containing all image entries
+    :param template_dir: path to Jinja2 files included in the main template
     :param excludes: list of image name substrings to use for exclude filter
     :param includes: list of image name substrings, at least one must match.
                      All excludes are ignored if includes is specified.
@@ -331,7 +334,7 @@ def container_images_prepare(template_file=DEFAULT_TEMPLATE_FILE,
                     return None
         return entry
 
-    builder = KollaImageBuilder([template_file])
+    builder = KollaImageBuilder([template_file], template_dir)
     result = builder.container_images_from_template(
         filter=ffunc, **mapping_args)
 
@@ -506,8 +509,14 @@ class KollaImageBuilder(base.BaseImageManager):
         if len(self.config_files) != 1:
             raise ValueError('A single config file must be specified')
         config_file = self.config_files[0]
+        template_dir = self.template_dir
+
         with open(config_file) as cf:
-            template = jinja2.Template(cf.read())
+            if template_dir is not None:
+                template = jinja2.Environment(loader=jinja2.FileSystemLoader(
+                    template_dir)).from_string(cf.read())
+            else:
+                template = jinja2.Template(cf.read())
 
         rendered = template.render(mapping)
         rendered_dict = yaml.safe_load(rendered)
@@ -530,6 +539,7 @@ class KollaImageBuilder(base.BaseImageManager):
 
         if len(self.config_files) == 0:
             self.config_files = [DEFAULT_TEMPLATE_FILE]
+            self.template_dir = DEFAULT_TEMPLATE_DIR
             container_images = self.container_images_from_template()
         else:
             container_images = self.load_config_files(self.CONTAINER_IMAGES) \

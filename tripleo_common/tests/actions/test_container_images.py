@@ -13,9 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import os
-import sys
-
 import mock
 from swiftclient import exceptions as swiftexceptions
 import yaml
@@ -61,10 +58,6 @@ class PrepareContainerImageEnvTest(base.TestCase):
             container='overcloud')
         self.assertEqual(final_env, action.run(self.ctx))
 
-        kib.assert_called_once_with(
-            [os.path.join(sys.prefix, 'share', 'tripleo-common',
-                          'container-images', 'tripleo_containers.yaml.j2')]
-        )
         params = {
             'ContainerNovaComputeImage': 't/cb-nova-compute:liberty',
             'ContainerNovaLibvirtConfigImage': 't/cb-nova-compute:liberty',
