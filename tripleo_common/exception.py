@@ -101,10 +101,6 @@ class RootDeviceDetectionError(Exception):
     """Failed to detect the root device"""
 
 
-class DeriveParamsError(Exception):
-    """Error while performing a derive parameters operation"""
-
-
 class NotFound(Exception):
     """Resource not found"""
 
