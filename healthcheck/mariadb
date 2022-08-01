@@ -14,6 +14,9 @@ elif pgrep -a socat 2> /dev/null | grep -w clustercheck; then
         TRIPLEO_SOCAT_BIND=$(sed -nE "s/^TRIPLEO_SOCAT_BIND='?([^']*)'?$/\1/p" $SOCAT_CONF)
         PORT=$(echo $TRIPLEO_SOCAT_BIND | sed -n -E 's/.*listen:([0-9]*),.*/\1/p')
         ADDR=$(echo $TRIPLEO_SOCAT_BIND | sed -n -E 's/.*bind="?([^",]*)"?,?.*/\1/p')
+        if echo $TRIPLEO_SOCAT_BIND | grep -q '^tcp6'; then
+                ADDR="[${ADDR}]"
+        fi
 else
         IS_MYSQL=1
 fi
