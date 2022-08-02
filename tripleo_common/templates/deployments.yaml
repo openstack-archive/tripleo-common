@@ -154,6 +154,7 @@
     - not ansible_check_mode|bool
 
 - name: "Check if deployed file exists for {{ item }}"
+  become: true
   stat:
     path: /var/lib/heat-config/deployed/{{ deployment_uuid }}.json
   register: deployed_file_stat
