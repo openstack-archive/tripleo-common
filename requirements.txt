@@ -10,7 +10,6 @@ oslo.log>=3.36.0 # Apache-2.0
 oslo.utils>=3.33.0 # Apache-2.0
 python-ironicclient!=2.5.2,!=2.7.1,!=3.0.0,>=2.3.0 # Apache-2.0
 oslo.concurrency>=3.26.0 # Apache-2.0
-python-ironic-inspector-client>=1.5.0 # Apache-2.0
 Jinja2>=2.10 # BSD License (3 clause)
 passlib>=1.7.0 # BSD
 cryptography>=3.4.7 # BSD/Apache-2.0
