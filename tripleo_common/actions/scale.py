@@ -176,4 +176,6 @@ class ScaleDownAction(base.TripleOAction):
         stack_params = self._get_removal_params_from_heat(
             resources_by_role, resources)
 
-        return self._update_stack(parameters=stack_params, context=context)
+        return self._update_stack(parameters=stack_params,
+                                  timeout_mins=self.timeout_mins,
+                                  context=context)
