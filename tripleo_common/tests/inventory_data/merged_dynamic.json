@@ -36,12 +36,7 @@
             ],
             "project_name": "admin",
             "undercloud_service_list": [
-                "tripleo_nova_compute",
-                "tripleo_heat_engine",
-                "tripleo_ironic_conductor",
-                "tripleo_swift_container_server",
-                "tripleo_swift_object_server",
-                "tripleo_mistral_engine"
+                "tripleo_ironic_conductor"
             ],
             "undercloud_swift_url": "https://192.168.24.2:13808/v1/AUTH_b0d47705b94c486889fd2b26ce343763",
             "username": "admin"
