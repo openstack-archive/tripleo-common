@@ -299,10 +299,7 @@ class TripleoInventory(object):
                 keystoneauth1.exceptions.catalog.EndpointNotFound):
             return {}
 
-    UNDERCLOUD_SERVICES = [
-        'tripleo_nova_compute', 'tripleo_heat_engine',
-        'tripleo_ironic_conductor', 'tripleo_swift_container_server',
-        'tripleo_swift_object_server', 'tripleo_mistral_engine']
+    UNDERCLOUD_SERVICES = ['tripleo_ironic_conductor']
 
     def get_undercloud_service_list(self):
         """Return list of undercloud services - currently static

@@ -299,13 +299,7 @@ class TestInventory(base.TestCase):
                     'plan': 'overcloud',
                     'project_name': 'admin',
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'
-                        ],
+                        'tripleo_ironic_conductor'],
                     'username': 'admin'
                     }
                 }
@@ -404,13 +398,7 @@ class TestInventory(base.TestCase):
                     'any_error_fatal': True,
                     'max_fail_percentage': 0,
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'
-                        ],
+                        'tripleo_ironic_conductor'],
                     'username': 'admin'
                 }
             },
@@ -561,12 +549,7 @@ class TestInventory(base.TestCase):
                     'plan': 'overcloud',
                     'project_name': 'admin',
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'],
+                        'tripleo_ironic_conductor'],
                     'username': 'admin'
                     }
                 }
@@ -609,12 +592,7 @@ class TestInventory(base.TestCase):
                     'plan': 'overcloud',
                     'project_name': 'admin',
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'],
+                        'tripleo_ironic_conductor'],
                     'username': 'admin'
                 }
             },
@@ -1020,12 +998,7 @@ class TestInventory(base.TestCase):
                          'plan': 'overcloud',
                          'project_name': 'admin',
                          'undercloud_service_list': [
-                             'tripleo_nova_compute',
-                             'tripleo_heat_engine',
-                             'tripleo_ironic_conductor',
-                             'tripleo_swift_container_server',
-                             'tripleo_swift_object_server',
-                             'tripleo_mistral_engine'],
+                             'tripleo_ironic_conductor'],
                          'username': 'admin'}},
             'Controller': {
                 'hosts': {
