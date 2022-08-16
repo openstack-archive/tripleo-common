@@ -6,7 +6,6 @@ tcib_packages:
   common:
   - httpd
   - mod_ssl
-  - openstack-ceilometer-common
   - openstack-swift-proxy
   - python3-ceilometermiddleware
 tcib_user: swift
