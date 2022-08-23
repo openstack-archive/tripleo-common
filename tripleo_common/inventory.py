@@ -603,7 +603,8 @@ class TripleoInventory(object):
                                  sorted(role_networks))
             role_vars.setdefault(
                 'role_networks',
-                [networks_upper[net] for net in role_networks])
+                [networks_upper[net] for net in role_networks
+                 if net != self.host_network])
             role_vars.setdefault('networks_all', networks_all)
             role_vars.setdefault('networks_lower', networks_lower)
 

@@ -835,7 +835,7 @@ class TestInventory(base.TestCase):
                           'networks_all': ['InternalApi'],
                           'networks_lower': {'InternalApi': 'internal_api',
                                              'ctlplane': 'ctlplane'},
-                          'role_networks': ['ctlplane', 'InternalApi'],
+                          'role_networks': ['InternalApi'],
                           'serial': 1,
                           'tripleo_role_name': 'Controller',
                           'tripleo_role_networks': ['ctlplane', 'internal_api']
@@ -868,7 +868,7 @@ class TestInventory(base.TestCase):
                           'networks_all': ['InternalApi'],
                           'networks_lower': {'InternalApi': 'internal_api',
                                              'ctlplane': 'ctlplane'},
-                          'role_networks': ['ctlplane', 'InternalApi'],
+                          'role_networks': ['InternalApi'],
                           'serial': 1,
                           'tripleo_role_name': 'Compute',
                           'tripleo_role_networks': ['ctlplane', 'internal_api']
@@ -911,7 +911,7 @@ class TestInventory(base.TestCase):
                          'networks_all': ['InternalApi'],
                          'networks_lower': {'InternalApi': 'internal_api',
                                             'ctlplane': 'ctlplane'},
-                         'role_networks': ['ctlplane', 'InternalApi'],
+                         'role_networks': ['InternalApi'],
                          'serial': 1,
                          'tripleo_role_name': 'Controller',
                          'tripleo_role_networks': ['ctlplane', 'internal_api']
@@ -937,7 +937,7 @@ class TestInventory(base.TestCase):
                          'networks_all': ['InternalApi'],
                          'networks_lower': {'InternalApi': 'internal_api',
                                             'ctlplane': 'ctlplane'},
-                         'role_networks': ['ctlplane', 'InternalApi'],
+                         'role_networks': ['InternalApi'],
                          'serial': 1,
                          'tripleo_role_name': 'Compute',
                          'tripleo_role_networks': ['ctlplane', 'internal_api']
@@ -1073,7 +1073,7 @@ class TestInventory(base.TestCase):
                     'networks_all': ['InternalApi'],
                     'networks_lower': {'InternalApi': 'internal_api',
                                        'ctlplane': 'ctlplane'},
-                    'role_networks': ['ctlplane', 'InternalApi'],
+                    'role_networks': ['InternalApi'],
                     'serial': 1,
                     'tripleo_role_name': 'Controller',
                     'tripleo_role_networks': ['ctlplane', 'internal_api']}
@@ -1109,7 +1109,7 @@ class TestInventory(base.TestCase):
                          'networks_all': ['InternalApi'],
                          'networks_lower': {'InternalApi': 'internal_api',
                                             'ctlplane': 'ctlplane'},
-                         'role_networks': ['ctlplane', 'InternalApi'],
+                         'role_networks': ['InternalApi'],
                          'serial': 1,
                          'tripleo_role_name': 'Compute',
                          'tripleo_role_networks': ['ctlplane', 'internal_api']}
@@ -1137,7 +1137,7 @@ class TestInventory(base.TestCase):
                          'networks_all': ['InternalApi'],
                          'networks_lower': {'InternalApi': 'internal_api',
                                             'ctlplane': 'ctlplane'},
-                         'role_networks': ['ctlplane'],
+                         'role_networks': [],
                          'serial': 1,
                          'tripleo_role_name': 'CustomRole',
                          'tripleo_role_networks': ['ctlplane']}
