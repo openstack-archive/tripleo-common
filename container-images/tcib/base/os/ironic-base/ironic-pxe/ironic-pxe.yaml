@@ -10,7 +10,6 @@ tcib_packages:
   - ipxe-bootimgs
   - mod_ssl
   - python3-mod_wsgi
-  - syslinux-tftpboot
   - dnsmasq
   - grub2-efi-x64
   - shim
