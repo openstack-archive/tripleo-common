@@ -296,13 +296,7 @@ class TestInventory(base.TestCase):
                     'overcloud_admin_password': 'theadminpw',
                     'plan': 'overcloud',
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'
-                        ],
+                        'tripleo_ironic_conductor']
                     }
                 }
             }
@@ -394,13 +388,7 @@ class TestInventory(base.TestCase):
                     'any_error_fatal': True,
                     'max_fail_percentage': 0,
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'
-                        ],
+                        'tripleo_ironic_conductor']
                 }
             },
             '_meta': {'hostvars': {}},
@@ -544,12 +532,7 @@ class TestInventory(base.TestCase):
                     'overcloud_admin_password': 'theadminpw',
                     'plan': 'overcloud',
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'],
+                        'tripleo_ironic_conductor']
                     }
                 }
             }
@@ -586,12 +569,7 @@ class TestInventory(base.TestCase):
                     'overcloud_keystone_url': 'xyz://keystone',
                     'plan': 'overcloud',
                     'undercloud_service_list': [
-                        'tripleo_nova_compute',
-                        'tripleo_heat_engine',
-                        'tripleo_ironic_conductor',
-                        'tripleo_swift_container_server',
-                        'tripleo_swift_object_server',
-                        'tripleo_mistral_engine'],
+                        'tripleo_ironic_conductor']
                 }
             },
             'Controller': {
@@ -993,12 +971,8 @@ class TestInventory(base.TestCase):
                          'overcloud_keystone_url': 'xyz://keystone',
                          'plan': 'overcloud',
                          'undercloud_service_list': [
-                             'tripleo_nova_compute',
-                             'tripleo_heat_engine',
-                             'tripleo_ironic_conductor',
-                             'tripleo_swift_container_server',
-                             'tripleo_swift_object_server',
-                             'tripleo_mistral_engine']}},
+                             'tripleo_ironic_conductor']}
+            },
             'Controller': {
                 'hosts': {
                     'c-0': {
