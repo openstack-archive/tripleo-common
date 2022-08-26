@@ -84,7 +84,7 @@ class ListPlansAction(base.TripleOAction):
         oc = self.get_object_client(context)
 
         for item in oc.get_account()[1]:
-            container = oc.get_container(item['name'])[0]
+            container = oc.head_container(item['name'])
             if constants.TRIPLEO_META_USAGE_KEY in container.keys():
                 plan_list.append(item['name'])
         return list(set(plan_list))

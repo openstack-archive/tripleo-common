@@ -28,17 +28,24 @@ from tripleo_common.utils import tarball
 LOG = logging.getLogger(__name__)
 
 
+OBJECT_LIST_LIMIT = 1000
+
+
 def empty_container(swiftclient, name):
     container_names = [container["name"] for container
                        in swiftclient.get_account()[1]]
 
     if name in container_names:
-        headers, objects = swiftclient.get_container(name)
-        # FIXME(rbrady): remove delete_object loop when
-        # LP#1615830 is fixed.  See LP#1615825 for more info.
-        # delete files from plan
-        for o in objects:
-            swiftclient.delete_object(name, o['name'])
+        _, objects = swiftclient.get_container(name,
+                                               limit=OBJECT_LIST_LIMIT)
+        while objects:
+            # FIXME(rbrady): remove delete_object loop when
+            # LP#1615830 is fixed.  See LP#1615825 for more info.
+            # delete files from plan
+            for o in objects:
+                swiftclient.delete_object(name, o['name'])
+            _, objects = swiftclient.get_container(
+                name, limit=OBJECT_LIST_LIMIT, marker=objects[-1]['name'])
     else:
         error_text = "The {name} container does not exist.".format(name=name)
         raise ValueError(error_text)
@@ -58,45 +65,51 @@ def download_container(swiftclient, container, dest,
                        overwrite_only_newer=False):
     """Download the contents of a Swift container to a directory"""
 
-    objects = swiftclient.get_container(container)[1]
+    objects = swiftclient.get_container(container, limit=OBJECT_LIST_LIMIT)[1]
 
-    for obj in objects:
-        is_newer = False
-        filename = obj['name']
-        contents = swiftclient.get_object(container, filename)[1]
-        try:
-            contents = contents.encode('utf-8')
-        except (UnicodeDecodeError, AttributeError):
-            pass
-        path = os.path.join(dest, filename)
-        dirname = os.path.dirname(path)
-        already_exists = os.path.exists(path)
+    # It's possible that we have more than 10,000 objects in the container and
+    # the list might not contain all objects.
+    while objects:
+        for obj in objects:
+            is_newer = False
+            filename = obj['name']
+            contents = swiftclient.get_object(container, filename)[1]
+            try:
+                contents = contents.encode('utf-8')
+            except (UnicodeDecodeError, AttributeError):
+                pass
+            path = os.path.join(dest, filename)
+            dirname = os.path.dirname(path)
+            already_exists = os.path.exists(path)
 
-        if already_exists:
-            last_modified = obj.get('last_modified', None)
+            if already_exists:
+                last_modified = obj.get('last_modified', None)
 
-            if last_modified is not None:
-                last_mod_swift = int(dateutil.parser.parse(
-                    obj['last_modified']).strftime('%s'))
+                if last_modified is not None:
+                    last_mod_swift = int(dateutil.parser.parse(
+                        obj['last_modified']).strftime('%s'))
 
-                last_mod_disk = int(os.path.getmtime(path))
+                    last_mod_disk = int(os.path.getmtime(path))
 
-                if last_mod_swift > last_mod_disk:
-                    is_newer = True
+                    if last_mod_swift > last_mod_disk:
+                        is_newer = True
 
-        # write file if `overwrite_only_newer` is not set,
-        # or if file does not exist at destination,
-        # or if we found a newer file at source
-        if (not overwrite_only_newer or
-                not already_exists or
-                (overwrite_only_newer and is_newer)):
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+            # write file if `overwrite_only_newer` is not set,
+            # or if file does not exist at destination,
+            # or if we found a newer file at source
+            if (not overwrite_only_newer or
+                    not already_exists or
+                    (overwrite_only_newer and is_newer)):
+                if not os.path.exists(dirname):
+                    os.makedirs(dirname)
 
-            # open in binary as the swift client returns error
-            # under python3 if opened as text
-            with open(path, 'wb') as f:
-                f.write(contents)
+                # open in binary as the swift client returns error
+                # under python3 if opened as text
+                with open(path, 'wb') as f:
+                    f.write(contents)
+
+        objects = swiftclient.get_container(
+            container, limit=OBJECT_LIST_LIMIT, marker=objects[-1]['name'])[1]
 
 
 def create_container(swiftclient, container):

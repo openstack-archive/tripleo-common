@@ -315,11 +315,11 @@ class UpdateParametersActionTest(base.TestCase):
             swiftexceptions.ClientException('atest2')
         )
 
-        def return_container_files(*args):
-            return ('headers', [{'name': 'foo.role.j2.yaml'}])
-
-        swift.get_container = mock.MagicMock(
-            side_effect=return_container_files)
+        swift.get_container = mock.MagicMock()
+        swift.get_container.side_effect = [
+            ({}, [{'name': 'foo.role.j2.yaml'}]),
+            ({}, [])
+        ]
 
         mock_get_object_client.return_value = swift
 
@@ -436,11 +436,11 @@ class UpdateParametersActionTest(base.TestCase):
             swiftexceptions.ClientException('atest2')
         )
 
-        def return_container_files(*args):
-            return ('headers', [{'name': 'foo.role.j2.yaml'}])
-
-        swift.get_container = mock.MagicMock(
-            side_effect=return_container_files)
+        swift.get_container = mock.MagicMock()
+        swift.get_container.side_effect = [
+            ({}, [{'name': 'foo.role.j2.yaml'}]),
+            ({}, [])
+        ]
 
         mock_get_object_client.return_value = swift
 
@@ -539,11 +539,11 @@ class UpdateRoleParametersActionTest(base.TestCase):
             swiftexceptions.ClientException('atest2')
         )
 
-        def return_container_files(*args):
-            return ('headers', [{'name': 'foo.yaml'}])
-
-        swift.get_container = mock.MagicMock(
-            side_effect=return_container_files)
+        swift.get_container = mock.MagicMock()
+        swift.get_container.side_effect = [
+            ({}, [{'name': 'foo.yaml'}]),
+            ({}, [])
+        ]
 
         mock_get_object_client.return_value = swift
 

@@ -28,14 +28,16 @@ class SwiftTest(base.TestCase):
             {'name': self.container_name},
             {'name': 'test'},
         ])
-        self.swiftclient.get_container.return_value = (
+        self.swiftclient.get_container.side_effect = [(
             {'x-container-meta-usage-tripleo': 'plan'}, [
                 {'name': 'some-name.yaml'},
                 {'name': 'some-other-name.yaml'},
                 {'name': 'yet-some-other-name.yaml'},
                 {'name': 'finally-another-name.yaml'}
             ]
-        )
+        ), (
+            {'x-container-meta-usage-tripleo': 'plan'}, []
+        )]
 
     def test_delete_container_success(self):
         swift_utils.empty_container(self.swiftclient, self.container_name)
@@ -50,7 +52,10 @@ class SwiftTest(base.TestCase):
             mock_calls, any_order=True)
 
         self.swiftclient.get_account.assert_called()
-        self.swiftclient.get_container.assert_called_with(self.container_name)
+        self.swiftclient.get_container.assert_has_calls([
+            mock.call(self.container_name, limit=1000),
+            mock.call(self.container_name, limit=1000,
+                      marker='finally-another-name.yaml')])
 
     def test_delete_container_not_found(self):
         self.assertRaises(ValueError,

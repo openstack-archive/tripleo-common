@@ -243,18 +243,18 @@ class ProcessTemplatesActionTest(base.TestCase):
             elif args[1] == constants.OVERCLOUD_J2_NETWORKS_NAME:
                 return ['', NETWORK_DATA_YAML]
 
-        def return_container_files(*args):
-            return ('headers', [
-                {'name': constants.OVERCLOUD_J2_NAME},
-                {'name': snippet_name},
-                {'name': constants.OVERCLOUD_J2_ROLES_NAME},
-                {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}])
-
         # setup swift
         swift = mock.MagicMock()
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
-        swift.get_container = mock.MagicMock(
-            side_effect=return_container_files)
+        swift.get_container = mock.MagicMock()
+        swift.get_container.side_effect = [
+            ({}, [
+                {'name': constants.OVERCLOUD_J2_NAME},
+                {'name': snippet_name},
+                {'name': constants.OVERCLOUD_J2_ROLES_NAME},
+                {'name': constants.OVERCLOUD_J2_NETWORKS_NAME}]),
+            ({}, [])
+        ]
         return swift
 
     @mock.patch('tripleo_common.actions.templates.ProcessTemplatesAction'
@@ -353,14 +353,14 @@ class ProcessTemplatesActionTest(base.TestCase):
             if args[1] == 'foo.yaml':
                 return ['', JINJA_SNIPPET_CONFIG]
 
-        def return_container_files(*args):
-            return ('headers', [{'name': 'foo.yaml'}])
-
         # setup swift
         swift = mock.MagicMock()
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
-        swift.get_container = mock.MagicMock(
-            side_effect=return_container_files)
+        swift.get_container = mock.MagicMock()
+        swift.get_container.side_effect = [
+            ({}, [{'name': 'foo.yaml'}]),
+            ({}, [])
+        ]
         get_obj_client_mock.return_value = swift
 
         # Test
@@ -383,14 +383,14 @@ class ProcessTemplatesActionTest(base.TestCase):
             if args[1] == 'bar/foo.yaml':
                 return ['', JINJA_SNIPPET_CONFIG]
 
-        def return_container_files(*args):
-            return ('headers', [{'name': 'bar/foo.yaml'}])
-
         # setup swift
         swift = mock.MagicMock()
         swift.get_object = mock.MagicMock(side_effect=return_multiple_files)
-        swift.get_container = mock.MagicMock(
-            side_effect=return_container_files)
+        swift.get_container = mock.MagicMock()
+        swift.get_container.side_effect = [
+            ({}, [{'name': 'bar/foo.yaml'}]),
+            ({}, [])
+        ]
         get_obj_client_mock.return_value = swift
 
         # Test

@@ -146,6 +146,7 @@ class GetCapabilitiesActionTest(base.TestCase):
         mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
+        swift.get_container.return_value = ({}, [])
         swift.get_object.return_value = mock.Mock(side_effect=ValueError)
         get_obj_client_mock.return_value = swift
 
@@ -161,6 +162,7 @@ class GetCapabilitiesActionTest(base.TestCase):
         mock_ctx = mock.MagicMock()
         # setup swift
         swift = mock.MagicMock()
+        swift.get_container.return_value = ({}, [])
         swift.get_object.side_effect = (
             ({}, MAPPING_YAML_CONTENTS),
             swiftexceptions.ClientException(self.container_name)
@@ -190,7 +192,7 @@ class GetCapabilitiesActionTest(base.TestCase):
             ({}, MAPPING_YAML_CONTENTS),
             ({}, mock_env)
         )
-        swift_files_data = ({
+        swift_container_metadata = {
             u'x-container-meta-usage-tripleo': u'plan',
             u'content-length': u'54271', u'x-container-object-count': u'3',
             u'accept-ranges': u'bytes', u'x-storage-policy': u'Policy-0',
@@ -198,26 +200,31 @@ class GetCapabilitiesActionTest(base.TestCase):
             u'x-timestamp': u'1471025600.02126',
             u'x-trans-id': u'txebb37f980dbc4e4f991dc-0057c70015',
             u'x-container-bytes-used': u'970557',
-            u'content-type': u'application/json; charset=utf-8'}, [{
-                u'bytes': 808,
-                u'last_modified': u'2016-08-12T18:13:22.231760',
-                u'hash': u'2df2606ed8b866806b162ab3fa9a77ea',
-                u'name': 'all-nodes-validation.yaml',
-                u'content_type': u'application/octet-stream'
-            }, {
-                u'bytes': 1808,
-                u'last_modified': u'2016-08-13T18:13:22.231760',
-                u'hash': u'3df2606ed8b866806b162ab3fa9a77ea',
-                u'name': '/path/to/environments/custom.yaml',
-                u'content_type': u'application/octet-stream'
-            }, {
-                u'bytes': 2808,
-                u'last_modified': u'2016-07-13T18:13:22.231760',
-                u'hash': u'4df2606ed8b866806b162ab3fa9a77ea',
-                u'name': '/path/to/environments/custom2.yaml',
-                u'content_type': u'application/octet-stream'
-            }])
-        swift.get_container.return_value = swift_files_data
+            u'content-type': u'application/json; charset=utf-8'
+        }
+        swift_objects = [{
+            u'bytes': 808,
+            u'last_modified': u'2016-08-12T18:13:22.231760',
+            u'hash': u'2df2606ed8b866806b162ab3fa9a77ea',
+            u'name': 'all-nodes-validation.yaml',
+            u'content_type': u'application/octet-stream'
+        }, {
+            u'bytes': 1808,
+            u'last_modified': u'2016-08-13T18:13:22.231760',
+            u'hash': u'3df2606ed8b866806b162ab3fa9a77ea',
+            u'name': '/path/to/environments/custom.yaml',
+            u'content_type': u'application/octet-stream'
+        }, {
+            u'bytes': 2808,
+            u'last_modified': u'2016-07-13T18:13:22.231760',
+            u'hash': u'4df2606ed8b866806b162ab3fa9a77ea',
+            u'name': '/path/to/environments/custom2.yaml',
+            u'content_type': u'application/octet-stream'
+        }]
+        swift.get_container.side_effect = [
+            (swift_container_metadata, swift_objects),
+            (swift_container_metadata, [])
+        ]
         get_obj_client_mock.return_value = swift
 
         action = heat_capabilities.GetCapabilitiesAction(self.container_name)

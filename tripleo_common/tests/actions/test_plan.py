@@ -223,9 +223,9 @@ class ListPlansActionTest(base.TestCase):
                 'name': 'overcloud'
             },
         ])
-        swift.get_container.return_value = ({
+        swift.head_container.return_value = {
             'x-container-meta-usage-tripleo': 'plan',
-        }, [])
+        }
         get_obj_client_mock.return_value = swift
 
         # Test
@@ -235,7 +235,7 @@ class ListPlansActionTest(base.TestCase):
         # verify
         self.assertEqual([self.container], action.run(self.ctx))
         swift.get_account.assert_called()
-        swift.get_container.assert_called_with(self.container)
+        swift.head_container.assert_called_with(self.container)
 
 
 class DeletePlanActionTest(base.TestCase):
@@ -276,14 +276,16 @@ class DeletePlanActionTest(base.TestCase):
             {'name': self.container_name},
             {'name': 'test'},
         ])
-        swift.get_container.return_value = (
+        swift.get_container.side_effect = [(
             {'x-container-meta-usage-tripleo': 'plan'}, [
                 {'name': 'some-name.yaml'},
                 {'name': 'some-other-name.yaml'},
                 {'name': 'yet-some-other-name.yaml'},
                 {'name': 'finally-another-name.yaml'}
             ]
-        )
+        ), (
+            {'x-container-meta-usage-tripleo': 'plan'}, []
+        )]
 
         get_obj_client_mock.return_value = swift
 
@@ -385,11 +387,13 @@ class ExportPlanActionTest(base.TestCase):
             'finally-another-name.yaml'
         )
         self.swift = mock.MagicMock()
-        self.swift.get_container.return_value = (
+        self.swift.get_container.side_effect = [(
             {'x-container-meta-usage-tripleo': 'plan'}, [
                 {'name': tf} for tf in self.template_files
             ]
-        )
+        ), (
+            {'x-container-meta-usage-tripleo': 'plan'}, []
+        )]
         self.swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
         swift_patcher = mock.patch(
             'tripleo_common.actions.base.TripleOAction.get_object_client',
@@ -419,7 +423,11 @@ class ExportPlanActionTest(base.TestCase):
                                        self.exports_container)
         action.run(self.ctx)
 
-        self.swift.get_container.assert_called_once_with(self.plan)
+        self.assertEqual(2, self.swift.get_container.call_count)
+        self.swift.get_container.assert_has_calls(
+            [mock.call(self.plan, limit=1000),
+             mock.call(self.plan, limit=1000,
+                       marker='finally-another-name.yaml')])
         self.swift.get_object.assert_has_calls(
             get_object_mock_calls, any_order=True)
         swift_service.upload.assert_called_once()

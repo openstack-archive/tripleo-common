@@ -54,10 +54,21 @@ class GetCapabilitiesAction(base.TripleOAction):
                 "Error parsing capabilities-map.yaml.")
             LOG.exception(err_msg)
             return actions.Result(error=err_msg)
+
         try:
-            container_files = swift.get_container(self.container)
+            # The default limit (10,000 unless the swift option is tuned) is
+            # used here because object list is appended to a single list.
+            container_files = _container_files = \
+                swift.get_container(self.container)[1]
+
+            while _container_files:
+                marker = _container_files[-1]['name']
+                _container_files = swift.get_container(
+                    swift.container, marker=marker)[1]
+                container_files.extend(_container_files)
+
             container_file_list = [entry['name'] for entry
-                                   in container_files[1]]
+                                   in container_files]
         except Exception as swift_err:
             err_msg = ("Error retrieving plan files: %s" % swift_err)
             LOG.exception(err_msg)

@@ -43,14 +43,16 @@ class GetOvercloudConfigActionTest(base.TestCase):
             'finally-another-name.yaml'
         )
         self.swift = mock.MagicMock()
-        self.swift.get_container.return_value = (
+        self.swift.get_container.side_effect = [(
             {'x-container-meta-usage-tripleo': 'plan'}, [
                 {
                     'name': tf,
                     'last_modified': '2018-11-05'
                 } for tf in self.template_files
             ]
-        )
+        ), (
+            {'x-container-meta-usage-tripleo': 'plan'}, []
+        )]
         self.swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
         swift_patcher = mock.patch(
             'tripleo_common.actions.base.TripleOAction.get_object_client',
@@ -112,11 +114,13 @@ class DownloadConfigActionTest(base.TestCase):
             'finally-another-name.yaml'
         )
         self.swift = mock.MagicMock()
-        self.swift.get_container.return_value = (
+        self.swift.get_container.side_effect = [(
             {'x-container-meta-usage-tripleo': 'plan'}, [
                 {'name': tf} for tf in self.template_files
             ]
-        )
+        ), (
+            {'x-container-meta-usage-tripleo': 'plan'}, []
+        )]
         self.swift.get_object.return_value = ({}, RESOURCES_YAML_CONTENTS)
         swift_patcher = mock.patch(
             'tripleo_common.actions.base.TripleOAction.get_object_client',
