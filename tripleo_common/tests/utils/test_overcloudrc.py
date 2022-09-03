@@ -50,6 +50,7 @@ class OvercloudRcTest(base.TestCase):
                       result['overcloudrc'])
         self.assertIn("OS_REGION_NAME=regionTwo",
                       result['overcloudrc'])
+        self.assertIn("OS_CLOUD=overcast", result['overcloudrc'])
 
     def test_generate_overcloudrc_with_duplicated_no_proxy(self):
 
@@ -80,3 +81,4 @@ class OvercloudRcTest(base.TestCase):
                       result['overcloudrc'])
         self.assertIn("OS_REGION_NAME=regionTwo",
                       result['overcloudrc'])
+        self.assertIn("OS_CLOUD=overcast", result['overcloudrc'])
