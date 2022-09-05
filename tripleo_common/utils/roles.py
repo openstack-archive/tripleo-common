@@ -157,7 +157,6 @@ def validate_role_yaml(role_data=None, role_path=None):
         'name': {'type': str},
         'CountDefault': {'type': int},
         'HostnameFormatDefault': {'type': str},
-        'disable_constraints': {'type': bool},  # TODO(sbaker) remove in U
         'upgrade_batch_size': {'type': int},
         'ServicesDefault': {'type': list},
         'tags': {'type': list},
