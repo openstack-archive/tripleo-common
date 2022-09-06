@@ -336,7 +336,7 @@ else
         fi
     fi
     mount_image
-    if [ -n $CHROOT ]; then
+    if [ -n "${CHROOT}" ]; then
         start_chroot
     fi
 fi
