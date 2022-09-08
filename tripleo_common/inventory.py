@@ -468,6 +468,13 @@ class TripleoInventory(object):
                     svc_host_vars.setdefault('ansible_python_interpreter',
                                              self.ansible_python_interpreter)
 
+        excluded_hosts = self.stack_outputs.get('BlacklistedHostnames', {})
+        excluded_overcloud = ret.setdefault('excluded_overcloud', {})
+        exclude = excluded_overcloud.setdefault('hosts', {})
+        for hostname in excluded_hosts:
+            if hostname:
+                exclude[hostname] = {}
+
     def _get_neutron_data(self):
         if not self.session:
             LOG.info("Session not set, neutron data will not be used to build "

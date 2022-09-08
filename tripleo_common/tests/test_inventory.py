@@ -208,6 +208,16 @@ class TestInventory(base.TestCase):
         self.assertTrue(self.hclient.called_once_with('overcloud',
                                                       'KeystoneURL'))
 
+    def test_with_excluded_nodes(self):
+        excluded_output = {
+            'output_key': 'BlacklistedHostnames',
+            'output_value': ['cp-0', '', '']
+            }
+        self.outputs_data['outputs'].append(excluded_output)
+        inventory_group = {'hosts': {'cp-0': {}}}
+        self.assertEquals(inventory_group,
+                          self.inventory.list()['excluded_overcloud'])
+
     def test_no_ips(self):
         for output in self.outputs_data['outputs']:
             if output['output_key'] == 'RoleNetIpMap':
@@ -274,6 +284,9 @@ class TestInventory(base.TestCase):
                 },
             'overcloud': {
                 'children': ['allovercloud']
+                },
+            'excluded_overcloud': {
+                'hosts': {}
                 },
             'allovercloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
@@ -673,6 +686,9 @@ class TestInventory(base.TestCase):
             },
             'overcloud': {
                 'children': {'allovercloud': {}}
+            },
+            'excluded_overcloud': {
+                'hosts': {}
             },
             'allovercloud': {
                 'children': {
