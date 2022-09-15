@@ -735,3 +735,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::TripleoClient
 
+- imagename: "{{namespace}}/tripleo-ansible-ee:{{tag}}"
+  image_source: tripleo
+  params:
+  - ContainerAEEImage

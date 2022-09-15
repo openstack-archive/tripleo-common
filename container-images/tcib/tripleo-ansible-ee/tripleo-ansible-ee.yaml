@@ -1,0 +1,48 @@
+tcib_args:
+  TRIPLEO_ANSIBLE_REQ: "/usr/share/openstack-tripleo-common-containers/container-images/kolla/tripleo-ansible-ee/requirements.yaml"
+  ANSIBLE_RUNNER_IMAGE: quay.io/tripleoansible/ansible-runner:stream9
+tcib_from: $ANSIBLE_RUNNER_IMAGE
+tcib_actions:
+- run: dnf install -y {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- user: root
+- run: >-
+    cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/tripleo-ansible-ee/settings /runner/env/settings &&
+    chmod 777 /runner/env/settings
+# To be able for ansible to deal with the arbirtray uid's that Openshift is enforcing
+# in its default scc, it would be necessary to add "RUN chmod g=u /etc/passwd /etc/group"
+# to the tcib file so the subsequent image let the operator set temporary permissions
+# on the openshift uid for ansible to work.
+- run: chmod g=u /etc/passwd /etc/group
+- workdir: /usr/share/ansible/roles
+- run: >-
+    if [ -f "$TRIPLEO_ANSIBLE_REQ" ]; then
+    ansible-galaxy role install -r $TRIPLEO_ANSIBLE_REQ --roles-path /usr/share/ansible/roles; fi
+- workdir: /usr/share/ansible/collections
+- run: >-
+    if [ -f "$TRIPLEO_ANSIBLE_REQ" ]; then
+    ansible-galaxy collection install -r $TRIPLEO_ANSIBLE_REQ --collections-path /usr/share/ansible/collections; fi
+- workdir: /runner
+- run: >-
+    if [ -d "/usr/share/ansible/roles" ]; then
+    rm -rf /runner/roles && ln -snf /usr/share/ansible/ansible roles; fi
+- run: >-
+    if [ -d "/usr/share/ansible/tripleo-playbooks" ]; then
+    rm -rf /runner/project && ln -snf /usr/share/ansible/tripleo-playbooks project; fi
+- run: >-
+    if [ -d "/usr/share/ansible/tripleo-inventory" ]; then
+    rm -rf /runner/inventory && ln -snf /usr/share/ansible/tripleo-inventory inventory; fi
+# Append the ansible-runner entrypoint content in tripleo_entrypoint by removing bash shebang
+- run: >-
+    cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/tripleo-ansible-ee/tripleo_entrypoint.sh /bin/tripleo_entrypoint &&
+    sed -i '1d' /bin/entrypoint &&
+    cat /bin/entrypoint >> /bin/tripleo_entrypoint &&
+    chmod +x /bin/tripleo_entrypoint
+- user: 1001
+tcib_entrypoint: tripleo_entrypoint
+# Install dumb-init from package instead from pip, used in ansible-runner entrypoint.
+tcib_packages:
+  common:
+  - ansible-role-chrony
+  - dumb-init
+  - openstack-tripleo-common-containers
+  - tripleo-ansible

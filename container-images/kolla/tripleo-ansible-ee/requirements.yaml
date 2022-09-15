@@ -1,0 +1,37 @@
+---
+# Copyright 2021 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# Roles and collections dependencies of tripleo-ansible
+# https://opendev.org/openstack/tripleo-ansible/src/branch/master/tripleo_ansible/requirements.yml
+collections:
+  - name: https://opendev.org/openstack/ansible-collections-openstack.git
+    type: git
+  - containers.podman
+  - community.general
+  - ansible.posix
+  - community.crypto
+roles:
+  - name: openstack-operations
+    scm: git
+    src: https://opendev.org/openstack/ansible-role-openstack-operations
+    version: master
+    trackbranch: master
+  # ansible-config_template action plugin
+  - name: config_template
+    scm: git
+    src: https://opendev.org/openstack/ansible-config_template
+    version: master
+    trackbranch: master

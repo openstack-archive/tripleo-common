@@ -189,3 +189,5 @@ container_images:
   image_source: tripleo
 - imagename: quay.io/tripleomastercentos9/openstack-tripleoclient:current-tripleo
   image_source: tripleo
+- imagename: quay.io/tripleomastercentos9/tripleo-ansible-ee:current-tripleo
+  image_source: tripleo
