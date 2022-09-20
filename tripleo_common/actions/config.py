@@ -53,6 +53,9 @@ class GetOvercloudConfig(base.TripleOAction):
         self.container_config = container_config
 
     def run(self, context):
+        # Set umask to avoid a=rwx
+        os.umask(0o007)
+
         heat = self.get_orchestration_client(context)
         swift = self.get_object_client(context)
 
@@ -97,8 +100,12 @@ class GetOvercloudConfig(base.TripleOAction):
             with open(tmp_tarball.name, 'rb') as t:
                 swift.put_object(self.container_config,
                                  '%s.tar.gz' % self.container_config, t)
+
         if os.path.exists(config_path):
             shutil.rmtree(config_path)
+
+        # NOTE(tkajinam): Reset umask
+        os.umask(0o000)
 
 
 class DownloadConfigAction(base.TripleOAction):
@@ -119,6 +126,13 @@ class DownloadConfigAction(base.TripleOAction):
                 prefix='tripleo-', suffix='-config')
 
     def run(self, context):
+        # Set umask to avoid a=rwx
+        os.umask(0o007)
+
+        # remove existing files so that we recreate all files with proper umask
+        if os.path.exists(self.work_dir):
+            shutil.rmtree(self.work_dir)
+
         swift = self.get_object_client(context)
         swiftutils.download_container(swift, self.container_config,
                                       self.work_dir)
@@ -127,4 +141,5 @@ class DownloadConfigAction(base.TripleOAction):
         if os.path.exists(symlink_path):
             os.unlink(symlink_path)
         os.symlink(self.work_dir, symlink_path)
+        os.umask(0o000)
         return self.work_dir

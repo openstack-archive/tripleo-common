@@ -62,6 +62,7 @@ class GetOvercloudConfigActionTest(base.TestCase):
 
         self.ctx = mock.MagicMock()
 
+    @mock.patch('tripleo_common.actions.config.os.umask')
     @mock.patch('tripleo_common.utils.swift.delete_container')
     @mock.patch('tripleo_common.utils.swift.download_container')
     @mock.patch('tripleo_common.actions.base.TripleOAction.'
@@ -72,7 +73,8 @@ class GetOvercloudConfigActionTest(base.TestCase):
                  mock_config,
                  mock_orchestration_client,
                  mock_swift_download,
-                 mock_swift_delete):
+                 mock_swift_delete,
+                 mock_os_umask):
         heat = mock.MagicMock()
         heat.stacks.get.return_value = mock.MagicMock(
             stack_name='stack', id='stack_id')
@@ -130,6 +132,7 @@ class DownloadConfigActionTest(base.TestCase):
 
         self.ctx = mock.MagicMock()
 
+    @mock.patch('tripleo_common.actions.config.os.umask')
     @mock.patch('tripleo_common.actions.config.os.unlink')
     @mock.patch('tripleo_common.actions.config.os.path.exists')
     @mock.patch('tripleo_common.actions.config.os.symlink')
@@ -139,14 +142,17 @@ class DownloadConfigActionTest(base.TestCase):
                  mock_swiftutils,
                  mock_os_symlink,
                  mock_os_path_exists,
-                 mock_os_unlink):
+                 mock_os_unlink,
+                 mock_os_umask):
         mock_mkdtemp.return_value = '/tmp/tripleo-foo-config'
+        mock_os_path_exists.return_value = False
         action = config.DownloadConfigAction(self.config_container)
         action.run(self.ctx)
         mock_swiftutils.assert_called_once_with(self.swift,
                                                 self.config_container,
                                                 '/tmp/tripleo-foo-config')
 
+    @mock.patch('tripleo_common.actions.config.os.umask')
     @mock.patch('tripleo_common.actions.config.os.path.exists')
     @mock.patch('tripleo_common.actions.config.os.symlink')
     @mock.patch('tripleo_common.utils.swift.download_container')
@@ -155,7 +161,8 @@ class DownloadConfigActionTest(base.TestCase):
             self, mock_mkdtemp,
             mock_swiftutils,
             mock_os_symlink,
-            mock_os_path_exists):
+            mock_os_path_exists,
+            mock_os_umask):
         mock_mkdtemp.return_value = '/var/lib/mistral/uuid'
         mock_os_path_exists.return_value = False
         action = config.DownloadConfigAction(self.config_container)
@@ -180,7 +187,7 @@ class DownloadConfigActionTest(base.TestCase):
             mock_os_path_exists,
             mock_os_unlink):
         mock_mkdtemp.return_value = '/var/lib/mistral/uuid'
-        mock_os_path_exists.return_value = True
+        mock_os_path_exists.side_effect = [False, True]
         action = config.DownloadConfigAction(self.config_container)
         action.run(self.ctx)
         mock_swiftutils.assert_called_once_with(self.swift,
