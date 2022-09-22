@@ -1,7 +1,6 @@
 tcib_args:
   TRIPLEO_ANSIBLE_REQ: "/usr/share/openstack-tripleo-common-containers/container-images/kolla/tripleo-ansible-ee/requirements.yaml"
-  ANSIBLE_RUNNER_IMAGE: quay.io/tripleoansible/ansible-runner:stream9
-tcib_from: $ANSIBLE_RUNNER_IMAGE
+tcib_from: quay.io/tripleoansible/ansible-runner:stream9
 tcib_actions:
 - run: dnf install -y {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - user: root
