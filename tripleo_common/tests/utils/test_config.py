@@ -316,8 +316,6 @@ class TestConfig(base.TestCase):
                          'a7db3010-a51f-4ae0-a791-2364d629d20d',
                          '8b07cd31-3083-4b88-a433-955f72039e2c',
                          '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
-            {'output_key': 'RoleNetworkConfigMap',
-             'output_value': {}},
             {'output_key': 'AnsibleHostVarsMap',
              'output_value': {
                  'Controller': {
@@ -455,8 +453,6 @@ class TestConfig(base.TestCase):
                          'a7db3010-a51f-4ae0-a791-2364d629d20d',
                          '8b07cd31-3083-4b88-a433-955f72039e2c',
                          '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
-            {'output_key': 'RoleNetworkConfigMap',
-             'output_value': {}},
             {'output_key': 'RoleGroupVars',
              'output_value': {
                  'Controller': {
@@ -604,8 +600,6 @@ class TestConfig(base.TestCase):
                          'a7db3010-a51f-4ae0-a791-2364d629d20d',
                          '8b07cd31-3083-4b88-a433-955f72039e2c',
                          '169b46f8-1965-4d90-a7de-f36fb4a830fe']}}},
-            {'output_key': 'RoleNetworkConfigMap',
-             'output_value': {}},
             {'output_key': 'RoleGroupVars',
              'output_value': {
                  'Controller': {
@@ -762,8 +756,6 @@ class TestConfig(base.TestCase):
                  'Compute': {
                      'any_errors_fatal': True,
                      'max_fail_percentage': 15}}},
-            {'output_key': 'RoleNetworkConfigMap',
-             'output_value': {}}
             ]
         deployment_data, configs = \
             self._get_config_data('config_data.yaml')
@@ -876,37 +868,6 @@ class TestConfig(base.TestCase):
         self.config = ooo_config.Config(heat)
         self.assertRaises(yaml.scanner.ScannerError,
                           self.config.validate_config, stack_config, yaml_file)
-
-    @patch('tripleo_common.utils.config.Config.get_role_network_config_data')
-    def test_render_role_network_config_empty_dict(
-            self, mock_get_role_net_config_data):
-        heat = mock.MagicMock()
-        heat.stacks.get.return_value = fakes.create_tht_stack()
-        config_mock = mock.MagicMock()
-        config_mock.config = {}
-        heat.software_configs.get.return_value = config_mock
-
-        self.config = ooo_config.Config(heat)
-        mock_get_role_net_config_data.return_value = dict(Controller='config')
-        config_dir = '/tmp/tht'
-        self.config.render_network_config(config_dir)
-
-    @patch.object(ooo_config.Config, '_open_file')
-    @patch('tripleo_common.utils.config.Config.get_role_network_config_data')
-    def test_render_role_network_config(self, mock_get_role_net_config_data,
-                                        mock_open):
-        heat = mock.MagicMock()
-        heat.stacks.get.return_value = fakes.create_tht_stack()
-        config_mock = mock.MagicMock()
-        config_mock.config = 'some config'
-        heat.software_configs.get.return_value = config_mock
-        self.config = ooo_config.Config(heat)
-        mock_get_role_net_config_data.return_value = dict(Controller='config')
-        config_dir = '/tmp/tht'
-        self.config.render_network_config(config_dir)
-        self.assertEqual(1, mock_open.call_count)
-        self.assertEqual('/tmp/tht/Controller/NetworkConfig',
-                         mock_open.call_args_list[0][0][0])
 
 
 class OvercloudConfigTest(base.TestCase):
