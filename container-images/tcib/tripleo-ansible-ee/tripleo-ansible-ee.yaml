@@ -23,7 +23,7 @@ tcib_actions:
 - workdir: /runner
 - run: >-
     if [ -d "/usr/share/ansible/roles" ]; then
-    rm -rf /runner/roles && ln -snf /usr/share/ansible/ansible roles; fi
+    rm -rf /runner/roles && ln -snf /usr/share/ansible/roles roles; fi
 - run: >-
     if [ -d "/usr/share/ansible/tripleo-playbooks" ]; then
     rm -rf /runner/project && ln -snf /usr/share/ansible/tripleo-playbooks project; fi
