@@ -58,9 +58,6 @@ class Config(object):
                             servers[server_id] = name.lower()
         return servers
 
-    def get_role_network_config_data(self):
-        return self.stack_outputs.get("RoleNetworkConfigMap")
-
     def get_deployment_data(self, stack,
                             nested_depth=constants.NESTED_DEPTH):
         deployments = self.client.resources.list(
@@ -234,28 +231,6 @@ class Config(object):
             self.log.error("Config for file %s contains invalid yaml, got "
                            "error %s", yaml_file, e)
             raise e
-
-    def render_network_config(self, config_dir):
-        role_network_config = self.get_role_network_config_data()
-        if role_network_config is None:
-            raise ValueError(
-                'Old network config templates are possibly used, '
-                'Please convert them before proceeding.')
-
-        for role, config in role_network_config.items():
-            config_path = os.path.join(config_dir, role, "NetworkConfig")
-            # check if it's actual config or heat config_id
-            # this will be dropped once we stop using SoftwareConfig
-            if config is None:
-                continue
-
-            if isinstance(config, dict):
-                str_config = json.dumps(config)
-            else:
-                str_config = self.client.software_configs.get(config).config
-            if str_config:
-                with self._open_file(config_path) as f:
-                    f.write(str_config)
 
     def write_config(self, stack, name, config_dir, config_type=None):
         # Get role data:
@@ -574,9 +549,6 @@ class Config(object):
                     ansible_host_vars=ansible_host_vars)
                 self.validate_config(template_data, host_var_server_path)
                 f.write(template_data)
-
-        # Render NetworkConfig data
-        self.render_network_config(config_dir)
 
         shutil.copyfile(
             os.path.join(templates_path, 'deployments.yaml'),

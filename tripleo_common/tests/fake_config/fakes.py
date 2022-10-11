@@ -33,8 +33,6 @@ FAKE_STACK = {
              'external_deploy_steps_tasks': [{'name': 'Fake external task',
                                               'debug': 'name=hello',
                                               'when': 'step|int == 1'}]}},
-        {'output_key': 'RoleNetworkConfigMap',
-         'output_value': {}},
         {'output_key': 'RoleData',
          'output_value': {
              'FakeCompute': {
