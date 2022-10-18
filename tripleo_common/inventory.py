@@ -28,6 +28,7 @@ import keystoneauth1
 import openstack
 
 from tripleo_common import exception
+from tripleo_common import inventories
 import tripleo_common.constants as constants
 
 HOST_NETWORK = 'ctlplane'
@@ -268,7 +269,7 @@ class TripleoInventory(object):
         self.username = username
         self.ansible_ssh_user = ansible_ssh_user
         self.undercloud_key_file = undercloud_key_file
-        self.plan_name = plan_name
+        self.plan_name = self.plan_group_name = plan_name
         self.ansible_python_interpreter = ansible_python_interpreter
         self.hostvars = {}
         self.undercloud_connection = undercloud_connection
@@ -404,8 +405,8 @@ class TripleoInventory(object):
                 ret[role_name]['hosts'] = hosts_format
 
         if children:
-            allovercloud = ret.setdefault('allovercloud', {})
-            overcloud_vars = allovercloud.setdefault('vars', {})
+            plan_group = ret.setdefault(self.plan_name, {})
+            overcloud_vars = plan_group.setdefault('vars', {})
 
             for vip_name, vip in vip_map.items():
                 if vip and (vip_name in networks or vip_name == 'redis'):
@@ -415,19 +416,15 @@ class TripleoInventory(object):
                 'container_cli', self.get_overcloud_environment().get(
                     'parameter_defaults', {}).get('ContainerCli'))
 
-            allovercloud.setdefault('children', self._hosts(sorted(children),
-                                                            dynamic))
+            plan_group.setdefault(
+                'children', self._hosts(sorted(children), dynamic)
+            )
 
             ret.setdefault(
-                self.plan_name, {'children': self._hosts(['allovercloud'],
-                                                         dynamic)})
-
-            if self.plan_name != 'overcloud':
-                ret.setdefault('overcloud',
-                               {'children': self._hosts(['allovercloud'],
-                                                        dynamic),
-                                'deprecated': ('Deprecated by allovercloud '
-                                               'group in Ussuri')})
+                'allovercloud', {
+                    'children': self._hosts([self.plan_name], dynamic)
+                }
+                )
 
         # Associate services with roles
         roles_by_service = self.get_roles_by_service(
@@ -624,9 +621,16 @@ class TripleoInventory(object):
                 ret[role_name]['hosts'] = hosts_format
 
         if children:
-            allovercloud = ret.setdefault('allovercloud', {})
-            allovercloud.setdefault('children',
-                                    self._hosts(sorted(children), dynamic))
+            ret.setdefault(
+                self.plan_name, {
+                    'children': self._hosts(sorted(children), dynamic)
+                }
+            )
+            ret.setdefault(
+                'allovercloud', {
+                    'children': self._hosts([self.plan_name], dynamic)
+                }
+            )
 
     def _extend_inventory(self, ret, dynamic, data=None):
         if not data:
@@ -810,19 +814,21 @@ def generate_tripleo_ansible_inventory(heat, auth_url,
 
     inventory_path = os.path.join(
         work_dir, 'tripleo-ansible-inventory.yaml')
-    inv = TripleoInventory(
-        session=session,
-        hclient=heat,
-        auth_url=auth_url,
-        username=username,
-        project_name=project_name,
-        cacert=cacert,
-        ansible_ssh_user=ansible_ssh_user,
-        undercloud_key_file=undercloud_key_file,
-        ansible_python_interpreter=ansible_python_interpreter,
-        plan_name=plan,
-        host_network=ssh_network,
-        work_dir=work_dir)
+    inv = inventories.TripleoInventories({
+        plan: TripleoInventory(
+            session=session,
+            hclient=heat,
+            auth_url=auth_url,
+            username=username,
+            project_name=project_name,
+            cacert=cacert,
+            ansible_ssh_user=ansible_ssh_user,
+            undercloud_key_file=undercloud_key_file,
+            ansible_python_interpreter=ansible_python_interpreter,
+            plan_name=plan,
+            host_network=ssh_network,
+            work_dir=work_dir)
+    })
 
     inv.write_static_inventory(inventory_path)
     return inventory_path

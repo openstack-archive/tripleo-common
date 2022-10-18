@@ -50,16 +50,16 @@ Compute:
     tripleo_role_name: Compute
     tripleo_role_networks: [ctlplane, external, internal_api, management, storage,
       storage_mgmt, tenant]
-allovercloud:
+overcloud:
   children:
     Compute: {}
     Controller: {}
   vars: {container_cli: podman, ctlplane_vip: 192.168.24.7, external_vip: 10.0.0.5,
     internal_api_vip: 172.16.2.164, redis_vip: 172.16.2.196, storage_mgmt_vip: 172.16.3.44,
     storage_vip: 172.16.1.147}
-overcloud:
+allovercloud:
   children:
-    allovercloud: {}
+    overcloud: {}
 kernel:
   children:
     Compute: {}

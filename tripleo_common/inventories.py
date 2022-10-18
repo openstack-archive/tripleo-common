@@ -66,7 +66,7 @@ class TripleoInventories(object):
                 if key != 'Undercloud':
                     new_key = stack + '_' + key
 
-                    if key not in ('_meta', 'overcloud', stack):
+                    if key not in ('_meta', stack):
                         # Merge into a top level group
                         if dynamic:
                             inventory.setdefault(key, {'children': []})
