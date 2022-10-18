@@ -137,6 +137,11 @@
             "cell1_allovercloud"
         ]
     },
+    "cell1_allovercloud": {
+        "children": [
+            "cell1_cell1"
+        ]
+    },
     "cell1_CellController": {
         "hosts": [
             "cell1-cellcontrol-0"
@@ -177,7 +182,7 @@
             ]
         }
     },
-    "cell1_allovercloud": {
+    "cell1_cell1": {
         "children": [
             "cell1_CellController",
             "cell1_Compute"
@@ -210,9 +215,9 @@
           "ansible_ssh_user": "heat-admin"
         }
     },
-    "cell1_cell1": {
+    "cell1_allovercloud": {
         "children": [
-            "cell1_allovercloud"
+            "cell1_cell1"
         ]
     },
     "cell1_certmonger_user": {
@@ -356,11 +361,6 @@
         "vars": {
           "ansible_ssh_user": "heat-admin"
         }
-    },
-    "cell1_overcloud": {
-        "children": [
-            "cell1_allovercloud"
-        ]
     },
     "cell1_ovn_controller": {
         "children": [
@@ -678,7 +678,7 @@
             ]
         }
     },
-    "overcloud_allovercloud": {
+    "overcloud_overcloud": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
@@ -692,6 +692,11 @@
           "storage_mgmt_vip": "172.16.3.44",
           "storage_vip": "172.16.1.147"
         }
+    },
+    "overcloud_allovercloud": {
+        "children": [
+            "overcloud_overcloud"
+        ]
     },
     "overcloud_boot_params_service": {
         "children": [
@@ -996,11 +1001,6 @@
         "vars": {
           "ansible_ssh_user": "heat-admin"
         }
-    },
-    "overcloud_overcloud": {
-        "children": [
-            "overcloud_allovercloud"
-        ]
     },
     "overcloud_ovn_controller": {
         "children": [
