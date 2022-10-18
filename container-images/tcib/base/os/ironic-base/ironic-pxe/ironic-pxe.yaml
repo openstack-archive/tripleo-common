@@ -1,7 +1,6 @@
 tcib_actions:
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: sed -i -r 's,^(Listen 80),#\1,' /etc/httpd/conf/httpd.conf  && sed -i -r 's,^(Listen 443),#\1,' /etc/httpd/conf.d/ssl.conf
-- run: mkdir -p --context=tftpdir_t /var/lib/ironic/tftpboot/pxelinux.cfg && cp /usr/share/ipxe/undionly.kpxe /usr/share/ipxe/ipxe-snponly-x86_64.efi /boot/efi/EFI/*/grubx64.efi /boot/efi/EFI/*/shimx64.efi /var/lib/ironic/tftpboot/
 - run: echo ". /usr/local/bin/kolla_httpd_setup"> /usr/local/bin/kolla_extend_start && chmod 755 /usr/local/bin/kolla_extend_start
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/ironic-pxe /openstack/healthcheck && chmod a+rx /openstack/healthcheck
 tcib_packages:
