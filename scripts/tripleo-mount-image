@@ -163,10 +163,10 @@ mount_image() {
 
     for device in ${devices}; do
         lsblk --nodeps -P --output-all $device
-        fstype=$(lsblk --all --nodeps --noheadings --output FSTYPE $device)
-        label=$(lsblk --all --nodeps --noheadings --output LABEL $device)
+        fstype=$(blkid -o value -s TYPE -p $device)
+        label=$(blkid -o value -s LABEL -p $device)
         part_type_name=$(lsblk --all --nodeps --noheadings --output PARTTYPENAME $device || echo "")
-        part_type=$(lsblk --all --nodeps --noheadings --output PARTTYPE $device)
+        part_type=$(blkid -o value -s PART_ENTRY_TYPE -p $device)
 
         if [ -z "${fstype}" ]; then
             # Ignore block device with no filesystem type
@@ -324,7 +324,7 @@ else
     if [ -z "${NBD_DEVICE}" ]; then
         for i in {0..15} ; do
             device="/dev/nbd${i}"
-            part_type=$(lsblk --nodeps --noheadings --output PTTYPE $device)
+            part_type=$(blkid -o value -s PTTYPE -p $device || echo "")
             if [ -z "${part_type}" ]; then
                 NBD_DEVICE="$device"
                 break
