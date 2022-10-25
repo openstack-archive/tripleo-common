@@ -187,7 +187,7 @@ class DownloadConfigActionTest(base.TestCase):
             mock_os_path_exists,
             mock_os_unlink):
         mock_mkdtemp.return_value = '/var/lib/mistral/uuid'
-        mock_os_path_exists.side_effect = [False, True]
+        mock_os_path_exists.return_value = True
         action = config.DownloadConfigAction(self.config_container)
         action.run(self.ctx)
         mock_swiftutils.assert_called_once_with(self.swift,

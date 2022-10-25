@@ -129,10 +129,6 @@ class DownloadConfigAction(base.TripleOAction):
         # Set umask to avoid a=rwx
         os.umask(0o007)
 
-        # remove existing files so that we recreate all files with proper umask
-        if os.path.exists(self.work_dir):
-            shutil.rmtree(self.work_dir)
-
         swift = self.get_object_client(context)
         swiftutils.download_container(swift, self.container_config,
                                       self.work_dir)
