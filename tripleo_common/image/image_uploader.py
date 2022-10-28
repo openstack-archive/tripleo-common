@@ -316,12 +316,36 @@ class RegistrySessionHelper(object):
             return None
         with lock.get_lock():
             data = lock.sessions().get(scope)
-            if data and data.get('issued_at'):
-                token_time = dt_parse(data.get('issued_at'))
-                now = datetime.now(tzlocal())
-                expires_in = data.get('expires_in')
-                if not expires_in or (now - token_time).seconds < expires_in:
+            if data:
+                # expires_in is an integer value from the issued_at time.
+                # We will use this to determine if the token should be expired
+                # https://www.rfc-editor.org/rfc/rfc6749#section-4.2.2
+                if data.get('expires_in'):
+                    now = datetime.now(tzlocal())
+                    expires_in = data.get('expires_in')
+                    token_time = dt_parse(data.get('issued_at'))
+                    if (now - token_time).seconds < expires_in:
+                        return data['token']
+
+                # TODO(bshephar) Remove once Satellite returns expected expiry
+                # expires_at uses UTC date and time format. Although, this
+                # field doesn't appear in the RFC for OAuth. It appears some
+                # API's return a response with expires_at instead of expires_in
+                # https://www.rfc-editor.org/rfc/rfc6749
+                # https://bugzilla.redhat.com/show_bug.cgi?id=2134075
+                # https://bugzilla.redhat.com/show_bug.cgi?id=2138743
+                elif data.get('expires_at'):
+                    now = datetime.utcnow()
+                    expires = datetime.strptime(data.get('expires_at'),
+                                                "%Y-%m-%dT%H:%M:%S.%fZ")
+                    if now < expires:
+                        return data['token']
+
+                # If we don't have expires_in or expires_at. We can just
+                # return the token since it probably doesn't expire.
+                else:
                     return data['token']
+
         return None
 
     @staticmethod
