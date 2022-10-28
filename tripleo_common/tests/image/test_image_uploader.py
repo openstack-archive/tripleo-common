@@ -13,6 +13,7 @@
 #   under the License.
 #
 
+import datetime
 import hashlib
 import io
 import json
@@ -23,6 +24,7 @@ from urllib.parse import urlparse
 from unittest import mock
 import zlib
 
+from dateutil.tz import tzlocal
 from tripleo_common.image.exception import ImageNotFoundException
 from tripleo_common.image.exception import ImageRateLimitedException
 from tripleo_common.image.exception import ImageUploaderException
@@ -240,6 +242,100 @@ class TestRegistrySessionHelper(base.TestCase):
 
         mock_action.assert_called_once_with('put',
                                             request_session)
+
+    @mock.patch('tripleo_common.utils.locks.threadinglock.ThreadingLock',
+                name='mock_lock')
+    def test_get_cached_bearer_token_expired(self, mock_lock):
+        issued = datetime.datetime.now(tzlocal()) - datetime.timedelta(
+            minutes=1
+        )
+
+        resp = {"fakeimage": {
+            'token': 'blah',
+            'expires_in': 1,
+            'issued_at': f'{issued}'}
+        }
+
+        scope = "fakeimage"
+        mock_lock.sessions.return_value = resp
+
+        ret = image_uploader.RegistrySessionHelper.get_cached_bearer_token(
+            mock_lock, scope)
+
+        self.assertIsNone(ret)
+
+    @mock.patch('tripleo_common.utils.locks.threadinglock.ThreadingLock',
+                name='mock_lock')
+    def test_get_cached_bearer_token_expires_at_current(self, mock_lock):
+        expiry = datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
+        expiry_time = "{}Z".format(expiry.isoformat())
+
+        resp = {"fakeimage": {
+            'token': 'blah',
+            'expires_at': expiry_time,
+            'issued_at': '2022-10-17T23:45:09.306Z'}
+        }
+
+        scope = "fakeimage"
+        mock_lock.sessions.return_value = resp
+
+        ret = image_uploader.RegistrySessionHelper.get_cached_bearer_token(
+            mock_lock, scope)
+
+        self.assertEqual(ret, "blah")
+
+    @mock.patch('tripleo_common.utils.locks.threadinglock.ThreadingLock',
+                name='mock_lock')
+    def test_get_cached_bearer_token_no_expires_in(self, mock_lock):
+
+        resp = {"fakeimage": {
+            'token': 'blah',
+            'issued_at': '2022-10-17T23:45:09.306Z'}
+        }
+
+        scope = "fakeimage"
+        mock_lock.sessions.return_value = resp
+
+        ret = image_uploader.RegistrySessionHelper.get_cached_bearer_token(
+            mock_lock, scope)
+
+        self.assertEqual(ret, "blah")
+
+    @mock.patch('tripleo_common.utils.locks.threadinglock.ThreadingLock',
+                name='mock_lock')
+    def test_get_cached_bearer_token_no_issued_at(self, mock_lock):
+
+        resp = {"fakeimage": {
+            'token': 'blah',
+            'expires_at': '2022-10-17T23:45:09.306Z'}
+        }
+
+        scope = "fakeimage"
+        mock_lock.sessions.return_value = resp
+
+        ret = image_uploader.RegistrySessionHelper.get_cached_bearer_token(
+            mock_lock, scope)
+
+        self.assertIsNone(ret)
+
+    @mock.patch('tripleo_common.utils.locks.threadinglock.ThreadingLock',
+                name='mock_lock')
+    def test_get_cached_bearer_token_expires_in_current(self, mock_lock):
+        issued = datetime.datetime.now(tzlocal())
+
+        resp = {"fakeimage": {
+            'token': 'blah',
+            'expires_in': 10000,
+            'issued_at': f'{issued}'}
+        }
+
+        scope = "fakeimage"
+        mock_lock.sessions.return_value = resp
+
+        ret = image_uploader.RegistrySessionHelper.get_cached_bearer_token(
+            mock_lock, scope)
+
+        self.assertEqual(ret, "blah")
 
 
 class TestImageUploadManager(base.TestCase):
