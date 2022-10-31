@@ -242,9 +242,11 @@ container_images_template:
   params:
   - ContainerGlanceApiConfigImage
   - ContainerGlanceApiImage
+  - ContainerGlanceApiInternalConfigImage
   services:
   - OS::TripleO::Services::GlanceApi
   - OS::TripleO::Services::GlanceApiEdge
+  - OS::TripleO::Services::GlanceApiInternal
 
 - imagename: "{{namespace}}/{{name_prefix}}gnocchi-api{{name_suffix}}:{{tag}}"
   image_source: tripleo
