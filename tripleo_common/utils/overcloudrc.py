@@ -60,10 +60,10 @@ CLEAR_ENV = """# Clear any old environment that may conflict.
 for key in $( set | awk '{FS=\"=\"}  /^OS_/ {print $1}' ); do unset $key ; done
 """
 CLOUDPROMPT = """
-# Add OS_CLOUDNAME to PS1
+# Add OS_CLOUD to PS1
 if [ -z "${CLOUDPROMPT_ENABLED:-}" ]; then
     export PS1=${PS1:-""}
-    export PS1=\\${OS_CLOUDNAME:+"(\\$OS_CLOUDNAME)"}\\ $PS1
+    export PS1=\\${OS_CLOUD:+"(\\$OS_CLOUD)"}\\ $PS1
     export CLOUDPROMPT_ENABLED=1
 fi
 """
@@ -105,7 +105,7 @@ def _create_overcloudrc_from_outputs(
         'OS_USER_DOMAIN_NAME': 'Default',
         'OS_PROJECT_DOMAIN_NAME': 'Default',
         'OS_NO_CACHE': 'True',
-        'OS_CLOUDNAME': stack_name,
+        'OS_CLOUD': stack_name,
         'no_proxy': ','.join(no_proxy_list),
         'PYTHONWARNINGS': ('ignore:Certificate has no, ignore:A true '
                            'SSLContext object is not available'),
