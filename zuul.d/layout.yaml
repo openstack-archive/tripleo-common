@@ -10,7 +10,7 @@
       - tripleo-undercloud-jobs-pipeline
       - tripleo-buildimage-jobs
       - tripleo-standalone-scenarios-pipeline
-      - tripleo-upgrades-master-pipeline
+      - tripleo-upgrades-zed-pipeline
     vars:
       ensure_global_symlinks: true
     check:
