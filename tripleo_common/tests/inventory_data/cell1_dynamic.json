@@ -101,7 +101,7 @@
             }
         }
     },
-    "allovercloud": {
+    "cell1": {
         "children": [
             "CellController",
             "Compute"
@@ -133,9 +133,9 @@
             "ansible_ssh_user": "heat-admin"
         }
     },
-    "cell1": {
+    "allovercloud": {
         "children": [
-            "allovercloud"
+            "cell1"
         ]
     },
     "certmonger_user": {
@@ -279,12 +279,6 @@
         "vars": {
             "ansible_ssh_user": "heat-admin"
         }
-    },
-    "overcloud": {
-        "children": [
-            "allovercloud"
-        ],
-        "deprecated": "Deprecated by allovercloud group in Ussuri"
     },
     "ovn_controller": {
         "children": [

@@ -40,8 +40,7 @@ class _TestInventoriesBase(base.TestCase):
                 'overcloud_static.yaml',
                 'merged_dynamic.json',
                 'merged_static.yaml',
-                'single_dynamic.json',
-                'single_static.yaml',
+                'list_overcloud.json',
                 'undercloud_dynamic.json',
                 'undercloud_static.yaml',
                 'undercloud_dynamic_merged.json',
@@ -114,24 +113,6 @@ class TestInventoriesDynamic(_TestInventoriesBase):
         self.assertEqual(expected, actual)
 
 
-class TestInventorySingleStatic(_TestInventoriesBase):
-    def setUp(self):
-        super(TestInventorySingleStatic, self).setUp()
-        mock_inv_overcloud = MagicMock()
-        mock_inv_overcloud.list.return_value = self.inventory_data[
-            'overcloud_static'
-        ]
-        stack_to_inv_obj_map = {
-            'overcloud': mock_inv_overcloud
-        }
-        self.inventories = TripleoInventories(stack_to_inv_obj_map)
-
-    def test_list(self):
-        actual = self.inventories.list()
-        expected = self.inventory_data['single_static']
-        self.assertEqual(expected, actual)
-
-
 class TestInventorySingleDynamic(_TestInventoriesBase):
     def setUp(self):
         super(TestInventorySingleDynamic, self).setUp()
@@ -146,7 +127,7 @@ class TestInventorySingleDynamic(_TestInventoriesBase):
 
     def test_list(self):
         actual = self.inventories.list()
-        expected = self.inventory_data['single_dynamic']
+        expected = self.inventory_data['list_overcloud']
         self.assertEqual(expected, actual)
 
 

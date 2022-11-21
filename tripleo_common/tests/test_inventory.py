@@ -282,13 +282,13 @@ class TestInventory(base.TestCase):
                     'tripleo_role_networks': ['ctlplane']
                     }
                 },
-            'overcloud': {
-                'children': ['allovercloud']
+            'allovercloud': {
+                'children': ['overcloud']
                 },
             'excluded_overcloud': {
                 'hosts': {}
                 },
-            'allovercloud': {
+            'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
                     'container_cli': 'podman',
@@ -374,6 +374,9 @@ class TestInventory(base.TestCase):
                     'tripleo_role_name': 'Undercloud',
                     'tripleo_role_networks': ['ctlplane', 'external']}},
             'allovercloud': {
+                'children': {'overcloud': {}}
+            },
+            'overcloud': {
                 'children': {'Undercloud': {}},
                 'vars': {'container_cli': 'podman',
                          'ctlplane_vip': 'x.x.x.4',
@@ -463,10 +466,10 @@ class TestInventory(base.TestCase):
                     'tripleo_role_networks': ['ctlplane']
                     }
             },
-            'overcloud': {
-                'children': ['allovercloud']
-            },
             'allovercloud': {
+                'children': ['overcloud']
+            },
+            'overcloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
                     'container_cli': 'podman',
@@ -660,13 +663,13 @@ class TestInventory(base.TestCase):
                     'tripleo_role_networks': ['ctlplane']
                 }
             },
-            'overcloud': {
-                'children': {'allovercloud': {}}
+            'allovercloud': {
+                'children': {'overcloud': {}}
             },
             'excluded_overcloud': {
                 'hosts': {}
             },
-            'allovercloud': {
+            'overcloud': {
                 'children': {
                     'Compute': {},
                     'Controller': {},
@@ -843,7 +846,8 @@ class TestInventory(base.TestCase):
                           'tripleo_role_name': 'Compute',
                           'tripleo_role_networks': ['ctlplane', 'internal_api']
                           }}),
-            ('allovercloud', {'children': {'Compute': {}, 'Controller': {}}})
+            ('overcloud', {'children': {'Compute': {}, 'Controller': {}}}),
+            ('allovercloud', {'children': {'overcloud': {}}})
         ]), ret)
 
     def test__inventory_from_neutron_data_dynamic(self):
@@ -912,8 +916,9 @@ class TestInventory(base.TestCase):
                          'tripleo_role_name': 'Compute',
                          'tripleo_role_networks': ['ctlplane', 'internal_api']
                          }}),
-            ('allovercloud', {'children': ['Compute', 'Controller']})]
-        ), ret)
+            ('overcloud', {'children': ['Compute', 'Controller']}),
+            ('allovercloud', {'children': ['overcloud']})
+        ]), ret)
 
     @mock.patch.object(TripleoInventory, '_get_neutron_data', autospec=True)
     def test_inventory_list_with_neutron_and_heat(self, mock_get_neutron_data):
@@ -1104,7 +1109,7 @@ class TestInventory(base.TestCase):
                          'tripleo_role_name': 'CustomRole',
                          'tripleo_role_networks': ['ctlplane']}
             },
-            'allovercloud': {
+            'overcloud': {
                 'children': {'Compute': {},
                              'Controller': {},
                              'CustomRole': {}},
@@ -1112,7 +1117,7 @@ class TestInventory(base.TestCase):
                          'ctlplane_vip': 'x.x.x.4',
                          'redis_vip': 'x.x.x.6'}
             },
-            'overcloud': {'children': {'allovercloud': {}}},
+            'allovercloud': {'children': {'overcloud': {}}},
             'sa': {'children': {'Controller': {}},
                    'vars': {'ansible_ssh_user': 'heat-admin'}},
             'se': {'children': {'Compute': {}},

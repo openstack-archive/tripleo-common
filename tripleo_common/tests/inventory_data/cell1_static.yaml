@@ -50,20 +50,16 @@ Compute:
     tripleo_role_name: Compute
     tripleo_role_networks: [ctlplane, external, internal_api, management, storage,
       storage_mgmt, tenant]
-allovercloud:
+cell1:
   children:
     CellController: {}
     Compute: {}
   vars: {container_cli: podman, ctlplane_vip: 192.168.24.21, external_vip: 10.0.0.6,
     internal_api_vip: 172.16.2.11, redis_vip: 192.168.24.21, storage_mgmt_vip: 172.16.3.26,
     storage_vip: 172.16.1.131}
-cell1:
+allovercloud:
   children:
-    allovercloud: {}
-overcloud:
-  children:
-    allovercloud: {}
-  deprecated: Deprecated by allovercloud group in Ussuri
+    cell1: {}
 kernel:
   children:
     CellController: {}

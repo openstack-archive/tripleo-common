@@ -61,7 +61,7 @@ allovercloud:
   children:
     cell1_allovercloud: {}
     overcloud_allovercloud: {}
-cell1_allovercloud:
+cell1_cell1:
   children:
     cell1_CellController: {}
     cell1_Compute: {}
@@ -76,12 +76,9 @@ cell1_allovercloud:
 cell1:
   children:
     cell1_allovercloud: {}
-cell1_cell1:
+cell1_allovercloud:
   children:
-    cell1_allovercloud: {}
-cell1_overcloud:
-  children:
-    cell1_allovercloud: {}
+    cell1_cell1: {}
 kernel:
   children:
     cell1_kernel: {}
@@ -384,7 +381,7 @@ overcloud_Compute:
     tripleo_role_name: Compute
     tripleo_role_networks: [ctlplane, external, internal_api, management, storage,
       storage_mgmt, tenant]
-overcloud_allovercloud:
+overcloud_overcloud:
   children:
     overcloud_Compute: {}
     overcloud_Controller: {}
@@ -399,9 +396,9 @@ overcloud_allovercloud:
 overcloud:
   children:
     overcloud_allovercloud: {}
-overcloud_overcloud:
+overcloud_allovercloud:
   children:
-    overcloud_allovercloud: {}
+    overcloud_overcloud: {}
 overcloud_kernel:
   children:
     overcloud_Compute: {}

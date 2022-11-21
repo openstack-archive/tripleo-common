@@ -119,7 +119,7 @@
             "overcloud_allovercloud"
         ]
     },
-    "overcloud_allovercloud": {
+    "overcloud_overcloud": {
         "children": [
             "overcloud_Compute",
             "overcloud_Controller"
@@ -137,6 +137,11 @@
     "overcloud": {
         "children": [
             "overcloud_allovercloud"
+        ]
+    },
+    "overcloud_allovercloud": {
+        "children": [
+            "overcloud_overcloud"
         ]
     },
     "boot_params_service": {
@@ -627,11 +632,6 @@
         "vars": {
           "ansible_ssh_user": "heat-admin"
         }
-    },
-    "overcloud_overcloud": {
-        "children": [
-            "overcloud_allovercloud"
-        ]
     },
     "ovn_controller": {
         "children": [
