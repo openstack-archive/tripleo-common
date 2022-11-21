@@ -59,7 +59,7 @@ _SUPPORTED_USERS['memcached']='memcached 42457 42457 /run/memcache kolla'
 _SUPPORTED_USERS['mysql']='mysql 42434 42434 /var/lib/mysql kolla'
 _SUPPORTED_USERS['neutron']='neutron 42435 42435 /var/lib/neutron kolla'
 _SUPPORTED_USERS['nfast']='nfast 42481 42481'
-_SUPPORTED_USERS['nova']='nova 42436 42436 /var/lib/nova qemu,libvirt,kolla'
+_SUPPORTED_USERS['nova']='nova 42436 42436 /var/lib/nova qemu,libvirt,tss,kolla'
 _SUPPORTED_USERS['octavia']='octavia 42437 42437 /var/lib/octavia kolla'
 _SUPPORTED_USERS['openvswitch']='openvswitch 42476 42476'
 _SUPPORTED_USERS['ovn-bgp']='ovn-bgp 42486 42486 /var/lib/ovn-bgp kolla'
@@ -70,7 +70,7 @@ _SUPPORTED_USERS['rabbitmq']='rabbitmq 42439 42439 /var/lib/rabbitmq kolla'
 _SUPPORTED_USERS['redis']='redis 42460 42460 /run/redis kolla'
 _SUPPORTED_USERS['swift']='swift 42445 42445 /var/lib/swift kolla'
 _SUPPORTED_USERS['tempest']='tempest 42480 42480 /var/lib/tempest kolla'
-_SUPPORTED_USERS['tss']='tss 42485 42485 /var/lib/tpm kolla'
+_SUPPORTED_USERS['tss']='tss 59 59'
 
 for _USER_TO_CREATE in $_USERS_TO_CREATE; do
     # Initialize computed args
