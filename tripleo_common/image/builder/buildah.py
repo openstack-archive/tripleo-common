@@ -174,7 +174,7 @@ class BuildahBuilder(base.BaseBuilder):
         # move to rootless buildah.
         pathlib.Path(logfile).touch()
 
-        bud_args = ['bud']
+        bud_args = ['bud', '--net=host']
         for v in self.volumes:
             bud_args.extend(['--volume', v])
         if self.debug:

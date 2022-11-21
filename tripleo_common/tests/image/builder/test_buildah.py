@@ -110,7 +110,7 @@ class TestBuildahBuilder(base.TestCase):
         dest = '127.0.0.1:8787/master/fedora-binary-fedora-base:latest'
         container_build_path = WORK_DIR + '/' + 'fedora-base'
         logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
-        buildah_cmd_build = ['--log-level=debug', 'bud',
+        buildah_cmd_build = ['--log-level=debug', 'bud', '--net=host',
                              '--loglevel=3', '--format', 'docker',
                              '--tls-verify=False', '--logfile',
                              logfile, '-t', dest, container_build_path]
@@ -131,8 +131,8 @@ class TestBuildahBuilder(base.TestCase):
         dest = '127.0.0.1:8787/master/fedora-fedora-base:latest'
         container_build_path = WORK_DIR + '/' + 'fedora-base'
         logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
-        buildah_cmd_build = ['bud', '--format', 'docker',
-                             '--tls-verify=False',
+        buildah_cmd_build = ['bud', '--net=host', '--format',
+                             'docker', '--tls-verify=False',
                              '--logfile', logfile, '-t', dest,
                              container_build_path]
         args.extend(buildah_cmd_build)
@@ -152,7 +152,8 @@ class TestBuildahBuilder(base.TestCase):
         dest = '127.0.0.1:8787/master/fedora-binary-fedora-base:latest'
         container_build_path = WORK_DIR + '/' + 'fedora-base'
         logfile = '/tmp/kolla/fedora-base/fedora-base-build.log'
-        buildah_cmd_build = ['bud', '--volume', '/etc/pki:/etc/pki',
+        buildah_cmd_build = ['bud', '--net=host',
+                             '--volume', '/etc/pki:/etc/pki',
                              '--volume', '/etc/dir2:/dir2',
                              '--format', 'docker',
                              '--tls-verify=False',
