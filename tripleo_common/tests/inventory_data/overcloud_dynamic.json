@@ -101,7 +101,7 @@
             }
         }
     },
-    "allovercloud": {
+    "overcloud": {
         "children": [
             "Compute",
             "Controller"
@@ -115,6 +115,11 @@
             "storage_mgmt_vip": "172.16.3.44",
             "storage_vip": "172.16.1.147"
         }
+    },
+    "allovercloud": {
+        "children": [
+            "overcloud"
+        ]
     },
     "boot_params_service": {
         "children": [
@@ -419,11 +424,6 @@
         "vars": {
             "ansible_ssh_user": "heat-admin"
         }
-    },
-    "overcloud": {
-        "children": [
-            "allovercloud"
-        ]
     },
     "ovn_controller": {
         "children": [
