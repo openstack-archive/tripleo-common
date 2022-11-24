@@ -15,4 +15,5 @@ if [[ ! "${!KOLLA_SKIP_EXTEND_START[@]}" ]]; then
 fi
 
 echo "Running command: '${CMD}${ARGS:+ $ARGS}'"
+umask "${TRIPLEO_KOLLA_UMASK:-0022}"
 exec ${CMD} ${ARGS}
