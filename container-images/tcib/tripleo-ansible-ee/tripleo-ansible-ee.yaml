@@ -12,6 +12,7 @@ tcib_actions:
 # to the tcib file so the subsequent image let the operator set temporary permissions
 # on the openshift uid for ansible to work.
 - run: chmod g=u /etc/passwd /etc/group
+- run: chmod -R 777 /usr/share/ansible
 - workdir: /usr/share/ansible/roles
 - run: >-
     if [ -f "$TRIPLEO_ANSIBLE_REQ" ]; then
