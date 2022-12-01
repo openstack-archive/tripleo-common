@@ -12,5 +12,6 @@ fi
 if [ -n "$RUNNER_PLAYBOOK" ]; then
     echo "---" > /runner/project/playbook.yaml
     echo "$RUNNER_PLAYBOOK" >> /runner/project/playbook.yaml
+fi
 
 # Contents from ansible-runner entrypoint
