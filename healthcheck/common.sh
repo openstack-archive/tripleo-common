@@ -12,6 +12,13 @@ fi
 : ${HEALTHCHECK_CURL_PY_USER_AGENT:=pyrequests-healthcheck}
 : ${HEALTHCHECK_CURL_WRITE_OUT:='\n%{http_code} %{remote_ip}:%{remote_port} %{time_total} seconds\n'}
 : ${HEALTHCHECK_CURL_OUTPUT:='/dev/null'}
+: ${HEALTHCHECK_USE_PROXY:=0}
+if [ $HEALTHCHECK_USE_PROXY -eq 0 ]; then
+    for prox_var in http_proxy https_proxy no_proxy; do
+        unset $prox_var
+        unset ${prox_var^^}
+    done
+fi
 
 get_user_from_process() {
     process=$1
