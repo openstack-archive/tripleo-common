@@ -94,7 +94,7 @@ class BuildahBuilder(base.BaseBuilder):
                          'Containerfile' in fnames}
         # Building images with root so overlayfs is used, and not fuse-overlay
         # from userspace, which would be slower.
-        self.buildah_cmd = ['sudo', 'buildah']
+        self.buildah_cmd = ['sudo', '-E', 'buildah']
         if self.debug:
             self.buildah_cmd.append('--log-level=debug')
 
