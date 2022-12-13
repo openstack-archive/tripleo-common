@@ -30,6 +30,12 @@ CONFIG_CONTAINER_NAME = 'overcloud-config'
 #: The path to the base directory of tripleo-validations
 DEFAULT_VALIDATIONS_BASEDIR = "/usr/share/ansible"
 
+# Path to Tripleo heat templates directory
+THT_BASE_DIR = "/usr/share/openstack-tripleo-heat-templates"
+
+# Path to system wide THT roles
+ROLES_PATH_DEFAULT = os.path.join(THT_BASE_DIR, "roles")
+
 # 60 minutes maximum to build the child layers at the same time.
 BUILD_TIMEOUT = 3600
 
