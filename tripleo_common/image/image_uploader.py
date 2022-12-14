@@ -51,7 +51,7 @@ LOG = logging.getLogger(__name__)
 
 
 SECURE_REGISTRIES = (
-    'trunk.registry.rdoproject.org',
+    'quay.rdoproject.org',
     'registry.redhat.io',
     'registry.access.redhat.com',
     'docker.io',
