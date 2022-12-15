@@ -25,7 +25,7 @@ from tripleo_common.tests import base
 from tripleo_common.utils import process
 
 
-BUILDAH_CMD_BASE = ['sudo', '-E', 'buildah']
+BUILDAH_CMD_BASE = ['sudo', 'buildah']
 DEPS = {"base"}
 WORK_DIR = '/tmp/kolla'
 VOLS = ['/etc/pki:/etc/pki', '/etc/dir2:/dir2']
