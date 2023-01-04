@@ -116,7 +116,7 @@ for _USER_TO_CREATE in $_USERS_TO_CREATE; do
             _EXTRA_PERMS="&& mkdir -p $_HOME_DIR && chown -R $_UID:$_GID $_HOME_DIR"
         fi
         # --append only exists with usermod
-        [ ! -z $_EXTRA_GROUPS_ARG ] && _EXTRA_GROUPS_ARG="--append $_EXTRA_GROUPS_ARG"
+        [[ ! -z $_EXTRA_GROUPS_ARG ]] && _EXTRA_GROUPS_ARG="--append $_EXTRA_GROUPS_ARG"
         _USERADD_CMD="usermod ${_HOME_ARGS} --gid $_GID --uid $_UID ${_EXTRA_GROUPS_ARG} $_NAME ${_EXTRA_PERMS}"
     else
         _USERADD_CMD="useradd -l ${_HOME_ARGS} --shell /usr/sbin/nologin --uid $_UID --gid $_GID ${_EXTRA_GROUPS_ARG} $_NAME"
