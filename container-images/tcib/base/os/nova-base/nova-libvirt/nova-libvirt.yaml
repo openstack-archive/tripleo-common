@@ -3,7 +3,7 @@ tcib_actions:
 - run: if [ '{{ tcib_release }}' == '8' ]; then dnf -y install {{ tcib_packages['el8'] | join(' ') }}; fi
 - run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-libvirt /openstack/healthcheck && chmod a+rx /openstack/healthcheck
-- run: jq ".mapping[\"nvram-template\"] = $(jq ".mapping[\"nvram-template\"]" /usr/share/qemu/firmware/50-edk2-ovmf-cc.json)" /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json > /tmp/50-edk2-ovmf-amdsev_.json && mv -f /tmp/50-edk2-ovmf-amdsev_.json /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json
+- run: if [ -f /usr/share/qemu/firmware/50-edk2-ovmf-cc.json ] && [ -f /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json ]; then jq ".mapping[\"nvram-template\"] = $(jq ".mapping[\"nvram-template\"]" /usr/share/qemu/firmware/50-edk2-ovmf-cc.json)" /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json > /tmp/50-edk2-ovmf-amdsev_.json && mv -f /tmp/50-edk2-ovmf-amdsev_.json /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json; fi
 tcib_packages:
   common:
   - ceph-common
