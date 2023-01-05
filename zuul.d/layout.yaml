@@ -10,9 +10,7 @@
       - tripleo-undercloud-jobs-pipeline
       - tripleo-buildimage-jobs
       - tripleo-standalone-scenarios-pipeline
-# TODO(cjeanner) uncomment this once this is in:
-# https://review.opendev.org/q/I540c681687f5502aaa2e0b9d8b81b5fef83b2bc2
-#      - tripleo-upgrades-master-pipeline
+      - tripleo-upgrades-master-pipeline
     vars:
       ensure_global_symlinks: true
     check:
