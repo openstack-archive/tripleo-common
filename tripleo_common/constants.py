@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
 
 #: The resource name used for package updates
 UPDATE_RESOURCE_NAME = 'UpdateDeployment'
@@ -161,3 +162,11 @@ INVENTORY_NETWORK_CONFIG_FILE = 'inventory-network-config.yaml'
 # Hard coded name in:
 #   tripleo_ansible/ansible_plugins/modules/tripleo_ovn_mac_addresses.py
 OVN_MAC_ADDR_NET_NAME = 'ovn_mac_addr_net'
+
+# Default directory for the overcloud deployment, where all inputs,
+# outputs and generated files are stored
+DEFAULT_WORKING_DIR_FORMAT = os.path.join(os.environ.get('HOME', '~/'),
+                                          'overcloud-deploy', '{}')
+
+# Format for password filename
+PASSWORDS_ENV_FORMAT = '{}-passwords.yaml'
