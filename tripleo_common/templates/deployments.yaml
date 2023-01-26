@@ -160,6 +160,7 @@
   register: deployed_file_stat
 
 - name: "Check previous deployment rc for {{ item }}"
+  become: true
   shell: |
     exit $(jq .deploy_status_code /var/lib/heat-config/deployed/{{ deployment_uuid }}.notify.json)
   register: previous_deployment_result
