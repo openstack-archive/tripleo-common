@@ -30,7 +30,7 @@ output = args.write_out.replace('%{', '%(').replace('}', ')s') \
 headers = {'User-Agent': args.user_agent}
 with requests.get(uri, headers=headers, timeout=args.max_time,
                   allow_redirects=True, stream=True, verify=False) as req:
-    r_ip, r_port = req.raw._original_response.fp.raw._sock.getpeername()
+    r_ip, r_port = req.raw._original_response.fp.raw._sock.getpeername()[0:2]
     resp = {'http_code': req.status_code,
             'remote_ip': r_ip,
             'remote_port': r_port,
