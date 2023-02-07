@@ -4,7 +4,9 @@ tcib_envs:
   MALLOC_TRIM_THRESHOLD_: 262144
 tcib_actions:
 - run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: mkdir -p /etc/libqb
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/cinder-backup/extend_start.sh /usr/local/bin/kolla_extend_start
+- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/cinder-backup/cinder-backup-sudoers /etc/sudoers.d/cinder-backup-sudoers
+- run: chmod 755 /usr/local/bin/kolla_extend_start && chmod 440 /etc/sudoers.d/cinder-backup-sudoers && mkdir -p /etc/libqb
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/cinder-backup /openstack/healthcheck && chmod a+rx /openstack/healthcheck
 tcib_packages:
   common:
