@@ -1,0 +1,1 @@
+%kolla ALL=(root) NOPASSWD: /bin/chown -R cinder\:kolla /var/lib/cinder
