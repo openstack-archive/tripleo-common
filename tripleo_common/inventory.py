@@ -505,8 +505,13 @@ class TripleoInventory(object):
             if not found_ctlplane_port:
                 return None
 
-            networks = [conn.network.find_network(p.network_id)
-                        for p in ports]
+            networks = []
+            network_ids_seen = []
+            for p in ports:
+                if p.network_id not in network_ids_seen:
+                    networks.append(conn.network.find_network(p.network_id))
+                    network_ids_seen.append(p.network_id)
+
             subnets = []
             for net in networks:
                 subnets.extend(conn.network.subnets(network_id=net.id))
