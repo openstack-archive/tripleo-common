@@ -60,12 +60,17 @@ tcib_envs:
 tcib_labels:
   maintainer: OpenStack TripleO team
   tcib_managed: True
+# TODO: Temporary pinning nettle to 3.8-3.el9, so it can be reinstalled from centos-9 repos.
+# nettle-3.8-3 is already installed in ubi9 image, but it conflicts with newer versions on gnutls
+# installed from centos-9 repos. This workaround can be reverted once ubi9.2 is released, which
+# should contain a newer version of gnutls with fixes to run under FIPS mode.
 tcib_packages:
   common:
   - ca-certificates
   - dumb-init
   - glibc-langpack-en
   - iscsi-initiator-utils
+  - nettle-3.8-3.el9
   - openstack-tripleo-common-containers
   - openstack-tripleo-common-container-base
   - procps-ng
