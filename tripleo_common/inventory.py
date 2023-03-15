@@ -218,13 +218,13 @@ class TripleoInventory(object):
             return ret
 
         ret['Undercloud']['vars']['plan'] = self.plan_name
-        admin_password = self.get_overcloud_environment().get(
-            'parameter_defaults', {}).get('AdminPassword')
+
+        self.stack_outputs = StackOutputs(self.stack)
+
+        admin_password = self.stack_outputs.get('AdminPassword')
         if admin_password:
             ret['Undercloud']['vars']['overcloud_admin_password'] =\
                 admin_password
-
-        self.stack_outputs = StackOutputs(self.stack)
 
         keystone_url = self.stack_outputs.get('KeystoneURL')
         if keystone_url:

@@ -65,6 +65,8 @@ class TestInventory(base.TestCase):
                  'CustomRole': ['sg', 'sh']}},
             {'output_key': 'KeystoneURL',
              'output_value': 'xyz://keystone'},
+            {'output_key': 'AdminPassword',
+             'output_value': 'theadminpw'},
             {'output_key': 'ServerIdData',
              'output_value': {
                  'server_ids': {
@@ -111,8 +113,7 @@ class TestInventory(base.TestCase):
 
         self.hclient = MagicMock()
         self.hclient.stacks.environment.return_value = {
-            'parameter_defaults': {'AdminPassword': 'theadminpw',
-                                   'ContainerCli': 'podman'}}
+            'parameter_defaults': {'ContainerCli': 'podman'}}
         self.mock_stack = MagicMock()
         self.mock_stack.outputs = self.outputs_data['outputs']
         self.hclient.stacks.get.return_value = self.mock_stack
@@ -189,7 +190,7 @@ class TestInventory(base.TestCase):
 
     def test_outputs_iterating_returns_list_of_output_keys(self):
         self.assertEqual(
-            {'EnabledServices', 'KeystoneURL', 'ServerIdData',
+            {'AdminPassword', 'EnabledServices', 'KeystoneURL', 'ServerIdData',
              'RoleNetHostnameMap', 'RoleNetIpMap', 'VipMap',
              'RoleData'},
             set([o for o in self.outputs]))
