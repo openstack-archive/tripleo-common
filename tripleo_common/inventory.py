@@ -733,8 +733,7 @@ class TripleoInventory(object):
 
         _vars.setdefault('plan', self.plan_name)
 
-        admin_password = self.get_overcloud_environment().get(
-            'parameter_defaults', {}).get('AdminPassword')
+        admin_password = self.stack_outputs.get('AdminPassword')
         if admin_password:
             _vars.setdefault('overcloud_admin_password', admin_password)
 
