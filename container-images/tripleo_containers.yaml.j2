@@ -547,6 +547,7 @@ container_images_template:
   services:
   - OS::TripleO::Services::NovaCompute
   - OS::TripleO::Services::NovaLibvirt
+  - OS::TripleO::Services::NovaLibvirtLegacy
   - OS::TripleO::Services::NovaMigrationTarget
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-conductor{{name_suffix}}:{{tag}}"
@@ -562,6 +563,7 @@ container_images_template:
   - ContainerNovaLibvirtImage
   services:
   - OS::TripleO::Services::NovaLibvirt
+  - OS::TripleO::Services::NovaLibvirtLegacy
 
 - imagename: "{{namespace}}/{{name_prefix}}nova-novncproxy{{name_suffix}}:{{tag}}"
   image_source: tripleo
