@@ -17,7 +17,6 @@ import logging
 from six.moves import urllib
 
 from tripleo_common import constants
-from tripleo_common.utils import common as common_utils
 
 try:  # py3
     from shlex import quote
@@ -91,10 +90,6 @@ def _create_overcloudrc_from_outputs(
     host = urllib.parse.urlparse(endpoint).hostname
     no_proxy_list = no_proxy.split(',')
     no_proxy_list.extend([host, admin_vip])
-    no_proxy_list = map(
-        common_utils.bracket_ipv6,
-        [i for i in no_proxy_list if i]
-    )
 
     # Remove duplicated entries
     no_proxy_list = sorted(list(set(no_proxy_list)))
