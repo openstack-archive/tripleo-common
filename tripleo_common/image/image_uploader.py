@@ -1027,7 +1027,8 @@ class BaseImageUploader(object):
             tags_get_args.append((self, image, session))
 
         images = []
-        workers = min(max(2, processutils.get_worker_count() // 2), 8)
+        # force single thread rhbz#2165527
+        workers = 1
         with futures.ThreadPoolExecutor(max_workers=workers) as p:
             for image, tags in p.map(tags_for_image, tags_get_args):
                 if not tags:
@@ -1142,7 +1143,8 @@ class BaseImageUploader(object):
                                   default_tag))
 
         versioned_images = {}
-        with futures.ThreadPoolExecutor(max_workers=16) as p:
+        # force single thread rhbz#2165527
+        with futures.ThreadPoolExecutor(max_workers=1) as p:
             for image, versioned_image in p.map(discover_tag_from_inspect,
                                                 discover_args):
                 versioned_images[image] = versioned_image
@@ -1874,7 +1876,8 @@ class PythonImageUploader(BaseImageUploader):
         copy_jobs = []
         jobs_count = 0
         jobs_finished = 0
-        with futures.ThreadPoolExecutor(max_workers=4) as p:
+        # force single thread rhbz#2165527
+        with futures.ThreadPoolExecutor(max_workers=1) as p:
             if source_layers:
                 for layer in source_layers:
                     copy_jobs.append(p.submit(
@@ -2295,7 +2298,7 @@ class PythonImageUploader(BaseImageUploader):
         copy_jobs = []
         jobs_count = 0
         jobs_finished = 0
-        with futures.ThreadPoolExecutor(max_workers=4) as p:
+        with futures.ThreadPoolExecutor(max_workers=1) as p:
             for layer in manifest['layers']:
                 layer_entry = layers_by_digest[layer['digest']]
                 copy_jobs.append(p.submit(
@@ -2507,12 +2510,14 @@ class PythonImageUploader(BaseImageUploader):
         """
         if not self.lock or isinstance(self.lock, threadinglock.ThreadingLock):
             # workers will scale from 2 to 8 based on the cpu count // 2
-            workers = min(max(2, processutils.get_worker_count() // 2), 8)
+            # force single thread rhbz#2165527
+            workers = 1
             return futures.ThreadPoolExecutor(max_workers=workers)
         # there really isn't an improvement with > 4 workers due to the
         # container layer overlaps. The higher the workers, the more
         # RAM required which can lead to OOMs. It's best to limit to 4
-        return futures.ProcessPoolExecutor(max_workers=4)
+        # force single thread rhbz#2165527
+        return futures.ProcessPoolExecutor(max_workers=1)
 
     def run_tasks(self):
         if not self.upload_tasks:
