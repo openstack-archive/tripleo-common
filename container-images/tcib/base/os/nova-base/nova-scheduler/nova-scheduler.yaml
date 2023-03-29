@@ -4,5 +4,4 @@ tcib_actions:
 tcib_packages:
   common:
   - openstack-nova-scheduler
-  - openstack-tripleo-common
 tcib_user: nova
