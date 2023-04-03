@@ -37,7 +37,7 @@ class OvercloudRcTest(base.TestCase):
         result = overcloudrc._create_overcloudrc(stack, "foo", "AdminPassword",
                                                  "regionTwo")
 
-        self.assertIn("export no_proxy='[fd00::1],foo,foo.com'",
+        self.assertIn("export no_proxy=fd00::1,foo,foo.com",
                       result['overcloudrc'])
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc'])
 
@@ -68,7 +68,7 @@ class OvercloudRcTest(base.TestCase):
         result = overcloudrc._create_overcloudrc(
             stack, "foo,foo.com", "AdminPassword", "regionTwo")
 
-        self.assertIn("export no_proxy='[fd00::1],foo,foo.com'",
+        self.assertIn("export no_proxy=fd00::1,foo,foo.com",
                       result['overcloudrc'])
         self.assertIn("OS_PASSWORD=AdminPassword", result['overcloudrc'])
 
