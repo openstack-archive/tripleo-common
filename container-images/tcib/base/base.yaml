@@ -87,9 +87,7 @@ tcib_packages:
   - which
   modules:
     el8:
-      - disable: container-tools:rhel8
       - disable: virt:rhel
-      - enable: container-tools:{{ tcib_rhel_modules['container-tools'] | default('3.0') }}
       - enable: mariadb:{{ tcib_rhel_modules['mariadb'] | default('10.3') }}
       - enable: virt:{{ tcib_rhel_modules['virt'] | default('av') }}
       - enable: redis:{{ tcib_rhel_modules['redis'] | default('5') }}
