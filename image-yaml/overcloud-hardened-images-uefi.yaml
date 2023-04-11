@@ -40,6 +40,7 @@ disk_images:
       DIB_PYTHON_VERSION: '2'
       DIB_MODPROBE_BLACKLIST: 'usb-storage cramfs freevxfs jffs2 hfs hfsplus squashfs udf bluetooth'
       DIB_BOOTLOADER_DEFAULT_CMDLINE: ''
+      DIB_BOOTLOADER_VIRTUAL_TERMINAL: ''
       DIB_IMAGE_SIZE: '40'
       COMPRESS_IMAGE: '1'
       DIB_BLOCK_DEVICE: 'efi'
