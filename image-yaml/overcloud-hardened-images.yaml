@@ -38,6 +38,6 @@ disk_images:
     environment:
       DIB_PYTHON_VERSION: '2'
       DIB_MODPROBE_BLACKLIST: 'usb-storage cramfs freevxfs jffs2 hfs hfsplus squashfs udf vfat bluetooth'
-      DIB_BOOTLOADER_DEFAULT_CMDLINE: 'nofb vga=normal console=tty0 console=ttyS0,115200 nousb'
+      DIB_BOOTLOADER_DEFAULT_CMDLINE: 'console=tty0 console=ttyS0,115200'
       DIB_IMAGE_SIZE: '40'
       COMPRESS_IMAGE: '1'
