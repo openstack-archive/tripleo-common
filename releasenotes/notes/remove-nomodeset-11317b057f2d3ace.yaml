@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Removes the use of the kernel parameter ``nomodeset`` as it has been
+    discovered it can cause blocking memory updates impacting latency
+    sensitive applications and workloads.
