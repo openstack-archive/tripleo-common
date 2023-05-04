@@ -1,0 +1,8 @@
+---
+other:
+  - |
+    console=tty0 has been removed from the kernel arguments for overcloud
+    nodes, this means that kernel boot messages will no longer be logged to the
+    graphics display. They are still logged to the serial console ttyS0. This
+    change is required to avoid performance degradation caused by some graphics
+    devices.
