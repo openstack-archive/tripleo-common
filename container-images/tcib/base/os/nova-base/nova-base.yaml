@@ -1,5 +1,5 @@
 tcib_actions:
-- run: bash /usr/local/bin/uid_gid_manage nova
+- run: bash /usr/local/bin/uid_gid_manage nova nova_migration
 - run: mkdir -p /etc/ssh && touch /etc/ssh/ssh_known_host
 - run: dnf install -y {{ tcib_packages | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
 tcib_packages:
