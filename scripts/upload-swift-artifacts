@@ -118,13 +118,7 @@ EOF_CAT
 # account
 SWIFT_ACCOUNT=$(openstack container create $CONTAINER_NAME -f value -c account)
 
-# This works with newer openstackclient which displays the endpoints in list
-SWIFT_INTERNAL_URL=$(openstack endpoint list | grep swift | grep internal | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|" || true)
-
-if [ -z "$SWIFT_INTERNAL_URL" ]; then
-    # fallback to old openstack client 'show' which displays all the URLs
-    SWIFT_INTERNAL_URL=$(openstack endpoint show swift | grep internalurl | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
-fi
+SWIFT_INTERNAL_URL=$(openstack endpoint list --interface internal --service swift -c URL -f value | sed -e "s|.*\(http.*\)://\([^/]*\)/.*|\1://\2|")
 
 # Does the Temp-URL-Key exist on this container?
 # jq will output "null" if it doesn't
