@@ -60,7 +60,7 @@ _SUPPORTED_USERS['mysql']='mysql 42434 42434 /var/lib/mysql kolla'
 _SUPPORTED_USERS['neutron']='neutron 42435 42435 /var/lib/neutron kolla'
 _SUPPORTED_USERS['nfast']='nfast 42481 42481'
 _SUPPORTED_USERS['nova']='nova 42436 42436 /var/lib/nova qemu,libvirt,tss,kolla'
-_SUPPORTED_USERS['nova_migration']='nova_migration 989 989'
+_SUPPORTED_USERS['nova_migration']='nova_migration 989 989 / kolla /bin/bash'
 _SUPPORTED_USERS['novajoin']='novajoin 42470 42470 /var/lib/novajoin kolla'
 _SUPPORTED_USERS['octavia']='octavia 42437 42437 /var/lib/octavia kolla'
 _SUPPORTED_USERS['openvswitch']='openvswitch 42476 42476'
@@ -77,6 +77,7 @@ _SUPPORTED_USERS['tss']='tss 59 59'
 for _USER_TO_CREATE in $_USERS_TO_CREATE; do
     # Initialize computed args
     _EXTRA_GROUPS_ARG=
+    _SHELL=
     _EXTRA_PERMS=
     _HOME_ARGS=
 
@@ -85,6 +86,7 @@ for _USER_TO_CREATE in $_USERS_TO_CREATE; do
     _GID=$(echo ${_SUPPORTED_USERS[$_USER_TO_CREATE]} | awk '{ print $3 }')
     _HOME_DIR=$(echo ${_SUPPORTED_USERS[$_USER_TO_CREATE]} | awk '{ print $4 }')
     _EXTRA_GROUPS=$(echo ${_SUPPORTED_USERS[$_USER_TO_CREATE]} | awk '{ print $5 }')
+    _SHELL=$(echo ${_SUPPORTED_USERS[$_USER_TO_CREATE]} | awk '{ print $6 }')
 
     # User was not found, we fail
     if [[ "$_NAME" != "$_USER_TO_CREATE" ]]; then
@@ -99,8 +101,16 @@ for _USER_TO_CREATE in $_USERS_TO_CREATE; do
     # Some users don't need a home directory
     if [[ -z $_HOME_DIR ]]; then
         _HOME_ARGS="-M"
+    elif [[ "$_HOME_DIR" != "/" ]]; then
+        _HOME_ARGS="-m -d $_HOME_DIR"
     else
-        _HOME_ARGS="-m --home $_HOME_DIR"
+        _HOME_ARGS="-M -d $_HOME_DIR"
+    fi
+
+    if [[ -z $_SHELL ]]; then
+        _SHELL_ARGS="--shell /usr/sbin/nologin"
+    else
+        _SHELL_ARGS="--shell $_SHELL"
     fi
 
     if id -g $_NAME 2>/dev/null; then
@@ -114,14 +124,14 @@ for _USER_TO_CREATE in $_USERS_TO_CREATE; do
         if [[ -z $_HOME_DIR ]]; then
             _HOME_ARGS=
         # usermod doesn't guaranty the home directory permissions (best effort)
-        else
+        elif [[ "$_HOME_DIR" != "/" ]]; then
             _EXTRA_PERMS="&& mkdir -p $_HOME_DIR && chown -R $_UID:$_GID $_HOME_DIR"
         fi
         # --append only exists with usermod
         [ ! -z $_EXTRA_GROUPS_ARG ] && _EXTRA_GROUPS_ARG="--append $_EXTRA_GROUPS_ARG"
         _USERADD_CMD="usermod ${_HOME_ARGS} --gid $_GID --uid $_UID ${_EXTRA_GROUPS_ARG} $_NAME ${_EXTRA_PERMS}"
     else
-        _USERADD_CMD="useradd -l ${_HOME_ARGS} --shell /usr/sbin/nologin --uid $_UID --gid $_GID ${_EXTRA_GROUPS_ARG} $_NAME"
+        _USERADD_CMD="useradd -l ${_HOME_ARGS} ${_SHELL_ARGS} --uid $_UID --gid $_GID ${_EXTRA_GROUPS_ARG} $_NAME"
     fi
     eval $_GROUPADD_CMD
     eval $_USERADD_CMD
