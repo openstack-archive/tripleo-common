@@ -227,9 +227,7 @@ class TestInventory(base.TestCase):
             'overcloud': {
                 'children': ['allovercloud']
             },
-            'excluded_overcloud': {
-                'hosts': {}
-            },
+            'excluded_overcloud': {},
             'allovercloud': {
                 'children': ['Compute', 'Controller', 'CustomRole'],
                 'vars': {
@@ -496,9 +494,7 @@ class TestInventory(base.TestCase):
                     'allovercloud': {}
                 }
             },
-            'excluded_overcloud': {
-                'hosts': {}
-            },
+            'excluded_overcloud': {},
             'allovercloud': {'children': {'Compute': {},
                                           'Controller': {},
                                           'CustomRole': {}},
