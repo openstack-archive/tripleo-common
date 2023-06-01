@@ -39,7 +39,9 @@ disk_images:
     environment:
       DIB_PYTHON_VERSION: '2'
       DIB_MODPROBE_BLACKLIST: 'usb-storage cramfs freevxfs jffs2 hfs hfsplus squashfs udf bluetooth'
-      DIB_BOOTLOADER_DEFAULT_CMDLINE: ''
+      # TODO remove memtest=0 when this change is available:
+      # https://review.opendev.org/c/openstack/diskimage-builder/+/884644
+      DIB_BOOTLOADER_DEFAULT_CMDLINE: 'memtest=0'
       DIB_BOOTLOADER_VIRTUAL_TERMINAL: ''
       DIB_IMAGE_SIZE: '40'
       COMPRESS_IMAGE: '1'
