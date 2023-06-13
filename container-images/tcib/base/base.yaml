@@ -51,15 +51,15 @@ tcib_actions:
     if [ '{{ tcib_distro }}' == 'centos' ];then
     if [ -n "$(rpm -qa redhat-release)" ];then rpm -e --nodeps redhat-release; fi ;
     dnf -y install centos-stream-release; fi
-# TODO: Temporary pinning nettle to 3.8-3.el9, so it can be reinstalled from centos-9 repos.
-# nettle-3.8-3 is already installed in ubi9 image, but it conflicts with newer versions on gnutls
-# installed from centos-9 repos. This workaround can be reverted once ubi9.2 is released, which
-# should contain a newer version of gnutls with fixes to run under FIPS mode.
-# See: https://bugzilla.redhat.com/show_bug.cgi?id=2154924 and
-# https://bugs.launchpad.net/tripleo/+bug/1984237
+# Force reinstalling nettle and gnutls from CentOS repos. We cannot have these packages installed
+# from mixed repos, or GNUTLS FIPS validation will fail. The only way is to force
+# reinstall these packages from CentOS-Stream-9 repos, since ubi repos are removed in the beginning
+# of this container build. See https://bugzilla.redhat.com/show_bug.cgi?id=2154924 and
+# https://bugs.launchpad.net/tripleo/+bug/1984237 for more info.
 - run: >-
     if [ '{{ tcib_release }}' == '9' ];then
-    dnf -y install nettle-3.8-3.el9; fi
+    for pkg in nettle gnutls; do RPM=$(dnf repoquery -q --latest-limit 1 --arch x86_64 $pkg) &&
+    dnf -y install $RPM; done; fi
 - run: dnf update --excludepkgs redhat-release -y && dnf clean all && rm -rf /var/cache/dnf
 tcib_cmd: kolla_start
 tcib_entrypoint: dumb-init --single-child --
