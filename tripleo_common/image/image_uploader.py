@@ -2126,15 +2126,18 @@ class PythonImageUploader(BaseImageUploader):
             manifest_type = manifest.get('mediaType',
                                          manifest.get('config',
                                                       {}).get('mediaType'))
+            new_manifest_type = manifest_type
+            set_config_MediaType = False
+            new_layers = []
             if manifest_type in [MEDIA_OCI_MANIFEST_V1,
                                  MEDIA_OCI_CONFIG_V1]:
-                manifest_type = MEDIA_MANIFEST_V2
+                new_manifest_type = MEDIA_MANIFEST_V2
                 # convert config mediaType to docker.container.image
                 manifest['config']['mediaType'] = MEDIA_CONFIG
+                set_config_MediaType = True
                 layers = manifest.get('layers')
                 # convert layer type to docker layer type
                 if layers:
-                    new_layers = []
                     for layer in layers:
                         layer_type = layer.get('mediaType')
                         if layer_type == MEDIA_OCI_LAYER_COMPRESSED:
@@ -2144,18 +2147,28 @@ class PythonImageUploader(BaseImageUploader):
                         new_layers.append(layer)
                     manifest['layers'] = new_layers
             elif manifest_type == MEDIA_CONFIG:
-                manifest_type = MEDIA_MANIFEST_V2
+                new_manifest_type = MEDIA_MANIFEST_V2
             elif manifest_type == MEDIA_OCI_INDEX_V1:
-                manifest_type = MEDIA_MANIFEST_V2_LIST
-            manifest['mediaType'] = manifest_type
-            manifest_str = json.dumps(manifest, indent=3)
+                new_manifest_type = MEDIA_MANIFEST_V2_LIST
+            # Only modify the manifest if the mediaType has actually changed.
+            # This is a partial fix for
+            # https://bugzilla.redhat.com/show_bug.cgi?id=2213672
+            # where the json pretty print with indent=3 causes the SHA256 of
+            # the manifest to change since the manifest is not pretty printed
+            # the same way in the source registry.
+            if (manifest_type != new_manifest_type or
+                    set_config_MediaType or
+                    new_layers):
+
+                manifest['mediaType'] = new_manifest_type
+                manifest_str = json.dumps(manifest, indent=3)
 
         export = target_url.netloc in cls.export_registries
         if export:
             image_export.export_manifest_config(
                 target_url,
                 manifest_str,
-                manifest_type,
+                new_manifest_type,
                 config_str,
                 multi_arch=multi_arch
             )
@@ -2191,7 +2204,7 @@ class PythonImageUploader(BaseImageUploader):
             target_url, CALL_MANIFEST % parts)
 
         LOG.debug('[%s] Uploading manifest of type %s to: %s' %
-                  (image, manifest_type, manifest_url))
+                  (image, new_manifest_type, manifest_url))
 
         try:
             r = RegistrySessionHelper.put(
@@ -2200,7 +2213,7 @@ class PythonImageUploader(BaseImageUploader):
                 timeout=30,
                 data=manifest_str.encode('utf-8'),
                 headers={
-                    'Content-Type': manifest_type
+                    'Content-Type': new_manifest_type
                 }
             )
         except requests.exceptions.HTTPError as e:
