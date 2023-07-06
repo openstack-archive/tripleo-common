@@ -1,5 +1,6 @@
 tcib_actions:
 - run: dnf install -y {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
+- run: sed -ri '/^session(\s)+required(\s+)pam_loginuid.so$/d' /etc/pam.d/crond
 tcib_packages:
   common:
   - cronie
