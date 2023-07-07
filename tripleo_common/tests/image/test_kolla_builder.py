@@ -480,8 +480,6 @@ class TestPrepare(base.TestCase):
             ],
             'environments/containers-default-parameters.yaml': {
                 'ContainerNovaComputeImage':
-                    '192.0.2.0:8787/t/p-nova-compute:l',
-                'ContainerNovaLibvirtConfigImage':
                     '192.0.2.0:8787/t/p-nova-compute:l'
             }},
             kb.container_images_prepare(
@@ -489,7 +487,7 @@ class TestPrepare(base.TestCase):
                 template_dir=TEMPLATE_DIR_PATH,
                 output_env_file=CONTAINER_DEFAULTS_ENVIRONMENT,
                 output_images_file='container_images.yaml',
-                service_filter=['OS::TripleO::Services::NovaLibvirt'],
+                service_filter=['OS::TripleO::Services::NovaCompute'],
                 excludes=['libvirt'],
                 mapping_args={
                     'namespace': '192.0.2.0:8787/t',
@@ -510,6 +508,8 @@ class TestPrepare(base.TestCase):
             ],
             'environments/containers-default-parameters.yaml': {
                 'ContainerNovaLibvirtImage':
+                    '192.0.2.0:8787/t/p-nova-libvirt:l',
+                'ContainerNovaLibvirtConfigImage':
                     '192.0.2.0:8787/t/p-nova-libvirt:l'
             }},
             kb.container_images_prepare(
@@ -538,6 +538,8 @@ class TestPrepare(base.TestCase):
             ],
             'environments/containers-default-parameters.yaml': {
                 'ContainerNovaLibvirtImage':
+                    '192.0.2.0:8787/t/p-nova-libvirt:l',
+                'ContainerNovaLibvirtConfigImage':
                     '192.0.2.0:8787/t/p-nova-libvirt:l'
             }},
             kb.container_images_prepare(
