@@ -1962,6 +1962,7 @@ class PythonImageUploader(BaseImageUploader):
                 manifest_type = MEDIA_MANIFEST_V1_SIGNED
             else:
                 manifest_type = MEDIA_MANIFEST_V1
+            new_manifest_type = manifest_type
         else:
             # NOTE(mwhahaha): always force docker media format if not set or
             # is explicitly OCI because buildah uses OCI by default but we
