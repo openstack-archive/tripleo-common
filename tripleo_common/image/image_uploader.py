@@ -914,6 +914,10 @@ class BaseImageUploader(object):
         )
         tags_r = RegistrySessionHelper.get(session, tags_url, timeout=30)
         tags = tags_r.json()['tags']
+        while 'next' in tags_r.links:
+            next_url = parse.urljoin(tags_url, tags_r.links['next']['url'])
+            tags_r = RegistrySessionHelper.get(session, next_url, timeout=30)
+            tags.extend(tags_r.json()['tags'])
         if default_tag and tag not in tags:
             if tags:
                 parts['tag'] = tags[-1]
