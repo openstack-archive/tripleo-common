@@ -1133,6 +1133,87 @@ class TestBaseImageUploader(base.TestCase):
             inspect(url1, session=session)
         )
 
+    def test_inspect_tags_pagination(self):
+        req = self.requests
+        session = requests.Session()
+        session.headers['Authorization'] = 'Bearer asdf1234'
+        inspect = image_uploader.BaseImageUploader._inspect
+
+        url1 = urlparse('docker://docker.io/t/nova-api:latest')
+
+        manifest_resp = {
+            'schemaVersion': 2,
+            'config': {
+                'mediaType': 'text/html',
+                'digest': 'abcdef'
+            },
+            'layers': [
+                {'digest': 'aaa'},
+                {'digest': 'bbb'},
+                {'digest': 'ccc'},
+            ]
+        }
+        manifest_str = json.dumps(manifest_resp, indent=3)
+        manifest_headers = {'Docker-Content-Digest': 'eeeeee'}
+        config_resp = {
+            'created': '2018-10-02T11:13:45.567533229Z',
+            'docker_version': '1.13.1',
+            'config': {
+                'Labels': {
+                    'build-date': '20181002',
+                    'build_id': '1538477701',
+                    'kolla_version': '7.0.0'
+                }
+            },
+            'architecture': 'amd64',
+            'os': 'linux',
+        }
+
+        link_headers = {'Link': '</v2/t/nova-api/tags/list'
+                                '?n=3&next_page=three>; rel="next"'}
+        tags_resp = {'tags': ['one', 'two', 'three']}
+        req.get('https://registry-1.docker.io/v2/t/nova-api/tags/list',
+                json=tags_resp, headers=link_headers)
+
+        link_headers = {'Link': '</v2/t/nova-api/tags/list'
+                                '?n=3&next_page=six>; rel="next"'}
+        tags_resp = {'tags': ['four', 'five', 'six']}
+        req.get('https://registry-1.docker.io/v2/t/nova-api/tags/list'
+                '?n=3&next_page=three',
+                json=tags_resp, headers=link_headers)
+
+        tags_resp = {'tags': ['seven', 'latest']}
+        req.get('https://registry-1.docker.io/v2/t/nova-api/tags/list'
+                '?n=3&next_page=six',
+                json=tags_resp)
+
+        req.get('https://registry-1.docker.io/v2/t/nova-api/blobs/abcdef',
+                json=config_resp)
+
+        req.get('https://registry-1.docker.io/v2/t/nova-api/manifests/latest',
+                text=manifest_str, headers=manifest_headers)
+
+        self.assertEqual(
+            {
+                'Architecture': 'amd64',
+                'Created': '2018-10-02T11:13:45.567533229Z',
+                'Digest': 'eeeeee',
+                'DockerVersion': '1.13.1',
+                'Labels': {
+                    'build-date': '20181002',
+                    'build_id': '1538477701',
+                    'kolla_version': '7.0.0'
+                },
+                'Layers': ['aaa', 'bbb', 'ccc'],
+                'Name': 'docker.io/t/nova-api',
+                'Os': 'linux',
+                'RepoTags': ['one', 'two', 'three', 'four',
+                             'five', 'six', 'seven', 'latest'],
+                'Tag': 'latest'
+            },
+            inspect(url1, session=session)
+        )
+
     def test_inspect_v1_manifest(self):
         req = self.requests
         session = requests.Session()
