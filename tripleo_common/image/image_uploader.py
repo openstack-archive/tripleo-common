@@ -335,9 +335,8 @@ class RegistrySessionHelper(object):
                 # https://bugzilla.redhat.com/show_bug.cgi?id=2134075
                 # https://bugzilla.redhat.com/show_bug.cgi?id=2138743
                 elif data.get('expires_at'):
-                    now = datetime.utcnow()
-                    expires = datetime.strptime(data.get('expires_at'),
-                                                "%Y-%m-%dT%H:%M:%S.%fZ")
+                    expires = dt_parse(data.get('expires_at'))
+                    now = datetime.now(tzlocal())
                     if now < expires:
                         return data['token']
 
