@@ -267,13 +267,34 @@ class TestRegistrySessionHelper(base.TestCase):
 
     @mock.patch('tripleo_common.utils.locks.threadinglock.ThreadingLock',
                 name='mock_lock')
-    def test_get_cached_bearer_token_expires_at_current(self, mock_lock):
+    def test_get_cached_bearer_token_expires_at_utc_current(self, mock_lock):
         expiry = datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
         expiry_time = "{}Z".format(expiry.isoformat())
 
         resp = {"fakeimage": {
             'token': 'blah',
             'expires_at': expiry_time,
+            'issued_at': '2022-10-17T23:45:09.306Z'}
+        }
+
+        scope = "fakeimage"
+        mock_lock.sessions.return_value = resp
+
+        ret = image_uploader.RegistrySessionHelper.get_cached_bearer_token(
+            mock_lock, scope)
+
+        self.assertEqual(ret, "blah")
+
+    @mock.patch('tripleo_common.utils.locks.threadinglock.ThreadingLock',
+                name='mock_lock')
+    def test_get_cached_bearer_token_expires_at_local_current(self, mock_lock):
+        expiry = datetime.datetime.now(tzlocal()) + datetime.timedelta(
+            minutes=60
+        )
+
+        resp = {"fakeimage": {
+            'token': 'blah',
+            'expires_at': f'{expiry}',
             'issued_at': '2022-10-17T23:45:09.306Z'}
         }
 
