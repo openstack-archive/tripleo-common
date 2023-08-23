@@ -120,7 +120,7 @@ DO_NOT_ROTATE_LIST = (
 DEFAULT_IDENTITY_API_VERSION = '3'
 
 # The default version of the Compute API to set in overcloudrc.
-DEFAULT_COMPUTE_API_VERSION = '2.latest'
+DEFAULT_COMPUTE_API_VERSION = '2.1'
 
 # The default version of the Image API to set in overcloudrc.
 DEFAULT_IMAGE_API_VERSION = '2'
