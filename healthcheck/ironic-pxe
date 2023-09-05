@@ -6,7 +6,7 @@ if grep "/httpd " /run_command 2>/dev/null ; then
     bind_host=$(wrap_ipv6 $(get_config_val /etc/ironic/ironic.conf DEFAULT my_ip 127.0.0.1))
     bind_port=$(grep "^Listen " /etc/httpd/conf.d/10-ipxe_vhost.conf | awk '{print $2}')
     protocol=http
-    path=
+    path=healthcheck
 else
     exit 0
 fi
