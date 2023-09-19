@@ -368,12 +368,13 @@ class TripleoInventory(object):
                 if self.ansible_python_interpreter:
                     ret[svc_host]['vars']['ansible_python_interpreter'] = \
                         self.ansible_python_interpreter
-        excluded_hosts = self.stack_outputs.get('BlacklistedHostnames', {})
+        excluded_hosts = self.stack_outputs.get('BlacklistedHostnames', [])
         excluded_overcloud = ret.setdefault('excluded_overcloud', {})
-        exclude = excluded_overcloud.setdefault('hosts', {})
-        for hostname in excluded_hosts:
-            if hostname:
-                exclude[hostname] = {}
+        if any(excluded_hosts):
+            exclude = excluded_overcloud.setdefault('hosts', {})
+            for hostname in excluded_hosts:
+                if hostname:
+                    exclude[hostname] = {}
 
         return ret
 
