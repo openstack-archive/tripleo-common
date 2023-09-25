@@ -2024,9 +2024,9 @@ class TestPythonImageUploader(base.TestCase):
             timeout=30,
             headers={
                 'Accept': 'application/'
-                          'vnd.docker.distribution.manifest.v2+json;q=1, '
+                          'vnd.docker.distribution.manifest.v2+json, '
                           'application/'
-                          'vnd.oci.image.manifest.v1+json;q=0.5'
+                          'vnd.oci.image.manifest.v1+json'
             }
         )
 

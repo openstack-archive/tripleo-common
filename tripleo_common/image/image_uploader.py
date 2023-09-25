@@ -929,7 +929,7 @@ class BaseImageUploader(object):
         )
         # prefer docker manifest over oci
         manifest_headers = {'Accept': ", ".join([
-            MEDIA_MANIFEST_V2 + ";q=1", MEDIA_OCI_MANIFEST_V1 + ";q=0.5"])}
+            MEDIA_MANIFEST_V2, MEDIA_OCI_MANIFEST_V1])}
 
         try:
             manifest_r = RegistrySessionHelper.get(
@@ -1669,7 +1669,7 @@ class PythonImageUploader(BaseImageUploader):
         else:
             # prefer docker manifest over oci
             manifest_headers = {'Accept': ", ".join([
-                MEDIA_MANIFEST_V2 + ";q=1", MEDIA_OCI_MANIFEST_V1 + ";q=0.5"])}
+                MEDIA_MANIFEST_V2, MEDIA_OCI_MANIFEST_V1])}
         try:
             r = RegistrySessionHelper.get(
                 session,
