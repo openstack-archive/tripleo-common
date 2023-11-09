@@ -7,6 +7,7 @@ tcib_actions:
 - run: rm -f /etc/machine-id
 - run: ln -s /usr/share/openstack-tripleo-common/healthcheck/nova-compute /openstack/healthcheck &&  chmod a+rx /openstack/healthcheck
 - run: if [ -f /usr/share/qemu/firmware/50-edk2-ovmf-cc.json ] && [ -f /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json ]; then jq ".mapping[\"nvram-template\"] = $(jq ".mapping[\"nvram-template\"]" /usr/share/qemu/firmware/50-edk2-ovmf-cc.json)" /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json > /tmp/50-edk2-ovmf-amdsev_.json && mv -f /tmp/50-edk2-ovmf-amdsev_.json /usr/share/qemu/firmware/50-edk2-ovmf-amdsev.json; fi
+- run: sed -ri '/^session(\s)+required(\s+)pam_loginuid.so$/d' /etc/pam.d/sshd
 tcib_packages:
   common:
   - ceph-common
