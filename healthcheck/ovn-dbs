@@ -1,4 +1,0 @@
-#!/bin/bash
-
-process='ovn-northd'
-/usr/bin/ovs-appctl -t ${process} version 1>/dev/null

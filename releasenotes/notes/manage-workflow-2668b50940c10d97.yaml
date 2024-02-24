@@ -1,4 +1,0 @@
----
-features:
-  - Add a workflow to move a list of baremetal nodes to
-    'manage' state.

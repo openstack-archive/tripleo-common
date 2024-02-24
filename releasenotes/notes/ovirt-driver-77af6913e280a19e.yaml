@@ -1,4 +1,0 @@
----
-features:
-  - |
-    Allows enrolling oVirt nodes using the ``staging-ovirt`` hardware type.

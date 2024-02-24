@@ -1,7 +1,0 @@
-tcib_actions:
-- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/ovn/ovn-nb-db-server/start_nb_db_server.sh /usr/local/bin/start-nb-db-server
-- run: chmod 755 /usr/local/bin/start-nb-db-server
-tcib_packages:
-  common:
-  - openvswitch-ovn-central

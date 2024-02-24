@@ -1,20 +1,10 @@
-========================
-Team and repository tags
-========================
+This project is no longer maintained.
 
-.. image:: https://governance.openstack.org/tc/badges/tripleo-common.svg
-    :target: https://governance.openstack.org/tc/reference/tags/index.html
+The contents of this repository are still available in the Git
+source code management system.  To see the contents of this
+repository before it reached its end of life, please check out the
+previous commit with "git checkout HEAD^1".
 
-.. Change things from this point on
-
-==============
-tripleo-common
-==============
-
-A common library for TripleO workflows.
-
-* Free software: Apache license
-* Documentation: https://docs.openstack.org/tripleo-common/latest/
-* Source: http://opendev.org/openstack/tripleo-common
-* Bugs: https://bugs.launchpad.net/tripleo-common
-* Release notes: https://docs.openstack.org/releasenotes/tripleo-common
+For any further questions, please email
+openstack-discuss@lists.openstack.org or join #openstack-dev on
+OFTC.

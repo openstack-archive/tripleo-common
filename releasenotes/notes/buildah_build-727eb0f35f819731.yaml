@@ -1,4 +1,0 @@
----
-features:
-  - |
-    kolla_builder now supports Buildah and not just Docker.

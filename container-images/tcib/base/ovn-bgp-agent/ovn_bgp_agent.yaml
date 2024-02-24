@@ -1,8 +1,0 @@
-tcib_actions:
-- run: bash /usr/local/bin/uid_gid_manage ovn-bgp
-- run: dnf install -y {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/ovn-bgp-agent /openstack/healthcheck && chmod a+rx /openstack/healthcheck
-tcib_packages:
-  common:
-  - ovn-bgp-agent
-tcib_user: ovn-bgp

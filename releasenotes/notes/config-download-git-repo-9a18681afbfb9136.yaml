@@ -1,5 +1,0 @@
----
-features:
-  - |
-     Initialize a git repository in the config-download directory and
-     automatically snapshot changes made to the repository.

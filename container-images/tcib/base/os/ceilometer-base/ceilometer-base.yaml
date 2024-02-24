@@ -1,8 +1,0 @@
-tcib_actions:
-- run: bash /usr/local/bin/uid_gid_manage ceilometer
-- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-tcib_packages:
-  common:
-  - openstack-ceilometer-common
-  - python3-oslo-db
-  - python3-tooz

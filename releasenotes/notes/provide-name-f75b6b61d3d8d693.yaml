@@ -1,4 +1,0 @@
----
-fixes:
-  - |
-    Fixes running the baremetal ``provide`` workflow with node names.

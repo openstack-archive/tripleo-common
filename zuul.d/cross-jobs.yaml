@@ -1,9 +1,0 @@
-- job:
-    name: tripleo-cross-tripleoclient-py39
-    parent: openstack-tox-py39
-    description: Run cross-project tests on tripleoclient from HEAD with py39
-    vars:
-      zuul_work_dir: src/opendev.org/openstack/python-tripleoclient
-    required-projects:
-      - name: openstack/python-tripleoclient
-      - name: openstack/tripleo-common

@@ -1,5 +1,0 @@
----
-features:
-  - |
-    Creates a workbook to update and get heat capabilities, so the related actions
-    do not need to be called directly.

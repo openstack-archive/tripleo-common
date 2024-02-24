@@ -1,5 +1,0 @@
-max_fail_percentage: 15
-any_errors_fatal: True
-chrony_host: 192.168.2.1
-chrony_acl: none
-chrony_foo: bar

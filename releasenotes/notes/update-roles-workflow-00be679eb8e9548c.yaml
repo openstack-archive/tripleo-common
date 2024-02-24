@@ -1,5 +1,0 @@
----
-features:
-  - |
-    Adds a workflow and associated actions to update roles in a deployment
-    plan.

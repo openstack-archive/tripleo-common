@@ -1,5 +1,0 @@
----
-features:
-  - |
-    Introduce Undercloud Backup workflow as well as set of Mistral actions to
-    perform Undercloud Backup

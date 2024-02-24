@@ -1,8 +1,0 @@
-tcib_actions:
-- run: bash /usr/local/bin/uid_gid_manage nfast barbican
-- run: dnf -y install {{ tcib_packages['common'] | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: cp /usr/share/openstack-tripleo-common-containers/container-images/kolla/barbican-base/sudoers /etc/sudoers.d/barbican_sudoers
-- run: chmod 640 /etc/sudoers.d/barbican_sudoers
-tcib_packages:
-  common:
-  - openstack-barbican-common

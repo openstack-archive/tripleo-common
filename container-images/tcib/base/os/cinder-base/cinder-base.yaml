@@ -1,7 +1,0 @@
-tcib_actions:
-- run: bash /usr/local/bin/uid_gid_manage cinder
-- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-tcib_packages:
-  common:
-  - ceph-common
-  - openstack-cinder

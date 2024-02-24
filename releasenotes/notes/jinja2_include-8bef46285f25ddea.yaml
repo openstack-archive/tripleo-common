@@ -1,3 +1,0 @@
----
-features:
-  - Adds support for the Jinja2 include statement in tripleo-heat-templates.

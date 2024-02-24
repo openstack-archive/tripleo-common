@@ -1,5 +1,0 @@
----
-features:
-  - |
-    Adds a workflow to list deployment plans so the tripleo.plan.list action
-    does not need to be called directly.

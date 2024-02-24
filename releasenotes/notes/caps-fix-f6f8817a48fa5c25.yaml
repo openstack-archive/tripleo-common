@@ -1,4 +1,0 @@
----
-fixes:
-  - |
-    Node update now works correctly when capabilities are specified as a dict.

@@ -1,5 +1,0 @@
----
-features:
-  - |
-    Adds a workflow to create a container so the underlying action does
-    not need to be called directly.

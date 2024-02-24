@@ -1,4 +1,0 @@
----
-fixes:
-  - |
-    Fixes OpenDaylight healthcheck for TLS and regular deployments.

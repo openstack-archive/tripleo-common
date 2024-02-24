@@ -1,4 +1,0 @@
-#!/bin/bash
-
-collectdctl -s /var/run/collectd-socket listval
-exit $?

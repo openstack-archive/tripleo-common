@@ -1,5 +1,0 @@
----
-fixes:
-  - |
-    Add missing httpd and mod_ssl packages to octavia container image to
-    support TLS proxy for internal TLS.

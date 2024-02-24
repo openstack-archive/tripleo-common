@@ -1,8 +1,0 @@
-tcib_actions:
-- run: bash /usr/local/bin/uid_gid_manage {{ tcib_user }}
-- run: dnf -y install {{ tcib_packages.common | join(' ') }} && dnf clean all && rm -rf /var/cache/dnf
-- run: ln -s /usr/share/openstack-tripleo-common/healthcheck/etcd /openstack/healthcheck && chmod a+rx /openstack/healthcheck
-tcib_packages:
-  common:
-  - etcd
-tcib_user: etcd

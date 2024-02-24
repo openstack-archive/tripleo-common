@@ -1,4 +1,0 @@
----
-features:
-  - Adds an action and workflow used to check the node
-    counts and the hypervisor.
